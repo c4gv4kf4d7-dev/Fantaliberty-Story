@@ -77,7 +77,7 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;
   border:1px solid var(--border);border-radius:16px;
   padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;
   box-shadow:0 2px 8px rgba(0,0,0,.07),inset 0 1px 0 rgba(255,255,255,.8);
-  text-align:center;line-height:1.5;max-width:560px;width:100%}
+  text-align:center;line-height:1.5;max-width:360px;width:auto}
 .ro-chip:hover{background:rgba(255,255,255,.55)}
 .ro-chip span{opacity:.52;font-weight:600}
 .ro-chip .chip-name{color:#5e4ded;font-weight:900}
@@ -575,7 +575,7 @@ body.disp-xxl .budget-cap{font-size:14.5px;height:40px;min-width:120px}
 
 <main class="wrap" id="mainContent">
   <div class="player-row">
-    <div class="ro-chip" id="chipPlayer">🎮 Scegli le tue previsioni, spendi i Newton e che vinca il migliore!</div>
+    <div class="ro-chip" id="chipPlayer">🎮 Scegli le tue previsioni, spendi i Newton<br>e che vinca il migliore!</div>
     <span id="playerSub" class="player-sub"></span>
   </div>
   <div id="cardsContainer"></div>
@@ -949,9 +949,9 @@ function load(){
 function refreshChips(){
   const name=identity.name||'';
   if(name)
-    $('#chipPlayer').innerHTML=`🎮 Tocca a te <span class="chip-name">${name}</span>, scegli le tue previsioni, spendi i Newton e che vinca il migliore!`;
+    $('#chipPlayer').innerHTML=`🎮 Tocca a te <span class="chip-name">${name}</span>, scegli le tue previsioni, spendi i Newton<br>e che vinca il migliore!`;
   else
-    $('#chipPlayer').innerHTML=`🎮 Scegli le tue previsioni, spendi i Newton e che vinca il migliore!`;
+    $('#chipPlayer').innerHTML=`🎮 Scegli le tue previsioni, spendi i Newton<br>e che vinca il migliore!`;
 }
 
 
