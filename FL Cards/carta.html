@@ -372,10 +372,17 @@
     document.getElementById('desc-text').textContent = b.descrizione;
   }
 
-  /* ────── leggi ?badge= dall'URL, fallback a 'investitore' ────── */
+  /* ────── leggi ?badge= e ?name= dall'URL, fallback a valori di default ────── */
   var params      = new URLSearchParams(window.location.search);
-  var currentKey  = (params.get('badge') || 'investitore').toLowerCase();
+  var currentKey  = (params.get('badge') || 'stratega').toLowerCase();
+  var nameParam   = params.get('name') || 'Michael';
   applyBadge(currentKey);
+
+  /* ────── popola il nick dal parametro URL ────── */
+  (function applyName() {
+    var nd = document.getElementById('nick-display');
+    if (nd && nameParam) nd.textContent = nameParam;
+  })();
 
   /* ────── TEST: popola il selettore e gestisci cambio badge ────── */
   (function setupTestSelector() {
