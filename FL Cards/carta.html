@@ -438,33 +438,24 @@
   var shimBack     = document.getElementById('shimmer-back');
 
   /* ────── state ────── */
-  var yAngle      = 0;      // cumulative Y rotation (degrees)
-  var isDragging  = false;
-  var prevDragX   = 0;
-  var prevDragT   = 0;
-  var velocity    = 0;      // deg/frame momentum
-  var recentV     = [];     // last N velocity samples
-  var rafMomentum = null;
+  var tiltX = 0, tiltY = 0, tiltZ = 0;
+  var isDragging = false;
+  var dragStartX = 0, dragStartY = 0;
+  var rafSpring  = null;
 
-  var tiltX = 0, tiltY = 0;  // hover tilt offsets (degrees)
+  var MAX_X = 22, MAX_Y = 28, MAX_Z = 7;
+  var SENS   = 0.45;  // gradi per pixel
 
-  var SENS       = 0.6;   // degrees per pixel
-  var SNAP_MS    = 400;   // snap animation duration (ms)
-  var SNAP_V_THR = 0.5;   // velocity threshold for directional snap
+  function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
 
   /* ────── transform ────── */
   function applyTransform() {
-    var totalY = yAngle  + (isDragging ? 0 : tiltY);
-    var totalX = isDragging ? 0 : tiltX;
     card.style.transform =
-      'rotateY(' + totalY + 'deg) rotateX(' + totalX + 'deg)';
+      'rotateX(' + tiltX + 'deg) rotateY(' + tiltY + 'deg) rotateZ(' + tiltZ + 'deg)';
   }
 
   /* ────── shimmer ────── */
   function updateShimmer(px, py, active) {
-    var norm = ((yAngle % 360) + 360) % 360;
-    var back = norm > 90 && norm < 270;
-    var bx   = back ? (100 - px) : px;
     var show = active ? '1' : '0';
     shimFront.style.opacity = show;
     shimBack.style.opacity  = show;
@@ -472,160 +463,91 @@
       'radial-gradient(circle at ' + px + '% ' + py +
       '%, rgba(255,255,255,.28), transparent 65%)';
     shimBack.style.background =
-      'radial-gradient(circle at ' + bx + '% ' + py +
+      'radial-gradient(circle at ' + (100 - px) + '% ' + py +
       '%, rgba(255,255,255,.18), transparent 65%)';
   }
 
-  /* ────── snap ────── */
-
-  // Returns the snap target (deg) in cumulative yAngle space.
-  // Velocity direction influences whether we snap to the NEXT face
-  // in the direction of travel, or the NEAREST one.
-  function getSnapTarget() {
-    var unit = 180;
-    if (velocity > SNAP_V_THR) {
-      // rotating right → next snap point ahead in + direction
-      return Math.floor(yAngle / unit) * unit + unit;
-    } else if (velocity < -SNAP_V_THR) {
-      // rotating left → next snap point ahead in - direction
-      return Math.ceil(yAngle / unit) * unit - unit;
-    } else {
-      // no significant velocity → nearest snap point
-      return Math.round(yAngle / unit) * unit;
-    }
+  function shimmerFromTilt() {
+    var px = clamp((tiltY / MAX_Y * 0.5 + 0.5) * 100, 0, 100);
+    var py = clamp((-tiltX / MAX_X * 0.5 + 0.5) * 100, 0, 100);
+    updateShimmer(px, py, true);
   }
 
-  function snapTo(target) {
-    card.style.transition = 'transform ' + SNAP_MS + 'ms ease-out';
-    yAngle = target;
-    applyTransform();
-    // after animation: remove transition and normalise yAngle to 0 or 180
-    setTimeout(function () {
-      card.style.transition = 'none';
-      var norm = ((yAngle % 360) + 360) % 360;
-      yAngle = (norm > 90 && norm < 270) ? 180 : 0;
-    }, SNAP_MS + 20);
+  /* ────── spring back to flat ────── */
+  function cancelSpring() {
+    if (rafSpring) { cancelAnimationFrame(rafSpring); rafSpring = null; }
   }
 
-  /* ────── drag helpers ────── */
-  function dragStart(x) {
-    cancelAnimationFrame(rafMomentum);  // cancel any leftover RAF
+  function springToRest() {
+    cancelSpring();
+    (function tick() {
+      tiltX *= 0.84; tiltY *= 0.84; tiltZ *= 0.84;
+      if (Math.abs(tiltX) < 0.08 && Math.abs(tiltY) < 0.08 && Math.abs(tiltZ) < 0.08) {
+        tiltX = tiltY = tiltZ = 0;
+        applyTransform();
+        updateShimmer(50, 50, false);
+        return;
+      }
+      applyTransform();
+      shimmerFromTilt();
+      rafSpring = requestAnimationFrame(tick);
+    })();
+  }
+
+  /* ────── pointer events (desktop + mobile unificati) ────── */
+  scene.addEventListener('pointerdown', function (e) {
+    if (nickDisplay.contains(e.target)) return;
+    cancelSpring();
     isDragging = true;
-    prevDragX  = x;
-    prevDragT  = Date.now();
-    velocity   = 0;
-    recentV    = [];
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
     scene.classList.add('dragging');
     card.style.transition = 'none';
-  }
+    scene.setPointerCapture(e.pointerId);
+  });
 
-  function dragMove(x) {
-    var now = Date.now();
-    var dx  = x - prevDragX;
-    var dt  = Math.max(now - prevDragT, 1);
-    yAngle += dx * SENS;
-    // rolling velocity sample (deg/frame @60fps)
-    recentV.push(dx * SENS * 16 / dt);
-    if (recentV.length > 6) recentV.shift();
-    prevDragX = x;
-    prevDragT = now;
+  scene.addEventListener('pointermove', function (e) {
+    if (!isDragging) return;
+    var dx = e.clientX - dragStartX;
+    var dy = e.clientY - dragStartY;
+    tiltY = clamp( dx * SENS, -MAX_Y, MAX_Y);
+    tiltX = clamp(-dy * SENS, -MAX_X, MAX_X);
+    // twist Z sottile quando si muove in diagonale
+    var nx = dx / 120, ny = dy / 120;
+    tiltZ = clamp(-nx * ny * MAX_Z, -MAX_Z, MAX_Z);
     applyTransform();
-  }
+    shimmerFromTilt();
+  });
 
-  function dragEnd() {
+  scene.addEventListener('pointerup', function (e) {
     if (!isDragging) return;
     isDragging = false;
     scene.classList.remove('dragging');
-    // compute average velocity from recent samples
-    if (recentV.length) {
-      velocity = recentV.reduce(function(a,b){return a+b;},0) / recentV.length;
-    }
-    recentV = [];
-    snapTo(getSnapTarget());
-  }
-
-  /* ────── pointer events (desktop + mobile) ────── */
-  var DRAG_THRESHOLD = 8;  // px of horizontal movement before drag starts
-  var pStartX = 0, pStartY = 0;
-  var pDragStarted = false, pIsTilting = false;
-
-  scene.addEventListener('pointerdown', function (e) {
-    if (nickDisplay.contains(e.target)) return;
-    cancelAnimationFrame(rafMomentum);
-    pStartX = e.clientX;
-    pStartY = e.clientY;
-    pDragStarted = false;
-    pIsTilting   = false;
-    card.style.transition = 'none';
-
-    function onMove(ev) {
-      var dx = ev.clientX - pStartX;
-      var r  = scene.getBoundingClientRect();
-      var relX = Math.min(100, Math.max(0, (ev.clientX - r.left) / r.width  * 100));
-      var relY = Math.min(100, Math.max(0, (ev.clientY - r.top)  / r.height * 100));
-
-      if (!pDragStarted && Math.abs(dx) > DRAG_THRESHOLD) {
-        pDragStarted = true;
-        pIsTilting   = false;
-        dragStart(pStartX);
-      }
-
-      if (pDragStarted) {
-        dragMove(ev.clientX);
-        updateShimmer(relX, relY, true);
-      } else {
-        // gentle tilt mode
-        pIsTilting = true;
-        var nx = ((ev.clientX - r.left) / r.width  - 0.5) * 2;
-        var ny = ((ev.clientY - r.top)  / r.height - 0.5) * 2;
-        tiltY =  nx * 8;
-        tiltX = -ny * 6;
-        applyTransform();
-        updateShimmer(relX, relY, true);
-      }
-    }
-
-    function onUp() {
-      if (pDragStarted) {
-        dragEnd();
-      } else if (pIsTilting) {
-        tiltX = 0; tiltY = 0;
-        card.style.transition = 'transform 0.35s ease';
-        applyTransform();
-        setTimeout(function () { card.style.transition = 'none'; }, 350);
-      }
-      updateShimmer(50, 50, false);
-      pDragStarted = false;
-      pIsTilting   = false;
-      document.removeEventListener('pointermove', onMove);
-      document.removeEventListener('pointerup',   onUp);
-    }
-
-    document.addEventListener('pointermove', onMove);
-    document.addEventListener('pointerup',   onUp);
+    springToRest();
   });
 
-  /* ────── hover tilt (desktop only, when not dragging) ────── */
+  scene.addEventListener('pointercancel', function (e) {
+    isDragging = false;
+    scene.classList.remove('dragging');
+    springToRest();
+  });
+
+  /* ────── hover tilt (mouse desktop, fuori dal drag) ────── */
   scene.addEventListener('mousemove', function (e) {
     if (isDragging) return;
-    var r    = scene.getBoundingClientRect();
-    var relX = e.clientX - r.left;
-    var relY = e.clientY - r.top;
-    var nx   = (relX / r.width  - 0.5) * 2;
-    var ny   = (relY / r.height - 0.5) * 2;
-    tiltY =  nx * 5;
-    tiltX = -ny * 7;
+    var r  = scene.getBoundingClientRect();
+    var nx = (e.clientX - r.left) / r.width  * 2 - 1;
+    var ny = (e.clientY - r.top)  / r.height * 2 - 1;
+    tiltY =  nx * MAX_Y;
+    tiltX = -ny * MAX_X;
+    tiltZ = -nx * ny * MAX_Z * 0.5;
     applyTransform();
-    updateShimmer(relX / r.width * 100, relY / r.height * 100, true);
+    shimmerFromTilt();
   });
 
   scene.addEventListener('mouseleave', function () {
     if (isDragging) return;
-    tiltX = 0; tiltY = 0;
-    card.style.transition = 'transform 0.35s ease';
-    applyTransform();
-    updateShimmer(50, 50, false);
-    setTimeout(function () { card.style.transition = 'none'; }, 350);
+    springToRest();
   });
 
   /* ────── nickname auto-fit (scaleX — nessun layout shift) ────── */
