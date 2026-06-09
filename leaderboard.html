@@ -68,22 +68,22 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;background:rgba(220,225
 .match-item:last-child{border-bottom:none}
 .match-item:hover{opacity:.75}
 /* Podium */
-.podium{display:grid;grid-template-columns:1fr 1.08fr 1fr;gap:10px;align-items:end}
-@media(max-width:440px){.podium{grid-template-columns:1fr}.podium-card{order:unset!important}}
-.podium-card{border-radius:16px;padding:18px 12px 20px;text-align:center}
-.podium-card.first{background:linear-gradient(160deg,rgba(184,134,11,.15),rgba(255,255,255,.28));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(184,134,11,.38);padding:24px 12px 22px;order:2}
-.podium-card.second{background:rgba(255,255,255,.35);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(110,110,124,.22);order:1}
-.podium-card.third{background:rgba(255,255,255,.30);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(139,69,19,.2);order:3}
-.pod-medal{font-size:24px;margin-bottom:6px}
-.pod-name{font-size:13px;font-weight:800;line-height:1.25;margin-bottom:8px}
+.podium{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-items:start}
+@media(max-width:440px){.podium{grid-template-columns:1fr}}
+.podium-card{border-radius:14px;padding:14px 10px 15px;text-align:center}
+.podium-card.first{background:linear-gradient(160deg,rgba(184,134,11,.15),rgba(255,255,255,.28));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(184,134,11,.38)}
+.podium-card.second{background:rgba(255,255,255,.35);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(110,110,124,.22)}
+.podium-card.third{background:rgba(255,255,255,.30);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(139,69,19,.2)}
+.pod-medal{font-size:18px;margin-bottom:4px}
+.pod-name{font-size:11.5px;font-weight:800;line-height:1.25;margin-bottom:6px}
 .podium-card.first .pod-name{color:var(--gold)}
 .podium-card.second .pod-name{color:var(--silver)}
 .podium-card.third .pod-name{color:var(--bronze)}
-.pod-score{font-size:28px;font-weight:900;font-family:'Orbitron',monospace;line-height:1}
+.pod-score{font-size:22px;font-weight:900;font-family:'Orbitron',monospace;line-height:1}
 .podium-card.first .pod-score{color:var(--gold)}
 .podium-card.second .pod-score{color:var(--silver)}
 .podium-card.third .pod-score{color:var(--bronze)}
-.pod-detail{font-size:10px;color:var(--ink-dim);margin-top:4px}
+.pod-detail{font-size:10px;color:var(--ink-dim);margin-top:3px}
 .podium-note{text-align:center;font-size:12px;color:var(--ink-dim);margin-top:10px;padding:0 6px}
 /* Ranking */
 .rank-head{display:grid;grid-template-columns:34px 1fr 64px 88px 48px;gap:6px;padding:7px 14px;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink-dim);border-bottom:1px solid rgba(0,0,0,.06)}
@@ -106,6 +106,9 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;background:rgba(220,225
 .r-bar-fill{height:100%;border-radius:3px}
 .r-ts{font-size:10px;color:var(--ink-dim);text-align:right}
 .r-badge{display:inline-block;font-size:9px;padding:1px 5px;border-radius:7px;background:rgba(94,77,237,.1);color:var(--accent);margin-left:4px;vertical-align:middle}
+.rank-hidden{display:none}
+.expand-btn{display:block;width:100%;padding:12px;background:rgba(255,255,255,.38);border:none;border-top:1px solid rgba(0,0,0,.05);font-size:13px;font-weight:700;color:var(--accent);cursor:pointer;font-family:inherit;text-align:center;letter-spacing:.2px;transition:background .15s}
+.expand-btn:hover{background:rgba(255,255,255,.55)}
 .sc5{color:var(--gold)}.sc4{color:#65a30d}.sc3{color:var(--accent)}.sc2{color:#7c3aed}.sc1{color:var(--orange)}.sc0{color:var(--red)}
 .bc5{background:var(--gold)}.bc4{background:#84cc16}.bc3{background:var(--accent)}.bc2{background:#a78bfa}.bc1{background:#fb923c}.bc0{background:#f87171}
 /* Fun grid */
@@ -214,7 +217,7 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;background:rgba(220,225
   <div id="rankList"></div>
 </div>
 
-<div class="sec">🎖️ Premi speciali</div>
+<div class="sec" style="font-size:18px;font-weight:900;letter-spacing:-.2px;text-transform:none;color:rgba(0,0,0,.75)">🎖️ Premi speciali</div>
 <div class="fun-grid" id="awards"></div>
 
 <div class="sec">💀 Angolo dei perdenti</div>
@@ -329,24 +332,40 @@ function medal(r){return r===1?'🥇':r===2?'🥈':r===3?'🥉':''}
 (function(){
   const p1a=PLAYERS[0],p1b=PLAYERS[1],p2=PLAYERS.find(p=>p.rank===2),p3=PLAYERS.find(p=>p.rank===3);
   document.getElementById('podium').innerHTML=`
-    <div class="podium-card second"><div class="pod-medal">🥈</div><div class="pod-name">${p2.name}</div><div class="pod-score">${fmt(p2.fin)}</div><div class="pod-detail">base ${p2.base} · ${p2.ts}</div></div>
     <div class="podium-card first"><div class="pod-medal">🥇</div><div class="pod-name">${p1a.name}<br>&amp; ${p1b.name}</div><div class="pod-score">${fmt(p1a.fin)}</div><div class="pod-detail">primo posto ex aequo</div></div>
+    <div class="podium-card second"><div class="pod-medal">🥈</div><div class="pod-name">${p2.name}</div><div class="pod-score">${fmt(p2.fin)}</div><div class="pod-detail">base ${p2.base} · ${p2.ts}</div></div>
     <div class="podium-card third"><div class="pod-medal">🥉</div><div class="pod-name">${p3.name}</div><div class="pod-score">${fmt(p3.fin)}</div><div class="pod-detail">base ${p3.base} · ${p3.ts}</div></div>`;
   document.getElementById('podiumNote').textContent='Stolfi e Lanfranchi chiudono entrambi a 30,4 e si dividono il 1° posto. Casati 2°, Gozzo 3°.';
 })();
 
 // RANKING
 (function(){
-  const el=document.getElementById('rankList');let last=null;
+  const el=document.getElementById('rankList');let last=null;let visibleCount=0;
   PLAYERS.forEach(p=>{
-    if(last!==null&&p.fin!==last){const s=document.createElement('div');s.style.cssText='padding:5px 0 3px 14px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(0,0,0,.28);border-top:1px solid rgba(0,0,0,.04)';s.textContent=`— ${fmt(p.fin)} pt`;el.appendChild(s);}
+    if(last!==null&&p.fin!==last){
+      const s=document.createElement('div');
+      s.style.cssText='padding:5px 0 3px 14px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(0,0,0,.28);border-top:1px solid rgba(0,0,0,.04)';
+      s.textContent=`— ${fmt(p.fin)} pt`;
+      if(visibleCount>=5)s.classList.add('rank-hidden');
+      el.appendChild(s);
+    }
     last=p.fin;
     const c=sc(p.fin),w=Math.round(p.fin/MAX*100),rc=p.rank===1?'gold':p.rank===2?'silver':p.rank===3?'bronze':'';
     const badge=p.allin?`<span class="r-badge">all-in ${p.allin}</span>`:'';
     const row=document.createElement('div');row.className=`rank-row ${rc}`;
+    if(visibleCount>=5)row.classList.add('rank-hidden');
     row.innerHTML=`<div class="r-pos">${p.rank}</div><div><div class="r-name-txt">${p.name}${badge}</div><div class="r-meta-txt">${p.meta}</div></div><div class="r-sc-wrap"><div class="r-sc ${c}">${fmt(p.fin)}</div><div class="r-base">base ${p.base}</div></div><div class="r-bar-wrap"><div class="r-bar-bg"><div class="r-bar-fill ${bc(p.fin)}" style="width:${w}%"></div></div></div><div class="r-ts">${p.ts}</div>`;
     el.appendChild(row);
+    visibleCount++;
   });
+  const btn=document.createElement('button');
+  btn.className='expand-btn';
+  btn.textContent=`Mostra tutti i ${PLAYERS.length} giocatori ▾`;
+  btn.onclick=function(){
+    el.querySelectorAll('.rank-hidden').forEach(r=>r.classList.remove('rank-hidden'));
+    this.remove();
+  };
+  el.parentElement.appendChild(btn);
 })();
 
 // AWARDS
