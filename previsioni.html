@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#c8d0dc">
+<title>FantaLiberty – Le Previsioni · WWDC 26</title>
+<style>
+:root{--ink:rgba(0,0,0,.82);--ink-dim:rgba(0,0,0,.48);--border:rgba(255,255,255,.55);--glass:rgba(255,255,255,.38)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
+body{background:#c8cdd8;padding-bottom:40px}
+body::before{content:"";position:fixed;inset:-20px;z-index:-1;background:url('./bg.jpg') center/cover no-repeat;filter:blur(6px) brightness(.88) saturate(1.15)}
+body::after{content:"";position:fixed;inset:0;z-index:-1;background:rgba(220,225,235,.18)}
+.topbar{position:sticky;top:0;z-index:100;background:rgba(235,238,245,.78);backdrop-filter:blur(30px) saturate(220%);-webkit-backdrop-filter:blur(30px) saturate(220%);border-bottom:1px solid rgba(255,255,255,.65);padding:10px 16px;display:flex;align-items:center;gap:12px}
+.back-btn{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.75);display:flex;align-items:center;justify-content:center;cursor:pointer;text-decoration:none;color:var(--ink);font-size:16px;flex-shrink:0;box-shadow:0 1px 6px rgba(0,0,0,.07)}
+.topbar-title{font-size:16px;font-weight:800;color:var(--ink);line-height:1.1}
+.topbar-sub{font-size:11px;color:var(--ink-dim)}
+.container{max-width:680px;margin:0 auto;padding:20px 14px 40px}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:24px}
+.stat-box{background:rgba(255,255,255,.42);backdrop-filter:blur(24px) saturate(200%);-webkit-backdrop-filter:blur(24px) saturate(200%);border:1px solid rgba(255,255,255,.7);border-radius:14px;padding:12px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.9)}
+.stat-box strong{display:block;font-size:22px;font-weight:900;color:#5e4ded}
+.stat-box span{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--ink-dim)}
+.section-wrap{margin-bottom:20px}
+.section-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:rgba(0,0,0,.42);margin:0 0 8px 2px;display:flex;align-items:center;gap:8px}
+.section-label::after{content:'';flex:1;height:1px;background:rgba(0,0,0,.08)}
+.pred-card{background:rgba(255,255,255,.42);backdrop-filter:blur(24px) saturate(200%);-webkit-backdrop-filter:blur(24px) saturate(200%);border:1px solid rgba(255,255,255,.65);border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.9)}
+.pred-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid rgba(0,0,0,.04)}
+.pred-item:last-child{border-bottom:none}
+.pred-item.ok{background:rgba(34,197,94,.07)}
+.pred-icon{font-size:15px;flex-shrink:0;width:20px;text-align:center}
+.pred-name{flex:1;font-size:13px;font-weight:600;color:var(--ink);line-height:1.35}
+.pred-item.ko .pred-name{color:rgba(0,0,0,.52)}
+.pred-cost{flex-shrink:0;font-size:10px;font-weight:800;padding:2px 7px;border-radius:8px;background:rgba(0,0,0,.05);border:1px solid rgba(0,0,0,.06);color:var(--ink-dim)}
+.pred-item.ok .pred-cost{background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.28);color:rgba(0,100,50,.8)}
+.footer-note{text-align:center;font-size:10px;color:var(--ink-dim);opacity:.5;margin-top:32px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a class="back-btn" href="./index.html">←</a>
+  <div>
+    <div class="topbar-title">📋 Le Previsioni</div>
+    <div class="topbar-sub">WWDC 26 · I risultati</div>
+  </div>
+</div>
+<div class="container">
+  <div class="stats-row">
+    <div class="stat-box"><strong>19</strong><span>Azzeccate</span></div>
+    <div class="stat-box"><strong>21</strong><span>Non azzeccate</span></div>
+    <div class="stat-box"><strong>40</strong><span>Totale</span></div>
+  </div>
+  <div id="sections"></div>
+  <p class="footer-note">© 2026 FantaLiberty · Progetto originale creato da Michael Lanfranchi e Lorenzo Bandini</p>
+</div>
+<script>
+const SECTIONS=[
+  {label:"🍎 Siri",items:[
+    {name:"Siri diventa chatbot in un'app",cost:9,ok:true},
+    {name:"Siri ricorda le conversazioni",cost:8,ok:true},
+    {name:"Siri vede cosa c'è sullo schermo",cost:6,ok:true},
+    {name:"Siri diventa hub per tutte le IA",cost:7,ok:true},
+    {name:"Crei automazioni a voce",cost:8,ok:true},
+    {name:"Siri cambia nome",cost:2,ok:true},
+  ]},
+  {label:"🤖 AI & Apple Intelligence",items:[
+    {name:"Gemini è il cervello della nuova Siri",cost:9,ok:true},
+    {name:"Emoji AI mentre digiti",cost:8,ok:false},
+    {name:"Foto: Enhance, Extend, Reframe",cost:9,ok:true},
+    {name:"Scansioni un alimento, vedi le calorie",cost:7,ok:true},
+    {name:"Ticket fisico diventa pass digitale",cost:6,ok:true},
+    {name:"Sfondi creati dall'AI",cost:5,ok:true},
+    {name:"Apple Intelligence in abbonamento",cost:2,ok:false},
+  ]},
+  {label:"📱 iOS 27 & Safari",items:[
+    {name:"iPhone 12 riceve iOS 27",cost:6,ok:true},
+    {name:"Camera app con controlli Pro",cost:4,ok:false},
+    {name:"Siri integrata nell'app Fotocamera",cost:7,ok:true},
+    {name:"Prima UI per iPhone pieghevole",cost:1,ok:false},
+  ]},
+  {label:"💻 macOS & Developer",items:[
+    {name:"Addio Intel: macOS 27 è M-chip Only",cost:9,ok:true},
+    {name:"Liquid Glass aggiornato su Mac",cost:7,ok:true},
+    {name:"Mac da tavolo aggiornati a M5",cost:3,ok:false},
+    {name:"Primo accenno al MacBook touch",cost:1,ok:false},
+    {name:"macOS 27 non avrà nome californiano",cost:2,ok:false},
+  ]},
+  {label:"⌚ Watch · iPad · Home",items:[
+    {name:"Nuovi quadranti su Apple Watch",cost:8,ok:false},
+    {name:"Live Translation su Apple Watch",cost:6,ok:false},
+    {name:"iPhone Mirroring su iPad",cost:3,ok:false},
+    {name:"Apple Intelligence arriva sull'iPad A16",cost:3,ok:false},
+    {name:"HomePad: nuovo device per la casa",cost:1,ok:false},
+    {name:"Apple TV torna con un update",cost:3,ok:false},
+    {name:"HomePod con display integrato",cost:1,ok:false},
+  ]},
+  {label:"🎭 Keynote & Palco",items:[
+    {name:"Cook e Ternus insieme sul palco",cost:6,ok:false},
+    {name:"Cook racconta la sua vita in Apple",cost:7,ok:true},
+    {name:"Ternus da solo sul palco",cost:4,ok:false},
+    {name:'L\'ultimo "One more thing" di Cook',cost:2,ok:false},
+    {name:"Cook si emoziona (momento lacrimuccia)",cost:6,ok:true},
+  ]},
+  {label:"🔮 Speculativo",items:[
+    {name:"AirPods: nuove funzioni AI via firmware",cost:6,ok:true},
+    {name:"Apple svela gli Smart Glasses",cost:2,ok:false},
+    {name:"Apple svela un robot",cost:1,ok:false},
+  ]},
+  {label:"🌍 Apple Classica",items:[
+    {name:"Segmento sostenibilità nel keynote",cost:6,ok:false},
+    {name:"Citano un numero astronomico",cost:8,ok:true},
+    {name:"Feature Android presentata come rivoluzione",cost:7,ok:false},
+  ]},
+];
+const wrap=document.getElementById('sections');
+SECTIONS.forEach(sec=>{
+  const div=document.createElement('div');
+  div.className='section-wrap';
+  const correct=sec.items.filter(i=>i.ok).length;
+  div.innerHTML=`<div class="section-label">${sec.label}<span style="font-size:10px;color:rgba(22,163,74,.9);font-weight:700;letter-spacing:0;text-transform:none">${correct}/${sec.items.length} ✅</span></div>
+    <div class="pred-card">${sec.items.map(item=>`
+      <div class="pred-item ${item.ok?'ok':'ko'}">
+        <span class="pred-icon">${item.ok?'✅':'❌'}</span>
+        <span class="pred-name">${item.name}</span>
+        <span class="pred-cost">${item.cost}N</span>
+      </div>`).join('')}</div>`;
+  wrap.appendChild(div);
+});
+</script>
+</body>
+</html>

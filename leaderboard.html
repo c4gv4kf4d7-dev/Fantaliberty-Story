@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#c8d0dc">
+<title>FantaLiberty – Classifica · WWDC 26</title>
+<style>
+:root{--ink:rgba(0,0,0,.82);--ink-dim:rgba(0,0,0,.45);--accent:#5e4ded;--gold:#a07808;--silver:#6e6e7c;--bronze:#8b4513;--green:#16a34a;--red:#dc2626;--orange:#ea580c}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
+body{background:#c8cdd8;padding-bottom:60px}
+body::before{content:"";position:fixed;inset:-20px;z-index:-1;background:url('./bg.jpg') center/cover no-repeat;filter:blur(6px) brightness(.88) saturate(1.15)}
+body::after{content:"";position:fixed;inset:0;z-index:-1;background:rgba(220,225,235,.18)}
+.glass{background:rgba(255,255,255,.42);backdrop-filter:blur(24px) saturate(200%);-webkit-backdrop-filter:blur(24px) saturate(200%);border:1px solid rgba(255,255,255,.7);border-radius:18px;box-shadow:0 2px 14px rgba(0,0,0,.07),inset 0 1px 0 rgba(255,255,255,.9)}
+/* Topbar */
+.topbar{position:sticky;top:0;z-index:200;background:rgba(235,238,245,.82);backdrop-filter:blur(30px) saturate(220%);-webkit-backdrop-filter:blur(30px) saturate(220%);border-bottom:1px solid rgba(255,255,255,.65);padding:10px 16px;display:flex;align-items:center;gap:12px}
+.back-btn{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.75);display:flex;align-items:center;justify-content:center;cursor:pointer;text-decoration:none;color:var(--ink);font-size:16px;flex-shrink:0;box-shadow:0 1px 6px rgba(0,0,0,.07)}
+.topbar-info{flex:1}
+.topbar-title{font-size:16px;font-weight:800;line-height:1.1}
+.topbar-sub{font-size:11px;color:var(--ink-dim)}
+.reg-btn{background:rgba(255,255,255,.5);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.7);border-radius:10px;padding:7px 12px;font-size:12px;font-weight:700;color:var(--ink);cursor:pointer;font-family:inherit;white-space:nowrap;box-shadow:0 1px 5px rgba(0,0,0,.06)}
+.container{max-width:760px;margin:0 auto;padding:18px 14px}
+.sec{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.4px;color:rgba(0,0,0,.36);margin:26px 0 10px 2px;display:flex;align-items:center;gap:8px}
+.sec::after{content:'';flex:1;height:1px;background:rgba(0,0,0,.07)}
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media(max-width:480px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-card{padding:14px 10px;text-align:center}
+.stat-num{display:block;font-size:20px;font-weight:900;color:var(--accent);font-family:'Orbitron',monospace}
+.stat-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-dim);margin-top:2px}
+/* Search */
+.search-wrap{position:relative}
+.search-input{width:100%;padding:13px 44px 13px 16px;background:rgba(255,255,255,.58);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.82);border-radius:14px;font-size:15px;font-family:inherit;color:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.07),inset 0 1px 0 rgba(255,255,255,.9);outline:none;transition:box-shadow .2s}
+.search-input::placeholder{color:rgba(0,0,0,.32)}
+.search-input:focus{box-shadow:0 0 0 3px rgba(94,77,237,.18),0 2px 10px rgba(0,0,0,.07)}
+.search-icon{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none;opacity:.38}
+/* Personal card */
+.personal-card{display:none;margin-top:8px}
+.personal-card.show{display:block}
+.pc-header{display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid rgba(0,0,0,.05)}
+.pc-medal{font-size:26px;flex-shrink:0;line-height:1}
+.pc-info{flex:1;min-width:0}
+.pc-name{font-size:17px;font-weight:900;line-height:1.15}
+.pc-meta{font-size:12px;color:var(--ink-dim);margin-top:2px}
+.pc-score-col{text-align:right;flex-shrink:0}
+.pc-score{font-size:26px;font-weight:900;font-family:'Orbitron',monospace;line-height:1}
+.pc-score-lbl{font-size:10px;color:var(--ink-dim);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.pc-body{padding:14px 18px}
+.pc-subtitle{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink-dim);margin-bottom:10px}
+.pc-pick{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid rgba(0,0,0,.04)}
+.pc-pick:last-child{border-bottom:none}
+.pc-pick-icon{font-size:14px;flex-shrink:0;width:18px;text-align:center}
+.pc-pick-name{flex:1;font-size:12.5px;font-weight:500}
+.pc-pick.ok .pc-pick-name{color:rgba(0,0,0,.82)}
+.pc-pick.ko .pc-pick-name{color:rgba(0,0,0,.48)}
+.pc-pick-cost{font-size:10px;font-weight:800;padding:2px 7px;border-radius:8px;flex-shrink:0}
+.pc-pick.ok .pc-pick-cost{background:rgba(22,163,74,.12);color:#15803d}
+.pc-pick.ko .pc-pick-cost{background:rgba(0,0,0,.05);color:rgba(0,0,0,.38)}
+.pc-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid rgba(0,0,0,.05)}
+.pc-tag{font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;background:rgba(94,77,237,.1);color:var(--accent)}
+.pc-tag.store{background:rgba(10,122,255,.1);color:#0055cc}
+.pc-tag.date{background:rgba(0,0,0,.05);color:rgba(0,0,0,.45)}
+.no-result{padding:16px 18px;text-align:center;font-size:13px;color:var(--ink-dim)}
+.match-item{cursor:pointer;display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.04)}
+.match-item:last-child{border-bottom:none}
+.match-item:hover{opacity:.75}
+/* Podium */
+.podium{display:grid;grid-template-columns:1fr 1.08fr 1fr;gap:10px;align-items:end}
+@media(max-width:440px){.podium{grid-template-columns:1fr}.podium-card{order:unset!important}}
+.podium-card{border-radius:16px;padding:18px 12px 20px;text-align:center}
+.podium-card.first{background:linear-gradient(160deg,rgba(184,134,11,.15),rgba(255,255,255,.28));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(184,134,11,.38);padding:24px 12px 22px;order:2}
+.podium-card.second{background:rgba(255,255,255,.35);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(110,110,124,.22);order:1}
+.podium-card.third{background:rgba(255,255,255,.30);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(139,69,19,.2);order:3}
+.pod-medal{font-size:24px;margin-bottom:6px}
+.pod-name{font-size:13px;font-weight:800;line-height:1.25;margin-bottom:8px}
+.podium-card.first .pod-name{color:var(--gold)}
+.podium-card.second .pod-name{color:var(--silver)}
+.podium-card.third .pod-name{color:var(--bronze)}
+.pod-score{font-size:28px;font-weight:900;font-family:'Orbitron',monospace;line-height:1}
+.podium-card.first .pod-score{color:var(--gold)}
+.podium-card.second .pod-score{color:var(--silver)}
+.podium-card.third .pod-score{color:var(--bronze)}
+.pod-detail{font-size:10px;color:var(--ink-dim);margin-top:4px}
+.podium-note{text-align:center;font-size:12px;color:var(--ink-dim);margin-top:10px;padding:0 6px}
+/* Ranking */
+.rank-head{display:grid;grid-template-columns:34px 1fr 64px 88px 48px;gap:6px;padding:7px 14px;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink-dim);border-bottom:1px solid rgba(0,0,0,.06)}
+.rank-row{display:grid;grid-template-columns:34px 1fr 64px 88px 48px;gap:6px;padding:9px 14px;align-items:center;transition:background .12s;border-bottom:1px solid rgba(0,0,0,.03)}
+.rank-row:last-child{border-bottom:none}
+.rank-row:hover{background:rgba(255,255,255,.22)}
+.rank-row.gold{background:rgba(184,134,11,.06)}
+.rank-row.silver{background:rgba(110,110,140,.04)}
+.rank-row.bronze{background:rgba(139,69,19,.04)}
+@media(max-width:500px){.rank-head,.rank-row{grid-template-columns:28px 1fr 52px 70px}.r-ts{display:none}}
+.r-pos{font-size:12px;font-weight:800;color:var(--ink-dim);text-align:center}
+.rank-row.gold .r-pos{color:var(--gold)}.rank-row.silver .r-pos{color:var(--silver)}.rank-row.bronze .r-pos{color:var(--bronze)}
+.r-name-txt{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r-meta-txt{font-size:10px;color:var(--ink-dim);margin-top:1px}
+.r-sc-wrap{text-align:center}
+.r-sc{font-size:15px;font-weight:900;font-family:'Orbitron',monospace}
+.r-base{font-size:10px;color:var(--ink-dim)}
+.r-bar-wrap{display:flex;align-items:center;gap:4px}
+.r-bar-bg{flex:1;height:5px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden}
+.r-bar-fill{height:100%;border-radius:3px}
+.r-ts{font-size:10px;color:var(--ink-dim);text-align:right}
+.r-badge{display:inline-block;font-size:9px;padding:1px 5px;border-radius:7px;background:rgba(94,77,237,.1);color:var(--accent);margin-left:4px;vertical-align:middle}
+.sc5{color:var(--gold)}.sc4{color:#65a30d}.sc3{color:var(--accent)}.sc2{color:#7c3aed}.sc1{color:var(--orange)}.sc0{color:var(--red)}
+.bc5{background:var(--gold)}.bc4{background:#84cc16}.bc3{background:var(--accent)}.bc2{background:#a78bfa}.bc1{background:#fb923c}.bc0{background:#f87171}
+/* Fun grid */
+.fun-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:10px}
+.fun-card{padding:16px 18px}
+.fun-card.hl{border-color:rgba(184,134,11,.38)!important;background:linear-gradient(160deg,rgba(184,134,11,.08),rgba(255,255,255,.38))!important}
+.fun-card.bad{border-color:rgba(220,50,50,.28)!important;background:linear-gradient(160deg,rgba(220,50,50,.05),rgba(255,255,255,.38))!important}
+.fun-emoji{font-size:20px;margin-bottom:7px;display:block}
+.fun-lbl{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink-dim);margin-bottom:5px}
+.fun-val{font-size:16px;font-weight:800;line-height:1.2;margin-bottom:4px}
+.fun-sub{font-size:12px;color:var(--ink-dim);line-height:1.45}
+.fun-card.hl .fun-val{color:var(--gold)}.fun-card.bad .fun-val{color:var(--red)}
+/* Store */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:500px){.two-col{grid-template-columns:1fr}}
+.mini-rank{padding:16px 18px}
+.mini-title{font-size:13px;font-weight:800;margin-bottom:12px}
+.mini-row{display:grid;grid-template-columns:130px 1fr 52px;gap:8px;align-items:center;margin-bottom:9px}
+@media(max-width:400px){.mini-row{grid-template-columns:100px 1fr 44px}}
+.mini-label{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-label small{color:var(--ink-dim);font-size:10px}
+.mini-bar-bg{height:7px;background:rgba(0,0,0,.07);border-radius:4px;overflow:hidden}
+.mini-bar{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),#0a7aff)}
+.mini-val{font-size:13px;font-weight:800;text-align:right;color:var(--accent)}
+.store-pods{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+@media(max-width:520px){.store-pods{grid-template-columns:1fr}}
+.sp-card{padding:15px 15px 12px}
+.sp-tag{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--ink-dim);margin-bottom:2px}
+.sp-name{font-size:13px;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.sp-row{display:grid;grid-template-columns:20px 1fr 48px;gap:5px;align-items:center;margin-bottom:7px;font-size:12px}
+.sp-medal{text-align:center;font-size:13px}
+.sp-player{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp-pts{font-weight:800;text-align:right;color:var(--accent);font-size:12px}
+/* Pred boxes */
+.pred-box{border-radius:16px;overflow:hidden}
+.pred-row{display:grid;grid-template-columns:34px 1fr 64px 84px;gap:6px;padding:9px 14px;align-items:center;border-bottom:1px solid rgba(0,0,0,.04)}
+.pred-row:last-child{border-bottom:none}
+.pred-num{font-size:10px;color:var(--ink-dim);font-weight:700}
+.pred-text{font-size:12px;font-weight:500}
+.pred-bar-row{height:3px;background:rgba(0,0,0,.07);border-radius:2px;overflow:hidden;margin-top:3px}
+.pred-bar{height:100%;border-radius:2px}
+.pred-pct{font-size:11px;color:var(--ink-dim);text-align:right}
+.pred-status{font-size:11px;font-weight:600;text-align:right}
+.ok-txt{color:var(--green)}.ko-txt{color:var(--red)}
+/* Regolamento modal */
+.modal-ov{position:fixed;inset:0;z-index:500;display:none;align-items:flex-end;justify-content:center}
+.modal-ov.open{display:flex}
+.modal-bg{position:absolute;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.modal-sh{position:relative;width:100%;max-width:660px;max-height:92vh;background:rgba(242,244,248,.96);backdrop-filter:blur(40px) saturate(220%);-webkit-backdrop-filter:blur(40px) saturate(220%);border:1px solid rgba(255,255,255,.8);border-radius:22px 22px 0 0;box-shadow:0 -8px 40px rgba(0,0,0,.14);overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:env(safe-area-inset-bottom,20px)}
+.modal-handle{width:36px;height:4px;background:rgba(0,0,0,.15);border-radius:2px;margin:12px auto 0}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:12px 18px 10px;border-bottom:1px solid rgba(0,0,0,.07);position:sticky;top:0;background:rgba(242,244,248,.96);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);z-index:10}
+.modal-title{font-size:17px;font-weight:900}
+.modal-close{width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.07);border:none;cursor:pointer;font-size:16px;color:var(--ink-dim);display:flex;align-items:center;justify-content:center}
+.modal-body{padding:16px 18px}
+.rule-intro{background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.8);border-radius:14px;padding:15px 17px;margin-bottom:12px;font-size:13px;line-height:1.7}
+.rule-intro b{color:var(--accent)}
+.rule-card{background:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.75);border-radius:14px;padding:15px 17px;margin-bottom:10px}
+.rule-head{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+.rule-ico{width:28px;height:28px;border-radius:9px;background:rgba(94,77,237,.12);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.rule-name{font-size:14px;font-weight:800}
+.rule-body{font-size:13px;line-height:1.55}
+.rule-ex{font-size:11px;color:var(--ink-dim);margin-top:7px;padding-top:7px;border-top:1px solid rgba(0,0,0,.06);line-height:1.5}
+.rule-ex b{color:var(--gold)}
+.rule-tbl{width:100%;border-collapse:collapse;margin:8px 0;font-size:12px}
+.rule-tbl th{text-align:left;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-dim);padding:5px 8px;border-bottom:1px solid rgba(0,0,0,.07)}
+.rule-tbl td{padding:6px 8px;border-bottom:1px solid rgba(0,0,0,.04)}
+.rule-tbl tr:last-child td{border-bottom:none}
+.mult{font-weight:800;color:var(--accent);text-align:right}.mult.mx{color:var(--gold)}.mult.z{color:var(--ink-dim)}
+.footer-note{text-align:center;font-size:10px;color:var(--ink-dim);opacity:.5;margin-top:40px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a class="back-btn" href="./index.html">←</a>
+  <div class="topbar-info">
+    <div class="topbar-title">🏆 Classifica &amp; Statistiche</div>
+    <div class="topbar-sub">WWDC 26 · 59 giocatori</div>
+  </div>
+  <button class="reg-btn" id="openReg">📖 Regolamento</button>
+</div>
+
+<div class="container">
+
+<div class="sec" style="margin-top:4px">📊 Panoramica</div>
+<div class="stats-grid">
+  <div class="glass stat-card"><span class="stat-num">59</span><div class="stat-lbl">Giocatori</div></div>
+  <div class="glass stat-card"><span class="stat-num">19/40</span><div class="stat-lbl">Azzeccate</div></div>
+  <div class="glass stat-card"><span class="stat-num">14,4</span><div class="stat-lbl">Media finale</div></div>
+  <div class="glass stat-card"><span class="stat-num">30,4</span><div class="stat-lbl">Punteggio max</div></div>
+</div>
+
+<div class="sec">🔍 La tua scheda personale</div>
+<div class="search-wrap">
+  <input class="search-input" id="searchInput" type="text" placeholder="Cerca il tuo nome…" autocomplete="off" autocorrect="off" spellcheck="false">
+  <span class="search-icon">🔎</span>
+</div>
+<div class="glass personal-card" id="personalCard"></div>
+
+<div class="sec">🏆 Podio</div>
+<div class="podium" id="podium"></div>
+<p class="podium-note" id="podiumNote"></p>
+
+<div class="sec">📋 Classifica completa</div>
+<div class="glass" style="border-radius:18px;overflow:hidden">
+  <div class="rank-head"><div>#</div><div>Nome</div><div style="text-align:center">Punti</div><div>Barra</div><div class="r-ts" style="text-align:right">Invio</div></div>
+  <div id="rankList"></div>
+</div>
+
+<div class="sec">🎖️ Premi speciali</div>
+<div class="fun-grid" id="awards"></div>
+
+<div class="sec">💀 Angolo dei perdenti</div>
+<div class="fun-grid" id="losers"></div>
+
+<div class="sec">🏪 Sfida tra store</div>
+<p style="font-size:12px;color:var(--ink-dim);margin-bottom:12px">La <strong style="color:var(--ink)">media</strong> è il confronto equo — Carosello 7 giocatori, Fiordaliso solo 3.</p>
+<div class="two-col">
+  <div class="glass mini-rank" id="storeAvg"></div>
+  <div class="glass mini-rank" id="storeTot"></div>
+</div>
+<div class="store-pods" id="storePods"></div>
+
+<div class="sec">💎 Tesori nascosti</div>
+<p style="font-size:12px;color:var(--ink-dim);margin-bottom:12px">Previsioni azzeccate scelte da pochi: chi le ha prese ha guadagnato punti che la massa si è persa.</p>
+<div class="glass pred-box" id="gems"></div>
+
+<div class="sec">🎯 Tasso di successo per sezione</div>
+<div class="glass mini-rank" id="secSuccess"></div>
+
+<div class="sec">🔥 Previsioni più gettonate</div>
+<div class="glass pred-box" id="mostPicked"></div>
+
+<p class="footer-note">© 2026 FantaLiberty · Progetto originale creato da Michael Lanfranchi e Lorenzo Bandini · Non affiliato ad Apple Inc.</p>
+</div>
+
+<!-- REGOLAMENTO MODAL -->
+<div class="modal-ov" id="regModal">
+  <div class="modal-bg" id="regBg"></div>
+  <div class="modal-sh">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <div class="modal-title">📖 Regolamento punti</div>
+      <button class="modal-close" id="closeReg">✕</button>
+    </div>
+    <div class="modal-body" id="regBody"></div>
+  </div>
+</div>
+
+<script>
+const RESULTS={"Siri diventa chatbot in un'app":true,"Siri ricorda le conversazioni":true,"Siri vede cosa c'è sullo schermo":true,"Siri diventa hub per tutte le IA":true,"Crei automazioni a voce":true,"Siri cambia nome":true,"Gemini è il cervello della nuova Siri":true,"Emoji AI mentre digiti":false,"Foto: Enhance, Extend, Reframe":true,"Scansioni un alimento, vedi le calorie":true,"Ticket fisico diventa pass digitale":true,"Sfondi creati dall'AI":true,"Apple Intelligence in abbonamento":false,"iPhone 12 riceve iOS 27":true,"Camera app con controlli Pro":false,"Siri integrata nell'app Fotocamera":true,"Prima UI per iPhone pieghevole":false,"Addio Intel: macOS 27 è M-chip Only":true,"Liquid Glass aggiornato su Mac":true,"Mac da tavolo aggiornati a M5":false,"Primo accenno al MacBook touch":false,"macOS 27 non avrà nome californiano":false,"Nuovi quadranti su Apple Watch":false,"Live Translation su Apple Watch":false,"iPhone Mirroring su iPad":false,"Apple Intelligence arriva sull'iPad A16":false,"HomePad: nuovo device per la casa":false,"Apple TV torna con un update":false,"HomePod con display integrato":false,"Cook e Ternus insieme sul palco":false,"Cook racconta la sua vita in Apple":true,"Ternus da solo sul palco":false,'L\'ultimo "One more thing" di Cook':false,"Cook si emoziona (momento lacrimuccia)":true,"AirPods: nuove funzioni AI via firmware":true,"Apple svela gli Smart Glasses":false,"Apple svela un robot":false,"Segmento sostenibilità nel keynote":false,"Citano un numero astronomico":true,"Feature Android presentata come rivoluzione":false};
+const COSTS={"Siri diventa chatbot in un'app":9,"Siri ricorda le conversazioni":8,"Siri vede cosa c'è sullo schermo":6,"Siri diventa hub per tutte le IA":7,"Crei automazioni a voce":8,"Siri cambia nome":2,"Gemini è il cervello della nuova Siri":9,"Emoji AI mentre digiti":8,"Foto: Enhance, Extend, Reframe":9,"Scansioni un alimento, vedi le calorie":7,"Ticket fisico diventa pass digitale":6,"Sfondi creati dall'AI":5,"Apple Intelligence in abbonamento":2,"iPhone 12 riceve iOS 27":6,"Camera app con controlli Pro":4,"Siri integrata nell'app Fotocamera":7,"Prima UI per iPhone pieghevole":1,"Addio Intel: macOS 27 è M-chip Only":9,"Liquid Glass aggiornato su Mac":7,"Mac da tavolo aggiornati a M5":3,"Primo accenno al MacBook touch":1,"macOS 27 non avrà nome californiano":2,"Nuovi quadranti su Apple Watch":8,"Live Translation su Apple Watch":6,"iPhone Mirroring su iPad":3,"Apple Intelligence arriva sull'iPad A16":3,"HomePad: nuovo device per la casa":1,"Apple TV torna con un update":3,"HomePod con display integrato":1,"Cook e Ternus insieme sul palco":6,"Cook racconta la sua vita in Apple":7,"Ternus da solo sul palco":4,'L\'ultimo "One more thing" di Cook':2,"Cook si emoziona (momento lacrimuccia)":6,"AirPods: nuove funzioni AI via firmware":6,"Apple svela gli Smart Glasses":2,"Apple svela un robot":1,"Segmento sostenibilità nel keynote":6,"Citano un numero astronomico":8,"Feature Android presentata come rivoluzione":7};
+
+const PLAYERS=[
+{rank:1,name:"Nico Stolfi",fin:30.4,base:16,ts:"02/06",store:"Piazza Liberty",meta:"14 Pro · 7–10a · Scommettitore",allin:"",picks:["Siri integrata nell'app Fotocamera","Prima UI per iPhone pieghevole","Gemini è il cervello della nuova Siri","Cook e Ternus insieme sul palco","Live Translation su Apple Watch","Siri cambia nome","Mac da tavolo aggiornati a M5","AirPods: nuove funzioni AI via firmware"]},
+{rank:1,name:"Michael Lanfranchi",fin:30.4,base:24,ts:"07/06",store:"Piazza Liberty",meta:"Air · 10+a · Moderato",allin:"Siri,AI",picks:["Siri diventa hub per tutte le IA","Siri vede cosa c'è sullo schermo","AirPods: nuove funzioni AI via firmware","Sfondi creati dall'AI","Ticket fisico diventa pass digitale","Cook si emoziona (momento lacrimuccia)","Camera app con controlli Pro"]},
+{rank:2,name:"Marco Casati",fin:26.9,base:17,ts:"02/06",store:"Piazza Liberty",meta:"17 · 10+a · Visionario",allin:"AI",picks:["AirPods: nuove funzioni AI via firmware","Siri vede cosa c'è sullo schermo","Camera app con controlli Pro","Ticket fisico diventa pass digitale","Sfondi creati dall'AI","Cook e Ternus insieme sul palco",'L\'ultimo "One more thing" di Cook',"macOS 27 non avrà nome californiano","Mac da tavolo aggiornati a M5"]},
+{rank:3,name:"Massimiliano Gozzo",fin:25.7,base:16,ts:"01/06",store:"Piazza Liberty",meta:"17 Pro Max · 10+a · Stratega",allin:"AI,Siri",picks:['L\'ultimo "One more thing" di Cook',"Sfondi creati dall'AI","Ticket fisico diventa pass digitale","Camera app con controlli Pro","Siri vede cosa c'è sullo schermo","Siri ricorda le conversazioni","Addio Intel: macOS 27 è M-chip Only"]},
+{rank:4,name:"Mattia Graziani",fin:25.4,base:16,ts:"06/06",store:"Piazza Liberty",meta:"17 Pro Max · 0–3a · Moderato",allin:"AI",picks:["Ticket fisico diventa pass digitale","Sfondi creati dall'AI","Cook e Ternus insieme sul palco","Camera app con controlli Pro","Segmento sostenibilità nel keynote","Siri vede cosa c'è sullo schermo","Liquid Glass aggiornato su Mac"]},
+{rank:5,name:"Sofia Rmn",fin:23.7,base:14,ts:"01/06",store:"Piazza Liberty",meta:"17 Pro Max · 4–6a · Investitore",allin:"macOS,iOS",picks:["Addio Intel: macOS 27 è M-chip Only","Liquid Glass aggiornato su Mac","Siri integrata nell'app Fotocamera","iPhone 12 riceve iOS 27","Apple TV torna con un update","Siri diventa hub per tutte le IA"]},
+{rank:6,name:"Julen Bilbao",fin:23.6,base:14,ts:"01/06",store:"Piazza Liberty",meta:"16 Pro Max · 7–10a · Scommettitore",allin:"AI",picks:["Sfondi creati dall'AI","Gemini è il cervello della nuova Siri","Apple svela un robot","Apple svela gli Smart Glasses","Cook si emoziona (momento lacrimuccia)","Cook e Ternus insieme sul palco","macOS 27 non avrà nome californiano","Apple TV torna con un update","iPhone 12 riceve iOS 27"]},
+{rank:7,name:"Michele Lupi",fin:21.5,base:14,ts:"07/06",store:"Piazza Liberty",meta:"16 Pro · 0–3a · Stratega",allin:"",picks:["Siri vede cosa c'è sullo schermo","iPhone 12 riceve iOS 27",'L\'ultimo "One more thing" di Cook',"Cook si emoziona (momento lacrimuccia)","Gemini è il cervello della nuova Siri","Apple Intelligence in abbonamento","Addio Intel: macOS 27 è M-chip Only"]},
+{rank:8,name:"Marco Poletti",fin:20.6,base:14,ts:"01/06",store:"Piazza Liberty",meta:"17 Pro Max · 10+a · Scommettitore",allin:"",picks:["Siri diventa chatbot in un'app","Sfondi creati dall'AI","Ternus da solo sul palco","Cook si emoziona (momento lacrimuccia)",'L\'ultimo "One more thing" di Cook',"HomePod con display integrato","Segmento sostenibilità nel keynote","Prima UI per iPhone pieghevole","AirPods: nuove funzioni AI via firmware"]},
+{rank:9,name:"giulia paggiarin",fin:20.5,base:12,ts:"07/06",store:"Carosello",meta:"16 Pro · 0–3a · Scommettitore",allin:"Siri",picks:["Primo accenno al MacBook touch","AirPods: nuove funzioni AI via firmware","HomePod con display integrato","Siri ricorda le conversazioni","Crei automazioni a voce","Prima UI per iPhone pieghevole","Feature Android presentata come rivoluzione",'L\'ultimo "One more thing" di Cook',"Ticket fisico diventa pass digitale"]},
+{rank:10,name:"Emma Ciorli",fin:20.1,base:11,ts:"02/06",store:"Piazza Liberty",meta:"17 Pro · 0–3a · Scommettitore",allin:"Siri",picks:["Apple TV torna con un update","Cook racconta la sua vita in Apple","Ternus da solo sul palco","Siri diventa hub per tutte le IA","Siri diventa chatbot in un'app","AirPods: nuove funzioni AI via firmware","Primo accenno al MacBook touch","Mac da tavolo aggiornati a M5"]},
+{rank:11,name:"Roberto Vezio",fin:19.3,base:12,ts:"02/06",store:"Piazza Liberty",meta:"16 Pro Max · 7–10a · Scommettitore",allin:"AI",picks:["Apple svela gli Smart Glasses","iPhone 12 riceve iOS 27","Gemini è il cervello della nuova Siri","Scansioni un alimento, vedi le calorie","HomePod con display integrato","Apple TV torna con un update","Cook si emoziona (momento lacrimuccia)","Cook e Ternus insieme sul palco"]},
+{rank:12,name:"Nikita Makarov",fin:19.0,base:12,ts:"07/06",store:"Piazza Liberty",meta:"15 Pro · 0–3a · Investitore",allin:"",picks:["Cook racconta la sua vita in Apple","Siri integrata nell'app Fotocamera","Nuovi quadranti su Apple Watch","HomePad: nuovo device per la casa","Siri diventa hub per tutte le IA","Scansioni un alimento, vedi le calorie","Mac da tavolo aggiornati a M5"]},
+{rank:13,name:"linda Arrigotti",fin:18.6,base:13,ts:"07/06",store:"Piazza Liberty",meta:"15 Pro · 0–3a · Prudente",allin:"",picks:["Cook si emoziona (momento lacrimuccia)","Cook e Ternus insieme sul palco","Siri integrata nell'app Fotocamera","Siri diventa hub per tutte le IA","Live Translation su Apple Watch","Liquid Glass aggiornato su Mac"]},
+{rank:14,name:"ENRiCO Bonardi",fin:18.4,base:12,ts:"03/06",store:"Piazza Liberty",meta:"14 · 10+a · Scommettitore",allin:"",picks:["Camera app con controlli Pro","iPhone 12 riceve iOS 27","Liquid Glass aggiornato su Mac","Apple TV torna con un update","HomePad: nuovo device per la casa","Segmento sostenibilità nel keynote",'L\'ultimo "One more thing" di Cook',"Cook e Ternus insieme sul palco","Sfondi creati dall'AI"]},
+{rank:15,name:"Alessandro Ferrario",fin:18.1,base:11,ts:"02/06",store:"Piazza Liberty",meta:"Air · 0–3a · Stratega",allin:"",picks:["Siri integrata nell'app Fotocamera","AirPods: nuove funzioni AI via firmware","macOS 27 non avrà nome californiano","Foto: Enhance, Extend, Reframe",'L\'ultimo "One more thing" di Cook',"Cook e Ternus insieme sul palco","Siri diventa hub per tutte le IA"]},
+{rank:16,name:"Omar Rezk",fin:17.5,base:10,ts:"02/06",store:"Piazza Liberty",meta:"15 Pro · 0–3a · Investitore",allin:"Siri",picks:["Feature Android presentata come rivoluzione","Apple svela un robot","Apple svela gli Smart Glasses","Cook si emoziona (momento lacrimuccia)","Addio Intel: macOS 27 è M-chip Only","Siri ricorda le conversazioni","Siri diventa hub per tutte le IA"]},
+{rank:17,name:"Dada Grattoni",fin:17.3,base:10,ts:"02/06",store:"Piazza Liberty",meta:"17 Pro Max · 7–10a · Stratega",allin:"AI",picks:["Cook racconta la sua vita in Apple","Cook e Ternus insieme sul palco",'L\'ultimo "One more thing" di Cook',"HomePad: nuovo device per la casa","HomePod con display integrato","Sfondi creati dall'AI","Gemini è il cervello della nuova Siri","Foto: Enhance, Extend, Reframe"]},
+{rank:18,name:"Angela Torazzi",fin:16.8,base:11,ts:"03/06",store:"Piazza Liberty",meta:"Air · 7–10a · Stratega",allin:"AI",picks:["Scansioni un alimento, vedi le calorie","Gemini è il cervello della nuova Siri","Liquid Glass aggiornato su Mac","macOS 27 non avrà nome californiano","Cook e Ternus insieme sul palco",'L\'ultimo "One more thing" di Cook',"iPhone 12 riceve iOS 27","HomePod con display integrato"]},
+{rank:19,name:"Andrea Bruletti",fin:16.3,base:11,ts:"01/06",store:"Piazza Liberty",meta:"17 Pro · 10+a · Investitore",allin:"Siri,AI",picks:["Siri vede cosa c'è sullo schermo","Siri diventa hub per tutte le IA","Scansioni un alimento, vedi le calorie","Gemini è il cervello della nuova Siri","Apple TV torna con un update","Nuovi quadranti su Apple Watch"]},
+{rank:20,name:"Gualtiero Quario Rondo",fin:16.1,base:11,ts:"01/06",store:"Piazza Liberty",meta:"Air · 10+a · Scommettitore",allin:"",picks:["Segmento sostenibilità nel keynote","Feature Android presentata come rivoluzione","Mac da tavolo aggiornati a M5","Siri vede cosa c'è sullo schermo","Scansioni un alimento, vedi le calorie","Apple TV torna con un update","Cook si emoziona (momento lacrimuccia)",'L\'ultimo "One more thing" di Cook']},
+{rank:21,name:"Giovanni Cantamessa",fin:15.9,base:10,ts:"01/06",store:"Piazza Liberty",meta:"17 Pro · 7–10a · Scommettitore",allin:"",picks:["Apple svela gli Smart Glasses","AirPods: nuove funzioni AI via firmware","Citano un numero astronomico","Camera app con controlli Pro","Prima UI per iPhone pieghevole","Ticket fisico diventa pass digitale","Mac da tavolo aggiornati a M5","HomePod con display integrato","HomePad: nuovo device per la casa","Apple TV torna con un update","Ternus da solo sul palco"]},
+{rank:22,name:"Marco Sacco Zaut",fin:15.4,base:10,ts:"04/06",store:"Carosello",meta:"17 Pro · 7–10a · Stratega",allin:"Siri",picks:["Ticket fisico diventa pass digitale","Addio Intel: macOS 27 è M-chip Only","Siri vede cosa c'è sullo schermo","Siri diventa chatbot in un'app","HomePad: nuovo device per la casa","Apple TV torna con un update","Cook e Ternus insieme sul palco"]},
+{rank:23,name:"Dario Toscano",fin:15.3,base:11,ts:"01/06",store:"Piazza Liberty",meta:"17 Pro · 10+a · Investitore",allin:"",picks:["Cook si emoziona (momento lacrimuccia)","Feature Android presentata come rivoluzione","Siri diventa hub per tutte le IA","Gemini è il cervello della nuova Siri","Liquid Glass aggiornato su Mac","Mac da tavolo aggiornati a M5"]},
+{rank:24,name:"Andrea Sacco",fin:15.2,base:11,ts:"02/06",store:"Piazza Liberty",meta:"16 Pro · 7–10a · Il Sicuro",allin:"Siri",picks:["Addio Intel: macOS 27 è M-chip Only","Siri diventa chatbot in un'app","Crei automazioni a voce","AirPods: nuove funzioni AI via firmware","Scansioni un alimento, vedi le calorie"]},
+{rank:25,name:"Samuele Perego",fin:14.8,base:8,ts:"02/06",store:"Piazza Liberty",meta:"17 Pro · 0–3a · Scommettitore",allin:"Siri",picks:["Citano un numero astronomico","iPhone Mirroring su iPad","Apple TV torna con un update","Live Translation su Apple Watch","Siri ricorda le conversazioni","Siri vede cosa c'è sullo schermo",'L\'ultimo "One more thing" di Cook',"Ternus da solo sul palco"]},
+{rank:26,name:"Matilde Rossi Cafari",fin:14.7,base:10,ts:"05/06",store:"Piazza Liberty",meta:"15 Pro · 0–3a · Il Sicuro",allin:"AI",picks:["Addio Intel: macOS 27 è M-chip Only","Siri integrata nell'app Fotocamera","Citano un numero astronomico","Scansioni un alimento, vedi le calorie","Gemini è il cervello della nuova Siri"]},
+{rank:27,name:"Achille Capparelli",fin:14.2,base:11,ts:"06/06",store:"Carosello",meta:"16 Pro · 10+a · Investitore",allin:"AI",picks:["Siri diventa hub per tutte le IA","iPhone 12 riceve iOS 27","Scansioni un alimento, vedi le calorie","Gemini è il cervello della nuova Siri","Nuovi quadranti su Apple Watch","Apple svela un robot",'L\'ultimo "One more thing" di Cook']},
+{rank:28,name:"Michele Russo",fin:13.8,base:9,ts:"03/06",store:"Piazza Liberty",meta:"15 Pro Max · 7–10a · Scommettitore",allin:"",picks:["Cook e Ternus insieme sul palco","Feature Android presentata come rivoluzione","Siri vede cosa c'è sullo schermo","Apple svela gli Smart Glasses","Apple TV torna con un update","Addio Intel: macOS 27 è M-chip Only","iPhone 12 riceve iOS 27","Prima UI per iPhone pieghevole"]},
+{rank:29,name:"Riccardo Cesana",fin:13.5,base:8,ts:"01/06",store:"Piazza Liberty",meta:"17 Pro · 4–6a · Visionario",allin:"",picks:["HomePad: nuovo device per la casa","Apple TV torna con un update","HomePod con display integrato","Siri vede cosa c'è sullo schermo","Cook e Ternus insieme sul palco","Ternus da solo sul palco",'L\'ultimo "One more thing" di Cook',"Camera app con controlli Pro","Prima UI per iPhone pieghevole","iPhone 12 riceve iOS 27","Segmento sostenibilità nel keynote"]},
+{rank:30,name:"Laura Demontis",fin:13.2,base:8,ts:"08/06",store:"Piazza Liberty",meta:"17 Pro Max · 0–3a · Stratega",allin:"Siri",picks:["Liquid Glass aggiornato su Mac","Cook e Ternus insieme sul palco","Segmento sostenibilità nel keynote","Siri diventa hub per tutte le IA","Crei automazioni a voce","HomePad: nuovo device per la casa","Apple Intelligence arriva sull'iPad A16"]},
+{rank:31,name:"Frank Maranzano",fin:13.1,base:9,ts:"01/06",store:"Piazza Liberty",meta:"17 Pro · 7–10a · Investitore",allin:"",picks:["Feature Android presentata come rivoluzione","Scansioni un alimento, vedi le calorie","Nuovi quadranti su Apple Watch","Ternus da solo sul palco","Siri integrata nell'app Fotocamera","Siri diventa hub per tutte le IA"]},
+{rank:32,name:"Carlo Manzotti",fin:12.8,base:10,ts:"04/06",store:"Carosello",meta:"Air · 10+a · Investitore",allin:"",picks:["iPhone 12 riceve iOS 27","Siri diventa hub per tutte le IA","Gemini è il cervello della nuova Siri",'L\'ultimo "One more thing" di Cook',"Nuovi quadranti su Apple Watch","Citano un numero astronomico"]},
+{rank:33,name:"Fabster Sironi",fin:12.7,base:9,ts:"02/06",store:"Piazza Liberty",meta:"17 Pro Max · 10+a · Investitore",allin:"",picks:["Liquid Glass aggiornato su Mac","Emoji AI mentre digiti","Foto: Enhance, Extend, Reframe","Siri ricorda le conversazioni","Siri integrata nell'app Fotocamera","Prima UI per iPhone pieghevole"]},
+{rank:34,name:"Anisia Brischetto",fin:12.5,base:8,ts:"02/06",store:"Piazza Liberty",meta:"17 Pro Max · 4–6a · Scommettitore",allin:"",picks:["HomePod con display integrato",'L\'ultimo "One more thing" di Cook',"Siri ricorda le conversazioni","AirPods: nuove funzioni AI via firmware","Apple Intelligence in abbonamento","Gemini è il cervello della nuova Siri","Mac da tavolo aggiornati a M5","Addio Intel: macOS 27 è M-chip Only"]},
+{rank:35,name:"Alberto Filippo Cameroni",fin:12.2,base:8,ts:"04/06",store:"Piazza Liberty",meta:"17 Pro Max · 0–3a · Investitore",allin:"",picks:["Addio Intel: macOS 27 è M-chip Only","iPhone 12 riceve iOS 27","Nuovi quadranti su Apple Watch","Feature Android presentata come rivoluzione","Siri diventa hub per tutte le IA",'L\'ultimo "One more thing" di Cook']},
+{rank:36,name:"Valentina Seregni",fin:11.8,base:8,ts:"03/06",store:"Piazza Liberty",meta:"17 Pro · 4–6a · Moderato",allin:"",picks:["Addio Intel: macOS 27 è M-chip Only","Cook e Ternus insieme sul palco","Segmento sostenibilità nel keynote","Live Translation su Apple Watch","Siri ricorda le conversazioni","Sfondi creati dall'AI"]},
+{rank:37,name:"Luca Bottigliero",fin:11.6,base:8,ts:"05/06",store:"Piazza Liberty",meta:"17 Pro Max · 0–3a · Incognito",allin:"",picks:["Citano un numero astronomico","AirPods: nuove funzioni AI via firmware","Gemini è il cervello della nuova Siri","Siri diventa chatbot in un'app",'L\'ultimo "One more thing" di Cook']},
+{rank:38,name:"Roberto Mele",fin:10.9,base:7,ts:"04/06",store:"Carosello",meta:"Air · 7–10a · Scommettitore",allin:"Siri",picks:["Citano un numero astronomico","Apple svela un robot","HomePod con display integrato","Apple TV torna con un update","Camera app con controlli Pro",'L\'ultimo "One more thing" di Cook',"Cook e Ternus insieme sul palco","Siri diventa chatbot in un'app","Siri vede cosa c'è sullo schermo"]},
+{rank:39,name:"Lorenzo Magnani",fin:10.7,base:8,ts:"03/06",store:"Piazza Liberty",meta:"17 · 10+a · Scommettitore",allin:"",picks:["AirPods: nuove funzioni AI via firmware","Apple TV torna con un update","Cook e Ternus insieme sul palco",'L\'ultimo "One more thing" di Cook',"Siri diventa hub per tutte le IA","Primo accenno al MacBook touch","Addio Intel: macOS 27 è M-chip Only","macOS 27 non avrà nome californiano","Mac da tavolo aggiornati a M5","Prima UI per iPhone pieghevole"]},
+{rank:40,name:"Fabio Russo",fin:10.6,base:8,ts:"03/06",store:"Piazza Liberty",meta:"17 Pro Max · 7–10a · Moderato",allin:"",picks:["Live Translation su Apple Watch","Cook e Ternus insieme sul palco","Scansioni un alimento, vedi le calorie","Segmento sostenibilità nel keynote","Siri diventa chatbot in un'app","AirPods: nuove funzioni AI via firmware"]},
+{rank:41,name:"Vladi Kruten",fin:10.1,base:6,ts:"01/06",store:"Piazza Liberty",meta:"16 Pro Max · 0–3a · Prudente",allin:"AI",picks:["Foto: Enhance, Extend, Reframe","Scansioni un alimento, vedi le calorie","Siri ricorda le conversazioni","Segmento sostenibilità nel keynote","Cook e Ternus insieme sul palco"]},
+{rank:42,name:"Simone Coppa",fin:9.7,base:7,ts:"01/06",store:"Piazza Liberty",meta:"15 Pro Max · 10+a · Investitore",allin:"",picks:["AirPods: nuove funzioni AI via firmware","Nuovi quadranti su Apple Watch","Feature Android presentata come rivoluzione","Citano un numero astronomico","Siri diventa chatbot in un'app",'L\'ultimo "One more thing" di Cook']},
+{rank:43,name:"Luigi Ciarletta",fin:9.6,base:8,ts:"03/06",store:"Piazza Liberty",meta:"17 Pro · 10+a · Il Sicuro",allin:"",picks:["Citano un numero astronomico","Siri ricorda le conversazioni","Emoji AI mentre digiti","Gemini è il cervello della nuova Siri","Siri integrata nell'app Fotocamera"]},
+{rank:43,name:"Giuse Giusexpple",fin:9.6,base:6,ts:"03/06",store:"Piazza Liberty",meta:"17 Pro Max · 0–3a · Scommettitore",allin:"",picks:["AirPods: nuove funzioni AI via firmware",'L\'ultimo "One more thing" di Cook',"Ternus da solo sul palco","Cook e Ternus insieme sul palco","Addio Intel: macOS 27 è M-chip Only","Camera app con controlli Pro","Gemini è il cervello della nuova Siri"]},
+{rank:44,name:"Davide Scanzi",fin:9.5,base:7,ts:"04/06",store:"Carosello",meta:"17 Pro Max · 10+a · Scommettitore",allin:"",picks:["Gemini è il cervello della nuova Siri","Cook e Ternus insieme sul palco",'L\'ultimo "One more thing" di Cook',"Citano un numero astronomico","Segmento sostenibilità nel keynote","Siri vede cosa c'è sullo schermo","Apple svela gli Smart Glasses","HomePod con display integrato"]},
+{rank:44,name:"Cesare Maccarone",fin:9.5,base:6,ts:"06/06",store:"Fiordaliso",meta:"17 Pro · 0–3a · Scommettitore",allin:"",picks:["Siri diventa chatbot in un'app","Mac da tavolo aggiornati a M5","Gemini è il cervello della nuova Siri","HomePad: nuovo device per la casa","Prima UI per iPhone pieghevole","Apple svela gli Smart Glasses","Feature Android presentata come rivoluzione","Cook si emoziona (momento lacrimuccia)",'L\'ultimo "One more thing" di Cook']},
+{rank:45,name:"Walter Bonizzoni",fin:8.6,base:6,ts:"04/06",store:"Carosello",meta:"16 Pro · 7–10a · Scommettitore",allin:"",picks:["Primo accenno al MacBook touch","Citano un numero astronomico","HomePod con display integrato","Apple TV torna con un update","HomePad: nuovo device per la casa","Apple svela gli Smart Glasses","Apple svela un robot","Cook e Ternus insieme sul palco","Gemini è il cervello della nuova Siri","Siri diventa hub per tutte le IA","Prima UI per iPhone pieghevole"]},
+{rank:46,name:"Lorenzo Bandini",fin:8.5,base:6,ts:"05/06",store:"Piazza Liberty",meta:"17 Pro Max · 7–10a · Investitore",allin:"AI",picks:["Siri diventa chatbot in un'app","Foto: Enhance, Extend, Reframe","Gemini è il cervello della nuova Siri","Prima UI per iPhone pieghevole","Siri integrata nell'app Fotocamera","iPhone Mirroring su iPad",'L\'ultimo "One more thing" di Cook']},
+{rank:46,name:"Irene Parolini",fin:8.5,base:6,ts:"06/06",store:"Piazza Liberty",meta:"17 Pro Max · 7–10a · Investitore",allin:"AI",picks:["Cook e Ternus insieme sul palco","Primo accenno al MacBook touch","Siri ricorda le conversazioni","Nuovi quadranti su Apple Watch","Scansioni un alimento, vedi le calorie","Gemini è il cervello della nuova Siri","Prima UI per iPhone pieghevole"]},
+{rank:47,name:"Angelica Diaz",fin:8.3,base:6,ts:"02/06",store:"Piazza Liberty",meta:"16 · 4–6a · Prudente",allin:"",picks:["AirPods: nuove funzioni AI via firmware","Cook e Ternus insieme sul palco","Nuovi quadranti su Apple Watch","Gemini è il cervello della nuova Siri","Siri diventa chatbot in un'app"]},
+{rank:48,name:"Raffaele Gargiulo",fin:8.0,base:6,ts:"03/06",store:"Piazza Liberty",meta:"17 Pro · 7–10a · Moderato",allin:"",picks:["Segmento sostenibilità nel keynote","Gemini è il cervello della nuova Siri","iPhone 12 riceve iOS 27","Camera app con controlli Pro","Cook e Ternus insieme sul palco","Siri diventa chatbot in un'app"]},
+{rank:49,name:"Marco Lampa",fin:7.8,base:5,ts:"01/06",store:"Piazza Liberty",meta:"17 Pro · 0–3a · Investitore",allin:"",picks:["Siri diventa hub per tutte le IA","Camera app con controlli Pro","Gemini è il cervello della nuova Siri","Segmento sostenibilità nel keynote","Addio Intel: macOS 27 è M-chip Only","Ternus da solo sul palco"]},
+{rank:49,name:"francesca Cacciatore",fin:7.8,base:5,ts:"05/06",store:"Fiordaliso",meta:"17 Pro · 7–10a · Scommettitore",allin:"",picks:["Ternus da solo sul palco","Siri integrata nell'app Fotocamera","Apple Intelligence arriva sull'iPad A16","Live Translation su Apple Watch","Apple svela gli Smart Glasses","Feature Android presentata come rivoluzione","Mac da tavolo aggiornati a M5","Crei automazioni a voce"]},
+{rank:50,name:"Filippo Bascialli",fin:6.5,base:6,ts:"08/06",store:"Fiordaliso",meta:"16 Pro Max · 10+a · Il Sicuro",allin:"",picks:["Citano un numero astronomico","Gemini è il cervello della nuova Siri","Siri ricorda le conversazioni","Cook e Ternus insieme sul palco","Addio Intel: macOS 27 è M-chip Only"]},
+{rank:51,name:"Federica Piazza",fin:5.9,base:4,ts:"04/06",store:"Piazza Liberty",meta:"15 Pro · 0–3a · Il Sicuro",allin:"",picks:["Siri diventa chatbot in un'app","Foto: Enhance, Extend, Reframe","Nuovi quadranti su Apple Watch","Cook e Ternus insieme sul palco","Citano un numero astronomico"]},
+{rank:52,name:"Monica Rossi",fin:5.7,base:4,ts:"02/06",store:"Piazza Liberty",meta:"17 Pro · 7–10a · Investitore",allin:"",picks:["Feature Android presentata come rivoluzione","Nuovi quadranti su Apple Watch","Apple Intelligence arriva sull'iPad A16","Live Translation su Apple Watch","Scansioni un alimento, vedi le calorie","Siri diventa chatbot in un'app"]},
+{rank:53,name:"Michael Marchetti",fin:4.2,base:3,ts:"02/06",store:"Piazza Liberty",meta:"17 Pro Max · 0–3a · Il Sicuro",allin:"",picks:["Addio Intel: macOS 27 è M-chip Only","Gemini è il cervello della nuova Siri","Segmento sostenibilità nel keynote","Feature Android presentata come rivoluzione","Siri diventa chatbot in un'app"]},
+{rank:54,name:"Andrea Menchicchi",fin:1.5,base:1,ts:"04/06",store:"Piazza Liberty",meta:"15 Pro Max · 10+a · Scommettitore",allin:"",picks:["Live Translation su Apple Watch","Nuovi quadranti su Apple Watch","Apple TV torna con un update","Apple Intelligence in abbonamento","Foto: Enhance, Extend, Reframe","Cook e Ternus insieme sul palco","macOS 27 non avrà nome californiano","Camera app con controlli Pro"]},
+];
+
+const MAX=30.4,fmt=n=>n.toFixed(1).replace('.',',');
+function sc(s){return s>=27?'sc5':s>=22?'sc4':s>=16?'sc3':s>=11?'sc2':s>=7?'sc1':'sc0'}
+function bc(s){return s>=27?'bc5':s>=22?'bc4':s>=16?'bc3':s>=11?'bc2':s>=7?'bc1':'bc0'}
+function medal(r){return r===1?'🥇':r===2?'🥈':r===3?'🥉':''}
+
+// PODIUM
+(function(){
+  const p1a=PLAYERS[0],p1b=PLAYERS[1],p2=PLAYERS.find(p=>p.rank===2),p3=PLAYERS.find(p=>p.rank===3);
+  document.getElementById('podium').innerHTML=`
+    <div class="podium-card second"><div class="pod-medal">🥈</div><div class="pod-name">${p2.name}</div><div class="pod-score">${fmt(p2.fin)}</div><div class="pod-detail">base ${p2.base} · ${p2.ts}</div></div>
+    <div class="podium-card first"><div class="pod-medal">🥇</div><div class="pod-name">${p1a.name}<br>&amp; ${p1b.name}</div><div class="pod-score">${fmt(p1a.fin)}</div><div class="pod-detail">primo posto ex aequo</div></div>
+    <div class="podium-card third"><div class="pod-medal">🥉</div><div class="pod-name">${p3.name}</div><div class="pod-score">${fmt(p3.fin)}</div><div class="pod-detail">base ${p3.base} · ${p3.ts}</div></div>`;
+  document.getElementById('podiumNote').textContent='Stolfi e Lanfranchi chiudono entrambi a 30,4 e si dividono il 1° posto. Casati 2°, Gozzo 3°.';
+})();
+
+// RANKING
+(function(){
+  const el=document.getElementById('rankList');let last=null;
+  PLAYERS.forEach(p=>{
+    if(last!==null&&p.fin!==last){const s=document.createElement('div');s.style.cssText='padding:5px 0 3px 14px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(0,0,0,.28);border-top:1px solid rgba(0,0,0,.04)';s.textContent=`— ${fmt(p.fin)} pt`;el.appendChild(s);}
+    last=p.fin;
+    const c=sc(p.fin),w=Math.round(p.fin/MAX*100),rc=p.rank===1?'gold':p.rank===2?'silver':p.rank===3?'bronze':'';
+    const badge=p.allin?`<span class="r-badge">all-in ${p.allin}</span>`:'';
+    const row=document.createElement('div');row.className=`rank-row ${rc}`;
+    row.innerHTML=`<div class="r-pos">${p.rank}</div><div><div class="r-name-txt">${p.name}${badge}</div><div class="r-meta-txt">${p.meta}</div></div><div class="r-sc-wrap"><div class="r-sc ${c}">${fmt(p.fin)}</div><div class="r-base">base ${p.base}</div></div><div class="r-bar-wrap"><div class="r-bar-bg"><div class="r-bar-fill ${bc(p.fin)}" style="width:${w}%"></div></div></div><div class="r-ts">${p.ts}</div>`;
+    el.appendChild(row);
+  });
+})();
+
+// AWARDS
+document.getElementById('awards').innerHTML=[
+  {e:"👑",hl:true,l:"Vincitore assoluto",v:"Nico Stolfi",s:"30,4 pt da soli 16 base. Rarità folle su 'Siri cambia nome' (scelta solo da lui) + Scommettitore + iPhone 14. Vince allo spareggio."},
+  {e:"🎯",hl:true,l:"Re del punteggio base",v:"Michael Lanfranchi",s:"24 punti base — il più alto del torneo — con all-in su Siri e AI. Pari a Stolfi a 30,4, secondo per data d'invio."},
+  {e:"🎲",l:"Scommessa più folle",v:"'Siri cambia nome'",s:"2N · scelta da 1 sola persona su 59. Con la rarità ×1,5 ha valso 12 punti pieni."},
+  {e:"💎",l:"Chicca più redditizia",v:"9 giocatori",s:"In 9 hanno preso 'Sfondi creati dall'AI' (5N), la previsione media-rischio più redditizia del torneo."},
+  {e:"🧱",l:"All-in riusciti",v:"Lanfranchi · Gozzo",s:"Hanno azzeccato il 100% delle scelte in due sezioni intere. Bonus ×1,1 su entrambi i blocchi."},
+  {e:"🏃",l:"Primo al traguardo",v:"Andrea Bruletti",s:"Schedina il 01/06 alle 09:49, primo di tutti. Bonus giorno massimo, da veterano niente anzianità."},
+  {e:"📟",l:"Reliquia tech",v:"ENRiCO Bonardi",s:"iPhone 14 (2022), il più antico del torneo. Bonus underdog ×1,05."},
+  {e:"🐌",l:"Ultimo della classe",v:"Laura Demontis",s:"Consegna l'8/06 alle 17:24, a un soffio dal keynote. Zero bonus giorno."},
+].map(a=>`<div class="glass fun-card ${a.hl?'hl':''}"><span class="fun-emoji">${a.e}</span><div class="fun-lbl">${a.l}</div><div class="fun-val">${a.v}</div><div class="fun-sub">${a.s}</div></div>`).join('');
+
+document.getElementById('losers').innerHTML=[
+  {e:"🧱",bad:true,l:"Maglia nera",v:"Andrea Menchicchi",s:"1,5 pt finali, ultimo dopo tutti i bonus. 1 sola previsione azzeccata su 8."},
+  {e:"🕳️",bad:true,l:"Più buchi",v:"Riccardo Cesana",s:"9 sbagliate su 11. Ha puntato su Home/Watch/iPad: la sezione a 0 su tutto."},
+  {e:"📉",l:"Tanta roba, pochi punti",v:"Walter Bonizzoni",s:"11 picks (record) per 8,6 pt. Lo sparo nel mucchio non paga."},
+  {e:"🐑",l:"Trappola del gregge",v:"'Cook e Ternus' (28×)",s:"Previsione più scelta (47%) — e sbagliata. Mezzo torneo nella stessa buca."},
+  {e:"💸",l:"One more thing... no",v:"24 illusi",s:'L\'ultimo "One more thing" di Cook scelto da 24 persone. Non è mai arrivato.'},
+].map(a=>`<div class="glass fun-card ${a.bad?'bad':''}"><span class="fun-emoji">${a.e}</span><div class="fun-lbl">${a.l}</div><div class="fun-val">${a.v}</div><div class="fun-sub">${a.s}</div></div>`).join('');
+
+// STORE
+function miniRank(id,title,rows,mx){
+  document.getElementById(id).innerHTML=`<div class="mini-title">${title}</div>`+rows.map(r=>`<div class="mini-row"><div class="mini-label">${r.k} <small>(${r.n}p)</small></div><div class="mini-bar-bg"><div class="mini-bar" style="width:${Math.round(r.v/mx*100)}%"></div></div><div class="mini-val">${r.v}</div></div>`).join('');
+}
+miniRank('storeAvg','🥇 Media punti base',[{k:"Piazza Liberty",n:49,v:9.8},{k:"Carosello",n:7,v:9.0},{k:"Fiordaliso",n:3,v:5.7}],9.8);
+miniRank('storeTot','💰 Totale punti base',[{k:"Piazza Liberty",n:49,v:478},{k:"Carosello",n:7,v:63},{k:"Fiordaliso",n:3,v:17}],478);
+document.getElementById('storePods').innerHTML=[
+  {store:"Piazza Liberty",n:49,tie:true,top:[["Nico Stolfi",30.4],["Michael Lanfranchi",30.4],["Marco Casati",26.9]]},
+  {store:"Carosello",n:7,top:[["giulia paggiarin",20.5],["Marco Sacco Zaut",15.4],["Roberto Mele",10.9]]},
+  {store:"Fiordaliso",n:3,top:[["Cesare Maccarone",9.5],["francesca Cacciatore",7.8],["Filippo Bascialli",6.5]]},
+].map(sp=>`<div class="glass sp-card"><div class="sp-tag">${sp.n} giocatori</div><div class="sp-name">🏪 ${sp.store}</div>${sp.top.map((t,i)=>{const m=sp.tie?["🥇","🥇","🥈"][i]:["🥇","🥈","🥉"][i];return`<div class="sp-row"><div class="sp-medal">${m}</div><div class="sp-player">${t[0]}</div><div class="sp-pts">${fmt(t[1])}</div></div>`;}).join('')}</div>`).join('');
+
+// GEMS
+document.getElementById('gems').innerHTML=[
+  {t:"Siri cambia nome",c:1,p:8},{t:"Cook racconta la sua vita in Apple",c:3,p:3},
+  {t:"Crei automazioni a voce",c:4,p:2},{t:"Ticket fisico → pass digitale",c:7,p:4},
+  {t:"Sfondi creati dall'AI",c:9,p:5},{t:"iPhone 12 riceve iOS 27",c:9,p:4},
+  {t:"Liquid Glass aggiornato su Mac",c:9,p:3},{t:"Siri ricorda le conversazioni",c:9,p:2},
+].map(g=>{const pct=Math.round(g.c/59*100);return`<div class="pred-row"><div class="pred-num">${g.p}pt</div><div><div class="pred-text">${g.t}</div><div class="pred-bar-row"><div class="pred-bar" style="width:${pct}%;background:#16a34a"></div></div></div><div class="pred-pct">${g.c}× · ${pct}%</div><div class="pred-status ok-txt">💎</div></div>`;}).join('');
+
+// SECTION SUCCESS
+document.getElementById('secSuccess').innerHTML='<div class="mini-title">Previsioni azzeccate per sezione</div>'+[
+  {k:"🍎 Siri",v:100,d:"59/59"},{k:"🤖 AI & Intelligence",v:93,d:"65/70"},
+  {k:"💻 macOS & Dev",v:57,d:"25/44"},{k:"📱 iOS & Safari",v:56,d:"20/36"},
+  {k:"🔮 Speculativo",v:55,d:"16/29"},{k:"🌍 Apple Classica",v:33,d:"11/33"},
+  {k:"🎭 Keynote & Palco",v:19,d:"14/73"},{k:"⌚ Watch · iPad · Home",v:0,d:"0/54"},
+].map(s=>{const col=s.v>=80?'#16a34a':s.v>=50?'var(--accent)':s.v>=30?'var(--orange)':'var(--red)';return`<div class="mini-row"><div class="mini-label">${s.k} <small>(${s.d})</small></div><div class="mini-bar-bg"><div class="mini-bar" style="width:${Math.max(s.v,2)}%;background:${col}"></div></div><div class="mini-val" style="color:${col}">${s.v}%</div></div>`;}).join('');
+
+// MOST PICKED
+document.getElementById('mostPicked').innerHTML=[
+  {n:30,t:"Cook e Ternus insieme sul palco",c:28,ok:false},
+  {n:7,t:"Gemini è il cervello della nuova Siri",c:25,ok:true},
+  {n:33,t:'L\'ultimo "One more thing" di Cook',c:24,ok:false},
+  {n:4,t:"Siri diventa hub per tutte le IA",c:17,ok:true},
+  {n:28,t:"Apple TV torna con un update",c:16,ok:false},
+  {n:18,t:"Addio Intel: macOS 27 M-only",c:16,ok:true},
+  {n:35,t:"AirPods: funzioni AI via firmware",c:16,ok:true},
+  {n:1,t:"Siri diventa chatbot in un'app",c:15,ok:true},
+  {n:3,t:"Siri vede cosa c'è sullo schermo",c:13,ok:true},
+  {n:38,t:"Segmento sostenibilità nel keynote",c:13,ok:false},
+].map(p=>{const pct=Math.round(p.c/59*100);return`<div class="pred-row"><div class="pred-num">#${p.n}</div><div><div class="pred-text">${p.t}</div><div class="pred-bar-row"><div class="pred-bar" style="width:${pct}%;background:${p.ok?'#16a34a':'var(--red)'}"></div></div></div><div class="pred-pct">${p.c}× · ${pct}%</div><div class="pred-status ${p.ok?'ok-txt':'ko-txt'}">${p.ok?'✅':'❌'}</div></div>`;}).join('');
+
+// SEARCH + PERSONAL CARD
+function renderCard(p){
+  const card=document.getElementById('personalCard');
+  const c=sc(p.fin);
+  const sorted=[...p.picks].sort((a,b)=>(RESULTS[b]?1:0)-(RESULTS[a]?1:0));
+  const correct=p.picks.filter(pk=>RESULTS[pk]).length;
+  const newton=p.picks.reduce((s,pk)=>s+(COSTS[pk]||0),0);
+  card.innerHTML=`<div class="pc-header">
+    <div class="pc-medal">${medal(p.rank)||'#'+p.rank}</div>
+    <div class="pc-info"><div class="pc-name">${p.name}</div><div class="pc-meta">${p.meta}</div></div>
+    <div class="pc-score-col"><div class="pc-score ${c}">${fmt(p.fin)}</div><div class="pc-score-lbl">pt finali</div></div>
+  </div>
+  <div class="pc-body">
+    <div class="pc-subtitle">${p.picks.length} previsioni · ${correct} azzeccate · ${newton}N spesi</div>
+    ${sorted.map(pk=>`<div class="pc-pick ${RESULTS[pk]?'ok':'ko'}"><span class="pc-pick-icon">${RESULTS[pk]?'✅':'❌'}</span><span class="pc-pick-name">${pk}</span><span class="pc-pick-cost">${COSTS[pk]||'?'}N</span></div>`).join('')}
+    <div class="pc-tags">
+      <span class="pc-tag store">🏪 ${p.store}</span>
+      <span class="pc-tag date">📅 Inviato ${p.ts}</span>
+      ${p.allin?`<span class="pc-tag">all-in ${p.allin}</span>`:''}
+    </div>
+  </div>`;
+  card.classList.add('show');
+}
+window.renderCard=renderCard;
+
+document.getElementById('searchInput').addEventListener('input',function(){
+  const q=this.value.trim().toLowerCase();
+  const card=document.getElementById('personalCard');
+  if(q.length<2){card.classList.remove('show');card.innerHTML='';return;}
+  const matches=PLAYERS.filter(p=>p.name.toLowerCase().includes(q));
+  if(!matches.length){card.innerHTML='<div class="no-result">Nessun risultato per "'+this.value+'"</div>';card.classList.add('show');}
+  else if(matches.length===1){renderCard(matches[0]);}
+  else{
+    card.innerHTML='<div class="pc-body"><div class="pc-subtitle">Più risultati — scegli:</div>'+
+      matches.map(m=>`<div class="match-item" onclick="renderCard(PLAYERS.find(p=>p.name==='${m.name.replace(/'/g,"\\'")}'))"><span class="pc-pick-icon">${medal(m.rank)||'#'+m.rank}</span><span class="pc-pick-name">${m.name}</span><span class="pc-pick-cost">${fmt(m.fin)}pt</span></div>`).join('')+'</div>';
+    card.classList.add('show');
+  }
+});
+
+// REGOLAMENTO
+document.getElementById('regBody').innerHTML=`<div class="rule-intro">Parti da <b>40 Newton</b> da spendere. Le previsioni facili costano tanto e rendono poco, quelle improbabili costano poco e rendono tanto. Sul punteggio base si applicano moltiplicatori che premiano chi rischia, chi gioca presto, chi è giovane in azienda.</div>`+[
+  {i:"💰",n:"Budget Newton",b:"Le previsioni facili costano di più e rendono meno, quelle azzardate il contrario.",ex:'"Gemini in Siri" = 9N ma 1pt. "Siri cambia nome" = 2N ma 8pt.',t:null},
+  {i:"✅",n:"Punteggio base",b:"Ogni previsione azzeccata dà i suoi punti. Le sbagliate non tolgono niente.",ex:null,t:null},
+  {i:"🐺",n:"Rarità (per casella)",b:"Una previsione azzeccata da pochi vale di più.",ex:null,t:[["1 persona","×1,50"],["5 persone","×1,23"],["15 persone","×1,05"],["20+","×1,00"]]},
+  {i:"⏳",n:"Anzianità (sul totale)",b:"Chi è in Apple da meno tempo riceve un piccolo aiuto.",ex:null,t:[["0–3 anni","×1,20"],["4–6 anni","×1,13"],["7–10 anni","×1,07"],["oltre 10","×1,00"]]},
+  {i:"📅",n:"Giorno di invio",b:"Chi si espone prima, con meno indizi, riceve un bonus.",ex:null,t:[["01/06","×1,15"],["04/06","×1,086"],["07/06","×1,021"],["08/06","×1,00"]]},
+  {i:"🎭",n:"Profilo dichiarato",b:"Premia chi sceglie il profilo più rischioso.",ex:null,t:[["Visionario","×1,20"],["Scommettitore","×1,17"],["Il Sicuro","×1,00"]]},
+  {i:"🎯",n:"All-in di sezione",b:"Azzecchi TUTTE le scelte in una sezione (min. 2): quel blocco riceve ×1,1.",ex:null,t:null},
+  {i:"📱",n:"Underdog device",b:"Piccolo bonus a chi gioca con un iPhone meno recente.",ex:null,t:[["iPhone 14","×1,05"],["iPhone 15","×1,03"],["iPhone 16","×1,015"],["iPhone 17","×1,00"]]},
+].map(r=>`<div class="rule-card"><div class="rule-head"><div class="rule-ico">${r.i}</div><div class="rule-name">${r.n}</div></div><div class="rule-body">${r.b}</div>${r.t?`<table class="rule-tbl"><tr><th>Condizione</th><th style="text-align:right">Molt.</th></tr>${r.t.map(row=>`<tr><td>${row[0]}</td><td class="mult ${row[1]==='×1,00'?'z':row[1].includes('1,5')||row[1].includes('1,20')?'mx':''}">${row[1]}</td></tr>`).join('')}</table>`:''}${r.ex?`<div class="rule-ex"><b>Es:</b> ${r.ex}</div>`:''}</div>`).join('')+
+`<div style="padding:8px 0 4px;text-align:center;font-size:11px;color:var(--ink-dim)">A parità di punteggio vince chi ha inviato prima.</div>`;
+
+document.getElementById('openReg').addEventListener('click',()=>document.getElementById('regModal').classList.add('open'));
+document.getElementById('closeReg').addEventListener('click',()=>document.getElementById('regModal').classList.remove('open'));
+document.getElementById('regBg').addEventListener('click',()=>document.getElementById('regModal').classList.remove('open'));
+</script>
+</body>
+</html>
