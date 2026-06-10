@@ -39,6 +39,17 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;background:rgba(220,225
 .btn-big.secondary:hover{background:rgba(255,255,255,.66);transform:translateY(-1px)}
 
 .footer-note{font-size:10px;color:var(--ink-dim);text-align:center;opacity:.55;line-height:1.6;padding:0 8px}
+.legal-link{background:none;border:none;padding:0;font-size:10px;color:var(--ink-dim);opacity:.7;cursor:pointer;text-decoration:underline;font-family:inherit}
+
+/* modal */
+.modal{display:none;position:fixed;inset:0;z-index:1300;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.32)}
+.modal.show{display:flex}
+.modal-card{background:rgba(245,245,250,.92);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border-radius:20px 20px 0 0;width:100%;max-width:520px;padding:24px 24px 40px;max-height:80vh;overflow-y:auto}
+.modal-card h2{font-size:18px;font-weight:800;margin:0 0 16px}
+.modal-card p{font-size:13px;color:var(--ink-dim);line-height:1.6;margin:0 0 12px}
+.modal-card p strong{color:var(--ink)}
+.handle{width:36px;height:4px;border-radius:2px;background:rgba(0,0,0,.18);margin:0 auto 20px}
+.btn-close{display:block;width:100%;margin-top:8px;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,rgba(94,77,237,.88),rgba(10,122,255,.88));color:#fff;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer}
 </style>
 </head>
 <body>
@@ -63,7 +74,31 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;background:rgba(220,225
     <a href="./previsioni.html" class="btn-big secondary">📋 Le Previsioni</a>
   </div>
 
-  <p class="footer-note">© 2026 FantaLiberty · Progetto originale creato da Michael Lanfranchi e Lorenzo Bandini<br>Non affiliato ad Apple Inc.</p>
+  <p class="footer-note">© 2026 FantaLiberty · Progetto originale creato da Michael Lanfranchi e Lorenzo Bandini<br>Non affiliato ad Apple Inc.
+  &nbsp;·&nbsp;<button class="legal-link" id="openLegal">Note legali</button></p>
 </div>
+
+<div class="modal" id="legalModal">
+  <div class="modal-card">
+    <div class="handle"></div>
+    <h2>📄 Note legali</h2>
+    <p><strong>© 2026 FantaLiberty</strong><br>
+    Tutti i diritti riservati. Progetto originale creato da Michael Lanfranchi e Lorenzo Bandini. Vietata la riproduzione, copia o distribuzione senza autorizzazione scritta degli autori.</p>
+    <p><strong>Non affiliazione</strong><br>
+    FantaLiberty è un progetto indipendente a scopo ricreativo. Non è affiliato, sponsorizzato né approvato da Apple Inc. I marchi Apple, WWDC e relativi loghi sono di proprietà di Apple Inc.</p>
+    <p><strong>Privacy e uso dei dati</strong><br>
+    Partecipando confermi di aver letto e accettato quanto segue: i tuoi dati personali (nome, cognome, reparto, email e modello iPhone) sono raccolti esclusivamente per finalità interne a FantaLiberty WWDC26, l'invio dei risultati, classifica e premi virtuali. I dati non vengono condivisi, venduti o ceduti a terzi in alcuna forma. Potranno essere utilizzati in forma aggregata e anonima per migliorare le edizioni future dell'app (es. distribuzione per reparto, dispositivi utilizzati). Tutti i dati identificativi vengono cancellati entro 72 ore dal Keynote dell'8 giugno 2026.</p>
+    <p><strong>Limitazione di responsabilità</strong><br>
+    Le previsioni sono puramente ludiche. L'autore non si assume alcuna responsabilità per decisioni prese sulla base dei contenuti del gioco.</p>
+    <button class="btn-close" id="closeLegal">Chiudi</button>
+  </div>
+</div>
+
+<script>
+var legalModal = document.getElementById('legalModal');
+document.getElementById('openLegal').addEventListener('click', function(){ legalModal.classList.add('show'); });
+document.getElementById('closeLegal').addEventListener('click', function(){ legalModal.classList.remove('show'); });
+legalModal.addEventListener('click', function(e){ if(e.target===legalModal) legalModal.classList.remove('show'); });
+</script>
 </body>
 </html>
