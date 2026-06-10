@@ -461,9 +461,12 @@
 
   /* ────── transform ────── */
   function applyTransform() {
+    var norm   = ((yAngle % 360) + 360) % 360;
+    var isBack = norm > 90 && norm < 270;
+    var sign   = isBack ? -1 : 1;  // sul retro l'asse X/Z è specchiato
     var ty = (gestureType === 'flip') ? 0 : tiltY;
-    var tx = (gestureType === 'flip') ? 0 : tiltX;
-    var tz = (gestureType === 'flip') ? 0 : tiltZ;
+    var tx = (gestureType === 'flip') ? 0 : tiltX * sign;
+    var tz = (gestureType === 'flip') ? 0 : tiltZ * sign;
     card.style.transform =
       'rotateY(' + (yAngle + ty) + 'deg) rotateX(' + tx + 'deg) rotateZ(' + tz + 'deg)';
   }
