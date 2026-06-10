@@ -4,6 +4,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Carta 3D</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -112,6 +114,20 @@
       padding: 52px 20px 48px;
       z-index: 5;
     }
+
+    /* ── rank & score sopra il retro ── */
+    .stat-corner {
+      position: absolute;
+      top: 16px;
+      z-index: 6;
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      font-size: 13px;
+      line-height: 1;
+      color: rgba(255,255,255,0.7);
+    }
+    .stat-rank  { left: 16px; }
+    .stat-score { right: 16px; }
 
     /* ── nickname: trofeo metallico dorato in rilievo ── */
     .nick-display {
@@ -329,6 +345,8 @@
       <!-- RETRO -->
       <div class="face face--back">
                 <img class="bg" src="retro.png">
+        <span class="stat-corner stat-rank"  id="rank-text"></span>
+        <span class="stat-corner stat-score" id="score-text"></span>
         <div class="back-overlay">
           <div class="nick-slot">
             <span class="nick-display" id="nick-display"
@@ -401,6 +419,32 @@
   (function applyName() {
     var nd = document.getElementById('nick-display');
     if (nd && nameParam) nd.textContent = nameParam;
+  })();
+
+  /* ────── punteggio e posizione in classifica dall'URL ────── */
+  (function applyStats() {
+    var scoreParam = params.get('score');
+    var rankParam  = params.get('rank');
+    var rankEl  = document.getElementById('rank-text');
+    var scoreEl = document.getElementById('score-text');
+
+    // rank: "1°"
+    if (rankEl && rankParam != null && rankParam !== '') {
+      var rankNum = parseInt(rankParam, 10);
+      rankEl.textContent = (isNaN(rankNum) ? rankParam : rankNum) + '°';
+      var col, shadow = 'none';
+      if      (rankNum === 1) { col = '#f5c842'; shadow = '0 0 10px rgba(245,200,66,0.6)'; }
+      else if (rankNum === 2) { col = '#c0c0c0'; }
+      else if (rankNum === 3) { col = '#cd7f32'; }
+      else                    { col = 'rgba(255,255,255,0.7)'; }
+      rankEl.style.color = col;
+      rankEl.style.textShadow = shadow;
+    }
+
+    // score: "30,4 pt" (virgola decimale, formato italiano)
+    if (scoreEl && scoreParam != null && scoreParam !== '') {
+      scoreEl.textContent = String(scoreParam).replace('.', ',') + ' pt';
+    }
   })();
 
   /* ────── TEST: popola il selettore e gestisci cambio badge ────── */
