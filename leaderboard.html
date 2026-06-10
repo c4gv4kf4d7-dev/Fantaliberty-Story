@@ -409,7 +409,7 @@ function miniRank(id,title,rows,mx){
     if(!stats[d])stats[d]={sum:0,n:0};
     stats[d].sum+=p.fin;stats[d].n++;
   });
-  const arr=Object.entries(stats).map(([k,v])=>({k,n:v.n,avg:v.sum/v.n})).sort((a,b)=>b.avg-a.avg);
+  const arr=Object.entries(stats).map(([k,v])=>({k,n:v.n,avg:v.sum/v.n})).sort((a,b)=>b.avg-a.avg).slice(0,3);
   const mx=arr[0].avg;
   const icons={Shopping:'🛍️',"Genius Bar":'🛠️',Forum:'🎤',Operation:'⚙️',Leadership:'👑',Business:'💼'};
   document.getElementById('deptRank').innerHTML='<div class="mini-title">🏬 Media punteggio finale per reparto</div>'+arr.map((r,i)=>{
