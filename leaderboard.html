@@ -225,6 +225,10 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;background:rgba(220,225
 <div class="sec">💀 Angolo dei perdenti</div>
 <div class="fun-grid" id="losers"></div>
 
+<div class="sec sec-big">🏬 Classifica per reparto</div>
+<p style="font-size:12px;color:var(--ink-dim);margin-bottom:12px">Reparto vincente in base alla <strong style="color:var(--ink)">media dei punteggi finali</strong> dei suoi giocatori.</p>
+<div class="glass mini-rank" id="deptRank"></div>
+
 <div class="sec">🏪 Sfida tra store</div>
 <p style="font-size:12px;color:var(--ink-dim);margin-bottom:12px">La <strong style="color:var(--ink)">media</strong> è il confronto equo — Carosello 7 giocatori, Fiordaliso solo 3.</p>
 <div class="two-col">
@@ -325,6 +329,8 @@ const PLAYERS=[
 {rank:54,name:"Andrea Menchicchi",fin:1.5,base:1,ts:"04/06",store:"Piazza Liberty",meta:"15 Pro Max · 10+a · Scommettitore",allin:"",picks:["Live Translation su Apple Watch","Nuovi quadranti su Apple Watch","Apple TV torna con un update","Apple Intelligence in abbonamento","Foto: Enhance, Extend, Reframe","Cook e Ternus insieme sul palco","macOS 27 non avrà nome californiano","Camera app con controlli Pro"]},
 ];
 
+const REPARTI={"Nico Stolfi":"Shopping","Michael Lanfranchi":"Shopping","Marco Casati":"Shopping","Massimiliano Gozzo":"Shopping","Mattia Graziani":"Shopping","Sofia Rmn":"Shopping","Julen Bilbao":"Genius Bar","Michele Lupi":"Shopping","Marco Poletti":"Forum","giulia paggiarin":"Shopping","Emma Ciorli":"Shopping","Roberto Vezio":"Shopping","Nikita Makarov":"Shopping","linda Arrigotti":"Operation","ENRiCO Bonardi":"Genius Bar","Alessandro Ferrario":"Shopping","Omar Rezk":"Shopping","Dada Grattoni":"Shopping","Angela Torazzi":"Shopping","Andrea Bruletti":"Genius Bar","Gualtiero Quario Rondo":"Leadership","Giovanni Cantamessa":"Shopping","Marco Sacco Zaut":"Operation","Dario Toscano":"Shopping","Andrea Sacco":"Shopping","Samuele Perego":"Shopping","Matilde Rossi Cafari":"Shopping","Achille Capparelli":"Genius Bar","Michele Russo":"Genius Bar","Riccardo Cesana":"Genius Bar","Laura Demontis":"Shopping","Frank Maranzano":"Genius Bar","Carlo Manzotti":"Shopping","Fabster Sironi":"Leadership","Anisia Brischetto":"Shopping","Alberto Filippo Cameroni":"Shopping","Valentina Seregni":"Genius Bar","Luca Bottigliero":"Shopping","Roberto Mele":"Genius Bar","Lorenzo Magnani":"Genius Bar","Fabio Russo":"Shopping","Vladi Kruten":"Shopping","Simone Coppa":"Forum","Luigi Ciarletta":"Business","Giuse Giusexpple":"Shopping","Davide Scanzi":"Business","Cesare Maccarone":"Operation","Walter Bonizzoni":"Operation","Lorenzo Bandini":"Shopping","Irene Parolini":"Shopping","Angelica Diaz":"Shopping","Raffaele Gargiulo":"Genius Bar","Marco Lampa":"Operation","francesca Cacciatore":"Forum","Filippo Bascialli":"Shopping","Federica Piazza":"Shopping","Monica Rossi":"Shopping","Michael Marchetti":"Shopping","Andrea Menchicchi":"Forum"};
+
 const MAX=30.4,fmt=n=>n.toFixed(1).replace('.',',');
 function sc(s){return s>=27?'sc5':s>=22?'sc4':s>=16?'sc3':s>=11?'sc2':s>=7?'sc1':'sc0'}
 function bc(s){return s>=27?'bc5':s>=22?'bc4':s>=16?'bc3':s>=11?'bc2':s>=7?'bc1':'bc0'}
@@ -394,6 +400,23 @@ document.getElementById('losers').innerHTML=[
 function miniRank(id,title,rows,mx){
   document.getElementById(id).innerHTML=`<div class="mini-title">${title}</div>`+rows.map(r=>`<div class="mini-row"><div class="mini-label">${r.k} <small>(${r.n}p)</small></div><div class="mini-bar-bg"><div class="mini-bar" style="width:${Math.round(r.v/mx*100)}%"></div></div><div class="mini-val">${r.v}</div></div>`).join('');
 }
+
+// DEPARTMENT RANKING
+(function(){
+  const stats={};
+  PLAYERS.forEach(p=>{
+    const d=REPARTI[p.name];
+    if(!stats[d])stats[d]={sum:0,n:0};
+    stats[d].sum+=p.fin;stats[d].n++;
+  });
+  const arr=Object.entries(stats).map(([k,v])=>({k,n:v.n,avg:v.sum/v.n})).sort((a,b)=>b.avg-a.avg);
+  const mx=arr[0].avg;
+  const icons={Shopping:'🛍️',"Genius Bar":'🛠️',Forum:'🎤',Operation:'⚙️',Leadership:'👑',Business:'💼'};
+  document.getElementById('deptRank').innerHTML='<div class="mini-title">🏬 Media punteggio finale per reparto</div>'+arr.map((r,i)=>{
+    const m=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+    return `<div class="mini-row"><div class="mini-label">${m?m+' ':''}${icons[r.k]||''} ${r.k} <small>(${r.n}p)</small></div><div class="mini-bar-bg"><div class="mini-bar" style="width:${Math.round(r.avg/mx*100)}%"></div></div><div class="mini-val">${fmt(r.avg)}</div></div>`;
+  }).join('');
+})();
 miniRank('storeAvg','🥇 Media punti base',[{k:"Piazza Liberty",n:49,v:9.8},{k:"Carosello",n:7,v:9.0},{k:"Fiordaliso",n:3,v:5.7}],9.8);
 miniRank('storeTot','💰 Totale punti base',[{k:"Piazza Liberty",n:49,v:478},{k:"Carosello",n:7,v:63},{k:"Fiordaliso",n:3,v:17}],478);
 document.getElementById('storePods').innerHTML=[
