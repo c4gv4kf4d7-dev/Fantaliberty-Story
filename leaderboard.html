@@ -231,10 +231,7 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;background:rgba(220,225
 
 <div class="sec">🏪 Sfida tra store</div>
 <p style="font-size:12px;color:var(--ink-dim);margin-bottom:12px">La <strong style="color:var(--ink)">media</strong> è il confronto equo — Carosello 7 giocatori, Fiordaliso solo 3.</p>
-<div class="two-col">
-  <div class="glass mini-rank" id="storeAvg"></div>
-  <div class="glass mini-rank" id="storeTot"></div>
-</div>
+<div class="glass mini-rank" id="storeAvg"></div>
 <div class="store-pods" id="storePods"></div>
 
 <div class="sec">💎 Tesori nascosti</div>
@@ -418,7 +415,6 @@ function miniRank(id,title,rows,mx){
   }).join('');
 })();
 miniRank('storeAvg','🥇 Media punti base',[{k:"Piazza Liberty",n:49,v:9.8},{k:"Carosello",n:7,v:9.0},{k:"Fiordaliso",n:3,v:5.7}],9.8);
-miniRank('storeTot','💰 Totale punti base',[{k:"Piazza Liberty",n:49,v:478},{k:"Carosello",n:7,v:63},{k:"Fiordaliso",n:3,v:17}],478);
 document.getElementById('storePods').innerHTML=[
   {store:"Piazza Liberty",n:49,tie:true,top:[["Nico Stolfi",30.4],["Michael Lanfranchi",30.4],["Marco Casati",26.9]]},
   {store:"Carosello",n:7,top:[["giulia paggiarin",20.5],["Marco Sacco Zaut",15.4],["Roberto Mele",10.9]]},
