@@ -418,7 +418,11 @@
   /* ────── popola il nick dal parametro URL ────── */
   (function applyName() {
     var nd = document.getElementById('nick-display');
-    if (nd && nameParam) nd.textContent = nameParam;
+    if (nd && nameParam) {
+      nd.textContent = nameParam;
+      // adatta la larghezza al nome (anche nomi lunghi dall'URL)
+      requestAnimationFrame(function () { fitNickname(); });
+    }
   })();
 
   /* ────── punteggio e posizione in classifica dall'URL ────── */
@@ -685,23 +689,17 @@
   /* ────── nickname auto-fit (scaleX — nessun layout shift) ────── */
   function fitNickname() {
     var text = nickDisplay.textContent;
-    if (!text) {
-      nickDisplay.style.transform = '';
-      return;
+    nickDisplay.style.transform = '';
+    nickDisplay.style.fontSize  = '';
+    if (!text) return;
+    var maxW = 252;
+    // scrollWidth = larghezza reale del testo, anche se l'elemento è
+    // limitato da max-width (il contenuto overflowa il box)
+    var w = nickDisplay.scrollWidth;
+    if (w > maxW) {
+      var fs = Math.max(16, 48 * (maxW / w));
+      nickDisplay.style.fontSize = fs.toFixed(1) + 'px';
     }
-    var probe = document.createElement('span');
-    probe.style.cssText =
-      'position:absolute;visibility:hidden;white-space:nowrap;' +
-      'font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;' +
-      'font-weight:900;font-size:48px;';
-    probe.textContent = text;
-    document.body.appendChild(probe);
-    var maxW  = 252;
-    var scale = Math.min(1, maxW / probe.offsetWidth);
-    document.body.removeChild(probe);
-    nickDisplay.style.transform = scale < 1
-      ? 'scaleX(' + scale.toFixed(3) + ')'
-      : '';
   }
 
   /* contenteditable: input, maxlength, no newlines */
