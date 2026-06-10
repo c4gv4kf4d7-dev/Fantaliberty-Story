@@ -96,9 +96,13 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;background:rgba(220,225
 
 <script>
 var legalModal = document.getElementById('legalModal');
-document.getElementById('openLegal').addEventListener('click', function(){ legalModal.classList.add('show'); });
-document.getElementById('closeLegal').addEventListener('click', function(){ legalModal.classList.remove('show'); });
-legalModal.addEventListener('click', function(e){ if(e.target===legalModal) legalModal.classList.remove('show'); });
+function openLegal(){ legalModal.classList.add('show'); }
+function closeLegal(){ legalModal.classList.remove('show'); window.location.hash = ''; }
+document.getElementById('openLegal').addEventListener('click', openLegal);
+document.getElementById('closeLegal').addEventListener('click', closeLegal);
+legalModal.addEventListener('click', function(e){ if(e.target===legalModal) closeLegal(); });
+// apri automaticamente se l'URL contiene #legal (es. link dalla mail)
+if(window.location.hash === '#legal') openLegal();
 </script>
 </body>
 </html>
