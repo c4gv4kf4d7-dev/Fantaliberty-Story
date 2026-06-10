@@ -438,42 +438,56 @@
   var shimBack     = document.getElementById('shimmer-back');
 
   /* ────── state ────── */
+  var yAngle  = 0;   // 0 = fronte, 180 = retro
   var tiltX = 0, tiltY = 0, tiltZ = 0;
-  var isDragging = false;
-  var dragStartX = 0, dragStartY = 0;
-  var rafSpring  = null;
+  var rafSpring = null;
 
-  var MAX_X = 22, MAX_Y = 28, MAX_Z = 7;
-  var SENS   = 0.45;  // gradi per pixel
+  // gesture flags
+  var gestureActive    = false;   // finger/mouse down
+  var gestureType      = null;    // null | 'flip' | 'tilt'
+  var dragStartX = 0, dragStartY = 0;
+  var lastDragX  = 0;
+  var yFaceStart = 0;
+  var velSamples = [];
+
+  var FLIP_SENS  = 0.55;  // gradi per pixel (swipe flip)
+  var TILT_SENS  = 0.35;  // gradi per pixel (tilt)
+  var TAP_PX     = 10;    // max px per riconoscere un tap
+  var DRAG_PX    = 8;     // px orizzontali prima di committare il flip
+
+  var MAX_TX = 20, MAX_TY = 14, MAX_TZ = 6;
 
   function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
 
   /* ────── transform ────── */
   function applyTransform() {
+    var ty = (gestureType === 'flip') ? 0 : tiltY;
+    var tx = (gestureType === 'flip') ? 0 : tiltX;
+    var tz = (gestureType === 'flip') ? 0 : tiltZ;
     card.style.transform =
-      'rotateX(' + tiltX + 'deg) rotateY(' + tiltY + 'deg) rotateZ(' + tiltZ + 'deg)';
+      'rotateY(' + (yAngle + ty) + 'deg) rotateX(' + tx + 'deg) rotateZ(' + tz + 'deg)';
   }
 
   /* ────── shimmer ────── */
   function updateShimmer(px, py, active) {
-    var show = active ? '1' : '0';
+    var norm  = ((yAngle % 360) + 360) % 360;
+    var isBack = norm > 90 && norm < 270;
+    var show  = active ? '1' : '0';
     shimFront.style.opacity = show;
     shimBack.style.opacity  = show;
     shimFront.style.background =
-      'radial-gradient(circle at ' + px + '% ' + py +
-      '%, rgba(255,255,255,.28), transparent 65%)';
+      'radial-gradient(circle at ' + px + '% ' + py + '%, rgba(255,255,255,.28), transparent 65%)';
     shimBack.style.background =
-      'radial-gradient(circle at ' + (100 - px) + '% ' + py +
-      '%, rgba(255,255,255,.18), transparent 65%)';
+      'radial-gradient(circle at ' + (isBack ? (100-px) : px) + '% ' + py + '%, rgba(255,255,255,.18), transparent 65%)';
   }
 
   function shimmerFromTilt() {
-    var px = clamp((tiltY / MAX_Y * 0.5 + 0.5) * 100, 0, 100);
-    var py = clamp((-tiltX / MAX_X * 0.5 + 0.5) * 100, 0, 100);
+    var px = clamp((tiltY / MAX_TY * 0.5 + 0.5) * 100, 0, 100);
+    var py = clamp((-tiltX / MAX_TX * 0.5 + 0.5) * 100, 0, 100);
     updateShimmer(px, py, true);
   }
 
-  /* ────── spring back to flat ────── */
+  /* ────── spring tilt → zero ────── */
   function cancelSpring() {
     if (rafSpring) { cancelAnimationFrame(rafSpring); rafSpring = null; }
   }
@@ -494,59 +508,130 @@
     })();
   }
 
-  /* ────── pointer events (desktop + mobile unificati) ────── */
-  scene.addEventListener('pointerdown', function (e) {
+  /* ────── snap alla faccia più vicina ────── */
+  function snapToFace() {
+    var avg = velSamples.length
+      ? velSamples.reduce(function(a,b){return a+b;},0) / velSamples.length : 0;
+    var target;
+    if      (avg >  0.4) target = Math.floor(yAngle / 180) * 180 + 180;
+    else if (avg < -0.4) target = Math.ceil (yAngle / 180) * 180 - 180;
+    else                 target = Math.round(yAngle / 180) * 180;
+    var MS = 380;
+    card.style.transition = 'transform ' + MS + 'ms ease-out';
+    yAngle = target;
+    applyTransform();
+    setTimeout(function() {
+      card.style.transition = 'none';
+      var norm = ((yAngle % 360) + 360) % 360;
+      yAngle = (norm > 90 && norm < 270) ? 180 : 0;
+    }, MS + 20);
+  }
+
+  /* ────── tap: gira la carta ────── */
+  function flipCard() {
+    cancelSpring();
+    tiltX = tiltY = tiltZ = 0;
+    card.style.transition = 'transform 0.52s ease-in-out';
+    yAngle = (yAngle === 0) ? 180 : 0;
+    applyTransform();
+    updateShimmer(50, 50, false);
+    setTimeout(function() { card.style.transition = 'none'; }, 540);
+  }
+
+  /* ────── pointer events ────── */
+  scene.addEventListener('pointerdown', function(e) {
     if (nickDisplay.contains(e.target)) return;
     cancelSpring();
-    isDragging = true;
-    dragStartX = e.clientX;
-    dragStartY = e.clientY;
-    scene.classList.add('dragging');
+    gestureActive = true;
+    gestureType   = null;
+    dragStartX    = e.clientX;
+    dragStartY    = e.clientY;
+    lastDragX     = e.clientX;
+    yFaceStart    = yAngle;
+    velSamples    = [];
     card.style.transition = 'none';
     scene.setPointerCapture(e.pointerId);
   });
 
-  scene.addEventListener('pointermove', function (e) {
-    if (!isDragging) return;
-    var dx = e.clientX - dragStartX;
-    var dy = e.clientY - dragStartY;
-    tiltY = clamp( dx * SENS, -MAX_Y, MAX_Y);
-    tiltX = clamp(-dy * SENS, -MAX_X, MAX_X);
-    // twist Z sottile quando si muove in diagonale
-    var nx = dx / 120, ny = dy / 120;
-    tiltZ = clamp(-nx * ny * MAX_Z, -MAX_Z, MAX_Z);
-    applyTransform();
-    shimmerFromTilt();
+  scene.addEventListener('pointermove', function(e) {
+    if (!gestureActive) return;
+    var dx   = e.clientX - dragStartX;
+    var dy   = e.clientY - dragStartY;
+    var dist = Math.sqrt(dx*dx + dy*dy);
+
+    // commit gesture type on first significant movement
+    if (!gestureType) {
+      if (Math.abs(dx) >= DRAG_PX && Math.abs(dx) > Math.abs(dy) * 1.2) {
+        gestureType = 'flip';
+        scene.classList.add('dragging');
+      } else if (dist > 4) {
+        gestureType = 'tilt';
+      }
+    }
+
+    if (gestureType === 'flip') {
+      var incr = e.clientX - lastDragX;
+      yAngle = yFaceStart + dx * FLIP_SENS;
+      velSamples.push(incr * FLIP_SENS);
+      if (velSamples.length > 6) velSamples.shift();
+      applyTransform();
+      updateShimmer(50, 50, true);
+    } else if (gestureType === 'tilt') {
+      tiltY = clamp( dx * TILT_SENS, -MAX_TY, MAX_TY);
+      tiltX = clamp(-dy * TILT_SENS, -MAX_TX, MAX_TX);
+      var nx = dx / 100, ny = dy / 100;
+      tiltZ = clamp(-nx * ny * MAX_TZ, -MAX_TZ, MAX_TZ);
+      applyTransform();
+      shimmerFromTilt();
+    }
+    lastDragX = e.clientX;
   });
 
-  scene.addEventListener('pointerup', function (e) {
-    if (!isDragging) return;
-    isDragging = false;
+  scene.addEventListener('pointerup', function(e) {
+    if (!gestureActive) return;
+    var dx   = e.clientX - dragStartX;
+    var dy   = e.clientY - dragStartY;
+    var dist = Math.sqrt(dx*dx + dy*dy);
+    gestureActive = false;
+    scene.classList.remove('dragging');
+
+    if (gestureType === 'flip') {
+      gestureType = null;
+      snapToFace();
+    } else if (gestureType === 'tilt') {
+      gestureType = null;
+      springToRest();
+    } else if (dist < TAP_PX) {
+      // tap singolo → gira la carta
+      gestureType = null;
+      flipCard();
+    } else {
+      gestureType = null;
+    }
+  });
+
+  scene.addEventListener('pointercancel', function(e) {
+    gestureActive = false;
+    gestureType   = null;
     scene.classList.remove('dragging');
     springToRest();
   });
 
-  scene.addEventListener('pointercancel', function (e) {
-    isDragging = false;
-    scene.classList.remove('dragging');
-    springToRest();
-  });
-
-  /* ────── hover tilt (mouse desktop, fuori dal drag) ────── */
-  scene.addEventListener('mousemove', function (e) {
-    if (isDragging) return;
+  /* ────── hover tilt mouse (desktop, fuori dal drag) ────── */
+  scene.addEventListener('mousemove', function(e) {
+    if (gestureActive) return;
     var r  = scene.getBoundingClientRect();
     var nx = (e.clientX - r.left) / r.width  * 2 - 1;
     var ny = (e.clientY - r.top)  / r.height * 2 - 1;
-    tiltY =  nx * MAX_Y;
-    tiltX = -ny * MAX_X;
-    tiltZ = -nx * ny * MAX_Z * 0.5;
+    tiltY =  nx * MAX_TY;
+    tiltX = -ny * MAX_TX;
+    tiltZ = -nx * ny * MAX_TZ * 0.5;
     applyTransform();
     shimmerFromTilt();
   });
 
-  scene.addEventListener('mouseleave', function () {
-    if (isDragging) return;
+  scene.addEventListener('mouseleave', function() {
+    if (gestureActive) return;
     springToRest();
   });
 
@@ -596,25 +681,51 @@
   });
 
   /* ────── download ────── */
-  btnDl.addEventListener('click', async function () {
-    var savedT = card.style.transition;
-    var savedX = card.style.transform;
-    card.style.transition = 'none';
-    card.style.transform  =
-      'rotateY(' + yAngle + 'deg) rotateX(0deg)';
-    await new Promise(function (r) {
-      requestAnimationFrame(function () { requestAnimationFrame(r); });
+  btnDl.addEventListener('click', async function() {
+    // Determina la faccia visibile
+    var norm   = ((yAngle % 360) + 360) % 360;
+    var isBack = norm > 90 && norm < 270;
+    var frontFace = scene.querySelector('.face--front');
+    var backFace  = scene.querySelector('.face--back');
+
+    // Salva stato
+    var savedCardTrans  = card.style.transition;
+    var savedCardTr     = card.style.transform;
+    var savedCardTs     = card.style.transformStyle;
+
+    // Appiattisce per html2canvas (non gestisce preserve-3d)
+    card.style.transition    = 'none';
+    card.style.transformStyle = 'flat';
+    card.style.transform     = 'none';
+    if (isBack) {
+      frontFace.style.visibility = 'hidden';
+      backFace.style.transform   = 'none';
+    } else {
+      backFace.style.visibility  = 'hidden';
+    }
+
+    await new Promise(function(r) {
+      requestAnimationFrame(function() { requestAnimationFrame(r); });
     });
-    var canvas = await html2canvas(scene, {
-      backgroundColor: null, useCORS: true, allowTaint: true,
-      scale: 2, width: 300, height: 450, logging: false
-    });
-    var a = document.createElement('a');
-    a.download = 'fantaliberty-carta.png';
-    a.href = canvas.toDataURL('image/png');
-    a.click();
-    card.style.transition = savedT;
-    card.style.transform  = savedX;
+
+    try {
+      var canvas = await html2canvas(scene, {
+        backgroundColor: null, useCORS: true, allowTaint: true,
+        scale: 2, width: 300, height: 450, logging: false
+      });
+      var a = document.createElement('a');
+      a.download = 'fantaliberty-carta.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    } finally {
+      // Ripristina tutto
+      card.style.transition    = savedCardTrans;
+      card.style.transform     = savedCardTr;
+      card.style.transformStyle = savedCardTs;
+      frontFace.style.visibility = '';
+      backFace.style.visibility  = '';
+      backFace.style.transform   = '';  // ritorna a rotateY(180deg) da CSS
+    }
   });
 })();
 </script>
