@@ -548,7 +548,7 @@ body.disp-xxl .budget-cap{font-size:14.5px;height:40px;min-width:120px}
     <div class="controls">
       <button class="mini-btn" id="openGuide">Guida</button>
       <button class="mini-btn danger" id="resetBtn">↺ Reset</button>
-      <button class="budget-cap" id="budgetCap"><span id="budgetText">0/30 Newton</span></button>
+      <button class="budget-cap" id="budgetCap"><span id="budgetText">0 Newton</span></button>
       <button class="send-btn" id="sendBtn">Invia 🚀</button>
     </div>
   </div>
@@ -1086,7 +1086,7 @@ function buildMailtoUrl(){
   const body=[
     `FantaLiberty WWDC 26 — Previsioni di ${identity.name} ${identity.surname}`,``,
     `Reparto: ${identity.dept||'N/D'}`,`In Apple da: ${identity.seniority||'N/D'}`,
-    `Newton usati: ${spent()}/30`,``,`Previsioni (${picks.length}):`,
+    `Newton usati: ${spent()}/${BUDGET_DEFAULT}`,``,`Previsioni (${picks.length}):`,
     ...picks.map((p,i)=>`${i+1}. ${p.name.replace(/\n/g,' ')}  [${p.cost}N]`),
     ``,`Inviato il: ${new Date().toLocaleString('it-IT')}`
   ].join('\n');

@@ -30,13 +30,35 @@ Dentro `index.html`:
 > ⚠️ La taratura dei costi Newton è la parte più delicata: `punti = 10 − costo`.
 > Sbagliarla rovina la classifica finale.
 
-## 3. Google Form
+## 3. Raccolta risposte
 
-1. Crea il nuovo Form
-2. **Rimappa gli `entry.ID`** nel JS di invio — *questo è il punto storicamente più
-   fragile del progetto*
-3. Aggiungi il campo **Badge nascosto**, autocompilato all'invio
+> ℹ️ **Non si usa più un Google Form con gli `entry.ID`.** Il gioco fa un POST
+> form-urlencoded a un **Apps Script** pubblicato come Web App, che scrive la riga
+> sul Foglio. Niente ID da rimappare.
+
+1. Crea un nuovo Foglio Google per l'edizione
+2. Incolla [`apps-script.gs`](apps-script.gs) in Estensioni → Apps Script e segui il
+   setup descritto in cima al file
+3. Copia l'URL `/exec` della Web App in **`APPS_SCRIPT_URL`** dentro `index.html`
 4. **Testa con 3-4 invii reali** prima del lancio, non il giorno stesso
+
+### Dati inviati a ogni invio
+
+| Parametro | Contenuto |
+|---|---|
+| `nome`, `cognome` | identità |
+| `reparto` | reparto Apple |
+| `seniority` | da quanto è in Apple |
+| `iphone` | modello posseduto (moltiplicatore underdog) |
+| `store` | store di appartenenza |
+| `email` | per l'invio dei risultati |
+| `profilo` | **il badge**, calcolato da `computeBadge()` sul pattern di scelte |
+| `previsioni` | previsioni scelte, separate da ` \| ` |
+
+Il badge **è già incluso** nell'invio: `computeBadge()` lo deriva dal mix di previsioni
+ad alta/media/bassa probabilità e `submitSilent()` lo manda come `profilo`. Se aggiungi
+parametri nuovi, ricordati di aggiungerli anche a `COLONNE` in `apps-script.gs`,
+altrimenti finiscono solo nei log.
 
 ## 4. Aggiorna la root
 
