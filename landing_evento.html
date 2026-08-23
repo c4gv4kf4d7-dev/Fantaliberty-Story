@@ -6,28 +6,37 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#c8d0dc">
-<title>FantaLiberty – In manutenzione</title>
+<title>FantaLiberty – WWDC 26</title>
 <style>
-:root{--ink:rgba(0,0,0,.82);--ink-dim:rgba(0,0,0,.48)}
+:root{--ink:rgba(0,0,0,.82);--ink-dim:rgba(0,0,0,.48);--border:rgba(255,255,255,.55);--glass:rgba(255,255,255,.38)}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;min-height:100vh}
 body{background:#c8cdd8;display:flex;flex-direction:column;align-items:center}
 body::before{content:"";position:fixed;inset:-20px;z-index:-1;background:url('./bg.jpg') center/cover no-repeat;filter:blur(6px) brightness(.88) saturate(1.15)}
 body::after{content:"";position:fixed;inset:0;z-index:-1;background:rgba(220,225,235,.18)}
 
-.wrap{max-width:520px;width:100%;padding:env(safe-area-inset-top,32px) 20px env(safe-area-inset-bottom,32px);display:flex;flex-direction:column;align-items:center;min-height:100vh;justify-content:center;gap:22px}
+.wrap{max-width:520px;width:100%;padding:env(safe-area-inset-top,32px) 20px env(safe-area-inset-bottom,32px);display:flex;flex-direction:column;align-items:center;min-height:100vh;justify-content:center;gap:20px}
 
-.logo-wrap img{width:300px;max-width:78vw;height:auto;display:block;filter:drop-shadow(0 0 30px rgba(255,255,255,.4)) drop-shadow(0 4px 20px rgba(0,0,0,.6))}
+.logo-wrap img{width:320px;max-width:82vw;height:auto;display:block;filter:drop-shadow(0 0 30px rgba(255,255,255,.4)) drop-shadow(0 4px 20px rgba(0,0,0,.6))}
 
-.badge{display:inline-flex;align-items:center;gap:7px;background:rgba(255,180,40,.16);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,180,40,.42);border-radius:20px;padding:6px 15px;font-size:11px;font-weight:700;color:rgba(0,0,0,.68);letter-spacing:.5px;text-transform:uppercase}
+.badge{display:inline-flex;align-items:center;gap:6px;background:rgba(52,199,89,.15);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(52,199,89,.38);border-radius:20px;padding:5px 14px;font-size:11px;font-weight:700;color:rgba(0,0,0,.68);letter-spacing:.5px;text-transform:uppercase}
+.badge::before{content:"✓";color:#34c759;font-weight:900}
 
 .hero-text{text-align:center}
-.hero-text h1{font-size:24px;font-weight:900;color:var(--ink);margin:0 0 10px;line-height:1.25}
-.hero-text p{font-size:16px;color:var(--ink-dim);font-weight:500;line-height:1.5}
+.hero-text h1{font-size:24px;font-weight:900;color:var(--ink);margin:0 0 8px;line-height:1.2}
+.hero-text p{font-size:16px;color:var(--ink-dim);font-weight:500}
 
-.glass-card{background:rgba(255,255,255,.42);backdrop-filter:blur(24px) saturate(200%);-webkit-backdrop-filter:blur(24px) saturate(200%);border:1px solid rgba(255,255,255,.7);border-radius:16px;padding:18px 20px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.9);width:100%}
-.glass-card p{font-size:14px;color:var(--ink-dim);line-height:1.55}
-.glass-card strong{color:var(--ink)}
+.stats-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%}
+.stat-pill{background:rgba(255,255,255,.42);backdrop-filter:blur(24px) saturate(200%);-webkit-backdrop-filter:blur(24px) saturate(200%);border:1px solid rgba(255,255,255,.7);border-radius:14px;padding:12px 10px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.9)}
+.stat-pill strong{display:block;font-size:20px;font-weight:900;color:#5e4ded;font-family:'Orbitron',monospace}
+.stat-pill span{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--ink-dim)}
+
+.btns{display:flex;flex-direction:column;gap:12px;width:100%}
+.btn-big{display:block;text-decoration:none;width:100%;padding:16px 20px;border-radius:16px;font-size:16px;font-weight:800;font-family:inherit;cursor:pointer;border:none;text-align:center;transition:.2s;letter-spacing:-.2px}
+.btn-big.primary{background:linear-gradient(135deg,rgba(94,77,237,.88),rgba(10,122,255,.88));color:#fff;border:1px solid rgba(120,100,255,.35);box-shadow:0 4px 20px rgba(94,77,237,.28),inset 0 1px 0 rgba(255,255,255,.2)}
+.btn-big.primary:hover{box-shadow:0 7px 28px rgba(94,77,237,.44);transform:translateY(-1px)}
+.btn-big.secondary{background:rgba(255,255,255,.52);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);color:var(--ink);border:1px solid rgba(255,255,255,.75);box-shadow:0 2px 12px rgba(0,0,0,.07),inset 0 1px 0 rgba(255,255,255,.9)}
+.btn-big.secondary:hover{background:rgba(255,255,255,.66);transform:translateY(-1px)}
 
 .footer-note{font-size:10px;color:var(--ink-dim);text-align:center;opacity:.55;line-height:1.6;padding:0 8px}
 .legal-link{background:none;border:none;padding:0;font-size:10px;color:var(--ink-dim);opacity:.7;cursor:pointer;text-decoration:underline;font-family:inherit}
@@ -47,15 +56,22 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;background:rgba(220,225
 <div class="wrap">
   <div class="logo-wrap"><img src="./logo2.png" alt="FantaLiberty WWDC 26"></div>
 
-  <div class="badge">🛠️ Sito in manutenzione</div>
+  <div class="badge">WWDC 26 · Evento concluso</div>
 
   <div class="hero-text">
-    <h1>Torniamo a breve</h1>
-    <p>Stiamo lavorando a qualcosa di nuovo.<br>Ci vediamo a settembre 👀</p>
+    <h1>Grazie per aver partecipato! 🎉</h1>
+    <p>Ci vediamo a settembre 👀</p>
   </div>
 
-  <div class="glass-card">
-    <p>La <strong>classifica</strong> e le <strong>previsioni</strong> dell'edizione WWDC 26 sono temporaneamente offline.<br>Grazie per aver partecipato! 🎉</p>
+  <div class="stats-strip">
+    <div class="stat-pill"><strong>59</strong><span>Giocatori</span></div>
+    <div class="stat-pill"><strong>19/40</strong><span>Azzeccate</span></div>
+    <div class="stat-pill"><strong>30,4</strong><span>Punteggio max</span></div>
+  </div>
+
+  <div class="btns">
+    <a href="./leaderboard.html" class="btn-big primary">🏆 Classifica &amp; Statistiche</a>
+    <a href="./previsioni.html" class="btn-big secondary">📋 Le Previsioni</a>
   </div>
 
   <p class="footer-note">© 2026 FantaLiberty · Progetto originale creato da Michael Lanfranchi e Lorenzo Bandini<br>Non affiliato ad Apple Inc.
