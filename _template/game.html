@@ -805,6 +805,12 @@ body.disp-xxl .budget-cap{font-size:14.5px;height:40px;min-width:120px}
     </div>
   </div>
   <p id="confirmNote" style="font-size:13px;color:var(--ink-dim)"></p>
+  <div id="sendError" style="display:none;background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.3);border-radius:12px;padding:12px 14px;margin-bottom:10px">
+    <p style="font-size:13px;font-weight:700;color:#b91c1c;margin-bottom:4px">⚠️ Invio non riuscito</p>
+    <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.5">Le tue previsioni <strong>non</strong> sono state registrate. Sono salvate su questo dispositivo: riprova, oppure inviale per email.</p>
+    <p style="font-size:11px;color:var(--ink-dim);margin-top:6px;opacity:.75" id="sendErrorDetail"></p>
+    <a class="btn" id="mailFallbackBtn" href="#" style="display:block;text-align:center;text-decoration:none;margin-top:10px">✉️ Invia per email</a>
+  </div>
   <div class="modal-actions" style="display:grid;grid-template-columns:1fr 1fr">
     <button class="btn" id="cancelConfirm">Indietro</button>
     <button class="btn primary" id="openFormBtn">Invia le previsioni 🚀</button>
@@ -1064,7 +1070,7 @@ function tick(){
 }
 
 /* ═══ FORM / MAILTO ══════════════════════════════════════════════════════ */
-function submitSilent(){
+function buildParams(){
   const picksStr=PREDICTIONS.filter(p=>selected.has(p.id)).map(p=>p.name.replace(/\n/g,' ')).join(' | ');
   const params=new URLSearchParams();
   if(identity.name)      params.append('nome',      identity.name);
@@ -1077,9 +1083,37 @@ function submitSilent(){
   const badge=computeBadge();
   params.append('profilo', badge?badge.n:'Incognito');
   if(picksStr) params.append('previsioni', picksStr);
-  fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',
-    headers:{'Content-Type':'application/x-www-form-urlencoded'},
-    body:params.toString()}).catch(()=>{});
+  return params;
+}
+
+/* Invia e ATTENDE conferma. Prima si usava mode:'no-cors', che impedisce al
+   browser di leggere la risposta: il gioco mostrava "inviato" anche quando il
+   salvataggio falliva, e le risposte sparivano senza che nessuno se ne
+   accorgesse. Ora un invio fallito viene detto in faccia al giocatore.
+   NB: il body è un URLSearchParams, quindi il Content-Type viene impostato dal
+   browser e la richiesta resta "semplice" — nessun preflight CORS da gestire. */
+async function submitAnswers(){
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),15000);
+  try{
+    const res=await fetch(APPS_SCRIPT_URL,{method:'POST',body:buildParams(),signal:ctrl.signal,redirect:'follow'});
+    if(!res.ok) throw new Error('Il server ha risposto '+res.status);
+    // Apps Script risponde JSON; se il corpo non è leggibile ma lo stato è 200,
+    // la riga è stata comunque scritta: non trattarlo come errore.
+    const data=await res.json().catch(()=>null);
+    if(data&&data.ok===false) throw new Error(data.error||'errore lato server');
+    return true;
+  } finally { clearTimeout(timer); }
+}
+
+/* Un tentativo, poi un secondo dopo 1,5s: copre i buchi di rete momentanei
+   (WiFi dello store che salta) senza far aspettare troppo il giocatore. */
+async function submitWithRetry(){
+  try { return await submitAnswers(); }
+  catch(e){
+    await new Promise(r=>setTimeout(r,1500));
+    return await submitAnswers();
+  }
 }
 function buildMailtoUrl(){
   const picks=PREDICTIONS.filter(p=>selected.has(p.id));
@@ -1112,6 +1146,8 @@ function showConfirmModal(){
   $('#confirmBudget').textContent=BUDGET_DEFAULT;
   $('#confirmNote').textContent='Le previsioni verranno registrate automaticamente alla conferma.';
   $('#openFormBtn').textContent='Invia le previsioni 🚀';
+  $('#openFormBtn').disabled=false;
+  $('#sendError').style.display='none';
   showM($('#confirmModal'));
 }
 function openConfirm(){
@@ -1122,9 +1158,28 @@ function openConfirm(){
   showConfirmModal();
 }
 
-$('#openFormBtn').addEventListener('click',()=>{
-  submitSilent();
-  submitted=true;save();hideM($('#confirmModal'));showSuccess();
+$('#openFormBtn').addEventListener('click',async()=>{
+  const btn=$('#openFormBtn'), err=$('#sendError');
+  if(btn.disabled) return;
+  btn.disabled=true; btn.textContent='Invio in corso…'; err.style.display='none';
+  try{
+    await submitWithRetry();
+    submitted=true; save(); hideM($('#confirmModal')); showSuccess();
+  }catch(e){
+    // Le previsioni restano in localStorage: il giocatore può riprovare
+    // senza rifare la schedina.
+    save();
+    $('#sendErrorDetail').textContent=(e&&e.name==='AbortError')
+      ? 'La richiesta è scaduta dopo 15 secondi.'
+      : (e&&e.message)?e.message:'';
+    $('#mailFallbackBtn').href=buildMailtoUrl();
+    err.style.display='block';
+    err.scrollIntoView({behavior:'smooth',block:'nearest'});
+    haptic(70);
+    btn.textContent='Riprova l\'invio 🔄';
+  }finally{
+    btn.disabled=false;
+  }
 });
 
 function tickSuccess(){
