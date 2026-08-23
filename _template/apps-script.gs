@@ -24,6 +24,7 @@
  *  La chiave è il nome del parametro inviato dal gioco. */
 var COLONNE = [
   { key: null,          header: 'Timestamp'  },  // aggiunto dal server
+  { key: 'edizione',    header: 'Edizione'   },
   { key: 'nome',        header: 'Nome'       },
   { key: 'cognome',     header: 'Cognome'    },
   { key: 'reparto',     header: 'Reparto'    },
@@ -85,7 +86,7 @@ function risposta(obj) {
  *  senza dover aprire il gioco. Eseguilo dall'editor Apps Script. */
 function test_scriviRigaFinta() {
   doPost({ parameter: {
-    nome: 'Mario', cognome: 'Rossi', reparto: 'Shopping',
+    edizione: 'test', nome: 'Mario', cognome: 'Rossi', reparto: 'Shopping',
     seniority: '0–3 anni', iphone: '17 Pro', store: 'Piazza Liberty',
     email: 'test@example.com', profilo: 'Scommettitore',
     previsioni: 'Previsione A | Previsione B'

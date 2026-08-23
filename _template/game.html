@@ -842,8 +842,28 @@ const DEADLINE_ISO   = '2026-06-08T19:00:00';
 const BUDGET_DEFAULT = 40;
 const LS_KEY         = 'FANTALIBERTY_WWDC26_V3';
 
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWzocbATc30cqiVe_UkeSf5VYG3LX4FYzPG03apzzk9F4XjSGV03kOLtHV8_UUwZregw/exec';
 const MAIL_TO = 'fantaliberty@icloud.com';
+
+/* ═══ DOVE FINISCONO LE RISPOSTE ══════════════════════════════════════════
+   Si possono tenere attivi entrambi gli archivi contemporaneamente: la
+   schedina viene scritta su tutti e due e l'invio è considerato riuscito
+   se ALMENO UNO risponde ok. Serve per passare da un archivio all'altro
+   senza rischio — li tieni accesi insieme, confronti i dati, poi spegni
+   quello vecchio svuotandone l'indirizzo.
+
+   Per disattivare un archivio: lascia la sua URL come stringa vuota.
+
+   ⚠️ Con entrambi attivi le risposte esistono in due copie. Allo spoglio
+      scegli UNA fonte come autorevole; l'altra è solo rete di sicurezza.
+      Non unire i due elenchi, o ti ritrovi ogni giocatore due volte.     */
+
+const EDIZIONE = 'wwdc26';          // cambia a ogni edizione: 'settembre26', 'wwdc27'…
+
+const APPS_SCRIPT_URL   = 'https://script.google.com/macros/s/AKfycbxWzocbATc30cqiVe_UkeSf5VYG3LX4FYzPG03apzzk9F4XjSGV03kOLtHV8_UUwZregw/exec';
+
+const SUPABASE_URL      = '';       // es. 'https://abcdefgh.supabase.co'
+const SUPABASE_ANON_KEY = '';       // la chiave anon (pubblica: sta nel sito)
+const SUPABASE_TABELLA  = 'risposte';
 
 /* ═══ DISPLAY MAP ═════════════════════════════════════════════════════════ */
 const IPHONE_DISPLAY = {
@@ -1070,50 +1090,114 @@ function tick(){
 }
 
 /* ═══ FORM / MAILTO ══════════════════════════════════════════════════════ */
-function buildParams(){
-  const picksStr=PREDICTIONS.filter(p=>selected.has(p.id)).map(p=>p.name.replace(/\n/g,' ')).join(' | ');
-  const params=new URLSearchParams();
-  if(identity.name)      params.append('nome',      identity.name);
-  if(identity.surname)   params.append('cognome',   identity.surname);
-  if(identity.dept)      params.append('reparto',   identity.dept);
-  if(identity.seniority) params.append('seniority', identity.seniority);
-  if(identity.iphone)    params.append('iphone',    identity.iphone);
-  if(identity.store)     params.append('store',     identity.store);
-  if(identity.email) params.append('email', identity.email);
+/* La schedina in forma neutra: ogni archivio se la adatta come gli serve. */
+function raccogliDati(){
   const badge=computeBadge();
-  params.append('profilo', badge?badge.n:'Incognito');
-  if(picksStr) params.append('previsioni', picksStr);
-  return params;
+  return {
+    edizione:  EDIZIONE,
+    nome:      identity.name||'',
+    cognome:   identity.surname||'',
+    reparto:   identity.dept||'',
+    seniority: identity.seniority||'',
+    iphone:    identity.iphone||'',
+    store:     identity.store||'',
+    email:     identity.email||'',
+    profilo:   badge?badge.n:'Incognito',
+    previsioni: PREDICTIONS.filter(p=>selected.has(p.id)).map(p=>p.name.replace(/\n/g,' '))
+  };
 }
 
-/* Invia e ATTENDE conferma. Prima si usava mode:'no-cors', che impedisce al
-   browser di leggere la risposta: il gioco mostrava "inviato" anche quando il
-   salvataggio falliva, e le risposte sparivano senza che nessuno se ne
-   accorgesse. Ora un invio fallito viene detto in faccia al giocatore.
-   NB: il body è un URLSearchParams, quindi il Content-Type viene impostato dal
-   browser e la richiesta resta "semplice" — nessun preflight CORS da gestire. */
-async function submitAnswers(){
-  const ctrl=new AbortController();
-  const timer=setTimeout(()=>ctrl.abort(),15000);
-  try{
-    const res=await fetch(APPS_SCRIPT_URL,{method:'POST',body:buildParams(),signal:ctrl.signal,redirect:'follow'});
-    if(!res.ok) throw new Error('Il server ha risposto '+res.status);
-    // Apps Script risponde JSON; se il corpo non è leggibile ma lo stato è 200,
-    // la riga è stata comunque scritta: non trattarlo come errore.
-    const data=await res.json().catch(()=>null);
-    if(data&&data.ok===false) throw new Error(data.error||'errore lato server');
-    return true;
-  } finally { clearTimeout(timer); }
+/* ─── Archivio 1: Apps Script (form-urlencoded) ───────────────────────────
+   Il body è un URLSearchParams, quindi il Content-Type lo mette il browser
+   e la richiesta resta "semplice": nessun preflight CORS da gestire.      */
+async function inviaAdAppsScript(d,signal){
+  const params=new URLSearchParams();
+  Object.entries(d).forEach(([k,v])=>{
+    if(k==='previsioni'){ if(v.length) params.append(k,v.join(' | ')); }
+    else if(v) params.append(k,v);
+  });
+  const res=await fetch(APPS_SCRIPT_URL,{method:'POST',body:params,signal,redirect:'follow'});
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  // Risponde JSON, ma se il corpo non è leggibile e lo stato è 200 la riga
+  // è stata comunque scritta: non trattarlo come errore.
+  const j=await res.json().catch(()=>null);
+  if(j&&j.ok===false) throw new Error(j.error||'errore lato server');
+  return true;
+}
+
+/* ─── Archivio 2: Supabase (REST, JSON) ───────────────────────────────────
+   Gli header apikey/Authorization fanno scattare il preflight OPTIONS, che
+   Supabase gestisce da sé. `previsioni` va come array: la colonna è text[]. */
+async function inviaASupabase(d,signal){
+  const res=await fetch(SUPABASE_URL.replace(/\/$/,'')+'/rest/v1/'+SUPABASE_TABELLA,{
+    method:'POST',signal,
+    headers:{
+      'apikey':SUPABASE_ANON_KEY,
+      'Authorization':'Bearer '+SUPABASE_ANON_KEY,
+      'Content-Type':'application/json',
+      'Prefer':'return=minimal'
+    },
+    body:JSON.stringify(d)
+  });
+  if(!res.ok){
+    const t=await res.text().catch(()=>'');
+    throw new Error('HTTP '+res.status+(t?' — '+t.slice(0,120):''));
+  }
+  return true;
+}
+
+function archiviAttivi(){
+  const a=[];
+  if(APPS_SCRIPT_URL) a.push({nome:'Apps Script',invia:inviaAdAppsScript});
+  if(SUPABASE_URL&&SUPABASE_ANON_KEY) a.push({nome:'Supabase',invia:inviaASupabase});
+  return a;
 }
 
 /* Un tentativo, poi un secondo dopo 1,5s: copre i buchi di rete momentanei
-   (WiFi dello store che salta) senza far aspettare troppo il giocatore. */
-async function submitWithRetry(){
-  try { return await submitAnswers(); }
-  catch(e){
-    await new Promise(r=>setTimeout(r,1500));
-    return await submitAnswers();
+   (il WiFi dello store che salta) senza far aspettare troppo il giocatore.
+   Il timeout è per tentativo, non complessivo. */
+async function conRitentativo(fn){
+  for(let i=0;i<2;i++){
+    const ctrl=new AbortController();
+    const timer=setTimeout(()=>ctrl.abort(),15000);
+    try{ return await fn(ctrl.signal); }
+    catch(e){
+      if(i===1) throw e;
+      await new Promise(r=>setTimeout(r,1500));
+    }
+    finally{ clearTimeout(timer); }
   }
+}
+
+/* Invia a tutti gli archivi attivi e ATTENDE l'esito.
+   Prima si usava mode:'no-cors', che impedisce al browser di leggere la
+   risposta: il gioco mostrava "inviato" anche quando il salvataggio falliva,
+   e le risposte sparivano senza che nessuno se ne accorgesse.
+
+   Basta che UNO risponda ok perché la schedina sia salva. Se uno dei due
+   fallisce ma l'altro tiene, il giocatore non deve saperne nulla: se ne
+   accorge chi guarda la console, ed è un problema da sistemare con calma. */
+async function submitAnswers(){
+  const archivi=archiviAttivi();
+  if(!archivi.length) throw new Error('Nessun archivio configurato: controlla APPS_SCRIPT_URL / SUPABASE_URL');
+
+  const dati=raccogliDati();
+  const esiti=await Promise.allSettled(
+    archivi.map(a=>conRitentativo(sig=>a.invia(dati,sig)))
+  );
+
+  const falliti=esiti.map((e,i)=>({a:archivi[i],e}))
+                     .filter(x=>x.e.status==='rejected');
+  const riusciti=esiti.filter(e=>e.status==='fulfilled').length;
+
+  if(falliti.length) console.warn('[FantaLiberty] archivi non raggiunti: '+
+    falliti.map(x=>x.a.nome+' ('+(x.e.reason&&x.e.reason.message||x.e.reason)+')').join(' · '));
+
+  if(!riusciti) throw new Error(
+    falliti.map(x=>x.a.nome+': '+(x.e.reason&&x.e.reason.name==='AbortError'
+      ? 'tempo scaduto' : (x.e.reason&&x.e.reason.message||'errore'))).join(' · '));
+
+  return true;
 }
 function buildMailtoUrl(){
   const picks=PREDICTIONS.filter(p=>selected.has(p.id));
@@ -1163,15 +1247,13 @@ $('#openFormBtn').addEventListener('click',async()=>{
   if(btn.disabled) return;
   btn.disabled=true; btn.textContent='Invio in corso…'; err.style.display='none';
   try{
-    await submitWithRetry();
+    await submitAnswers();
     submitted=true; save(); hideM($('#confirmModal')); showSuccess();
   }catch(e){
     // Le previsioni restano in localStorage: il giocatore può riprovare
     // senza rifare la schedina.
     save();
-    $('#sendErrorDetail').textContent=(e&&e.name==='AbortError')
-      ? 'La richiesta è scaduta dopo 15 secondi.'
-      : (e&&e.message)?e.message:'';
+    $('#sendErrorDetail').textContent=(e&&e.message)?e.message:'';
     $('#mailFallbackBtn').href=buildMailtoUrl();
     err.style.display='block';
     err.scrollIntoView({behavior:'smooth',block:'nearest'});
