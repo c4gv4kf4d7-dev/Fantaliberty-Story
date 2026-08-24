@@ -805,6 +805,10 @@ body.disp-xxl .budget-cap{font-size:14.5px;height:40px;min-width:120px}
     </div>
   </div>
   <p id="confirmNote" style="font-size:13px;color:var(--ink-dim)"></p>
+  <p class="identity-error" id="confirmError"></p>
+  <p id="confirmMailFallback" style="display:none;text-align:center;margin:2px 0 0">
+    <a id="confirmMailLink" href="#" style="font-size:12px;font-weight:700;color:var(--ink-dim)">Invia via email 📧</a>
+  </p>
   <div class="modal-actions" style="display:grid;grid-template-columns:1fr 1fr">
     <button class="btn" id="cancelConfirm">Indietro</button>
     <button class="btn primary" id="openFormBtn">Invia le previsioni 🚀</button>
@@ -838,6 +842,110 @@ const LS_KEY         = 'FANTALIBERTY_WWDC26_V3';
 
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWzocbATc30cqiVe_UkeSf5VYG3LX4FYzPG03apzzk9F4XjSGV03kOLtHV8_UUwZregw/exec';
 const MAIL_TO = 'fantaliberty@icloud.com';
+
+/* ═══ SUPABASE ════════════════════════════════════════════════════════════
+   Canale principale per l'invio dei risultati. Setup completo in SUPABASE.md,
+   schema SQL in supabase/schema.sql.
+   ⚠️ Qui va SOLO la chiave "anon" (pubblica per design, protetta dalla RLS).
+      La service_role key non deve MAI finire in questo file.               */
+const SUPABASE_URL      = 'https://INCOLLA-QUI-IL-PROJECT-REF.supabase.co';
+const SUPABASE_ANON_KEY = 'INCOLLA-QUI-LA-ANON-KEY';
+const SUPABASE_TABLE    = 'previsioni';
+const EDIZIONE          = 'wwdc26';
+/* Lascia true finché non hai verificato che le righe arrivano su Supabase:
+   se Supabase fallisce, l'invio ripiega sul vecchio Google Apps Script.   */
+const APPS_SCRIPT_FALLBACK = true;
+
+const PENDING_KEY = 'FANTALIBERTY_WWDC26_PENDING';
+
+function supabaseConfigurato(){
+  return /^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(SUPABASE_URL)
+      && SUPABASE_ANON_KEY.length > 40
+      && !SUPABASE_ANON_KEY.startsWith('INCOLLA');
+}
+function buildPayload(){
+  const picks = PREDICTIONS.filter(p => selected.has(p.id));
+  const badge = computeBadge();
+  return {
+    edizione:         EDIZIONE,
+    nome:             identity.name    || null,
+    cognome:          identity.surname || null,
+    reparto:          identity.dept    || null,
+    seniority:        identity.seniority || null,
+    iphone:           identity.iphone  || null,
+    store:            identity.store   || null,
+    email:            (identity.email || '').trim().toLowerCase() || null,
+    profilo:          badge ? badge.n : 'Incognito',
+    newton_spesi:     spent(),
+    budget:           BUDGET_DEFAULT,
+    previsioni:       picks.map(p => ({id:p.id, nome:p.name.replace(/\n/g,' '), costo:p.cost, prob:p.prob})),
+    previsioni_testo: picks.map(p => p.name.replace(/\n/g,' ')).join(' | '),
+    inviato_il:       new Date().toISOString(),
+    user_agent:       (navigator.userAgent || '').slice(0, 300)
+  };
+}
+async function postSupabase(payload){
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 12000);
+  try{
+    const res = await fetch(`${SUPABASE_URL.replace(/\/$/,'')}/rest/v1/${SUPABASE_TABLE}`,{
+      method:'POST',
+      headers:{
+        'apikey':        SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type':  'application/json',
+        'Prefer':        'return=minimal'
+      },
+      body: JSON.stringify(payload),
+      signal: ctrl.signal
+    });
+    if(!res.ok){
+      const txt = await res.text().catch(() => '');
+      const err = new Error(`Supabase ${res.status}: ${txt.slice(0,200)}`);
+      err.status = res.status;
+      throw err;
+    }
+    return true;
+  } finally { clearTimeout(timer); }
+}
+/* Ritenta solo su errori di rete / 5xx: un 4xx è un problema di dati o di
+   policy, riprovare non cambierebbe nulla. */
+async function inviaSupabase(payload, tentativi = 3){
+  let ultimo;
+  for(let i = 0; i < tentativi; i++){
+    try{ return await postSupabase(payload); }
+    catch(e){
+      ultimo = e;
+      if(e.status && e.status < 500) break;
+      if(i < tentativi - 1) await new Promise(r => setTimeout(r, 800 * Math.pow(2, i)));
+    }
+  }
+  throw ultimo;
+}
+/* Coda locale: se l'invio non riesce, il payload resta su questo device e
+   viene ritentato al caricamento successivo della pagina. */
+function accodaInvio(payload){
+  try{
+    const q = JSON.parse(localStorage.getItem(PENDING_KEY) || '[]');
+    q.push(payload);
+    localStorage.setItem(PENDING_KEY, JSON.stringify(q.slice(-5)));
+  }catch(e){}
+}
+async function svuotaCoda(){
+  if(!supabaseConfigurato()) return;
+  let q;
+  try{ q = JSON.parse(localStorage.getItem(PENDING_KEY) || '[]'); }catch(e){ return; }
+  if(!q.length) return;
+  const rimasti = [];
+  for(const payload of q){
+    try{ await inviaSupabase(payload, 1); }
+    catch(e){ rimasti.push(payload); }
+  }
+  try{
+    if(rimasti.length) localStorage.setItem(PENDING_KEY, JSON.stringify(rimasti));
+    else localStorage.removeItem(PENDING_KEY);
+  }catch(e){}
+}
 
 /* ═══ DISPLAY MAP ═════════════════════════════════════════════════════════ */
 const IPHONE_DISPLAY = {
@@ -948,7 +1056,7 @@ function computeBadge(){
 
 /* ═══ STATE ══════════════════════════════════════════════════════════════ */
 let selected=new Set(), identity={name:'',surname:'',dept:'',seniority:'',iphone:'',store:'',email:''};
-let locked=false, submitted=false, mottoCount=0;
+let locked=false, submitted=false, mottoCount=0, lastChannel=null;
 
 const $=s=>document.querySelector(s);
 function haptic(ms=35){if(navigator.vibrate)try{navigator.vibrate(ms)}catch(e){}}
@@ -956,7 +1064,7 @@ function showToast(msg,ms=2000){const t=$('#toast');t.textContent=msg;t.classLis
 function showM(m){m.classList.add('show')} function hideM(m){m.classList.remove('show')}
 
 /* ═══ PERSIST ════════════════════════════════════════════════════════════ */
-function save(){try{localStorage.setItem(LS_KEY,JSON.stringify({identity,picks:[...selected],submitted,ts:new Date().toISOString()}))}catch(e){}}
+function save(){try{localStorage.setItem(LS_KEY,JSON.stringify({identity,picks:[...selected],submitted,canale:lastChannel,ts:new Date().toISOString()}))}catch(e){}}
 function load(){
   try{
     const d=JSON.parse(localStorage.getItem(LS_KEY)||'null');
@@ -964,6 +1072,7 @@ function load(){
     identity={...identity,...d.identity};
     selected=new Set(d.picks||[]);
     submitted=!!d.submitted;
+    lastChannel=d.canale||null;
     if(identity.iphone) applyPhoneLayout(identity.iphone);
   }catch(e){}
   refreshChips();
@@ -1064,6 +1173,9 @@ function tick(){
 }
 
 /* ═══ FORM / MAILTO ══════════════════════════════════════════════════════ */
+/* Vecchio canale Google Apps Script: resta come rete di sicurezza finché
+   APPS_SCRIPT_FALLBACK è true. Usa mode:'no-cors', quindi è "fire and
+   forget": non sappiamo se è andato a buon fine.                          */
 function submitSilent(){
   const picksStr=PREDICTIONS.filter(p=>selected.has(p.id)).map(p=>p.name.replace(/\n/g,' ')).join(' | ');
   const params=new URLSearchParams();
@@ -1122,9 +1234,48 @@ function openConfirm(){
   showConfirmModal();
 }
 
-$('#openFormBtn').addEventListener('click',()=>{
-  submitSilent();
-  submitted=true;save();hideM($('#confirmModal'));showSuccess();
+function mostraErroreInvio(msg){
+  const err=$('#confirmError');
+  err.textContent=msg;
+  err.classList.remove('shake');void err.offsetWidth;err.classList.add('shake');
+  const link=$('#confirmMailLink');
+  link.href=buildMailtoUrl();
+  $('#confirmMailFallback').style.display='block';
+}
+$('#openFormBtn').addEventListener('click',async ()=>{
+  const btn=$('#openFormBtn');
+  if(btn.disabled)return;
+  const label=btn.textContent;
+  btn.disabled=true;btn.textContent='Invio in corso…';
+  $('#confirmError').textContent='';
+  $('#confirmMailFallback').style.display='none';
+
+  const payload=buildPayload();
+  let inviato=false, canale=null;
+
+  if(supabaseConfigurato()){
+    try{ await inviaSupabase(payload); inviato=true; canale='supabase'; }
+    catch(e){ console.error('[FantaLiberty] invio Supabase fallito:',e); }
+  } else {
+    console.warn('[FantaLiberty] Supabase non configurato: vedi SUPABASE.md');
+  }
+
+  if(!inviato && APPS_SCRIPT_FALLBACK){
+    submitSilent();                 // no-cors: nessuna conferma possibile
+    inviato=true; canale='apps-script';
+    if(supabaseConfigurato()) accodaInvio(payload);
+  }
+
+  btn.disabled=false;btn.textContent=label;
+
+  if(!inviato){
+    accodaInvio(payload);
+    mostraErroreInvio('Invio non riuscito. Controlla la connessione e riprova.');
+    return;
+  }
+
+  submitted=true;lastChannel=canale;save();
+  hideM($('#confirmModal'));showSuccess();
 });
 
 function tickSuccess(){
@@ -1196,7 +1347,7 @@ $('#exitBtn').addEventListener('click',()=>showM($('#exitModal')));
 $('#exitConfirmBtn').addEventListener('click',()=>{
   hideM($('#exitModal'));
   selected.clear();identity={name:'',surname:'',dept:'',seniority:'',iphone:'',store:'',email:''};
-  submitted=false;locked=false;
+  submitted=false;locked=false;lastChannel=null;
   try{localStorage.removeItem(LS_KEY)}catch(e){}
   $('#successScreen').classList.remove('show');
   $('#mainContent').style.display='';
@@ -1223,7 +1374,7 @@ $('#calTrigger').addEventListener('click',addToCalendar);
 $('#resetBtn').addEventListener('click',()=>{
   if(locked||submitted)return;
   if(!confirm('Vuoi resettare tutto?'))return;
-  selected.clear();identity={name:'',surname:'',dept:'',seniority:'',iphone:'',store:'',email:''};
+  selected.clear();identity={name:'',surname:'',dept:'',seniority:'',iphone:'',store:'',email:''};lastChannel=null;
   try{localStorage.removeItem(LS_KEY)}catch(e){}
   refreshChips();renderCards();updateTotals();updateBadge();
 });
@@ -1312,7 +1463,7 @@ $('#emailContinue').addEventListener('click',()=>{
 });
 $('#homeBtn').addEventListener('click',()=>{
   selected.clear();identity={name:'',surname:'',dept:'',seniority:'',iphone:'',store:'',email:''};
-  submitted=false;locked=false;
+  submitted=false;locked=false;lastChannel=null;
   try{localStorage.removeItem(LS_KEY)}catch(e){}
   $('#homeBtn').classList.remove('visible');
   refreshChips();renderCards();updateTotals();updateBadge();
@@ -1326,6 +1477,7 @@ document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if
 (function init(){
   load();renderCards();updateTotals();updateBadge();
   tick();setInterval(tick,1000);
+  svuotaCoda();   // ritenta gli invii rimasti in sospeso su questo device
   if(submitted)showSuccess();
   else if(identity.name&&identity.surname){$('#homeBtn').classList.add('visible');}
   else showM($('#welcomeModal'));
