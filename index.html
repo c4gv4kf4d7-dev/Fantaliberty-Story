@@ -2,91 +2,61 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0f">
+<title>FantaLiberty — Nexus</title>
+<meta name="description" content="FantaLiberty: visual novel interattiva. Steve Jobs Theater, WWDC 26.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#c8d0dc">
-<title>FantaLiberty – In manutenzione</title>
-<style>
-:root{--ink:rgba(0,0,0,.82);--ink-dim:rgba(0,0,0,.48)}
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;min-height:100vh}
-body{background:#c8cdd8;display:flex;flex-direction:column;align-items:center}
-body::before{content:"";position:fixed;inset:-20px;z-index:-1;background:url('./bg.jpg') center/cover no-repeat;filter:blur(6px) brightness(.88) saturate(1.15)}
-body::after{content:"";position:fixed;inset:0;z-index:-1;background:rgba(220,225,235,.18)}
-
-.wrap{max-width:520px;width:100%;padding:env(safe-area-inset-top,32px) 20px env(safe-area-inset-bottom,32px);display:flex;flex-direction:column;align-items:center;min-height:100vh;justify-content:center;gap:22px}
-
-.logo-wrap img{width:300px;max-width:78vw;height:auto;display:block;filter:drop-shadow(0 0 30px rgba(255,255,255,.4)) drop-shadow(0 4px 20px rgba(0,0,0,.6))}
-
-.badge{display:inline-flex;align-items:center;gap:7px;background:rgba(255,180,40,.16);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,180,40,.42);border-radius:20px;padding:6px 15px;font-size:11px;font-weight:700;color:rgba(0,0,0,.68);letter-spacing:.5px;text-transform:uppercase}
-
-.hero-text{text-align:center}
-.hero-text h1{font-size:24px;font-weight:900;color:var(--ink);margin:0 0 10px;line-height:1.25}
-.hero-text p{font-size:16px;color:var(--ink-dim);font-weight:500;line-height:1.5}
-
-.glass-card{background:rgba(255,255,255,.42);backdrop-filter:blur(24px) saturate(200%);-webkit-backdrop-filter:blur(24px) saturate(200%);border:1px solid rgba(255,255,255,.7);border-radius:16px;padding:18px 20px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.9);width:100%}
-.glass-card p{font-size:14px;color:var(--ink-dim);line-height:1.55}
-.glass-card strong{color:var(--ink)}
-
-.footer-note{font-size:10px;color:var(--ink-dim);text-align:center;opacity:.55;line-height:1.6;padding:0 8px}
-.legal-link{background:none;border:none;padding:0;font-size:10px;color:var(--ink-dim);opacity:.7;cursor:pointer;text-decoration:underline;font-family:inherit}
-
-/* modal */
-.modal{display:none;position:fixed;inset:0;z-index:1300;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.32)}
-.modal.show{display:flex}
-.modal-card{background:rgba(245,245,250,.92);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border-radius:20px 20px 0 0;width:100%;max-width:520px;padding:24px 24px 40px;max-height:80vh;overflow-y:auto}
-.modal-card h2{font-size:18px;font-weight:800;margin:0 0 16px}
-.modal-card p{font-size:13px;color:var(--ink-dim);line-height:1.6;margin:0 0 12px}
-.modal-card p strong{color:var(--ink)}
-.handle{width:36px;height:4px;border-radius:2px;background:rgba(0,0,0,.18);margin:0 auto 20px}
-.btn-close{display:block;width:100%;margin-top:8px;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,rgba(94,77,237,.88),rgba(10,122,255,.88));color:#fff;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer}
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./game/engine.css">
 </head>
 <body>
-<div class="wrap">
-  <div class="logo-wrap"><img src="./logo2.png" alt="FantaLiberty WWDC 26"></div>
+<div id="stage">
+  <img id="bg" alt="">
+  <img id="char" alt="">
 
-  <div class="badge">🛠️ Sito in manutenzione</div>
-
-  <div class="hero-text">
-    <h1>Torniamo a breve</h1>
-    <p>Stiamo lavorando a qualcosa di nuovo.<br>Ci vediamo a settembre 👀</p>
+  <div id="propwrap">
+    <img id="prop" alt="">
+    <div id="screen"></div>
   </div>
 
-  <div class="glass-card">
-    <p>La <strong>classifica</strong> e le <strong>previsioni</strong> dell'edizione WWDC 26 sono temporaneamente offline.<br>Grazie per aver partecipato! 🎉</p>
+  <div id="boxwrap">
+    <div id="name" class="hidden"></div>
+    <div id="box"><span id="txt"></span></div>
+    <div id="arrow">▼</div>
+    <div id="choices"></div>
+    <div id="inputform">
+      <input id="ti" type="text" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Il tuo nome">
+      <button id="tok">OK</button>
+    </div>
   </div>
 
-  <p class="footer-note">© 2026 FantaLiberty · Progetto originale creato da Michael Lanfranchi e Lorenzo Bandini<br>Non affiliato ad Apple Inc.
-  &nbsp;·&nbsp;<button class="legal-link" id="openLegal">Note legali</button></p>
+  <div id="hint">tap per continuare</div>
+  <div id="flash"></div>
+  <div id="loaderr">Impossibile caricare <b>game/story.json</b>.<br>
+    Apri il gioco da un web server (o usa <b>dist/nexus_game.html</b> per l'uso offline).</div>
 </div>
 
-<div class="modal" id="legalModal">
-  <div class="modal-card">
-    <div class="handle"></div>
-    <h2>📄 Note legali</h2>
-    <p><strong>© 2026 FantaLiberty</strong><br>
-    Tutti i diritti riservati. Progetto originale creato da Michael Lanfranchi e Lorenzo Bandini. Vietata la riproduzione, copia o distribuzione senza autorizzazione scritta degli autori.</p>
-    <p><strong>Non affiliazione</strong><br>
-    FantaLiberty è un progetto indipendente a scopo ricreativo. Non è affiliato, sponsorizzato né approvato da Apple Inc. I marchi Apple, WWDC e relativi loghi sono di proprietà di Apple Inc.</p>
-    <p><strong>Privacy e uso dei dati</strong><br>
-    Partecipando confermi di aver letto e accettato quanto segue: i tuoi dati personali (nome, cognome, reparto, email e modello iPhone) sono raccolti esclusivamente per finalità interne a FantaLiberty WWDC26, l'invio dei risultati, classifica e premi virtuali. I dati non vengono condivisi, venduti o ceduti a terzi in alcuna forma. Potranno essere utilizzati in forma aggregata e anonima per migliorare le edizioni future dell'app (es. distribuzione per reparto, dispositivi utilizzati). Tutti i dati identificativi vengono cancellati entro 72 ore dal Keynote dell'8 giugno 2026.</p>
-    <p><strong>Limitazione di responsabilità</strong><br>
-    Le previsioni sono puramente ludiche. L'autore non si assume alcuna responsabilità per decisioni prese sulla base dei contenuti del gioco.</p>
-    <button class="btn-close" id="closeLegal">Chiudi</button>
-  </div>
-</div>
-
+<script src="./game/engine.js"></script>
 <script>
-var legalModal = document.getElementById('legalModal');
-function openLegal(){ legalModal.classList.add('show'); }
-function closeLegal(){ legalModal.classList.remove('show'); window.location.hash = ''; }
-document.getElementById('openLegal').addEventListener('click', openLegal);
-document.getElementById('closeLegal').addEventListener('click', closeLegal);
-legalModal.addEventListener('click', function(e){ if(e.target===legalModal) closeLegal(); });
-// apri automaticamente se l'URL contiene #legal (es. link dalla mail)
-if(window.location.hash === '#legal') openLegal();
+(function () {
+  var params = new URLSearchParams(location.search);
+  var opts = { speed: params.get('fast') ? 0 : 36 };
+
+  function start(story) { VN.boot(story, opts); }
+
+  // STORY_INLINE viene definito dal build single-file (tools/build_single_file.py):
+  // in quel caso non serve nessuna richiesta HTTP e il gioco gira anche da file://
+  if (window.STORY_INLINE) return start(window.STORY_INLINE);
+
+  fetch('./game/story.json', { cache: 'no-cache' })
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(start)
+    .catch(function (e) {
+      document.getElementById('loaderr').classList.add('on');
+      console.error('story.json non caricato:', e);
+    });
+})();
 </script>
 </body>
 </html>

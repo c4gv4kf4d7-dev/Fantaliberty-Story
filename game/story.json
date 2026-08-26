@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "title": "FantaLiberty — Nexus",
+    "version": "0.1.0",
+    "start": "arrivo",
+    "assetBase": "assets/",
+    "genderVar": "genere",
+    "genderOrder": ["m", "f", "x"]
+  },
+
+  "assets": {
+    "bg": {
+      "sjt_stage": "bg/sjt_stage.jpg"
+    },
+    "chars": {
+      "lucas_neutral": "chars/lucas_neutral.png",
+      "lucas_happy": "chars/lucas_happy.png"
+    },
+    "props": {
+      "mac_terminal": "props/mac_terminal.png"
+    }
+  },
+
+  "vars": {
+    "nome": "",
+    "genere": null,
+    "anni": null
+  },
+
+  "scenes": {
+
+    "arrivo": {
+      "bg": "sjt_stage",
+      "bgFx": "zoom",
+      "steps": [
+        { "t": "wait", "ms": 2100 },
+        { "t": "show", "char": "lucas_neutral" },
+        { "t": "wait", "ms": 500 },
+        { "t": "say", "who": "Lucas", "text": "Ciao! Io sono Lucas... ti stavamo aspettando allo Steve Jobs Theater!" }
+      ],
+      "next": "registrazione"
+    },
+
+    "registrazione": {
+      "bg": "sjt_stage",
+      "bgFx": "blur",
+      "terminal": [
+        { "key": "NOME:", "var": "nome" },
+        { "key": "GENERE:", "var": "genere", "map": { "m": "MASCHILE", "f": "FEMMINILE", "x": "NEUTRO" } },
+        { "key": "ANZIANITA':", "var": "anni", "map": { "0": "<1 ANNO", "1": "1-5 ANNI", "2": "5-10 ANNI", "3": "10+ ANNI" } },
+        { "key": "", "var": "__ok" }
+      ],
+      "steps": [
+        { "t": "show", "char": "lucas_neutral", "height": "26%", "bottom": "14%" },
+        { "t": "prop", "id": "mac_terminal", "show": true },
+        { "t": "wait", "ms": 600 },
+        {
+          "t": "input", "who": "Lucas", "var": "nome", "max": 14,
+          "text": "Registriamoti al terminale. Come ti chiami?"
+        },
+        {
+          "t": "choice", "who": "Lucas", "var": "genere",
+          "text": "Perfetto, {NOME}. Come preferisci che mi rivolga a te?",
+          "options": [
+            { "label": "Maschile", "value": "m" },
+            { "label": "Femminile", "value": "f" },
+            { "label": "Neutro", "value": "x" }
+          ]
+        },
+        {
+          "t": "choice", "who": "Lucas", "var": "anni",
+          "text": "Annotato. E da quanto tempo lavori in Apple?",
+          "options": [
+            { "label": "Meno di 1 anno", "say": "Meno di un anno", "value": "0" },
+            { "label": "Da 1 a 5 anni", "say": "Da 1 a 5 anni", "value": "1" },
+            { "label": "Da 5 a 10 anni", "say": "Da 5 a 10 anni", "value": "2" },
+            { "label": "Piu' di 10 anni", "say": "Piu' di 10 anni", "value": "3" }
+          ]
+        },
+        { "t": "set", "var": "__ok", "value": "> REGISTRAZIONE OK" },
+        { "t": "wait", "ms": 700 }
+      ],
+      "next": "benvenuto"
+    },
+
+    "benvenuto": {
+      "bg": "sjt_stage",
+      "steps": [
+        { "t": "prop", "show": false },
+        { "t": "fx", "name": "flash" },
+        { "t": "fx", "name": "unblur" },
+        { "t": "show", "char": "lucas_happy", "pop": true, "height": "34%", "bottom": "16%" },
+        {
+          "t": "say", "who": "Lucas",
+          "text": "{g:Benvenuto|Benvenuta|Ti do il benvenuto} allo Steve Jobs Theater, {NOME}! Grazie, ben fatto."
+        },
+        {
+          "t": "say", "who": "Lucas",
+          "text": "{g:Ti sei registrato senza intoppi.|Ti sei registrata senza intoppi.|La registrazione e' andata a buon fine.} {label:anni} in Apple: esperienza che qui conta parecchio."
+        },
+        {
+          "t": "say", "who": "Lucas",
+          "text": "Il badge e' attivo. {g:Direi che sei pronto.|Direi che sei pronta.|Direi che hai tutto quello che serve.} Puoi entrare... che aspetti?"
+        },
+        { "t": "end" }
+      ]
+    }
+  }
+}
