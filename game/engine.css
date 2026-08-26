@@ -125,6 +125,10 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 .tline{color:#fff;font-size:clamp(9px,3vw,15px);line-height:2.2;margin-bottom:1.1em;
  text-shadow:0 0 14px rgba(255,255,255,.25)}
 .tline.small{font-size:clamp(8px,2.4vw,12px);opacity:.72}
+.tline.big{font-size:clamp(11px,3.6vw,19px);letter-spacing:.04em}
+/* cursore che lampeggia mentre si scrive e durante le pause */
+.tcur{display:inline-block;width:.62em;height:1.05em;background:#fff;vertical-align:-.16em;
+ margin-left:.16em;animation:bl .62s steps(1) infinite}
 #curtainArrow{color:#fff;font-size:12px;opacity:0;margin-top:1.4em;animation:bob 1s infinite}
 
 #hint{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:14px;color:#fff9;font-size:9px}

@@ -11,7 +11,9 @@ p.on('console', m => { if (m.type() === 'error') errs.push('CONSOLE: ' + m.text(
 p.on('requestfailed', r => errs.push('404?: ' + r.url()));
 // intro a velocita' reale: cartello nero, poi accensione
 await p.goto('http://localhost:8080/', { waitUntil: 'networkidle' });
-await p.waitForTimeout(9000);
+await p.waitForTimeout(4200);
+await p.screenshot({ path: 'shots/0-intro-meta.png' });   // cursore a meta' intro
+await p.waitForTimeout(3600);
 await p.screenshot({ path: 'shots/0-intro.png' });
 await p.click('#stage');                                  // tap: si accendono le luci
 await p.waitForTimeout(1600);

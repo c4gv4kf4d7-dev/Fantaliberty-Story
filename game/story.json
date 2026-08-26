@@ -131,10 +131,9 @@
         {
           "t": "title",
           "lines": [
-            { "text": "Cupertino, California." },
-            { "text": "Apple Park.", "pausa": 700 },
-            { "text": "-1 ora al Keynote.", "pausa": 900 },
-            { "text": "Fuori c'e' ancora luce. Dentro, nessuno respira.", "small": true }
+            { "text": "Cupertino, California.", "pausa": 950 },
+            { "text": "Apple Park.", "pausa": 1150 },
+            { "text": "-1 ora al Keynote.", "big": true }
           ]
         },
         { "t": "fx", "name": "lights" },
@@ -157,8 +156,8 @@
         { "key": "", "var": "__ok" }
       ],
       "steps": [
-        { "t": "show", "who": "lucas", "body": "neutro", "height": "32%", "bottom": "37%" },
-        { "t": "prop", "id": "mac_terminale", "show": true },
+        { "t": "show", "who": "lucas", "body": "neutro" },
+        { "t": "prop", "id": "mac_terminale", "show": true, "size": "54%", "top": "5%" },
         { "t": "wait", "ms": 600 },
         {
           "t": "input", "who": "lucas", "var": "nome", "max": 14,

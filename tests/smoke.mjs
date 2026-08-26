@@ -102,10 +102,12 @@ VN.boot(story, { speed: 0, onEnd: (s) => { ended = s; } });   // speed 0 = nient
 // intro: cartello nero, righe scritte una dopo l'altra
 assert.ok($('curtain').classList.contains('on'), 'sipario nero visibile all\'avvio');
 const righe = [...$('curtainTxt').querySelectorAll('.tline')].map((d) => d.textContent);
-assert.equal(righe.length, 4, 'quattro righe di intro');
+assert.equal(righe.length, 3, 'tre righe di intro');
 assert.match(righe[0], /Cupertino/);
 assert.match(righe[2], /Keynote/);
-assert.ok($('curtainTxt').querySelector('.tline.small'), 'ultima riga in piccolo');
+assert.ok($('curtainTxt').querySelector('.tline.big'), 'ultima riga con enfasi');
+assert.ok($('curtainTxt').querySelector('.tcur'), 'cursore lampeggiante presente');
+assert.equal($('curtainTxt').querySelectorAll('.tcur').length, 1, 'un solo cursore, segue la riga');
 
 VN.step();                                              // tap: si accendono le luci
 assert.equal($('curtain').classList.contains('on'), false, 'sipario via dopo l\'accensione');

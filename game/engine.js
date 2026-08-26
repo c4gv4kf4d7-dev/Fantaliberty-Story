@@ -135,6 +135,11 @@
     el.curtainArrow.style.opacity = 0;
     var i = 0, nodi = [];
 
+    // il cursore segue la riga che si sta scrivendo e continua a lampeggiare
+    // anche nelle pause: sembra qualcuno che sta scrivendo davvero
+    var cur = global.document.createElement('span');
+    cur.className = 'tcur'; cur.id = 'tcur-intro';
+
     function completaTutto() {                 // tap durante la scrittura: le mostra tutte
       stopTyping();
       typing = false;
@@ -147,9 +152,12 @@
 
     function riga(k) {
       var d = global.document.createElement('div');
-      d.className = 'tline' + (lines[k].small ? ' small' : '');
+      d.className = 'tline' + (lines[k].small ? ' small' : '') + (lines[k].big ? ' big' : '');
+      var t = global.document.createElement('span');
+      d.appendChild(t);
       el.curtainTxt.appendChild(d);
-      return d;
+      d.appendChild(cur);              // il cursore si sposta sulla riga nuova
+      return t;
     }
 
     function fine() {
@@ -315,7 +323,8 @@
         el.curtain.classList.remove('lights');
         el.curtain.classList.add('on');
         typeLines((st.lines || []).map(function (l) {
-          return typeof l === 'string' ? { text: fmt(l) } : { text: fmt(l.text), small: l.small, pausa: l.pausa };
+          return typeof l === 'string' ? { text: fmt(l) }
+            : { text: fmt(l.text), small: l.small, big: l.big, pausa: l.pausa };
         }), next);
         return;
 
@@ -339,6 +348,8 @@
 
       case 'prop':
         if (st.id) el.prop.src = assetUrl('props', st.id);
+        el.propwrap.style.width = st.size || '';        // la scena puo' ridimensionare il prop
+        el.propwrap.style.top = st.top || '';
         el.propwrap.classList.remove(st.show ? 'out' : 'in');
         el.propwrap.classList.add(st.show ? 'in' : 'out');
         return next();
