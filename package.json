@@ -7,9 +7,11 @@
   "scripts": {
     "test": "node tests/smoke.mjs",
     "serve": "python3 -m http.server 8080",
-    "build": "python3 tools/build_single_file.py"
+    "build": "python3 tools/build_single_file.py",
+    "shots": "node tools/screenshots.mjs"
   },
   "devDependencies": {
-    "jsdom": "^24.0.0"
+    "jsdom": "^24.0.0",
+    "playwright": "^1.62.1"
   }
 }

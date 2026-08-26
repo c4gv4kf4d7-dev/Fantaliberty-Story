@@ -13,7 +13,12 @@
 <body>
 <div id="stage">
   <img id="bg" alt="">
-  <img id="char" alt="">
+
+  <!-- NPC: corpo (posa) + testa (espressione), file separati -->
+  <div id="npc"><img id="npcBody" alt=""><img id="npcHead" alt=""></div>
+
+  <!-- avatar del giocatore: i 4 layer vengono impilati qui dal motore -->
+  <div id="avatar"></div>
 
   <div id="propwrap">
     <img id="prop" alt="">
@@ -25,13 +30,14 @@
     <div id="box"><span id="txt"></span></div>
     <div id="arrow">▼</div>
     <div id="choices"></div>
+    <div id="picker"></div>
     <div id="inputform">
       <input id="ti" type="text" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Il tuo nome">
       <button id="tok">OK</button>
     </div>
   </div>
 
-  <div id="hint">tap per continuare</div>
+  <div id="hint">tap</div>
   <div id="flash"></div>
   <div id="loaderr">Impossibile caricare <b>game/story.json</b>.<br>
     Apri il gioco da un web server (o usa <b>dist/nexus_game.html</b> per l'uso offline).</div>

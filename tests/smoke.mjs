@@ -21,8 +21,14 @@ try {
 const story = JSON.parse(fs.readFileSync(path.join(ROOT, 'game/story.json'), 'utf8'));
 
 /* ---------- 1. validazione dello script ---------- */
-const todoChars = new Set();
-const KNOWN = new Set(['say', 'choice', 'input', 'show', 'hide', 'prop', 'bg', 'fx', 'wait', 'set', 'goto', 'end']);
+const todoAssets = new Set();
+
+// risolve un personaggio: cast + posa + espressione (file separati)
+function partOf(who, kind, id) {
+  const c = story.cast?.[who];
+  return c && id ? c[kind]?.[id] : undefined;
+}
+const KNOWN = new Set(['say', 'choice', 'input', 'avatar', 'show', 'hide', 'prop', 'bg', 'react', 'fx', 'wait', 'set', 'goto', 'end']);
 assert.ok(story.scenes[story.meta.start], 'meta.start punta a una scena esistente');
 
 for (const [id, sc] of Object.entries(story.scenes)) {
@@ -31,21 +37,47 @@ for (const [id, sc] of Object.entries(story.scenes)) {
   if (sc.bg) assert.ok(story.assets.bg[sc.bg], `scena ${id}: bg "${sc.bg}" dichiarato`);
   for (const st of sc.steps) {
     assert.ok(KNOWN.has(st.t), `scena ${id}: step sconosciuto "${st.t}"`);
-    // uno sprite non ancora disegnato e' ammesso (scena in bozza): il motore mostra la scena senza personaggio
-    if (st.t === 'show' && !story.assets.chars[st.char]) todoChars.add(st.char);
+    if (st.t === 'show') {
+      const c = story.cast?.[st.who];
+      assert.ok(c, `scena ${id}: personaggio "${st.who}" non e' nel cast`);
+      const body = st.body || c.defaultBody;
+      assert.ok(c.bodies?.[body], `scena ${id}: posa "${body}" non dichiarata per ${st.who}`);
+      if (st.head) assert.ok(c.heads?.[st.head], `scena ${id}: espressione "${st.head}" non dichiarata per ${st.who}`);
+    }
+    if (st.t === 'react' && st.level === 'pose') assert.ok(st.body, `scena ${id}: react pose senza body`);
+    if (st.t === 'react' && st.level === 'expr') assert.ok(st.head, `scena ${id}: react expr senza head`);
     if (st.t === 'prop' && st.id) assert.ok(story.assets.props[st.id], `scena ${id}: prop "${st.id}" dichiarato`);
     if (st.t === 'goto') assert.ok(story.scenes[st.scene], `scena ${id}: goto "${st.scene}" esiste`);
     if (st.t === 'choice') assert.ok(st.options?.length, `scena ${id}: choice senza opzioni`);
   }
 }
 
-/* ---------- 2. gli asset referenziati esistono su disco ---------- */
+/* ---------- 2. asset: fondali e prop devono esistere; i personaggi non ancora
+   disegnati sono ammessi (il motore mostra la scena senza personaggio) ---------- */
 const base = story.meta.assetBase || '';
-for (const items of Object.values(story.assets)) {
-  for (const rel of Object.values(items)) {
-    if (rel.startsWith('data:') || rel.startsWith('http')) continue;
-    assert.ok(fs.existsSync(path.join(ROOT, base + rel)), `asset mancante: ${base + rel}`);
+const onDisk = (rel) => fs.existsSync(path.join(ROOT, base + rel));
+
+for (const kind of ['bg', 'props']) {
+  for (const rel of Object.values(story.assets[kind] || {})) {
+    assert.ok(onDisk(rel), `asset mancante: ${base + rel}`);
   }
+}
+for (const [who, c] of Object.entries(story.cast || {})) {
+  for (const kind of ['bodies', 'heads']) {
+    for (const [id, rel] of Object.entries(c[kind] || {})) {
+      if (!onDisk(rel)) todoAssets.add(`${who}/${kind}/${id}`);
+    }
+  }
+  // corpo e testa separati: se ci sono espressioni serve l'ancoraggio del collo
+  if (Object.keys(c.heads || {}).length) assert.ok(c.neck, `cast ${who}: manca "neck" (ancoraggio collo)`);
+}
+
+// avatar: 4 layer, ogni layer deve avere il suo slot con almeno un'opzione
+const av = story.avatar;
+assert.ok(av && av.layers?.length === 4, 'avatar: servono 4 layer');
+for (const slot of av.layers) {
+  const s = av.slots.find((x) => x.id === slot);
+  assert.ok(s?.options?.length, `avatar: slot "${slot}" senza opzioni`);
 }
 
 /* ---------- 3. flusso di gioco in jsdom ---------- */
@@ -67,7 +99,7 @@ VN.boot(story, { speed: 0, onEnd: (s) => { ended = s; } });   // speed 0 = nient
 // scena "arrivo": la battuta di Lucas e' gia' scritta
 assert.match(txt(), /Io sono Lucas/, 'prima battuta mostrata');
 assert.equal($('name').textContent, 'Lucas');
-assert.ok($('char').getAttribute('src').includes('lucas_neutral'), 'sprite neutro in scena');
+assert.ok($('npcBody').getAttribute('src').includes('chr_lucas_neutro'), 'posa neutra in scena');
 
 VN.step();                                              // -> scena registrazione
 
@@ -97,9 +129,22 @@ assert.equal(VN.state.anni, '2');
 assert.equal($('tval_anni').textContent, '5-10 ANNI');
 assert.equal($('tval___ok').textContent, '> REGISTRAZIONE OK');
 
+// avatar a 4 layer: preselezione, cambio opzione, conferma
+assert.ok($('picker').classList.contains('on'), 'picker avatar visibile');
+assert.match(txt(), /Costruisci il tuo avatar/);
+assert.equal($('avatar').querySelectorAll('.alayer').length, 4, '4 layer disegnati');
+assert.equal(VN.state.avatar_testa, 'a', 'preselezione del primo slot');
+const optC = [...$('picker').querySelectorAll('.popt')].find((b) => b.dataset.option === 'c');
+optC.onclick({ stopPropagation() {} });
+assert.equal(VN.state.avatar_testa, 'c', 'opzione avatar cambiata');
+$('pok').onclick({ stopPropagation() {} });
+
+// l'avatar sopravvive al cambio scena
+assert.equal($('avatar').querySelectorAll('.alayer').length, 4, 'avatar ancora in scena');
+
 // scena benvenuto: variante di genere femminile + sprite happy
 assert.match(txt(), /^Benvenuta allo Steve Jobs Theater, FRANCO!/, 'variante {g:} femminile');
-assert.ok($('char').getAttribute('src').includes('lucas_happy'), 'sprite happy dopo il flash');
+assert.ok($('npcBody').getAttribute('src').includes('chr_lucas_felice'), 'posa felice dopo il flash');
 
 VN.step();
 assert.match(txt(), /Ti sei registrata senza intoppi\. Da 5 a 10 anni in Apple/, 'label scelta riusata nel testo');
@@ -121,7 +166,7 @@ assert.equal(resumeBtns.length, 2);
 resumeBtns[0].onclick({ stopPropagation() {} });                       // Riprendi
 assert.equal(VN.state.nome, 'Franco', 'variabili ripristinate');
 assert.match(txt(), /Direi che sei pronta/, 'ripreso dalla battuta giusta');
-assert.ok($('char').getAttribute('src').includes('lucas_happy'), 'scena ricomposta (sprite corretto)');
+assert.ok($('npcBody').getAttribute('src').includes('chr_lucas_felice'), 'scena ricomposta (posa corretta)');
 
 // ...oppure ricomincia da capo e il salvataggio sparisce
 VN.boot(story, { speed: 0 });
@@ -132,17 +177,27 @@ assert.match(txt(), /Io sono Lucas/, 'ripartito dalla prima scena');
 /* ---------- 5. atto 2: personaggi ancora senza sprite ---------- */
 VN.boot(story, { speed: 0, scene: 'ritardo_ceo' });
 assert.match(txt(), /Ternus e' in ritardo/, 'atto 2 raggiungibile');
-assert.equal($('name').textContent, 'Susan');
-assert.ok($('char').classList.contains('out'), 'sprite mancante: nessuna immagine rotta a schermo');
+assert.equal($('name').textContent, 'Susan', 'nome parlante preso dal cast');
+assert.ok($('npcBody').getAttribute('src').includes('chr_susan_corpo_in_piedi'), 'posa di Susan referenziata');
+assert.equal(typeof $('npcBody').onerror, 'function', 'file mancante: il personaggio viene nascosto, niente immagine rotta');
+
+// la reazione segue il TONO della scelta, mai il contenuto del pronostico
+VN.step();
+VN.step();
+const toni = [...$('choices').querySelectorAll('.ch')];
+assert.equal(toni.length, 2);
+toni[0].onclick({ stopPropagation() {} });
+assert.equal(VN.state.tono, 'sfacciato');
 
 /* ---------- 6. variante maschile, percorso rapido ---------- */
 VN.clearSave();
 VN.boot(story, { speed: 0 });
 VN.step();
 $('ti').value = 'Luca'; $('ti').oninput(); $('tok').onclick();
-[...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });
-[...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });
+[...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // maschile
+[...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // <1 anno
+$('pok').onclick({ stopPropagation() {} });                                      // avatar di default
 assert.match(txt(), /^Benvenuto allo Steve Jobs Theater, LUCA!/, 'variante {g:} maschile');
 
-if (todoChars.size) console.log('sprite ancora da disegnare:', [...todoChars].join(', '));
+if (todoAssets.size) console.log(`asset ancora da disegnare (${todoAssets.size}):`, [...todoAssets].join(', '));
 console.log('smoke test: OK');
