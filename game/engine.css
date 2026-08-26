@@ -137,8 +137,8 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
   100%{opacity:1}
 }
 @keyframes neonPulse{
-  0%,100%{filter:drop-shadow(0 0 6px rgba(126,240,120,.55)) drop-shadow(0 0 22px rgba(126,240,120,.28))}
-  50%{filter:drop-shadow(0 0 10px rgba(126,240,120,.85)) drop-shadow(0 0 34px rgba(126,240,120,.45))}
+  0%,100%{filter:drop-shadow(0 0 5px rgba(126,240,120,.30)) brightness(1)}
+  50%{filter:drop-shadow(0 0 16px rgba(126,240,120,.55)) brightness(1.12)}
 }
 @keyframes neonOff{from{opacity:1}to{opacity:0}}
 
@@ -151,6 +151,7 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #logoFallback sup{font-size:.45em;vertical-align:super}
 #logoImg.ok ~ #logoFallback{display:none}
 /* il palo dell'insegna */
+#logoImg.ok ~ #logoStem{display:none}
 #logoStem{position:relative;width:10px;height:min(9vh,74px);
  background:repeating-linear-gradient(180deg,#dfe6df 0 6px,#8d968d 6px 12px)}
 /* la base dell'insegna, in fondo al palo */
