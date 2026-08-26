@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "FantaLiberty — Nexus",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "start": "arrivo",
     "assetBase": "assets/",
     "genderVar": "genere",
@@ -24,12 +24,14 @@
   "vars": {
     "nome": "",
     "genere": null,
-    "anni": null
+    "anni": null,
+    "punti": 0
   },
 
   "scenes": {
 
     "arrivo": {
+      "title": "Atto 1 — L'arrivo",
       "bg": "sjt_stage",
       "bgFx": "zoom",
       "steps": [
@@ -42,6 +44,7 @@
     },
 
     "registrazione": {
+      "title": "Atto 1 — Registrazione",
       "bg": "sjt_stage",
       "bgFx": "blur",
       "terminal": [
@@ -84,6 +87,7 @@
     },
 
     "benvenuto": {
+      "title": "Atto 1 — Benvenuto",
       "bg": "sjt_stage",
       "steps": [
         { "t": "prop", "show": false },
@@ -101,7 +105,112 @@
         {
           "t": "say", "who": "Lucas",
           "text": "Il badge e' attivo. {g:Direi che sei pronto.|Direi che sei pronta.|Direi che hai tutto quello che serve.} Puoi entrare... che aspetti?"
+        }
+      ],
+      "next": "ritardo_ceo"
+    },
+
+    "_nota_bozza": {
+      "title": "NOTA",
+      "steps": [
+        { "t": "say", "text": "Le scene qui sotto (atti 2-4) sono SEGNAPOSTO: struttura e personaggi sono quelli decisi su Notion, i testi vanno riscritti. Questa scena non e' raggiungibile dal gioco." },
+        { "t": "end" }
+      ]
+    },
+
+    "ritardo_ceo": {
+      "title": "Atto 2 — Il ritardo del CEO",
+      "bg": "sjt_stage",
+      "steps": [
+        { "t": "hide" },
+        { "t": "wait", "ms": 400 },
+        { "t": "show", "char": "susan_panic" },
+        { "t": "say", "who": "Susan", "text": "[BOZZA] {NOME}? {NOME}! Meno male. Abbiamo un problema: Ternus e' in ritardo e il keynote inizia tra venti minuti." },
+        { "t": "say", "who": "Susan", "text": "[BOZZA] No, non hai capito. TU adesso vieni con me dietro le quinte. Muoviti!" },
+        {
+          "t": "choice", "who": "Susan", "var": "reazione",
+          "text": "[BOZZA] Allora? Che facciamo?",
+          "options": [
+            { "label": "Ti seguo, andiamo", "value": "segui" },
+            { "label": "Aspetta, chi sei?", "value": "chiedi" }
+          ]
         },
+        { "t": "say", "who": "Susan", "text": "[BOZZA] ...ne riparliamo dopo. Corri!" }
+      ],
+      "next": "lobby"
+    },
+
+    "lobby": {
+      "title": "Atto 3 — La lobby",
+      "bg": "sjt_stage",
+      "steps": [
+        { "t": "hide" },
+        { "t": "show", "char": "maurice_chill" },
+        { "t": "say", "who": "Maurice", "text": "[BOZZA] Ehi, calma. Prima che ti buttino sul palco, ti faccio vedere com'e' fatto questo posto." },
+        {
+          "t": "choice", "who": "Maurice", "var": "sezione",
+          "text": "[BOZZA] Da dove vuoi partire?",
+          "options": [
+            { "label": "Il gioco delle previsioni", "value": "gioco", "goto": "backstage" },
+            { "label": "I premi", "value": "premi", "goto": "premi" },
+            { "label": "Il quiz storico", "value": "quiz", "goto": "quiz" }
+          ]
+        }
+      ]
+    },
+
+    "backstage": {
+      "title": "Atto 4 — Backstage / regia",
+      "bg": "sjt_stage",
+      "steps": [
+        { "t": "hide" },
+        { "t": "show", "char": "martha_regia" },
+        { "t": "say", "who": "Martha", "text": "[BOZZA] Cuffie, microfono, tre minuti. Qui si decide come va lo show: le tue previsioni sul keynote." },
+        { "t": "say", "who": "Martha", "text": "[BOZZA] (qui va il blocco previsioni: le domande FantaLiberty vere e proprie)" }
+      ],
+      "next": "finale"
+    },
+
+    "quiz": {
+      "title": "Atto 4 — Quiz storico",
+      "bg": "sjt_stage",
+      "steps": [
+        { "t": "hide" },
+        { "t": "show", "char": "veterano_neutral" },
+        { "t": "say", "who": "Veterano", "text": "[BOZZA] Io c'ero nel 2007, ragazzo/a. Vediamo se te la cavi." },
+        {
+          "t": "choice", "who": "Veterano", "var": "quiz1",
+          "text": "[BOZZA] In che anno e' stato presentato il primo iPhone?",
+          "options": [
+            { "label": "2005", "value": "no" },
+            { "label": "2007", "value": "si" },
+            { "label": "2009", "value": "no" }
+          ]
+        },
+        { "t": "say", "who": "Veterano", "text": "[BOZZA] (qui la valutazione della risposta e l'assegnazione dei punti)" }
+      ],
+      "next": "premi"
+    },
+
+    "premi": {
+      "title": "Atto 4 — Premi",
+      "bg": "sjt_stage",
+      "steps": [
+        { "t": "hide" },
+        { "t": "show", "char": "premi_neutral", "pop": true },
+        { "t": "fx", "name": "flash" },
+        { "t": "say", "who": "???", "text": "[BOZZA] Ta-daaa! Questi te li sei {g:guadagnato|guadagnata|guadagnati}, {NOME}." }
+      ],
+      "next": "finale"
+    },
+
+    "finale": {
+      "title": "Finale",
+      "bg": "sjt_stage",
+      "steps": [
+        { "t": "hide" },
+        { "t": "show", "char": "lucas_happy", "pop": true },
+        { "t": "say", "who": "Lucas", "text": "[BOZZA] E' andata alla grande, {NOME}! Il tuo risultato e' salvato: ci vediamo in classifica." },
         { "t": "end" }
       ]
     }

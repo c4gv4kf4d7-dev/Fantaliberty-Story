@@ -21,6 +21,7 @@ try {
 const story = JSON.parse(fs.readFileSync(path.join(ROOT, 'game/story.json'), 'utf8'));
 
 /* ---------- 1. validazione dello script ---------- */
+const todoChars = new Set();
 const KNOWN = new Set(['say', 'choice', 'input', 'show', 'hide', 'prop', 'bg', 'fx', 'wait', 'set', 'goto', 'end']);
 assert.ok(story.scenes[story.meta.start], 'meta.start punta a una scena esistente');
 
@@ -30,7 +31,8 @@ for (const [id, sc] of Object.entries(story.scenes)) {
   if (sc.bg) assert.ok(story.assets.bg[sc.bg], `scena ${id}: bg "${sc.bg}" dichiarato`);
   for (const st of sc.steps) {
     assert.ok(KNOWN.has(st.t), `scena ${id}: step sconosciuto "${st.t}"`);
-    if (st.t === 'show') assert.ok(story.assets.chars[st.char], `scena ${id}: char "${st.char}" dichiarato`);
+    // uno sprite non ancora disegnato e' ammesso (scena in bozza): il motore mostra la scena senza personaggio
+    if (st.t === 'show' && !story.assets.chars[st.char]) todoChars.add(st.char);
     if (st.t === 'prop' && st.id) assert.ok(story.assets.props[st.id], `scena ${id}: prop "${st.id}" dichiarato`);
     if (st.t === 'goto') assert.ok(story.scenes[st.scene], `scena ${id}: goto "${st.scene}" esiste`);
     if (st.t === 'choice') assert.ok(st.options?.length, `scena ${id}: choice senza opzioni`);
@@ -51,7 +53,7 @@ const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8')
   .replace(/<script src=".*?"><\/script>/, '')
   .replace(/<script>[\s\S]*?<\/script>/, '');           // via il bootstrap con fetch
 
-const dom = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true });
+const dom = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://fantaliberty.com/' });
 dom.window.eval(fs.readFileSync(path.join(ROOT, 'game/engine.js'), 'utf8'));
 
 const { window } = dom;
@@ -105,15 +107,36 @@ assert.match(txt(), /Ti sei registrata senza intoppi\. Da 5 a 10 anni in Apple/,
 VN.step();
 assert.match(txt(), /Direi che sei pronta/);
 
-VN.step();
-assert.ok(ended, 'onEnd chiamato a fine storia');
-assert.deepEqual(
-  { nome: ended.nome, genere: ended.genere, anni: ended.anni },
-  { nome: 'Franco', genere: 'f', anni: '2' },
-  'stato finale del giocatore'
-);
+/* ---------- 4. salvataggio / ripresa ---------- */
+assert.ok(VN.hasSave(story), 'partita salvata in localStorage');
+const saved = VN.readSave();
+assert.equal(saved.state.nome, 'Franco');
+assert.equal(saved.scene, 'benvenuto');
 
-// variante maschile, percorso rapido
+// nuova sessione: riprende dal checkpoint invece di ricominciare
+VN.boot(story, { speed: 0 });
+assert.match(txt(), /Avevi lasciato il gioco a "Atto 1 — Benvenuto"/, 'prompt di ripresa');
+const resumeBtns = [...$('choices').querySelectorAll('.ch')];
+assert.equal(resumeBtns.length, 2);
+resumeBtns[0].onclick({ stopPropagation() {} });                       // Riprendi
+assert.equal(VN.state.nome, 'Franco', 'variabili ripristinate');
+assert.match(txt(), /Direi che sei pronta/, 'ripreso dalla battuta giusta');
+assert.ok($('char').getAttribute('src').includes('lucas_happy'), 'scena ricomposta (sprite corretto)');
+
+// ...oppure ricomincia da capo e il salvataggio sparisce
+VN.boot(story, { speed: 0 });
+[...$('choices').querySelectorAll('.ch')][1].onclick({ stopPropagation() {} });   // Ricomincia
+assert.equal(VN.hasSave(story), false, 'salvataggio cancellato');
+assert.match(txt(), /Io sono Lucas/, 'ripartito dalla prima scena');
+
+/* ---------- 5. atto 2: personaggi ancora senza sprite ---------- */
+VN.boot(story, { speed: 0, scene: 'ritardo_ceo' });
+assert.match(txt(), /Ternus e' in ritardo/, 'atto 2 raggiungibile');
+assert.equal($('name').textContent, 'Susan');
+assert.ok($('char').classList.contains('out'), 'sprite mancante: nessuna immagine rotta a schermo');
+
+/* ---------- 6. variante maschile, percorso rapido ---------- */
+VN.clearSave();
 VN.boot(story, { speed: 0 });
 VN.step();
 $('ti').value = 'Luca'; $('ti').oninput(); $('tok').onclick();
@@ -121,4 +144,5 @@ $('ti').value = 'Luca'; $('ti').oninput(); $('tok').onclick();
 [...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });
 assert.match(txt(), /^Benvenuto allo Steve Jobs Theater, LUCA!/, 'variante {g:} maschile');
 
+if (todoChars.size) console.log('sprite ancora da disegnare:', [...todoChars].join(', '));
 console.log('smoke test: OK');

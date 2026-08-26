@@ -5,6 +5,7 @@
      VN.boot(story, opts)  -> avvia il gioco
      VN.state              -> variabili correnti (debug / smoke test)
      VN.step()             -> avanza (equivale al click sullo stage)
+     VN.hasSave() / VN.clearSave() / VN.saveNow()  -> salvataggio in localStorage
 
    Tipi di step supportati (vedi game/story.json):
      say | choice | input | show | hide | prop | bg | fx | wait | set | goto | end
@@ -83,8 +84,77 @@
     return true;
   }
 
+  /* ---------------- salvataggio (localStorage) ----------------
+     Si salva a ogni step "bloccante" (say/choice/input): se il giocatore chiude
+     la pagina riprende esattamente da li'. Il ripristino rigioca in silenzio i
+     soli step visivi della scena (show/prop/bg/fx/set) fino al punto salvato,
+     cosi' la scena si ricompone senza rimostrare battute gia' lette. */
+  var SAVE_KEY = 'fl_nexus_save_v1';
+
+  function store() {
+    try { return global.localStorage; } catch (e) { return null; }   // Safari privato
+  }
+
+  // Non si salva finche' il giocatore non ha fatto la prima scelta reale: cosi'
+  // chi apre la pagina e la chiude subito non si ritrova il prompt "riprendi?".
+  VN.progressed = false;
+
+  VN.saveNow = function () {
+    var s = store();
+    if (!s || !VN.sceneId || !VN.progressed) return;
+    try {
+      s.setItem(SAVE_KEY, JSON.stringify({
+        v: (VN.story.meta && VN.story.meta.version) || '0',
+        scene: VN.sceneId, i: VN.i, state: VN.state, ts: Date.now()
+      }));
+    } catch (e) { /* quota piena: il gioco continua comunque */ }
+  };
+
+  VN.readSave = function () {
+    var s = store();
+    if (!s) return null;
+    try {
+      var d = JSON.parse(s.getItem(SAVE_KEY) || 'null');
+      if (!d || !d.scene) return null;
+      return d;
+    } catch (e) { return null; }
+  };
+
+  VN.hasSave = function (story) {
+    var d = VN.readSave();
+    if (!d) return false;
+    var st = story || VN.story;
+    if (st && !st.scenes[d.scene]) return false;                       // scena rimossa dallo script
+    if (st && d.scene === st.meta.start && !d.i) return false;         // salvataggio all'inizio: inutile
+    return true;
+  };
+
+  VN.clearSave = function () {
+    var s = store();
+    if (s) { try { s.removeItem(SAVE_KEY); } catch (e) {} }
+  };
+
+  var VISUAL = { show: 1, hide: 1, prop: 1, bg: 1, set: 1 };   // rigiocabili in silenzio
+
+  function restore(save) {
+    VN.state = save.state || VN.state;
+    VN.progressed = true;
+    var sc = VN.story.scenes[save.scene];
+    VN.scene = sc; VN.sceneId = save.scene;
+    if (sc.bg) setBg(sc.bg, sc.bgFx);
+    if (sc.terminal) { buildTerminal(sc.terminal); sc.terminal.forEach(function (r) { termSet(r.var); }); }
+    var upto = Math.min(save.i || 0, (sc.steps || []).length);
+    for (var k = 0; k < upto; k++) {
+      var st = sc.steps[k];
+      if (VISUAL[st.t]) { silent = true; VN.i = k; exec(st); silent = false; }
+    }
+    VN.i = upto;
+    run();
+  }
+
   /* ---------------- step runner ---------------- */
-  function next() { VN.i++; run(); }
+  var silent = false;   // true durante il ripristino: gli step visivi non fanno avanzare il flusso
+  function next() { if (silent) return; VN.i++; run(); }
 
   function goScene(id) {
     var sc = VN.story.scenes[id];
@@ -107,10 +177,14 @@
 
   function finish() {
     VN.scene = null;
+    VN.clearSave();          // storia finita: niente ripresa a meta'
     if (typeof VN.onEnd === 'function') VN.onEnd(VN.state);
   }
 
   function exec(st) {
+    // checkpoint: si salva prima di ogni step che aspetta il giocatore
+    if (!silent && (st.t === 'say' || st.t === 'choice' || st.t === 'input')) VN.saveNow();
+
     switch (st.t) {
 
       case 'say':
@@ -137,7 +211,13 @@
         return;
 
       case 'show':
-        el.char.src = assetUrl('chars', st.char);
+        var src = assetUrl('chars', st.char);
+        if (!src) {            // sprite non ancora disegnato: scena senza personaggio, niente immagine rotta
+          el.char.classList.remove('in', 'pop');
+          el.char.classList.add('out');
+          return next();
+        }
+        el.char.src = src;
         el.char.classList.remove('out');
         if (st.pop) { el.char.classList.remove('in'); void el.char.offsetWidth; el.char.classList.add('pop'); }
         else { el.char.classList.remove('pop'); void el.char.offsetWidth; el.char.classList.add('in'); }
@@ -213,6 +293,8 @@
           VN.state['__label_' + st.var] = o.say != null ? o.say : o.label;
           termSet(st.var);
         }
+        if (o._do) return o._do();
+        VN.progressed = true;
         if (o.goto) return goScene(o.goto);
         next();
       };
@@ -237,6 +319,7 @@
     el.tok.onclick = function (ev) {
       if (ev && ev.stopPropagation) ev.stopPropagation();
       if (el.tok.disabled) return;
+      VN.progressed = true;
       hideUI();
       termCursorOff();
       next();
@@ -295,6 +378,7 @@
     opts = opts || {};
     VN.story = story;
     VN.state = {};
+    VN.progressed = false;
     Object.keys(story.vars || {}).forEach(function (k) { VN.state[k] = story.vars[k]; });
     if (opts.speed != null) VN.speed = opts.speed;
     if (opts.onEnd) VN.onEnd = opts.onEnd;
@@ -317,7 +401,30 @@
       }
     });
 
-    goScene((story.meta && story.meta.start) || Object.keys(story.scenes)[0]);
+    var start = opts.scene || (story.meta && story.meta.start) || Object.keys(story.scenes)[0];
+
+    if (opts.scene) { VN.clearSave(); return goScene(start); }   // salto di scena per debug (?scene=lobby)
+
+    if (opts.resume !== false && VN.hasSave(story)) {
+      var save = VN.readSave();
+      el.boxwrap.classList.add('in');
+      setSpeaker(null);
+      var sc = story.scenes[save.scene];
+      var where = (sc && sc.title) || save.scene;
+      var resumeUI = function () {
+        showChoices({
+          options: [
+            { label: 'Riprendi', value: 'r', _do: function () { restore(save); } },
+            { label: 'Ricomincia da capo', value: 'n', _do: function () { VN.clearSave(); goScene(start); } }
+          ]
+        });
+      };
+      type('Bentornat*! Avevi lasciato il gioco a "' + where + '". Vuoi riprendere da li\'?', resumeUI);
+      revealUI = resumeUI;
+      return;
+    }
+
+    goScene(start);
   };
 
   VN.step = function () {
