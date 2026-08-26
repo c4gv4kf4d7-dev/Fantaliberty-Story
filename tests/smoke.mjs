@@ -72,13 +72,15 @@ for (const [who, c] of Object.entries(story.cast || {})) {
   if (Object.keys(c.heads || {}).length) assert.ok(c.neck, `cast ${who}: manca "neck" (ancoraggio collo)`);
 }
 
-// avatar: 4 layer, ogni layer deve avere il suo slot con almeno un'opzione
+// avatar: quattro avatar gia' pronti, ognuno con la sua battuta di Lucas
 const av = story.avatar;
-assert.ok(av && av.layers?.length === 4, 'avatar: servono 4 layer');
-for (const slot of av.layers) {
-  const s = av.slots.find((x) => x.id === slot);
-  assert.ok(s?.options?.length, `avatar: slot "${slot}" senza opzioni`);
+assert.equal(av?.options?.length, 4, 'avatar: servono 4 avatar');
+for (const o of av.options) {
+  assert.ok(o.id && o.say, `avatar "${o.id}": manca la battuta di Lucas`);
+  const rel = av.path.replace('{id}', o.id);
+  if (!onDisk(rel)) todoAssets.add(`avatar/${o.id}`);
 }
+assert.ok(av.prompt && av.confirm, 'avatar: servono prompt e testo di conferma');
 
 /* ---------- 3. flusso di gioco in jsdom ---------- */
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8')
@@ -129,18 +131,38 @@ assert.equal(VN.state.anni, '2');
 assert.equal($('tval_anni').textContent, '5-10 ANNI');
 assert.equal($('tval___ok').textContent, '> REGISTRAZIONE OK');
 
-// avatar a 4 layer: preselezione, cambio opzione, conferma
-assert.ok($('picker').classList.contains('on'), 'picker avatar visibile');
-assert.match(txt(), /Costruisci il tuo avatar/);
-assert.equal($('avatar').querySelectorAll('.alayer').length, 4, '4 layer disegnati');
-assert.equal(VN.state.avatar_testa, 'a', 'preselezione del primo slot');
-const optC = [...$('picker').querySelectorAll('.popt')].find((b) => b.dataset.option === 'c');
-optC.onclick({ stopPropagation() {} });
-assert.equal(VN.state.avatar_testa, 'c', 'opzione avatar cambiata');
-$('pok').onclick({ stopPropagation() {} });
+// carosello avatar: si scorrono tutti e 4, la conferma appare solo alla fine
+assert.ok($('picker').classList.contains('on'), 'carosello avatar visibile');
+assert.equal($('avatar').querySelectorAll('.alayer').length, 1, 'un avatar per volta');
+assert.equal(VN.state.avatar, 'a', 'parte dal primo');
+assert.match(txt(), /Questo e' il classico/, 'Lucas commenta il primo avatar');
+assert.equal($('pok'), null, 'niente conferma prima di averli visti tutti');
 
-// l'avatar sopravvive al cambio scena
-assert.equal($('avatar').querySelectorAll('.alayer').length, 4, 'avatar ancora in scena');
+$('pnext').onclick({ stopPropagation() {} });
+assert.equal(VN.state.avatar, 'b');
+assert.match(txt(), /meta' del reparto Retail/, 'Lucas commenta il secondo');
+assert.equal($('pok'), null);
+$('pnext').onclick({ stopPropagation() {} });
+assert.equal($('pok'), null, 'ancora niente conferma al terzo');
+$('pnext').onclick({ stopPropagation() {} });
+
+// visti tutti e quattro: ora Lucas invita a scegliere e compare la conferma
+assert.equal(VN.state.avatar, 'd');
+assert.match(txt(), /Scorri ancora se vuoi/, 'invito a scegliere');
+assert.ok($('pok'), 'conferma disponibile dopo il quarto');
+assert.equal($('picker').querySelectorAll('.pdot.seen').length, 4, 'tutti i pallini segnati');
+
+// puo' continuare a scorrere: torna indietro e sceglie il primo
+$('pprev').onclick({ stopPropagation() {} });
+$('pprev').onclick({ stopPropagation() {} });
+$('pprev').onclick({ stopPropagation() {} });
+assert.equal(VN.state.avatar, 'a', 'tornato al primo scorrendo indietro');
+assert.ok($('pok'), 'la conferma resta disponibile');
+$('pok').onclick({ stopPropagation() {} });
+assert.equal(VN.state.avatar, 'a', 'avatar confermato');
+
+// l'avatar scelto resta in scena
+assert.equal($('avatar').querySelector('.alayer')?.dataset.avatar, 'a', 'avatar ancora in scena');
 
 // scena benvenuto: variante di genere femminile + sprite happy
 assert.match(txt(), /^Benvenuta allo Steve Jobs Theater, FRANCO!/, 'variante {g:} femminile');
@@ -196,7 +218,8 @@ VN.step();
 $('ti').value = 'Luca'; $('ti').oninput(); $('tok').onclick();
 [...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // maschile
 [...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // <1 anno
-$('pok').onclick({ stopPropagation() {} });                                      // avatar di default
+[...Array(3)].forEach(() => $('pnext').onclick({ stopPropagation() {} }));       // scorre gli avatar
+$('pok').onclick({ stopPropagation() {} });
 assert.match(txt(), /^Benvenuto allo Steve Jobs Theater, LUCA!/, 'variante {g:} maschile');
 
 if (todoAssets.size) console.log(`asset ancora da disegnare (${todoAssets.size}):`, [...todoAssets].join(', '));

@@ -91,6 +91,26 @@
     tId = global.requestAnimationFrame(tick);
   }
 
+  // come type(), ma non chiude la UI aperta: serve al carosello dell'avatar,
+  // che resta a schermo mentre Lucas commenta l'avatar mostrato
+  function typeKeep(line) {
+    stopTyping();
+    el.arrow.style.opacity = 0;
+    curLine = line; typing = true; pending = null;
+    if (!VN.speed) { el.txt.textContent = line; typing = false; return; }
+    var shown = 0, t0 = 0;
+    el.txt.textContent = '';
+    var tick = function (ts) {
+      if (!typing) return;
+      if (!t0) t0 = ts;
+      var want = Math.min(line.length, Math.floor((ts - t0) / VN.speed));
+      if (want !== shown) { shown = want; el.txt.textContent = line.slice(0, shown); }
+      if (shown >= line.length) { typing = false; tId = null; return; }
+      tId = global.requestAnimationFrame(tick);
+    };
+    tId = global.requestAnimationFrame(tick);
+  }
+
   function stopTyping() {
     if (tId && global.cancelAnimationFrame) global.cancelAnimationFrame(tId);
     tId = null;
@@ -351,99 +371,111 @@
     el.npc.classList.remove('micro'); void el.npc.offsetWidth; el.npc.classList.add('micro');
   }
 
-  /* ---------------- avatar del giocatore (4 layer) ---------------- */
-  // I layer sono file separati registrati sullo stesso rig: qui si impilano e
-  // basta. Le scelte vivono in variabili avatar_<slot>, quindi il salvataggio
-  // le porta con se' e l'avatar si ridisegna da solo alla ripresa.
+  /* ---------------- avatar del giocatore ----------------
+     Quattro avatar gia' pronti, non componibili: il giocatore li scorre uno a
+     uno e Lucas commenta ognuno. La conferma compare solo dopo che li ha visti
+     tutti; da li' in poi puo' continuare a scorrere finche' non sceglie.
+     La scelta vive in VN.state.avatar, quindi il salvataggio se la porta dietro
+     e l'avatar si ridisegna da solo alla ripresa. */
   function avatarCfg() { return VN.story.avatar || null; }
 
-  function avatarSrc(slot, option) {
+  function avatarSrc(id) {
     var a = avatarCfg();
-    if (!a || !option) return '';
-    var pat = a.path || 'avatar/{slot}_{option}.png';
-    return withBase(pat.replace('{slot}', slot).replace('{option}', option));
+    if (!a || !id) return '';
+    return withBase((a.path || 'avatar/avt_{id}.png').replace('{id}', id));
   }
 
-  function drawAvatar() {
+  function avatarOption(id) {
+    var a = avatarCfg();
+    if (!a) return null;
+    return (a.options || []).filter(function (o) { return o.id === id; })[0] || null;
+  }
+
+  function drawAvatar(id) {
     var a = avatarCfg();
     if (!a) return;
+    id = id || VN.state.avatar;
     el.avatar.innerHTML = '';
-    var any = false;
-    (a.layers || []).forEach(function (slot) {
-      var opt = VN.state['avatar_' + slot];
-      if (!opt) return;
-      any = true;
-      var img = global.document.createElement('img');
-      img.className = 'alayer';
-      img.dataset.slot = slot;
-      img.src = avatarSrc(slot, opt);
-      img.onerror = function () {   // layer non ancora disegnato: silhouette, niente icona rotta
-        img.onerror = null;
-        img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-        img.classList.add('missing');
-      };
-      el.avatar.appendChild(img);
-    });
-    el.avatar.classList.toggle('on', any);
+    if (!id) { el.avatar.classList.remove('on'); return; }
+    var img = global.document.createElement('img');
+    img.className = 'alayer';
+    img.id = 'avatarImg';
+    img.dataset.avatar = id;
+    img.src = avatarSrc(id);
+    img.onerror = function () {          // avatar non ancora disegnato: sagoma, niente icona rotta
+      img.onerror = null;
+      img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+      img.classList.add('missing');
+    };
+    el.avatar.appendChild(img);
+    el.avatar.classList.add('on');
   }
 
   function showPicker(st) {
     var a = avatarCfg();
-    if (!a) return next();
-    var slots = a.slots || [];
+    if (!a || !(a.options || []).length) return next();
+    var opts = a.options;
     var cur = 0;
+    var visti = {};
 
-    // default: prima opzione di ogni slot, cosi' l'anteprima non e' mai vuota
-    slots.forEach(function (s) {
-      if (!VN.state['avatar_' + s.id]) VN.state['avatar_' + s.id] = (s.options[0] || {}).id;
-    });
-    drawAvatar();
+    function tuttiVisti() { return Object.keys(visti).length >= opts.length; }
+
+    function mostra(i, dir) {
+      cur = (i + opts.length) % opts.length;
+      var o = opts[cur];
+      visti[o.id] = true;
+      VN.state.avatar = o.id;
+      drawAvatar(o.id);
+      var img = $('avatarImg');
+      if (img && dir) { img.classList.add(dir > 0 ? 'slideL' : 'slideR'); }
+      // finche' non li ha visti tutti Lucas presenta l'avatar; poi passa all'invito a scegliere
+      typeKeep(fmt(tuttiVisti() ? (a.prompt || 'Scegline uno.') : (o.say || o.label || '')));
+      render();
+    }
 
     function render() {
       el.picker.innerHTML = '';
 
-      var tabs = global.document.createElement('div');
-      tabs.className = 'ptabs';
-      slots.forEach(function (s, idx) {
-        var b = global.document.createElement('button');
-        b.className = 'ptab' + (idx === cur ? ' sel' : '');
-        b.textContent = s.label || s.id;
-        b.onclick = function (ev) { if (ev && ev.stopPropagation) ev.stopPropagation(); cur = idx; render(); };
-        tabs.appendChild(b);
-      });
-      el.picker.appendChild(tabs);
+      var nav = global.document.createElement('div');
+      nav.className = 'pnav';
 
-      var opts = global.document.createElement('div');
-      opts.className = 'popts';
-      var slot = slots[cur];
-      (slot.options || []).forEach(function (o) {
-        var b = global.document.createElement('button');
-        b.className = 'popt' + (VN.state['avatar_' + slot.id] === o.id ? ' sel' : '');
-        b.textContent = o.label || o.id;
-        b.dataset.slot = slot.id;
-        b.dataset.option = o.id;
-        b.onclick = function (ev) {
+      var prev = global.document.createElement('button');
+      prev.className = 'parrow'; prev.id = 'pprev'; prev.textContent = '◀';
+      prev.onclick = function (ev) { if (ev && ev.stopPropagation) ev.stopPropagation(); mostra(cur - 1, -1); };
+
+      var dots = global.document.createElement('div');
+      dots.className = 'pdots';
+      opts.forEach(function (o, i) {
+        var d = global.document.createElement('span');
+        d.className = 'pdot' + (i === cur ? ' sel' : '') + (visti[o.id] ? ' seen' : '');
+        dots.appendChild(d);
+      });
+
+      var nextb = global.document.createElement('button');
+      nextb.className = 'parrow'; nextb.id = 'pnext'; nextb.textContent = '▶';
+      nextb.onclick = function (ev) { if (ev && ev.stopPropagation) ev.stopPropagation(); mostra(cur + 1, 1); };
+
+      nav.appendChild(prev); nav.appendChild(dots); nav.appendChild(nextb);
+      el.picker.appendChild(nav);
+
+      if (tuttiVisti()) {
+        var ok = global.document.createElement('button');
+        ok.id = 'pok'; ok.className = 'ch'; ok.textContent = st.confirm || a.confirm || 'Scelgo questo';
+        ok.onclick = function (ev) {
           if (ev && ev.stopPropagation) ev.stopPropagation();
-          VN.state['avatar_' + slot.id] = o.id;
-          drawAvatar();
-          render();
+          VN.state.avatar = opts[cur].id;
+          VN.state.__label_avatar = opts[cur].label || opts[cur].id;
+          VN.progressed = true;
+          el.avatar.classList.remove('pick');
+          hideUI();
+          next();
         };
-        opts.appendChild(b);
-      });
-      el.picker.appendChild(opts);
-
-      var ok = global.document.createElement('button');
-      ok.id = 'pok'; ok.className = 'ch'; ok.textContent = st.confirm || 'Sono io';
-      ok.onclick = function (ev) {
-        if (ev && ev.stopPropagation) ev.stopPropagation();
-        VN.progressed = true;
-        hideUI();
-        next();
-      };
-      el.picker.appendChild(ok);
+        el.picker.appendChild(ok);
+      }
     }
 
-    render();
+    mostra(0, 0);
+    el.avatar.classList.add('pick');
     el.picker.classList.add('on');
   }
 

@@ -102,30 +102,20 @@
   },
 
   "avatar": {
-    "path": "avatar/avt_{slot}_{option}@3x.webp",
-    "layers": ["bottom", "top", "scarpe", "testa"],
-    "slots": [
-      {
-        "id": "testa", "label": "Testa",
-        "options": [{ "id": "a", "label": "1" }, { "id": "b", "label": "2" }, { "id": "c", "label": "3" }, { "id": "d", "label": "4" }]
-      },
-      {
-        "id": "top", "label": "Sopra",
-        "options": [{ "id": "a", "label": "1" }, { "id": "b", "label": "2" }, { "id": "c", "label": "3" }, { "id": "d", "label": "4" }]
-      },
-      {
-        "id": "bottom", "label": "Sotto",
-        "options": [{ "id": "a", "label": "1" }, { "id": "b", "label": "2" }, { "id": "c", "label": "3" }, { "id": "d", "label": "4" }]
-      },
-      {
-        "id": "scarpe", "label": "Scarpe",
-        "options": [{ "id": "a", "label": "1" }, { "id": "b", "label": "2" }, { "id": "c", "label": "3" }, { "id": "d", "label": "4" }]
-      }
+    "path": "avatar/avt_{id}.png",
+    "prompt": "Allora, chi sei stasera? Scorri ancora se vuoi, poi conferma.",
+    "confirm": "Scelgo questo",
+    "options": [
+      { "id": "a", "label": "Avatar 1", "say": "[BOZZA] Questo e' il classico: badge dritto, sguardo sveglio. Non sbagli mai." },
+      { "id": "b", "label": "Avatar 2", "say": "[BOZZA] Questo invece l'ha scelto meta' del reparto Retail. Fai un po' te." },
+      { "id": "c", "label": "Avatar 3", "say": "[BOZZA] Ah, questo mi piace. Sembra uno che le domande le fa davvero." },
+      { "id": "d", "label": "Avatar 4", "say": "[BOZZA] E poi c'e' questo. Diciamo che si fa notare." }
     ]
   },
 
   "vars": {
     "nome": "",
+    "avatar": null,
     "genere": null,
     "anni": null,
     "punti": 0
@@ -187,8 +177,8 @@
         { "t": "wait", "ms": 700 },
         { "t": "prop", "show": false },
         {
-          "t": "avatar", "who": "lucas", "confirm": "Sono io",
-          "text": "Ultima cosa: il badge vuole la tua foto. Costruisci il tuo avatar."
+          "t": "avatar", "who": "lucas",
+          "text": "Ultima cosa: il badge vuole una faccia. Te ne faccio vedere quattro."
         }
       ],
       "next": "benvenuto"

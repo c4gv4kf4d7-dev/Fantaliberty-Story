@@ -57,7 +57,7 @@ Tutto lo script vive in `game/story.json`. Ogni scena e' una lista di `steps`:
 | `input` | `{"t":"input","var":"nome","max":14,"text":"Come ti chiami?"}` | campo di testo sanitizzato |
 | `show` / `hide` | `{"t":"show","who":"susan","body":"in_piedi","head":"ansia"}` | entra/esce il personaggio |
 | `react` | `{"t":"react","level":"expr","head":"positiva"}` | reazione a 3 livelli (micro/expr/pose) |
-| `avatar` | `{"t":"avatar","text":"Costruisci il tuo avatar"}` | editor avatar a 4 layer |
+| `avatar` | `{"t":"avatar","text":"Te ne faccio vedere quattro."}` | carosello dei 4 avatar |
 | `prop` | `{"t":"prop","id":"mac_terminal","show":true}` | mostra/nasconde l'oggetto di scena |
 | `bg` | `{"t":"bg","id":"sjt_stage","fx":"zoom"}` | cambia sfondo / effetto |
 | `fx` | `{"t":"fx","name":"flash"}` | `flash`, `blur`, `unblur` |
@@ -82,8 +82,8 @@ Mac) non si stira a tutto schermo: disegna una cornice con le proporzioni di un
 iPhone al centro della pagina.
 
 Personaggi: **corpo (posa) + testa (espressione) come file separati**, ancorati al
-collo dichiarato in `cast.<nome>.neck`. Avatar del giocatore: **4 layer**
-(bottom/top/scarpe/testa) impilati sullo stesso rig.
+collo dichiarato in `cast.<nome>.neck`. Avatar del giocatore: **4 avatar interi
+gia' pronti**, scorribili in un carosello.
 
 Reazioni dopo ogni input, tre livelli:
 `{"t":"react","level":"micro"}` (nessun asset nuovo),

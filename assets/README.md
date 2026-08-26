@@ -10,7 +10,7 @@ assets/
             _originali/    i file come arrivano da Gemini, prima della conversione
   chars/    personaggi     chr_<nome>_<parte>_<stato>@3x.webp
   props/    oggetti        prop_<nome>@3x.webp
-  avatar/   layer avatar   avt_<slot>_<opzione>@3x.webp
+  avatar/   avatar giocatore  avt_a.png … avt_d.png
 ```
 
 ## Formato
@@ -35,12 +35,21 @@ chr_susan_corpo_spinta@3x.webp       chr_susan_testa_neutro@3x.webp
 Set minimo per personaggio: **1–2 pose** + **4–5 espressioni**
 (neutro, positivo, sorpreso, scettico, in ansia).
 
-## Avatar del giocatore: 4 layer sullo stesso rig
+## Avatar del giocatore: 4 avatar già pronti
 
-`avt_testa_a@3x.webp`, `avt_top_a@3x.webp`, `avt_bottom_a@3x.webp`, `avt_scarpe_a@3x.webp`
-(opzioni `a` `b` `c` `d`). 4 slot × 4 opzioni = 256 combinazioni: gli sprite non si
-possono disegnare già assemblati. **Tutti i layer vanno registrati sullo stesso
-scheletro** — è il vincolo di produzione più delicato del progetto.
+Niente più composizione a layer. Servono **4 personaggi interi**, uno per file:
+
+```
+assets/avatar/avt_a.png   avt_b.png   avt_c.png   avt_d.png
+```
+
+Il giocatore li scorre uno a uno con le frecce e Lucas commenta ognuno; la
+conferma compare solo dopo che li ha visti tutti e quattro. Le battute stanno in
+`game/story.json` sotto `avatar.options[].say`.
+
+Al momento in repo ci sono **4 sagome segnaposto** colorate: sostituiscile con gli
+avatar veri tenendo gli stessi nomi. Figura intera, trasparenza, stessa altezza e
+stesso appoggio a terra per tutti e quattro (altrimenti "saltano" scorrendo).
 
 ## Cosa manca oggi
 
@@ -55,7 +64,7 @@ in scena senza toccare il codice. Finché mancano, la scena gira senza personagg
 | Martha | in_piedi | neutro, positivo |
 | Veterano | seduto | neutro, compiaciuto, scettico |
 | Premi | in_piedi, tada | neutro, positivo |
-| Avatar | — | 16 layer (4 slot × 4 opzioni) |
+| Avatar giocatore | 4 file interi (`avt_a..d.png`) | segnaposto in repo |
 
 `npm test` stampa l'elenco aggiornato di cosa manca ancora.
 
