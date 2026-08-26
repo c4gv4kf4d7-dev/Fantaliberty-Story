@@ -26,6 +26,7 @@ archivio/wwdc26/        edizione precedente (classifica, previsioni, pagina di m
 ## Sviluppo
 
 ```bash
+npm run bump       # alza ?v= sugli asset: obbligatorio prima di pubblicare
 npm run serve      # http://localhost:8080  (serve un web server: story.json via fetch)
 npm install        # solo per i test
 npm test           # smoke test del flusso: input -> variabili -> scene
@@ -37,6 +38,18 @@ Parametri utili in sviluppo:
 * `?fast=1` — niente typewriter, si scorre il flusso in fretta
 * `?scene=lobby` — parte direttamente da una scena (ignora il salvataggio)
 * `?reset=1` — cancella il salvataggio
+
+## Pubblicare una modifica
+
+I browser tengono in cache `engine.css`, `engine.js` e `story.json` anche dopo un
+ricaricamento: senza accorgimenti una modifica pubblicata puo' non vedersi per ore.
+Per questo index.html li carica con una query di versione (`engine.js?v=12`).
+
+**Prima di ogni push:** `npm run bump` (alza il numero) e poi commit. Dopo il push
+GitHub Pages impiega uno o due minuti; lo stato del deploy si vede nella tab
+Actions del repo, workflow "pages build and deployment". Se resta *queued* a lungo
+il sito continua a servire la versione precedente: non e' cache del browser, e'
+il deploy che non e' ancora passato.
 
 ## Salvataggio
 

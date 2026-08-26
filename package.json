@@ -8,7 +8,8 @@
     "test": "node tests/smoke.mjs",
     "serve": "python3 -m http.server 8080",
     "build": "python3 tools/build_single_file.py",
-    "shots": "node tools/screenshots.mjs"
+    "shots": "node tools/screenshots.mjs",
+    "bump": "python3 tools/bump_version.py"
   },
   "devDependencies": {
     "jsdom": "^24.0.0",
