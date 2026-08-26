@@ -1,74 +1,109 @@
-/* FantaLiberty VN engine — CSS puro, animazioni via @keyframes
-   (le keyframe sono piu' affidabili delle transition su mobile Safari) */
+/* FantaLiberty VN engine — CSS puro.
+   Baseline: iPhone portrait 390x844 pt. Le animazioni sono @keyframes (piu'
+   affidabili delle transition su mobile Safari). Il terzo inferiore dello
+   schermo e' area dialogo: i fondali non ci mettono dettagli importanti. */
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;background:#0a0a0f;overflow:hidden;font-family:'Press Start 2P',monospace}
+html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:none;
+ font-family:'Press Start 2P',ui-monospace,monospace;-webkit-text-size-adjust:100%}
 
-#stage{position:relative;width:100vw;height:100vh;overflow:hidden;cursor:pointer}
+#stage{position:relative;width:100vw;height:100vh;height:100svh;overflow:hidden;cursor:pointer;
+ -webkit-tap-highlight-color:transparent}
 
-/* ---------- sfondo ---------- */
-#bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;image-rendering:pixelated;
- transform:scale(1);transition:filter 1.1s ease}
+/* ---------- fondale ---------- */
+/* il fondale sta su un layer suo: cosi' il testo che si scrive non lo fa ridisegnare */
+#bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;
+ image-rendering:pixelated;transition:filter .8s ease;transform:translateZ(0);will-change:filter,transform}
 #bg.zoom{animation:zoom 6s ease-out forwards}
 @keyframes zoom{from{transform:scale(1)}to{transform:scale(1.12)}}
-#bg.blur{filter:blur(7px) brightness(.6)}
+#bg.blur{filter:blur(6px) brightness(.55)}
 
-/* ---------- personaggio ---------- */
-#char{position:absolute;bottom:16%;right:4%;height:34%;image-rendering:pixelated;
- filter:drop-shadow(0 10px 20px rgba(0,0,0,.55));opacity:0;transform:translateX(60px);
- transition:height .5s ease, bottom .5s ease, right .5s ease}
-#char.in{animation:enter .6s cubic-bezier(.2,.9,.3,1) forwards}
+/* ---------- NPC: corpo + testa ----------
+   #npc e' il riquadro del personaggio; la testa e' posizionata in percentuale
+   su quel riquadro (punto di ancoraggio del collo, uguale per tutte le pose). */
+#npc{position:absolute;right:1%;bottom:34%;height:42%;aspect-ratio:3/5;opacity:0;
+ filter:drop-shadow(0 10px 20px rgba(0,0,0,.55));transform:translateX(60px);
+ transition:height .5s ease, bottom .5s ease}
+#npcBody{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+ object-position:bottom center;image-rendering:pixelated}
+#npcHead{position:absolute;left:50%;top:4%;width:34%;transform:translateX(-50%);
+ image-rendering:pixelated}
+#npc.in{animation:enter .6s cubic-bezier(.2,.9,.3,1) forwards}
 @keyframes enter{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:translateX(0)}}
-#char.pop{animation:pop .5s ease forwards}
-@keyframes pop{0%{opacity:1;transform:scale(1)}45%{opacity:1;transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
-#char.out{animation:leave .45s ease forwards}
+#npc.pop{animation:pop .5s ease forwards}
+@keyframes pop{0%{opacity:1;transform:scale(1)}45%{opacity:1;transform:scale(1.06)}100%{opacity:1;transform:scale(1)}}
+#npc.broken{display:none}
+#npc.out{animation:leave .45s ease forwards}
 @keyframes leave{from{opacity:1}to{opacity:0;transform:translateX(40px)}}
+/* reazione livello 1: movimento minimo, nessun asset nuovo */
+#npc.micro{animation:micro .45s ease}
+@keyframes micro{0%,100%{transform:translateY(0) rotate(0)}40%{transform:translateY(-6px) rotate(-1deg)}}
+
+/* ---------- avatar del giocatore: 4 layer impilati ---------- */
+#avatar{position:absolute;left:3%;bottom:36%;height:30%;aspect-ratio:3/5;opacity:0;
+ transition:opacity .4s ease}
+#avatar.on{opacity:1}
+.alayer{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+ object-position:bottom center;image-rendering:pixelated}
+/* layer non ancora disegnato: silhouette, cosi' lo scheletro resta leggibile */
+.alayer.missing{background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.04));
+ border-radius:10px;border:2px dashed rgba(255,255,255,.25)}
 
 /* ---------- prop / terminale ---------- */
-#propwrap{position:absolute;left:50%;top:4%;height:44%;opacity:0;
+#propwrap{position:absolute;left:50%;top:7%;width:62%;max-width:420px;opacity:0;
  transform:translate(-50%,25px) scale(.85);
  transition:opacity .6s ease, transform .7s cubic-bezier(.2,.9,.3,1);pointer-events:none}
 #propwrap.in{opacity:1;transform:translate(-50%,0) scale(1)}
 #propwrap.out{opacity:0;transform:translate(-50%,-40px) scale(.8)}
-#prop{height:100%;display:block;image-rendering:pixelated;filter:drop-shadow(0 16px 30px rgba(0,0,0,.65))}
-/* la finestra di testo dentro lo schermo del Mac: percentuali sull'immagine del prop */
+#prop{width:100%;display:block;image-rendering:pixelated;filter:drop-shadow(0 16px 30px rgba(0,0,0,.65))}
 #screen{position:absolute;left:27.78%;top:11.94%;width:45.18%;height:28.15%;
- padding:3% 4%;color:#0f3b34;font-size:clamp(5px,1.05vh,12px);line-height:1.75;overflow:hidden}
+ padding:3% 4%;color:#0f3b34;font-size:clamp(5px,1.5vw,11px);line-height:1.75;overflow:hidden}
 .frow{margin-bottom:.5em;white-space:nowrap;overflow:hidden}
 .fk{opacity:.75}
 .fv{font-weight:bold}
 .cur{display:inline-block;width:.55em;background:#0f3b34;animation:bl .6s steps(1) infinite}
 @keyframes bl{50%{opacity:0}}
 
-/* ---------- dialog box ---------- */
-#boxwrap{position:absolute;left:4%;right:22%;bottom:5%;opacity:0;transform:translateY(18px);
- transition:opacity .5s ease, transform .5s ease}
+/* ---------- dialogo (terzo inferiore) ---------- */
+#boxwrap{position:absolute;left:4%;right:4%;bottom:calc(3% + env(safe-area-inset-bottom,0px));
+ opacity:0;transform:translateY(18px);transition:opacity .5s ease, transform .5s ease;
+ max-height:46%;display:flex;flex-direction:column}
 #boxwrap.in{opacity:1;transform:translateY(0)}
-#name{display:inline-block;background:#1b1f33;border:4px solid #fff;border-radius:10px;padding:8px 18px;
- color:#fff;font-size:clamp(9px,1.6vw,15px);margin-left:14px;position:relative;z-index:2;
+#name{align-self:flex-start;background:#1b1f33;border:3px solid #fff;border-radius:10px;
+ padding:7px 14px;color:#fff;font-size:clamp(9px,2.6vw,14px);margin-left:12px;position:relative;z-index:2;
  box-shadow:0 4px 0 rgba(0,0,0,.5)}
 #name.hidden{display:none}
-#box{background:#1b1f33;border:4px solid #fff;border-radius:12px;padding:16px 20px;margin-top:-4px;
- color:#fff;font-size:clamp(9px,1.7vw,17px);line-height:1.8;min-height:4.2em;
+/* altezza riservata: il box non cambia dimensione a ogni carattere (niente scatti) */
+#box{background:#1b1f33;border:3px solid #fff;border-radius:12px;padding:14px 16px;margin-top:-3px;
+ color:#fff;font-size:clamp(10px,3.1vw,16px);line-height:1.75;min-height:4.4em;
  box-shadow:0 6px 0 rgba(0,0,0,.5)}
-#arrow{text-align:center;color:#fff;font-size:13px;margin-top:6px;opacity:0;animation:bob 1s infinite}
+#arrow{text-align:center;color:#fff;font-size:12px;margin-top:5px;opacity:0;animation:bob 1s infinite}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
 
-/* ---------- scelte / input ---------- */
-#choices{margin-top:14px;display:none;flex-direction:column;gap:8px}
+/* ---------- scelte / input / avatar picker ---------- */
+#choices{margin-top:10px;display:none;flex-direction:column;gap:7px;overflow-y:auto}
 #choices.on{display:flex}
-.ch{background:#2a3050;border:3px solid #fff;border-radius:8px;padding:10px 14px;color:#fff;
- font-family:inherit;font-size:clamp(8px,1.5vw,15px);cursor:pointer;text-align:left;
+.ch{background:#2a3050;border:3px solid #fff;border-radius:8px;padding:11px 13px;color:#fff;
+ font-family:inherit;font-size:clamp(9px,2.8vw,14px);cursor:pointer;text-align:left;
  box-shadow:0 3px 0 rgba(0,0,0,.5)}
 .ch:hover,.ch:focus{background:#3d466e;outline:none}
-#inputform{margin-top:14px;display:none;gap:8px}
+
+#inputform{margin-top:10px;display:none;gap:7px}
 #inputform.on{display:flex}
-#ti{flex:1;background:#0d1020;border:3px solid #fff;border-radius:8px;color:#fff;
- font-family:inherit;font-size:clamp(9px,1.6vw,16px);padding:10px 12px;outline:none}
+#ti{flex:1;min-width:0;background:#0d1020;border:3px solid #fff;border-radius:8px;color:#fff;
+ font-family:inherit;font-size:16px;padding:10px 11px;outline:none}   /* 16px: iOS non zooma */
 #tok{background:#2a3050;border:3px solid #fff;border-radius:8px;color:#fff;font-family:inherit;
- font-size:clamp(8px,1.5vw,15px);padding:10px 14px;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.5)}
+ font-size:clamp(9px,2.8vw,14px);padding:10px 13px;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.5)}
 #tok:disabled{opacity:.35;cursor:default}
 
-#hint{position:absolute;top:14px;right:16px;color:#fff9;font-size:9px}
+#picker{margin-top:10px;display:none;flex-direction:column;gap:8px}
+#picker.on{display:flex}
+.ptabs,.popts{display:flex;gap:6px;flex-wrap:wrap}
+.ptab,.popt{background:#2a3050;border:3px solid rgba(255,255,255,.55);border-radius:8px;
+ color:#fff;font-family:inherit;font-size:clamp(8px,2.4vw,12px);padding:8px 10px;cursor:pointer}
+.ptab.sel,.popt.sel{border-color:#fff;background:#3d466e}
+.popt{flex:1 1 22%}
+
+#hint{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:14px;color:#fff9;font-size:9px}
 #flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
 #flash.go{animation:fl .55s ease-out}
 @keyframes fl{0%{opacity:.85}100%{opacity:0}}
@@ -77,8 +112,16 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;font-family:'Press Star
  font-size:12px;line-height:2;text-align:center}
 #loaderr.on{display:grid}
 
-@media (orientation:portrait){
-  #boxwrap{right:4%}
-  #char{height:26%;right:2%}
-  #propwrap{height:32%}
+/* Schermi larghi (Safari su Mac, tablet): niente stiramento a tutto schermo.
+   Si disegna una cornice con le proporzioni di un iPhone (390x844) centrata,
+   perche' e' li' che il gioco verra' davvero giocato. */
+@media (min-aspect-ratio:3/4){
+  body{background:#05060a;display:flex;align-items:center;justify-content:center}
+  #stage{
+    height:min(100svh,940px);
+    width:calc(min(100svh,940px) * 390 / 844);
+    max-width:100vw;
+    border-radius:22px;
+    box-shadow:0 0 0 2px rgba(255,255,255,.08), 0 24px 70px rgba(0,0,0,.75);
+  }
 }

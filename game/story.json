@@ -1,24 +1,125 @@
 {
   "meta": {
     "title": "FantaLiberty — Nexus",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "start": "arrivo",
     "assetBase": "assets/",
     "genderVar": "genere",
-    "genderOrder": ["m", "f", "x"]
+    "genderOrder": ["m", "f", "x"],
+    "note": "Formato: iPhone portrait 390x844. Il terzo inferiore e' area dialogo."
   },
 
   "assets": {
     "bg": {
-      "sjt_stage": "bg/sjt_stage.jpg"
-    },
-    "chars": {
-      "lucas_neutral": "chars/lucas_neutral.png",
-      "lucas_happy": "chars/lucas_happy.png"
+      "sjt_palco": "bg/bg_sjt_palco.jpg"
     },
     "props": {
-      "mac_terminal": "props/mac_terminal.png"
+      "mac_terminale": "props/prop_mac_terminale.png"
+    },
+    "chars": {}
+  },
+
+  "cast": {
+    "lucas": {
+      "name": "Lucas",
+      "defaultBody": "neutro",
+      "defaultHead": "neutro",
+      "bodies": {
+        "neutro": "chars/chr_lucas_neutro.png",
+        "felice": "chars/chr_lucas_felice.png"
+      },
+      "heads": {},
+      "_nota": "Sprite unico (prototipo). I personaggi nuovi vanno consegnati con corpo e testa separati: 'bodies' = pose, 'heads' = espressioni, 'neck' = ancoraggio."
+    },
+    "susan": {
+      "name": "Susan",
+      "defaultBody": "in_piedi",
+      "defaultHead": "ansia",
+      "neck": { "x": "50%", "y": "3%", "w": "32%" },
+      "bodies": {
+        "in_piedi": "chars/chr_susan_corpo_in_piedi@3x.webp",
+        "spinta": "chars/chr_susan_corpo_spinta@3x.webp"
+      },
+      "heads": {
+        "neutro": "chars/chr_susan_testa_neutro@3x.webp",
+        "ansia": "chars/chr_susan_testa_ansia@3x.webp",
+        "sorpresa": "chars/chr_susan_testa_sorpresa@3x.webp",
+        "scettica": "chars/chr_susan_testa_scettica@3x.webp",
+        "positiva": "chars/chr_susan_testa_positiva@3x.webp"
+      }
+    },
+    "maurice": {
+      "name": "Maurice",
+      "defaultBody": "in_piedi",
+      "defaultHead": "neutro",
+      "neck": { "x": "50%", "y": "3%", "w": "32%" },
+      "bodies": { "in_piedi": "chars/chr_maurice_corpo_in_piedi@3x.webp" },
+      "heads": {
+        "neutro": "chars/chr_maurice_testa_neutro@3x.webp",
+        "positivo": "chars/chr_maurice_testa_positivo@3x.webp",
+        "sorpreso": "chars/chr_maurice_testa_sorpreso@3x.webp"
+      }
+    },
+    "martha": {
+      "name": "Martha",
+      "defaultBody": "in_piedi",
+      "defaultHead": "neutro",
+      "neck": { "x": "50%", "y": "3%", "w": "32%" },
+      "bodies": { "in_piedi": "chars/chr_martha_corpo_in_piedi@3x.webp" },
+      "heads": {
+        "neutro": "chars/chr_martha_testa_neutro@3x.webp",
+        "positivo": "chars/chr_martha_testa_positivo@3x.webp"
+      }
+    },
+    "veterano": {
+      "name": "Veterano",
+      "defaultBody": "seduto",
+      "defaultHead": "neutro",
+      "neck": { "x": "50%", "y": "5%", "w": "32%" },
+      "bodies": { "seduto": "chars/chr_veterano_corpo_seduto@3x.webp" },
+      "heads": {
+        "neutro": "chars/chr_veterano_testa_neutro@3x.webp",
+        "compiaciuto": "chars/chr_veterano_testa_compiaciuto@3x.webp",
+        "scettico": "chars/chr_veterano_testa_scettico@3x.webp"
+      }
+    },
+    "premi": {
+      "name": "???",
+      "defaultBody": "in_piedi",
+      "defaultHead": "neutro",
+      "neck": { "x": "50%", "y": "3%", "w": "32%" },
+      "bodies": {
+        "in_piedi": "chars/chr_premi_corpo_in_piedi@3x.webp",
+        "tada": "chars/chr_premi_corpo_tada@3x.webp"
+      },
+      "heads": {
+        "neutro": "chars/chr_premi_testa_neutro@3x.webp",
+        "positivo": "chars/chr_premi_testa_positivo@3x.webp"
+      }
     }
+  },
+
+  "avatar": {
+    "path": "avatar/avt_{slot}_{option}@3x.webp",
+    "layers": ["bottom", "top", "scarpe", "testa"],
+    "slots": [
+      {
+        "id": "testa", "label": "Testa",
+        "options": [{ "id": "a", "label": "1" }, { "id": "b", "label": "2" }, { "id": "c", "label": "3" }, { "id": "d", "label": "4" }]
+      },
+      {
+        "id": "top", "label": "Sopra",
+        "options": [{ "id": "a", "label": "1" }, { "id": "b", "label": "2" }, { "id": "c", "label": "3" }, { "id": "d", "label": "4" }]
+      },
+      {
+        "id": "bottom", "label": "Sotto",
+        "options": [{ "id": "a", "label": "1" }, { "id": "b", "label": "2" }, { "id": "c", "label": "3" }, { "id": "d", "label": "4" }]
+      },
+      {
+        "id": "scarpe", "label": "Scarpe",
+        "options": [{ "id": "a", "label": "1" }, { "id": "b", "label": "2" }, { "id": "c", "label": "3" }, { "id": "d", "label": "4" }]
+      }
+    ]
   },
 
   "vars": {
@@ -32,20 +133,20 @@
 
     "arrivo": {
       "title": "Atto 1 — L'arrivo",
-      "bg": "sjt_stage",
+      "bg": "sjt_palco",
       "bgFx": "zoom",
       "steps": [
         { "t": "wait", "ms": 2100 },
-        { "t": "show", "char": "lucas_neutral" },
+        { "t": "show", "who": "lucas", "body": "neutro" },
         { "t": "wait", "ms": 500 },
-        { "t": "say", "who": "Lucas", "text": "Ciao! Io sono Lucas... ti stavamo aspettando allo Steve Jobs Theater!" }
+        { "t": "say", "who": "lucas", "text": "Ciao! Io sono Lucas... ti stavamo aspettando allo Steve Jobs Theater!" }
       ],
       "next": "registrazione"
     },
 
     "registrazione": {
       "title": "Atto 1 — Registrazione",
-      "bg": "sjt_stage",
+      "bg": "sjt_palco",
       "bgFx": "blur",
       "terminal": [
         { "key": "NOME:", "var": "nome" },
@@ -54,15 +155,15 @@
         { "key": "", "var": "__ok" }
       ],
       "steps": [
-        { "t": "show", "char": "lucas_neutral", "height": "26%", "bottom": "14%" },
-        { "t": "prop", "id": "mac_terminal", "show": true },
+        { "t": "show", "who": "lucas", "body": "neutro", "height": "34%" },
+        { "t": "prop", "id": "mac_terminale", "show": true },
         { "t": "wait", "ms": 600 },
         {
-          "t": "input", "who": "Lucas", "var": "nome", "max": 14,
+          "t": "input", "who": "lucas", "var": "nome", "max": 14,
           "text": "Registriamoti al terminale. Come ti chiami?"
         },
         {
-          "t": "choice", "who": "Lucas", "var": "genere",
+          "t": "choice", "who": "lucas", "var": "genere",
           "text": "Perfetto, {NOME}. Come preferisci che mi rivolga a te?",
           "options": [
             { "label": "Maschile", "value": "m" },
@@ -71,7 +172,7 @@
           ]
         },
         {
-          "t": "choice", "who": "Lucas", "var": "anni",
+          "t": "choice", "who": "lucas", "var": "anni",
           "text": "Annotato. E da quanto tempo lavori in Apple?",
           "options": [
             { "label": "Meno di 1 anno", "say": "Meno di un anno", "value": "0" },
@@ -81,74 +182,71 @@
           ]
         },
         { "t": "set", "var": "__ok", "value": "> REGISTRAZIONE OK" },
-        { "t": "wait", "ms": 700 }
+        { "t": "wait", "ms": 700 },
+        { "t": "prop", "show": false },
+        {
+          "t": "avatar", "who": "lucas", "confirm": "Sono io",
+          "text": "Ultima cosa: il badge vuole la tua foto. Costruisci il tuo avatar."
+        }
       ],
       "next": "benvenuto"
     },
 
     "benvenuto": {
       "title": "Atto 1 — Benvenuto",
-      "bg": "sjt_stage",
+      "bg": "sjt_palco",
       "steps": [
-        { "t": "prop", "show": false },
         { "t": "fx", "name": "flash" },
         { "t": "fx", "name": "unblur" },
-        { "t": "show", "char": "lucas_happy", "pop": true, "height": "34%", "bottom": "16%" },
+        { "t": "show", "who": "lucas", "body": "felice", "pop": true, "height": "46%" },
         {
-          "t": "say", "who": "Lucas",
+          "t": "say", "who": "lucas",
           "text": "{g:Benvenuto|Benvenuta|Ti do il benvenuto} allo Steve Jobs Theater, {NOME}! Grazie, ben fatto."
         },
         {
-          "t": "say", "who": "Lucas",
+          "t": "say", "who": "lucas",
           "text": "{g:Ti sei registrato senza intoppi.|Ti sei registrata senza intoppi.|La registrazione e' andata a buon fine.} {label:anni} in Apple: esperienza che qui conta parecchio."
         },
         {
-          "t": "say", "who": "Lucas",
+          "t": "say", "who": "lucas",
           "text": "Il badge e' attivo. {g:Direi che sei pronto.|Direi che sei pronta.|Direi che hai tutto quello che serve.} Puoi entrare... che aspetti?"
         }
       ],
       "next": "ritardo_ceo"
     },
 
-    "_nota_bozza": {
-      "title": "NOTA",
-      "steps": [
-        { "t": "say", "text": "Le scene qui sotto (atti 2-4) sono SEGNAPOSTO: struttura e personaggi sono quelli decisi su Notion, i testi vanno riscritti. Questa scena non e' raggiungibile dal gioco." },
-        { "t": "end" }
-      ]
-    },
-
     "ritardo_ceo": {
       "title": "Atto 2 — Il ritardo del CEO",
-      "bg": "sjt_stage",
+      "bg": "sjt_palco",
       "steps": [
         { "t": "hide" },
         { "t": "wait", "ms": 400 },
-        { "t": "show", "char": "susan_panic" },
-        { "t": "say", "who": "Susan", "text": "[BOZZA] {NOME}? {NOME}! Meno male. Abbiamo un problema: Ternus e' in ritardo e il keynote inizia tra venti minuti." },
-        { "t": "say", "who": "Susan", "text": "[BOZZA] No, non hai capito. TU adesso vieni con me dietro le quinte. Muoviti!" },
+        { "t": "show", "who": "susan", "body": "in_piedi", "head": "ansia" },
+        { "t": "say", "who": "susan", "text": "[BOZZA] {NOME}? {NOME}! Meno male. Abbiamo un problema: Ternus e' in ritardo e il keynote inizia tra venti minuti." },
+        { "t": "say", "who": "susan", "text": "[BOZZA] No, non hai capito. TU adesso vieni con me dietro le quinte. Muoviti!" },
         {
-          "t": "choice", "who": "Susan", "var": "reazione",
+          "t": "choice", "who": "susan", "var": "tono",
           "text": "[BOZZA] Allora? Che facciamo?",
           "options": [
-            { "label": "Ti seguo, andiamo", "value": "segui" },
-            { "label": "Aspetta, chi sei?", "value": "chiedi" }
+            { "label": "Ti seguo, andiamo", "value": "sfacciato", "react": { "level": "expr", "head": "positiva" } },
+            { "label": "Aspetta, chi sei?", "value": "prudente", "react": { "level": "expr", "head": "scettica" } }
           ]
         },
-        { "t": "say", "who": "Susan", "text": "[BOZZA] ...ne riparliamo dopo. Corri!" }
+        { "t": "react", "level": "pose", "body": "spinta", "head": "ansia" },
+        { "t": "say", "who": "susan", "text": "[BOZZA] ...ne riparliamo dopo. Corri!" }
       ],
       "next": "lobby"
     },
 
     "lobby": {
       "title": "Atto 3 — La lobby",
-      "bg": "sjt_stage",
+      "bg": "sjt_palco",
       "steps": [
         { "t": "hide" },
-        { "t": "show", "char": "maurice_chill" },
-        { "t": "say", "who": "Maurice", "text": "[BOZZA] Ehi, calma. Prima che ti buttino sul palco, ti faccio vedere com'e' fatto questo posto." },
+        { "t": "show", "who": "maurice" },
+        { "t": "say", "who": "maurice", "text": "[BOZZA] Ehi, calma. Prima che ti buttino sul palco, ti faccio vedere com'e' fatto questo posto." },
         {
-          "t": "choice", "who": "Maurice", "var": "sezione",
+          "t": "choice", "who": "maurice", "var": "sezione",
           "text": "[BOZZA] Da dove vuoi partire?",
           "options": [
             { "label": "Il gioco delle previsioni", "value": "gioco", "goto": "backstage" },
@@ -161,56 +259,56 @@
 
     "backstage": {
       "title": "Atto 4 — Backstage / regia",
-      "bg": "sjt_stage",
+      "bg": "sjt_palco",
       "steps": [
         { "t": "hide" },
-        { "t": "show", "char": "martha_regia" },
-        { "t": "say", "who": "Martha", "text": "[BOZZA] Cuffie, microfono, tre minuti. Qui si decide come va lo show: le tue previsioni sul keynote." },
-        { "t": "say", "who": "Martha", "text": "[BOZZA] (qui va il blocco previsioni: le domande FantaLiberty vere e proprie)" }
+        { "t": "show", "who": "martha" },
+        { "t": "say", "who": "martha", "text": "[BOZZA] Cuffie, microfono, tre minuti. Qui si decide come va lo show: le tue previsioni sul keynote." },
+        { "t": "say", "who": "martha", "text": "[BOZZA] (qui va il blocco previsioni FantaLiberty. Regola: le reazioni degli NPC e della platea seguono il TONO della risposta, mai il contenuto del pronostico.)" }
       ],
       "next": "finale"
     },
 
     "quiz": {
       "title": "Atto 4 — Quiz storico",
-      "bg": "sjt_stage",
+      "bg": "sjt_palco",
       "steps": [
         { "t": "hide" },
-        { "t": "show", "char": "veterano_neutral" },
-        { "t": "say", "who": "Veterano", "text": "[BOZZA] Io c'ero nel 2007, ragazzo/a. Vediamo se te la cavi." },
+        { "t": "show", "who": "veterano" },
+        { "t": "say", "who": "veterano", "text": "[BOZZA] Io c'ero nel 2007. Vediamo se te la cavi." },
         {
-          "t": "choice", "who": "Veterano", "var": "quiz1",
+          "t": "choice", "who": "veterano", "var": "quiz1",
           "text": "[BOZZA] In che anno e' stato presentato il primo iPhone?",
           "options": [
             { "label": "2005", "value": "no" },
-            { "label": "2007", "value": "si" },
+            { "label": "2007", "value": "si", "react": { "level": "expr", "head": "compiaciuto" } },
             { "label": "2009", "value": "no" }
           ]
         },
-        { "t": "say", "who": "Veterano", "text": "[BOZZA] (qui la valutazione della risposta e l'assegnazione dei punti)" }
+        { "t": "say", "who": "veterano", "text": "[BOZZA] (qui la valutazione della risposta e l'assegnazione dei punti)" }
       ],
       "next": "premi"
     },
 
     "premi": {
       "title": "Atto 4 — Premi",
-      "bg": "sjt_stage",
+      "bg": "sjt_palco",
       "steps": [
         { "t": "hide" },
-        { "t": "show", "char": "premi_neutral", "pop": true },
+        { "t": "show", "who": "premi", "body": "tada", "head": "positivo", "pop": true },
         { "t": "fx", "name": "flash" },
-        { "t": "say", "who": "???", "text": "[BOZZA] Ta-daaa! Questi te li sei {g:guadagnato|guadagnata|guadagnati}, {NOME}." }
+        { "t": "say", "who": "premi", "text": "[BOZZA] Ta-daaa! Questi te li sei {g:guadagnato|guadagnata|guadagnati}, {NOME}." }
       ],
       "next": "finale"
     },
 
     "finale": {
       "title": "Finale",
-      "bg": "sjt_stage",
+      "bg": "sjt_palco",
       "steps": [
         { "t": "hide" },
-        { "t": "show", "char": "lucas_happy", "pop": true },
-        { "t": "say", "who": "Lucas", "text": "[BOZZA] E' andata alla grande, {NOME}! Il tuo risultato e' salvato: ci vediamo in classifica." },
+        { "t": "show", "who": "lucas", "body": "felice", "pop": true },
+        { "t": "say", "who": "lucas", "text": "[BOZZA] E' andata alla grande, {NOME}! Il tuo risultato e' salvato: ci vediamo in classifica." },
         { "t": "end" }
       ]
     }

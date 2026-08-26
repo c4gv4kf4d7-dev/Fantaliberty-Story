@@ -55,7 +55,9 @@ Tutto lo script vive in `game/story.json`. Ogni scena e' una lista di `steps`:
 | `say` | `{"t":"say","who":"Lucas","text":"Ciao {NOME}!"}` | battuta + typewriter, avanza al tap |
 | `choice` | `{"t":"choice","var":"genere","text":"...","options":[{"label":"Maschile","value":"m"}]}` | bottoni; salva in `var`; `goto` opzionale per opzione |
 | `input` | `{"t":"input","var":"nome","max":14,"text":"Come ti chiami?"}` | campo di testo sanitizzato |
-| `show` / `hide` | `{"t":"show","char":"lucas_happy","pop":true}` | entra/esce il personaggio |
+| `show` / `hide` | `{"t":"show","who":"susan","body":"in_piedi","head":"ansia"}` | entra/esce il personaggio |
+| `react` | `{"t":"react","level":"expr","head":"positiva"}` | reazione a 3 livelli (micro/expr/pose) |
+| `avatar` | `{"t":"avatar","text":"Costruisci il tuo avatar"}` | editor avatar a 4 layer |
 | `prop` | `{"t":"prop","id":"mac_terminal","show":true}` | mostra/nasconde l'oggetto di scena |
 | `bg` | `{"t":"bg","id":"sjt_stage","fx":"zoom"}` | cambia sfondo / effetto |
 | `fx` | `{"t":"fx","name":"flash"}` | `flash`, `blur`, `unblur` |
@@ -71,6 +73,25 @@ Interpolazione nei testi:
 
 La scena puo' definire `terminal`: le righe mostrate sullo schermo del Mac, che si
 compilano da sole man mano che le variabili vengono impostate.
+
+## Formato e layout
+
+Il gioco e' pensato per **iPhone in verticale** (390x844 pt): il fondale occupa
+tutto lo schermo, il terzo inferiore e' area dialogo. Su schermi larghi (Safari sul
+Mac) non si stira a tutto schermo: disegna una cornice con le proporzioni di un
+iPhone al centro della pagina.
+
+Personaggi: **corpo (posa) + testa (espressione) come file separati**, ancorati al
+collo dichiarato in `cast.<nome>.neck`. Avatar del giocatore: **4 layer**
+(bottom/top/scarpe/testa) impilati sullo stesso rig.
+
+Reazioni dopo ogni input, tre livelli:
+`{"t":"react","level":"micro"}` (nessun asset nuovo),
+`{"t":"react","level":"expr","head":"sorpresa"}` (cambia la testa),
+`{"t":"react","level":"pose","body":"spinta","head":"ansia"}` (momenti chiave).
+Una scelta puo' portarsi dietro la sua reazione con `"react": {...}`.
+**Regola inderogabile**: le reazioni seguono il *tono* della risposta, mai il
+contenuto del pronostico, altrimenti il gioco suggerisce le risposte.
 
 ## Stato dello script
 
