@@ -157,7 +157,7 @@
         { "key": "", "var": "__ok" }
       ],
       "steps": [
-        { "t": "show", "who": "lucas", "body": "neutro", "height": "34%" },
+        { "t": "show", "who": "lucas", "body": "neutro", "height": "32%", "bottom": "37%" },
         { "t": "prop", "id": "mac_terminale", "show": true },
         { "t": "wait", "ms": 600 },
         {
@@ -200,7 +200,7 @@
       "steps": [
         { "t": "fx", "name": "flash" },
         { "t": "fx", "name": "unblur" },
-        { "t": "show", "who": "lucas", "body": "felice", "pop": true, "height": "46%" },
+        { "t": "show", "who": "lucas", "body": "felice", "pop": true },
         {
           "t": "say", "who": "lucas",
           "text": "{g:Benvenuto|Benvenuta|Ti do il benvenuto} allo Steve Jobs Theater, {NOME}! Grazie, ben fatto."

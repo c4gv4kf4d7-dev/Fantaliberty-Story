@@ -20,7 +20,7 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 /* ---------- NPC: corpo + testa ----------
    #npc e' il riquadro del personaggio; la testa e' posizionata in percentuale
    su quel riquadro (punto di ancoraggio del collo, uguale per tutte le pose). */
-#npc{position:absolute;right:1%;bottom:24%;height:42%;aspect-ratio:3/5;opacity:0;
+#npc{position:absolute;right:-2%;bottom:16%;height:56%;aspect-ratio:3/5;opacity:0;z-index:1;
  filter:drop-shadow(0 10px 20px rgba(0,0,0,.55));transform:translateX(60px);
  transition:height .5s ease, bottom .5s ease}
 #npcBody{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
@@ -39,7 +39,7 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 @keyframes micro{0%,100%{transform:translateY(0) rotate(0)}40%{transform:translateY(-6px) rotate(-1deg)}}
 
 /* ---------- avatar del giocatore: 4 layer impilati ---------- */
-#avatar{position:absolute;left:3%;bottom:26%;height:26%;aspect-ratio:3/5;opacity:0;
+#avatar{position:absolute;left:2%;bottom:20%;height:34%;aspect-ratio:3/5;opacity:0;
  transition:opacity .4s ease}
 #avatar.on{opacity:1}
 .alayer{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
@@ -56,7 +56,7 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #propwrap.out{opacity:0;transform:translate(-50%,-40px) scale(.8)}
 #prop{width:100%;display:block;image-rendering:pixelated;filter:drop-shadow(0 16px 30px rgba(0,0,0,.65))}
 #screen{position:absolute;left:27.78%;top:11.94%;width:45.18%;height:28.15%;
- padding:3% 4%;color:#0f3b34;font-size:clamp(5px,1.5vw,11px);line-height:1.75;overflow:hidden}
+ padding:3% 4%;color:#0f3b34;font-size:clamp(5px,1.35vw,10px);line-height:1.7;overflow:hidden}
 .frow{margin-bottom:.5em;white-space:nowrap;overflow:hidden}
 .fk{opacity:.75}
 .fv{font-weight:bold}
@@ -64,17 +64,17 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 @keyframes bl{50%{opacity:0}}
 
 /* ---------- dialogo (terzo inferiore) ---------- */
-#boxwrap{position:absolute;left:4%;right:4%;bottom:calc(3% + env(safe-area-inset-bottom,0px));
+#boxwrap{position:absolute;z-index:2;left:4%;right:4%;bottom:calc(3% + env(safe-area-inset-bottom,0px));
  opacity:0;transform:translateY(18px);transition:opacity .5s ease, transform .5s ease;
  max-height:46%;display:flex;flex-direction:column}
 #boxwrap.in{opacity:1;transform:translateY(0)}
 #name{align-self:flex-start;background:#1b1f33;border:3px solid #fff;border-radius:10px;
- padding:7px 14px;color:#fff;font-size:clamp(9px,2.6vw,14px);margin-left:12px;position:relative;z-index:2;
+ padding:7px 14px;color:#fff;font-size:clamp(8px,2.15vw,12px);margin-left:12px;position:relative;z-index:2;
  box-shadow:0 4px 0 rgba(0,0,0,.5)}
 #name.hidden{display:none}
 /* altezza riservata: il box non cambia dimensione a ogni carattere (niente scatti) */
 #box{background:#1b1f33;border:3px solid #fff;border-radius:12px;padding:14px 16px;margin-top:-3px;
- color:#fff;font-size:clamp(10px,3.1vw,16px);line-height:1.75;min-height:4.4em;
+ color:#fff;font-size:clamp(8px,2.5vw,13px);line-height:1.85;min-height:4.6em;
  box-shadow:0 6px 0 rgba(0,0,0,.5)}
 #arrow{text-align:center;color:#fff;font-size:12px;margin-top:5px;opacity:0;animation:bob 1s infinite}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
@@ -83,7 +83,7 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #choices{margin-top:10px;display:none;flex-direction:column;gap:7px;overflow-y:auto}
 #choices.on{display:flex}
 .ch{background:#2a3050;border:3px solid #fff;border-radius:8px;padding:11px 13px;color:#fff;
- font-family:inherit;font-size:clamp(9px,2.8vw,14px);cursor:pointer;text-align:left;
+ font-family:inherit;font-size:clamp(8px,2.35vw,12px);cursor:pointer;text-align:left;
  box-shadow:0 3px 0 rgba(0,0,0,.5)}
 .ch:hover,.ch:focus{background:#3d466e;outline:none}
 
@@ -92,14 +92,14 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #ti{flex:1;min-width:0;background:#0d1020;border:3px solid #fff;border-radius:8px;color:#fff;
  font-family:inherit;font-size:16px;padding:10px 11px;outline:none}   /* 16px: iOS non zooma */
 #tok{background:#2a3050;border:3px solid #fff;border-radius:8px;color:#fff;font-family:inherit;
- font-size:clamp(9px,2.8vw,14px);padding:10px 13px;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.5)}
+ font-size:clamp(8px,2.35vw,12px);padding:10px 13px;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.5)}
 #tok:disabled{opacity:.35;cursor:default}
 
 #picker{margin-top:10px;display:none;flex-direction:column;gap:8px}
 #picker.on{display:flex}
 .ptabs,.popts{display:flex;gap:6px;flex-wrap:wrap}
 .ptab,.popt{background:#2a3050;border:3px solid rgba(255,255,255,.55);border-radius:8px;
- color:#fff;font-family:inherit;font-size:clamp(8px,2.4vw,12px);padding:8px 10px;cursor:pointer}
+ color:#fff;font-family:inherit;font-size:clamp(7px,2.05vw,11px);padding:8px 10px;cursor:pointer}
 .ptab.sel,.popt.sel{border-color:#fff;background:#3d466e}
 .popt{flex:1 1 22%}
 

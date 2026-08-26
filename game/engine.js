@@ -318,7 +318,10 @@
       el.npcHead.style.top = c.neck.y || '4%';
       el.npcHead.style.width = c.neck.w || '34%';
     }
-    if (st.height) el.npc.style.height = st.height;
+    // la scena puo' riposizionare il personaggio (es. quando c'e' il terminale)
+    el.npc.style.height = st.height || '';
+    el.npc.style.bottom = st.bottom || '';
+    el.npc.style.right = st.right || '';
 
     el.npc.classList.remove('out');
     if (st.pop) { el.npc.classList.remove('in'); void el.npc.offsetWidth; el.npc.classList.add('pop'); }
