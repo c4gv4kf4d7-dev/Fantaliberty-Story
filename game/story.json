@@ -11,7 +11,9 @@
 
   "assets": {
     "bg": {
-      "sjt_palco": "bg/bg_sjt_palco.jpg"
+      "esterno_teatro": "bg/bg_esterno_teatro.webp",
+      "lobby": "bg/bg_lobby.webp",
+      "sala_teatro": "bg/bg_sala_teatro.webp"
     },
     "props": {
       "mac_terminale": "props/prop_mac_terminale.png"
@@ -133,7 +135,7 @@
 
     "arrivo": {
       "title": "Atto 1 — L'arrivo",
-      "bg": "sjt_palco",
+      "bg": "esterno_teatro",
       "bgFx": "zoom",
       "steps": [
         { "t": "wait", "ms": 2100 },
@@ -146,7 +148,7 @@
 
     "registrazione": {
       "title": "Atto 1 — Registrazione",
-      "bg": "sjt_palco",
+      "bg": "esterno_teatro",
       "bgFx": "blur",
       "terminal": [
         { "key": "NOME:", "var": "nome" },
@@ -194,7 +196,7 @@
 
     "benvenuto": {
       "title": "Atto 1 — Benvenuto",
-      "bg": "sjt_palco",
+      "bg": "esterno_teatro",
       "steps": [
         { "t": "fx", "name": "flash" },
         { "t": "fx", "name": "unblur" },
@@ -217,7 +219,7 @@
 
     "ritardo_ceo": {
       "title": "Atto 2 — Il ritardo del CEO",
-      "bg": "sjt_palco",
+      "bg": "sala_teatro",
       "steps": [
         { "t": "hide" },
         { "t": "wait", "ms": 400 },
@@ -240,7 +242,7 @@
 
     "lobby": {
       "title": "Atto 3 — La lobby",
-      "bg": "sjt_palco",
+      "bg": "lobby",
       "steps": [
         { "t": "hide" },
         { "t": "show", "who": "maurice" },
@@ -259,7 +261,7 @@
 
     "backstage": {
       "title": "Atto 4 — Backstage / regia",
-      "bg": "sjt_palco",
+      "bg": "sala_teatro",
       "steps": [
         { "t": "hide" },
         { "t": "show", "who": "martha" },
@@ -271,7 +273,7 @@
 
     "quiz": {
       "title": "Atto 4 — Quiz storico",
-      "bg": "sjt_palco",
+      "bg": "lobby",
       "steps": [
         { "t": "hide" },
         { "t": "show", "who": "veterano" },
@@ -292,7 +294,7 @@
 
     "premi": {
       "title": "Atto 4 — Premi",
-      "bg": "sjt_palco",
+      "bg": "lobby",
       "steps": [
         { "t": "hide" },
         { "t": "show", "who": "premi", "body": "tada", "head": "positivo", "pop": true },
@@ -304,7 +306,7 @@
 
     "finale": {
       "title": "Finale",
-      "bg": "sjt_palco",
+      "bg": "lobby",
       "steps": [
         { "t": "hide" },
         { "t": "show", "who": "lucas", "body": "felice", "pop": true },

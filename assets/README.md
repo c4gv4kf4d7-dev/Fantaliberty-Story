@@ -6,7 +6,8 @@ i file già ritagliati: il gioco li pesca da queste cartelle, basta dichiararli 
 
 ```
 assets/
-  bg/       fondali        bg_<scena>@3x.webp        1170x2532 px, < 400 KB
+  bg/       fondali        bg_<scena>.webp           1170x2532 px, < 400 KB
+            _originali/    i file come arrivano da Gemini, prima della conversione
   chars/    personaggi     chr_<nome>_<parte>_<stato>@3x.webp
   props/    oggetti        prop_<nome>@3x.webp
   avatar/   layer avatar   avt_<slot>_<opzione>@3x.webp
