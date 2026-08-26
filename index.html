@@ -41,7 +41,11 @@
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
-  var opts = { speed: params.get('fast') ? 0 : 36 };
+  var opts = {
+    speed: params.get('fast') ? 0 : 36,     // ?fast=1  -> niente typewriter
+    scene: params.get('scene') || null      // ?scene=lobby -> salta a una scena (debug)
+  };
+  if (params.get('reset')) { try { localStorage.removeItem('fl_nexus_save_v1'); } catch (e) {} }
 
   function start(story) { VN.boot(story, opts); }
 

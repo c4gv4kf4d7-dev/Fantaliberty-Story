@@ -20,7 +20,7 @@ tools/
   optimize_assets.py    resize + quantizzazione colore (Pillow)
   build_single_file.py  compila tutto in dist/nexus_game.html (asset inline base64)
 tests/smoke.mjs         smoke test headless con jsdom
-manutenzione.html       vecchia pagina "sito in manutenzione" (conservata)
+archivio/wwdc26/        edizione precedente (classifica, previsioni, pagina di manutenzione)
 ```
 
 ## Sviluppo
@@ -32,7 +32,19 @@ npm test           # smoke test del flusso: input -> variabili -> scene
 npm run build      # dist/nexus_game.html, singolo file offline
 ```
 
-`index.html?fast=1` disattiva l'effetto macchina da scrivere (comodo per provare il flusso).
+Parametri utili in sviluppo:
+
+* `?fast=1` — niente typewriter, si scorre il flusso in fretta
+* `?scene=lobby` — parte direttamente da una scena (ignora il salvataggio)
+* `?reset=1` — cancella il salvataggio
+
+## Salvataggio
+
+La partita si salva da sola in `localStorage` (chiave `fl_nexus_save_v1`) a ogni
+battuta/scelta, a partire dalla prima risposta del giocatore. Chi riapre la pagina
+trova "Riprendi / Ricomincia da capo": riprendendo, il motore rigioca in silenzio
+solo gli step visivi della scena (sfondo, sprite, terminale) e riparte dalla battuta
+esatta in cui si era interrotto. A storia finita il salvataggio viene cancellato.
 
 ## Scrivere una scena
 
@@ -59,6 +71,13 @@ Interpolazione nei testi:
 
 La scena puo' definire `terminal`: le righe mostrate sullo schermo del Mac, che si
 compilano da sole man mano che le variabili vengono impostate.
+
+## Stato dello script
+
+Atto 1 (arrivo → registrazione → benvenuto) e' completo e corrisponde al database
+"Full Script / Onboarding Scene" su Notion. Atti 2-4 sono **segnaposto**: struttura,
+personaggi e sezioni sono quelli decisi nella pagina "Cast Personaggi", i testi sono
+marcati `[BOZZA]` e vanno riscritti.
 
 ## Aggiungere asset
 
