@@ -59,6 +59,17 @@ in scena senza toccare il codice. Finché mancano, la scena gira senza personagg
 
 `npm test` stampa l'elenco aggiornato di cosa manca ancora.
 
+## Attenzione: sfondo trasparente
+
+Gemini consegna spesso i PNG con **sfondo bianco opaco**: nel gioco diventa un
+rettangolo bianco attorno al personaggio. Se capita non serve rifare l'immagine,
+lo sfondo si toglie in automatico (flood fill dai bordi + erosione di 1px per
+l'alone chiaro) — basta dirmelo, oppure:
+
+```bash
+python3 tools/rimuovi_sfondo.py assets/props/prop_mac_terminale.png
+```
+
 ## Dopo aver caricato
 
 ```bash
