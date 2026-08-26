@@ -71,6 +71,9 @@ Tutto lo script vive in `game/story.json`. Ogni scena e' una lista di `steps`:
 | `show` / `hide` | `{"t":"show","who":"susan","body":"in_piedi","head":"ansia"}` | entra/esce il personaggio |
 | `react` | `{"t":"react","level":"expr","head":"positiva"}` | reazione a 3 livelli (micro/expr/pose) |
 | `avatar` | `{"t":"avatar","text":"Te ne faccio vedere quattro."}` | carosello dei 4 avatar |
+| `logo` | `{"t":"logo","img":"ui/logo_studio.png"}` | sigla che si accende come un neon |
+| `boot` | `{"t":"boot","ms":2200,"cursore":1600}` | barra LOADING, poi cursore sul nero |
+| `title` | `{"t":"title","lines":[…]}` | cartello nero a righe |
 | `prop` | `{"t":"prop","id":"mac_terminal","show":true}` | mostra/nasconde l'oggetto di scena |
 | `bg` | `{"t":"bg","id":"sjt_stage","fx":"zoom"}` | cambia sfondo / effetto |
 | `fx` | `{"t":"fx","name":"flash"}` | `flash`, `blur`, `unblur` |

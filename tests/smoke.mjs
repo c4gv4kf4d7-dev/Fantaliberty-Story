@@ -28,7 +28,7 @@ function partOf(who, kind, id) {
   const c = story.cast?.[who];
   return c && id ? c[kind]?.[id] : undefined;
 }
-const KNOWN = new Set(['boot', 'title', 'say', 'choice', 'input', 'avatar', 'show', 'hide', 'prop', 'bg', 'react', 'fx', 'wait', 'set', 'goto', 'end']);
+const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'avatar', 'show', 'hide', 'prop', 'bg', 'react', 'fx', 'wait', 'set', 'goto', 'end']);
 assert.ok(story.scenes[story.meta.start], 'meta.start punta a una scena esistente');
 
 for (const [id, sc] of Object.entries(story.scenes)) {
@@ -100,7 +100,8 @@ let ended = null;
 VN.boot(story, { speed: 0, onEnd: (s) => { ended = s; } });   // speed 0 = niente timer
 
 // avvio: la barra di caricamento precede il cartello
-assert.equal(story.scenes[story.meta.start].steps[0].t, 'boot', 'la scena iniziale parte dal boot');
+const primi = story.scenes[story.meta.start].steps.map((s) => s.t);
+assert.deepEqual(primi.slice(0, 3), ['logo', 'boot', 'title'], 'sigla, poi loading, poi cartello');
 
 // intro: cartello nero, righe scritte una dopo l'altra
 assert.ok($('curtain').classList.contains('on'), 'sipario nero visibile all\'avvio');

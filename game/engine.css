@@ -123,6 +123,41 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 @keyframes lights{from{opacity:1}to{opacity:0}}
 #curtainInner{text-align:center;max-width:34em}
 
+/* sigla dello studio: si accende come un neon, resta acceso pulsando, sfuma */
+#logo{display:none;flex-direction:column;align-items:center;opacity:0}
+#logo.on{display:flex}
+#logo.accendi{animation:neonOn 1s steps(1) forwards}
+#logo.acceso{opacity:1;animation:neonPulse 1.8s ease-in-out infinite}
+#logo.spegni{animation:neonOff .9s ease-out forwards}
+/* accensione a scatti, come un tubo alogeno che fatica a partire */
+@keyframes neonOn{
+  0%{opacity:0}   8%{opacity:1}  12%{opacity:0}
+  22%{opacity:1}  26%{opacity:.15} 34%{opacity:1}
+  38%{opacity:.4} 52%{opacity:1}  56%{opacity:.7}
+  100%{opacity:1}
+}
+@keyframes neonPulse{
+  0%,100%{filter:drop-shadow(0 0 6px rgba(126,240,120,.55)) drop-shadow(0 0 22px rgba(126,240,120,.28))}
+  50%{filter:drop-shadow(0 0 10px rgba(126,240,120,.85)) drop-shadow(0 0 34px rgba(126,240,120,.45))}
+}
+@keyframes neonOff{from{opacity:1}to{opacity:0}}
+
+#logoImg{width:min(78vw,420px);image-rendering:pixelated;display:none}
+#logoImg.ok{display:block}
+/* finche' il logo vero non c'e', lo si disegna in CSS con la stessa insegna */
+#logoFallback{border:4px solid #7ef078;border-radius:14px;padding:18px 22px;
+ background:rgba(20,60,20,.55);color:#bdf7b8;font-size:clamp(13px,4.6vw,26px);
+ box-shadow:inset 0 0 0 3px rgba(126,240,120,.35)}
+#logoFallback sup{font-size:.45em;vertical-align:super}
+#logoImg.ok ~ #logoFallback{display:none}
+/* il palo dell'insegna */
+#logoStem{position:relative;width:10px;height:min(9vh,74px);
+ background:repeating-linear-gradient(180deg,#dfe6df 0 6px,#8d968d 6px 12px)}
+/* la base dell'insegna, in fondo al palo */
+#logoStem::after{content:"";position:absolute;left:50%;bottom:-8px;transform:translateX(-50%);
+ width:34px;height:15px;background:#dfe6df;border-radius:3px;
+ box-shadow:inset 0 0 0 4px #c8332a}
+
 /* schermata di avvio: barra a blocchi che finge di caricare */
 #boot{display:none;flex-direction:column;align-items:center;gap:14px}
 #boot.on{display:flex}

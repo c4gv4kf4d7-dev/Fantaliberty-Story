@@ -11,6 +11,7 @@ assets/
   chars/    personaggi     chr_<nome>_<parte>_<stato>@3x.webp
   props/    oggetti        prop_<nome>@3x.webp
   avatar/   avatar giocatore  avt_a.png … avt_d.png
+  ui/       grafica di sistema logo_studio.png (la sigla 8Bit Studios)
 ```
 
 ## Formato
@@ -67,6 +68,15 @@ in scena senza toccare il codice. Finché mancano, la scena gira senza personagg
 | Avatar giocatore | 4 file interi (`avt_a..d.png`) | segnaposto in repo |
 
 `npm test` stampa l'elenco aggiornato di cosa manca ancora.
+
+## La sigla dello studio
+
+`assets/ui/logo_studio.png` — l'insegna "8Bit Studios" che si accende all'avvio.
+PNG con **sfondo trasparente**, largo 800–1200 px. Il gioco lo fa lampeggiare e
+pulsare da solo: il file dev'essere l'insegna **spenta/neutra**, senza aloni verdi
+gia' disegnati addosso, altrimenti si sommano al bagliore aggiunto dal motore.
+
+Finche' il file non c'e', l'insegna viene disegnata in CSS con lo stesso aspetto.
 
 ## Attenzione: sfondo trasparente
 

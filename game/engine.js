@@ -15,7 +15,7 @@
      VN.hasSave() / VN.readSave() / VN.clearSave() / VN.saveNow()
 
    Step supportati:
-     boot | title | say | choice | input | avatar | show | hide | react | prop | bg |
+     logo | boot | title | say | choice | input | avatar | show | hide | react | prop | bg |
      fx | wait | set | goto | end
 */
 (function (global) {
@@ -125,6 +125,44 @@
     if (revealUI) { var r = revealUI; revealUI = null; r(); }
     else if (pending) el.arrow.style.opacity = 1;
     return true;
+  }
+
+  /* ---------------- sigla dello studio ----------------
+     Nero, il logo si accende a scatti come un neon, resta acceso pulsando,
+     poi sfuma. Va da solo, nessun tap. Se il PNG del logo non c'e' ancora,
+     l'insegna viene disegnata in CSS con lo stesso aspetto. */
+  function sigla(st, done) {
+    var accensione = st.accensione != null ? st.accensione : 1000;
+    var fisso = st.fisso != null ? st.fisso : 2000;
+    var uscita = st.uscita != null ? st.uscita : 900;
+
+    el.curtain.classList.remove('lights');
+    el.curtain.classList.add('on');
+    el.curtainTxt.innerHTML = '';
+    el.curtainArrow.style.opacity = 0;
+
+    var src = st.img ? withBase(st.img) : '';
+    el.logoImg.classList.remove('ok');
+    if (src) {
+      el.logoImg.onload = function () { el.logoImg.classList.add('ok'); };
+      el.logoImg.onerror = function () { el.logoImg.classList.remove('ok'); };
+      el.logoImg.src = src;
+    }
+
+    el.logo.className = 'on';
+    if (!VN.speed) { el.logo.className = ''; return done(); }
+
+    void el.logo.offsetWidth;
+    el.logo.classList.add('accendi');
+    setTimeout(function () {
+      el.logo.classList.remove('accendi');
+      el.logo.classList.add('acceso');
+      setTimeout(function () {
+        el.logo.classList.remove('acceso');
+        el.logo.classList.add('spegni');
+        setTimeout(function () { el.logo.className = ''; done(); }, uscita);
+      }, fisso);
+    }, accensione);
   }
 
   /* ---------------- schermata di avvio ----------------
@@ -305,7 +343,7 @@
   function goScene(id) {
     var sc = VN.story.scenes[id];
     if (!sc) throw new Error('scena inesistente: ' + id);
-    if (!(sc.steps || []).some(function (s) { return s.t === 'title' || s.t === 'boot'; })) {
+    if (!(sc.steps || []).some(function (s) { return s.t === 'title' || s.t === 'boot' || s.t === 'logo'; })) {
       el.curtain.classList.remove('on', 'lights');
     }
     VN.scene = sc; VN.sceneId = id; VN.i = 0;
@@ -360,6 +398,12 @@
         setSpeaker(st.who);
         type(fmt(st.text), function () { showPicker(st); });
         revealUI = function () { showPicker(st); };
+        return;
+
+      case 'logo':
+        el.boxwrap.classList.remove('in');
+        el.hint.style.opacity = 0;
+        sigla(st, next);
         return;
 
       case 'boot':
@@ -740,7 +784,7 @@
     el = {
       stage: $('stage'), bg: $('bg'), npc: $('npc'), npcBody: $('npcBody'), npcHead: $('npcHead'),
       curtain: $('curtain'), curtainTxt: $('curtainTxt'), curtainArrow: $('curtainArrow'), hint: $('hint'),
-      boot: $('boot'), bootbar: $('bootbar'),
+      boot: $('boot'), bootbar: $('bootbar'), logo: $('logo'), logoImg: $('logoImg'),
       avatar: $('avatar'), propwrap: $('propwrap'), prop: $('prop'), screen: $('screen'),
       boxwrap: $('boxwrap'), name: $('name'), txt: $('txt'), arrow: $('arrow'),
       choices: $('choices'), inputform: $('inputform'), ti: $('ti'), tok: $('tok'),
