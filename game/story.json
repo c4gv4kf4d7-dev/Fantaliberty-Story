@@ -128,6 +128,7 @@
       "bg": "esterno_teatro",
       "bgFx": "zoom",
       "steps": [
+        { "t": "boot", "blocchi": 9, "ms": 2200, "cursore": 1600 },
         {
           "t": "title",
           "lines": [

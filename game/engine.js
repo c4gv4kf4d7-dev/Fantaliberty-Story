@@ -15,7 +15,7 @@
      VN.hasSave() / VN.readSave() / VN.clearSave() / VN.saveNow()
 
    Step supportati:
-     title | say | choice | input | avatar | show | hide | react | prop | bg |
+     boot | title | say | choice | input | avatar | show | hide | react | prop | bg |
      fx | wait | set | goto | end
 */
 (function (global) {
@@ -125,6 +125,51 @@
     if (revealUI) { var r = revealUI; revealUI = null; r(); }
     else if (pending) el.arrow.style.opacity = 1;
     return true;
+  }
+
+  /* ---------------- schermata di avvio ----------------
+     Barra a blocchi che finge di caricare, poi solo il cursore che lampeggia
+     sul nero, poi il cartello. Nessun tap richiesto: va da sola. */
+  function boot(st, done) {
+    var blocchi = st.blocchi || 9;
+    var caricamento = st.ms != null ? st.ms : 2200;
+    var attesa = st.cursore != null ? st.cursore : 1600;
+
+    el.curtain.classList.remove('lights');
+    el.curtain.classList.add('on');
+    el.curtainTxt.innerHTML = '';
+    el.curtainArrow.style.opacity = 0;
+    el.bootbar.innerHTML = '';
+    el.boot.classList.add('on');
+
+    var celle = [];
+    for (var i = 0; i < blocchi; i++) {
+      var b = global.document.createElement('div');
+      b.className = 'bblock';
+      el.bootbar.appendChild(b);
+      celle.push(b);
+    }
+
+    if (!VN.speed) { el.boot.classList.remove('on'); return done(); }
+
+    // il blocco in corso e' grigio, quelli fatti sono pieni: come una barra vera
+    var passo = caricamento / blocchi, n = 0;
+    var avanza = setInterval(function () {
+      if (n > 0) celle[n - 1].className = 'bblock full';
+      if (n < blocchi) celle[n].className = 'bblock cur';
+      if (++n > blocchi) clearInterval(avanza);
+    }, passo);
+
+    setTimeout(function () {
+      clearInterval(avanza);
+      el.boot.classList.remove('on');
+      // fase 2: schermo nero e basta, con il cursore che aspetta
+      var cur = global.document.createElement('div');
+      cur.className = 'tline';
+      cur.innerHTML = '<span class="tcur"></span>';
+      el.curtainTxt.appendChild(cur);
+      setTimeout(function () { el.curtainTxt.innerHTML = ''; done(); }, attesa);
+    }, caricamento + 260);
   }
 
   /* ---------------- cartello d'apertura ----------------
@@ -260,7 +305,7 @@
   function goScene(id) {
     var sc = VN.story.scenes[id];
     if (!sc) throw new Error('scena inesistente: ' + id);
-    if (!(sc.steps || []).some(function (s) { return s.t === 'title'; })) {
+    if (!(sc.steps || []).some(function (s) { return s.t === 'title' || s.t === 'boot'; })) {
       el.curtain.classList.remove('on', 'lights');
     }
     VN.scene = sc; VN.sceneId = id; VN.i = 0;
@@ -315,6 +360,12 @@
         setSpeaker(st.who);
         type(fmt(st.text), function () { showPicker(st); });
         revealUI = function () { showPicker(st); };
+        return;
+
+      case 'boot':
+        el.boxwrap.classList.remove('in');
+        el.hint.style.opacity = 0;
+        boot(st, next);
         return;
 
       case 'title':
@@ -689,6 +740,7 @@
     el = {
       stage: $('stage'), bg: $('bg'), npc: $('npc'), npcBody: $('npcBody'), npcHead: $('npcHead'),
       curtain: $('curtain'), curtainTxt: $('curtainTxt'), curtainArrow: $('curtainArrow'), hint: $('hint'),
+      boot: $('boot'), bootbar: $('bootbar'),
       avatar: $('avatar'), propwrap: $('propwrap'), prop: $('prop'), screen: $('screen'),
       boxwrap: $('boxwrap'), name: $('name'), txt: $('txt'), arrow: $('arrow'),
       choices: $('choices'), inputform: $('inputform'), ti: $('ti'), tok: $('tok'),

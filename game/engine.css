@@ -122,6 +122,16 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #curtain.lights{animation:lights 3.4s ease-out forwards}
 @keyframes lights{from{opacity:1}to{opacity:0}}
 #curtainInner{text-align:center;max-width:34em}
+
+/* schermata di avvio: barra a blocchi che finge di caricare */
+#boot{display:none;flex-direction:column;align-items:center;gap:14px}
+#boot.on{display:flex}
+#bootbar{display:flex;gap:4px;width:min(68vw,300px);
+ border-top:3px solid #fff;border-bottom:3px solid #fff;padding:5px 3px}
+.bblock{flex:1;aspect-ratio:5/7;background:#fff;opacity:0}
+.bblock.full{opacity:1}
+.bblock.cur{opacity:.45}     /* il blocco in corso di caricamento */
+#bootlabel{color:#fff;font-size:clamp(11px,3.4vw,18px);letter-spacing:.42em;text-indent:.42em}
 .tline{color:#fff;font-size:clamp(9px,3vw,15px);line-height:2.2;margin-bottom:1.1em;
  text-shadow:0 0 14px rgba(255,255,255,.25)}
 .tline.small{font-size:clamp(8px,2.4vw,12px);opacity:.72}
