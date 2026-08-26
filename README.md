@@ -45,7 +45,11 @@ I browser tengono in cache `engine.css`, `engine.js` e `story.json` anche dopo u
 ricaricamento: senza accorgimenti una modifica pubblicata puo' non vedersi per ore.
 Per questo index.html li carica con una query di versione (`engine.js?v=12`).
 
-**Prima di ogni push:** `npm run bump` (alza il numero) e poi commit. Dopo il push
+**Prima di ogni push:** `npm run bump` (alza il numero) e poi commit.
+Nota: `index.html` non puo' avere una query di versione (e' lui il punto di
+partenza), quindi resta in cache su GitHub Pages per una decina di minuti. Per
+vedere subito una modifica appena pubblicata basta aprire il sito con una query
+qualsiasi mai usata prima, per esempio `fantaliberty.com/?prova2`. Dopo il push
 GitHub Pages impiega uno o due minuti; lo stato del deploy si vede nella tab
 Actions del repo, workflow "pages build and deployment". Se resta *queued* a lungo
 il sito continua a servire la versione precedente: non e' cache del browser, e'
