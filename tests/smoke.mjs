@@ -28,7 +28,7 @@ function partOf(who, kind, id) {
   const c = story.cast?.[who];
   return c && id ? c[kind]?.[id] : undefined;
 }
-const KNOWN = new Set(['say', 'choice', 'input', 'avatar', 'show', 'hide', 'prop', 'bg', 'react', 'fx', 'wait', 'set', 'goto', 'end']);
+const KNOWN = new Set(['title', 'say', 'choice', 'input', 'avatar', 'show', 'hide', 'prop', 'bg', 'react', 'fx', 'wait', 'set', 'goto', 'end']);
 assert.ok(story.scenes[story.meta.start], 'meta.start punta a una scena esistente');
 
 for (const [id, sc] of Object.entries(story.scenes)) {
@@ -49,6 +49,7 @@ for (const [id, sc] of Object.entries(story.scenes)) {
     if (st.t === 'prop' && st.id) assert.ok(story.assets.props[st.id], `scena ${id}: prop "${st.id}" dichiarato`);
     if (st.t === 'goto') assert.ok(story.scenes[st.scene], `scena ${id}: goto "${st.scene}" esiste`);
     if (st.t === 'choice') assert.ok(st.options?.length, `scena ${id}: choice senza opzioni`);
+    if (st.t === 'title') assert.ok(st.lines?.length, `scena ${id}: title senza righe`);
   }
 }
 
@@ -97,6 +98,17 @@ const txt = () => $('txt').textContent;
 
 let ended = null;
 VN.boot(story, { speed: 0, onEnd: (s) => { ended = s; } });   // speed 0 = niente timer
+
+// intro: cartello nero, righe scritte una dopo l'altra
+assert.ok($('curtain').classList.contains('on'), 'sipario nero visibile all\'avvio');
+const righe = [...$('curtainTxt').querySelectorAll('.tline')].map((d) => d.textContent);
+assert.equal(righe.length, 4, 'quattro righe di intro');
+assert.match(righe[0], /Cupertino/);
+assert.match(righe[2], /Keynote/);
+assert.ok($('curtainTxt').querySelector('.tline.small'), 'ultima riga in piccolo');
+
+VN.step();                                              // tap: si accendono le luci
+assert.equal($('curtain').classList.contains('on'), false, 'sipario via dopo l\'accensione');
 
 // scena "arrivo": la battuta di Lucas e' gia' scritta
 assert.match(txt(), /Io sono Lucas/, 'prima battuta mostrata');
@@ -194,7 +206,8 @@ assert.ok($('npcBody').getAttribute('src').includes('chr_lucas_felice'), 'scena 
 VN.boot(story, { speed: 0 });
 [...$('choices').querySelectorAll('.ch')][1].onclick({ stopPropagation() {} });   // Ricomincia
 assert.equal(VN.hasSave(story), false, 'salvataggio cancellato');
-assert.match(txt(), /Io sono Lucas/, 'ripartito dalla prima scena');
+assert.ok($('curtain').classList.contains('on'), 'ripartito dall\'intro');
+assert.match($('curtainTxt').textContent, /Cupertino/);
 
 /* ---------- 5. atto 2: personaggi ancora senza sprite ---------- */
 VN.boot(story, { speed: 0, scene: 'ritardo_ceo' });
@@ -214,7 +227,8 @@ assert.equal(VN.state.tono, 'sfacciato');
 /* ---------- 6. variante maschile, percorso rapido ---------- */
 VN.clearSave();
 VN.boot(story, { speed: 0 });
-VN.step();
+VN.step();                    // luci
+VN.step();                    // prima battuta di Lucas
 $('ti').value = 'Luca'; $('ti').oninput(); $('tok').onclick();
 [...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // maschile
 [...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // <1 anno

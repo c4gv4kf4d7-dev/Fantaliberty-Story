@@ -9,11 +9,20 @@ const errs = [];
 p.on('pageerror', e => errs.push('JS: ' + e.message));
 p.on('console', m => { if (m.type() === 'error') errs.push('CONSOLE: ' + m.text()); });
 p.on('requestfailed', r => errs.push('404?: ' + r.url()));
-await p.goto('http://localhost:8080/?fast=1', { waitUntil: 'networkidle' });
-await p.waitForTimeout(2600);
+// intro a velocita' reale: cartello nero, poi accensione
+await p.goto('http://localhost:8080/', { waitUntil: 'networkidle' });
+await p.waitForTimeout(9000);
+await p.screenshot({ path: 'shots/0-intro.png' });
+await p.click('#stage');                                  // tap: si accendono le luci
+await p.waitForTimeout(1600);
+await p.screenshot({ path: 'shots/0-accensione.png' });
+await p.waitForTimeout(3000);
 await p.screenshot({ path: 'shots/1-arrivo.png' });
-await p.click('#stage');                                  // -> registrazione
-await p.waitForTimeout(1200);
+await p.evaluate(() => { VN.speed = 0; });                 // il resto in fretta
+// avanza finche' non compare il campo del nome
+for (let i = 0; i < 6 && !(await p.isVisible('#ti')); i++) {
+  await p.click('#stage'); await p.waitForTimeout(200);
+}
 await p.screenshot({ path: 'shots/2-nome.png' });
 await p.fill('#ti', 'Mike'); await p.click('#tok');
 await p.waitForTimeout(400);

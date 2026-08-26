@@ -15,8 +15,8 @@
      VN.hasSave() / VN.readSave() / VN.clearSave() / VN.saveNow()
 
    Step supportati:
-     say | choice | input | avatar | show | hide | react | prop | bg | fx |
-     wait | set | goto | end
+     title | say | choice | input | avatar | show | hide | react | prop | bg |
+     fx | wait | set | goto | end
 */
 (function (global) {
   'use strict';
@@ -36,6 +36,7 @@
 
   var el = {};
   var typing = false, tId = null, pending = null, curLine = '', revealUI = null;
+  var typeTarget = null;   // nodo su cui si sta scrivendo (box dialogo o cartello)
   var current = { who: null, body: null, head: null };   // NPC in scena
 
   /* ---------------- testo: interpolazione ---------------- */
@@ -76,7 +77,7 @@
     stopTyping();
     el.arrow.style.opacity = 0;
     hideUI();
-    curLine = line; typing = true; pending = null;
+    curLine = line; typing = true; pending = null; typeTarget = el.txt;
     if (!VN.speed) { el.txt.textContent = line; typing = false; return after(); }
     var shown = 0, t0 = 0;
     el.txt.textContent = '';
@@ -96,7 +97,7 @@
   function typeKeep(line) {
     stopTyping();
     el.arrow.style.opacity = 0;
-    curLine = line; typing = true; pending = null;
+    curLine = line; typing = true; pending = null; typeTarget = el.txt;
     if (!VN.speed) { el.txt.textContent = line; typing = false; return; }
     var shown = 0, t0 = 0;
     el.txt.textContent = '';
@@ -119,11 +120,68 @@
   function skip() {
     if (!typing) return false;
     stopTyping();
-    el.txt.textContent = curLine;
+    (typeTarget || el.txt).textContent = curLine;
     typing = false;
     if (revealUI) { var r = revealUI; revealUI = null; r(); }
     else if (pending) el.arrow.style.opacity = 1;
     return true;
+  }
+
+  /* ---------------- cartello d'apertura ----------------
+     Schermo nero, righe a macchina da scrivere una dopo l'altra; al tap la scena
+     si accende (il nero sfuma via e sotto c'e' gia' il fondale). */
+  function typeLines(lines, done) {
+    el.curtainTxt.innerHTML = '';
+    el.curtainArrow.style.opacity = 0;
+    var i = 0, nodi = [];
+
+    function completaTutto() {                 // tap durante la scrittura: le mostra tutte
+      stopTyping();
+      typing = false;
+      for (var k = 0; k < lines.length; k++) {
+        if (!nodi[k]) nodi[k] = riga(k);
+        nodi[k].textContent = lines[k].text;
+      }
+      fine();
+    }
+
+    function riga(k) {
+      var d = global.document.createElement('div');
+      d.className = 'tline' + (lines[k].small ? ' small' : '');
+      el.curtainTxt.appendChild(d);
+      return d;
+    }
+
+    function fine() {
+      revealUI = null;
+      pending = done;
+      el.curtainArrow.style.opacity = 1;
+    }
+
+    function prossima() {
+      if (i >= lines.length) return fine();
+      var k = i++;
+      var node = nodi[k] = riga(k);
+      var line = lines[k].text;
+      curLine = line; typeTarget = node; typing = true;
+      if (!VN.speed) { node.textContent = line; typing = false; return prossima(); }
+      var shown = 0, t0 = 0;
+      var tick = function (ts) {
+        if (!typing) return;
+        if (!t0) t0 = ts;
+        var want = Math.min(line.length, Math.floor((ts - t0) / VN.speed));
+        if (want !== shown) { shown = want; node.textContent = line.slice(0, shown); }
+        if (shown >= line.length) {
+          typing = false; tId = null;
+          return setTimeout(prossima, lines[k].pausa != null ? lines[k].pausa : 420);
+        }
+        tId = global.requestAnimationFrame(tick);
+      };
+      tId = global.requestAnimationFrame(tick);
+    }
+
+    revealUI = completaTutto;
+    prossima();
   }
 
   /* ---------------- salvataggio (localStorage) ----------------
@@ -194,6 +252,9 @@
   function goScene(id) {
     var sc = VN.story.scenes[id];
     if (!sc) throw new Error('scena inesistente: ' + id);
+    if (!(sc.steps || []).some(function (s) { return s.t === 'title'; })) {
+      el.curtain.classList.remove('on', 'lights');
+    }
     VN.scene = sc; VN.sceneId = id; VN.i = 0;
     if (sc.bg) setBg(sc.bg, sc.bgFx);
     if (sc.terminal) buildTerminal(sc.terminal);
@@ -248,6 +309,16 @@
         revealUI = function () { showPicker(st); };
         return;
 
+      case 'title':
+        el.boxwrap.classList.remove('in');
+        el.hint.style.opacity = 0;
+        el.curtain.classList.remove('lights');
+        el.curtain.classList.add('on');
+        typeLines((st.lines || []).map(function (l) {
+          return typeof l === 'string' ? { text: fmt(l) } : { text: fmt(l.text), small: l.small, pausa: l.pausa };
+        }), next);
+        return;
+
       case 'show':
         showChar(st);
         return next();
@@ -280,6 +351,13 @@
         if (st.name === 'flash') { el.flash.classList.remove('go'); void el.flash.offsetWidth; el.flash.classList.add('go'); }
         else if (st.name === 'blur') el.bg.classList.add('blur');
         else if (st.name === 'unblur') el.bg.classList.remove('blur');
+        else if (st.name === 'lights') {          // si accendono le luci: il nero sfuma via
+          el.curtainArrow.style.opacity = 0;
+          el.curtain.classList.add('lights');
+          el.hint.style.opacity = '';
+          var spegni = function () { el.curtain.classList.remove('on', 'lights'); };
+          if (!VN.speed) spegni(); else setTimeout(spegni, 3400);
+        }
         return next();
 
       case 'wait':
@@ -599,6 +677,7 @@
 
     el = {
       stage: $('stage'), bg: $('bg'), npc: $('npc'), npcBody: $('npcBody'), npcHead: $('npcHead'),
+      curtain: $('curtain'), curtainTxt: $('curtainTxt'), curtainArrow: $('curtainArrow'), hint: $('hint'),
       avatar: $('avatar'), propwrap: $('propwrap'), prop: $('prop'), screen: $('screen'),
       boxwrap: $('boxwrap'), name: $('name'), txt: $('txt'), arrow: $('arrow'),
       choices: $('choices'), inputform: $('inputform'), ti: $('ti'), tok: $('tok'),

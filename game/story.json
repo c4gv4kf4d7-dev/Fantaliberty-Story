@@ -128,9 +128,19 @@
       "bg": "esterno_teatro",
       "bgFx": "zoom",
       "steps": [
-        { "t": "wait", "ms": 2100 },
+        {
+          "t": "title",
+          "lines": [
+            { "text": "Cupertino, California." },
+            { "text": "Apple Park.", "pausa": 700 },
+            { "text": "-1 ora al Keynote.", "pausa": 900 },
+            { "text": "Fuori c'e' ancora luce. Dentro, nessuno respira.", "small": true }
+          ]
+        },
+        { "t": "fx", "name": "lights" },
+        { "t": "wait", "ms": 2600 },
         { "t": "show", "who": "lucas", "body": "neutro" },
-        { "t": "wait", "ms": 500 },
+        { "t": "wait", "ms": 600 },
         { "t": "say", "who": "lucas", "text": "Ciao! Io sono Lucas... ti stavamo aspettando allo Steve Jobs Theater!" }
       ],
       "next": "registrazione"

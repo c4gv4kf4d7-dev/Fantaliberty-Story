@@ -14,7 +14,7 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;
  image-rendering:pixelated;transition:filter .8s ease;transform:translateZ(0);will-change:filter,transform}
 #bg.zoom{animation:zoom 6s ease-out forwards}
-@keyframes zoom{from{transform:scale(1)}to{transform:scale(1.12)}}
+@keyframes zoom{from{transform:scale(1.06)}to{transform:scale(1.16)}}
 #bg.blur{filter:blur(6px) brightness(.55)}
 
 /* ---------- NPC: corpo + testa ----------
@@ -113,6 +113,19 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  border:2px solid rgba(255,255,255,.35)}
 .pdot.seen{background:rgba(255,255,255,.5)}
 .pdot.sel{background:#fff;border-color:#fff;transform:scale(1.25)}
+
+/* ---------- sipario / cartello d'apertura ---------- */
+#curtain{position:absolute;inset:0;z-index:5;background:#000;display:none;place-items:center;
+ padding:14% 10%;opacity:1}
+#curtain.on{display:grid}
+/* l'accensione: il nero se ne va piano e la scena emerge */
+#curtain.lights{animation:lights 3.4s ease-out forwards}
+@keyframes lights{from{opacity:1}to{opacity:0}}
+#curtainInner{text-align:center;max-width:34em}
+.tline{color:#fff;font-size:clamp(9px,3vw,15px);line-height:2.2;margin-bottom:1.1em;
+ text-shadow:0 0 14px rgba(255,255,255,.25)}
+.tline.small{font-size:clamp(8px,2.4vw,12px);opacity:.72}
+#curtainArrow{color:#fff;font-size:12px;opacity:0;margin-top:1.4em;animation:bob 1s infinite}
 
 #hint{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:14px;color:#fff9;font-size:9px}
 #flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
