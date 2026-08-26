@@ -132,6 +132,7 @@
      poi sfuma. Va da solo, nessun tap. Se il PNG del logo non c'e' ancora,
      l'insegna viene disegnata in CSS con lo stesso aspetto. */
   function sigla(st, done) {
+    var nero = st.nero != null ? st.nero : 0;          // buio prima di accendere
     var accensione = st.accensione != null ? st.accensione : 1000;
     var fisso = st.fisso != null ? st.fisso : 2000;
     var uscita = st.uscita != null ? st.uscita : 900;
@@ -152,6 +153,9 @@
     el.logo.className = 'on';
     if (!VN.speed) { el.logo.className = ''; return done(); }
 
+    setTimeout(accendi, nero);
+
+    function accendi() {
     void el.logo.offsetWidth;
     el.logo.classList.add('accendi');
     setTimeout(function () {
@@ -163,6 +167,7 @@
         setTimeout(function () { el.logo.className = ''; done(); }, uscita);
       }, fisso);
     }, accensione);
+    }
   }
 
   /* ---------------- schermata di avvio ----------------

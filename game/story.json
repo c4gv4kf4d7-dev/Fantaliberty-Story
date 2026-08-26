@@ -130,7 +130,7 @@
       "steps": [
         {
           "t": "logo", "img": "ui/logo_studio.png",
-          "accensione": 1000, "fisso": 2000, "uscita": 900
+          "nero": 1000, "accensione": 1000, "fisso": 2000, "uscita": 900
         },
         { "t": "boot", "blocchi": 9, "ms": 2200, "cursore": 1600 },
         {
@@ -142,7 +142,7 @@
           ]
         },
         { "t": "fx", "name": "lights" },
-        { "t": "wait", "ms": 2600 },
+        { "t": "wait", "ms": 3600 },
         { "t": "show", "who": "lucas", "body": "neutro" },
         { "t": "wait", "ms": 600 },
         { "t": "say", "who": "lucas", "text": "Ciao! Io sono Lucas... ti stavamo aspettando allo Steve Jobs Theater!" }

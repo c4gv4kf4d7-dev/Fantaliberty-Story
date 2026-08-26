@@ -27,8 +27,8 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  object-position:bottom center;image-rendering:pixelated}
 #npcHead{position:absolute;left:50%;top:4%;width:34%;transform:translateX(-50%);
  image-rendering:pixelated}
-#npc.in{animation:enter .6s cubic-bezier(.2,.9,.3,1) forwards}
-@keyframes enter{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:translateX(0)}}
+#npc.in{animation:enter .85s cubic-bezier(.2,.9,.3,1) forwards}
+@keyframes enter{from{opacity:0;transform:translateX(74px)}to{opacity:1;transform:translateX(0)}}
 #npc.pop{animation:pop .5s ease forwards}
 @keyframes pop{0%{opacity:1;transform:scale(1)}45%{opacity:1;transform:scale(1.06)}100%{opacity:1;transform:scale(1)}}
 #npc.broken{display:none}

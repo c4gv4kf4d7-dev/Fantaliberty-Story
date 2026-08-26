@@ -89,6 +89,19 @@ l'alone chiaro) — basta dirmelo, oppure:
 python3 tools/rimuovi_sfondo.py assets/props/prop_mac_terminale.png
 ```
 
+## Puntini e trattini bianchi negli sprite
+
+Gli sprite generati arrivano quasi sempre con piccoli residui quasi bianchi:
+puntini isolati, trattini lungo i contorni interni, avanzi di sfondo attaccati
+alla figura. A schermo pieno si notano.
+
+```bash
+python3 tools/pulisci_bordi.py assets/chars/chr_susan_corpo_in_piedi.png
+```
+
+Li ricopre col colore che hanno intorno (non li rende trasparenti, altrimenti si
+aprirebbero buchi). Denti, bianco degli occhi e riflessi vengono risparmiati.
+
 ## Dopo aver caricato
 
 ```bash
