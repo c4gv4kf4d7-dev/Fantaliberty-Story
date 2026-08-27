@@ -81,9 +81,9 @@ scene** al nome giusto.
 |---|---|---|
 | `lucas` | Lucas | 2 pose collegate (`neutro`, `felice`, i nomi del prototipo). Il manifest ne descrive altre 3 già consegnate e **non ancora collegate**: `chr_lucas_idle`, `chr_lucas_indica_terminale` (più `chr_lucas_saluto`, `chr_lucas_pollice_su`, `chr_lucas_divertito`, mai disegnate) |
 | `francesca` | Francesca | 7 pose, tutte collegate |
-| `susan` | Susan | 8 pose collegate. **`chr_susan_commento_stile` è ancora uno sprite sheet a 4 teste**, non tagliato — va passato da `taglia_sheet.py` prima di poter essere usato |
-| `peter` (ex `veterano`) | Peter | 6 pose collegate. Il manifest lo vuole *addormentato* (`occhi_bassi`) finché `run.locked` è falso e sveglio (`alza_occhi`) solo in S8 — la scena `quiz` esistente è ancora la vecchia placeholder e **non modella questo stato** |
-| `martha` | Martha | Sprite consegnati (`chr_martha_indicatore_regia`, `chr_martha_ritratto_regia`) ma **non collegati e non usati in nessuna scena**. Il manifest la descrive come "nessun corpo, solo icona" — un'icona a 2 frame mostrata *accanto al box dialogo*, non un personaggio `show`/`say` normale. Serve un meccanismo diverso da quello usato per gli altri NPC, non ancora costruito |
+| `susan` | Susan | 12 pose collegate, comprese le 4 `commento_*` tagliate dal foglio `chr_susan_commento_stile` (ordine confermato dall'utente: 1 drip, 2 hawaiano, 3 showman, 4 ingegnere). Servono a S3, non ancora usate |
+| `peter` (ex `veterano`) | Peter | 6 pose collegate. Lo stato *dorme finché `locked` è falso, si sveglia dopo* **è modellato nella lobby** (zona 4, due varianti con `when`). La scena `quiz` resta la vecchia placeholder |
+| `martha` | Martha | Sprite consegnati (`chr_martha_indicatore_regia`, `chr_martha_ritratto_regia`) ma **non collegati e non usati in nessuna scena**. Il cast punta ancora a 3 file `@3x` mai disegnati. Il manifest la descrive come "nessun corpo, solo icona" — un'icona a 2 frame mostrata *accanto al box dialogo*, non un personaggio `show`/`say` normale. Serve un meccanismo diverso da quello usato per gli altri NPC, non ancora costruito |
 | `premi` | — | **Probabilmente da eliminare.** Non esiste un NPC "Premi" nel manifest: la sezione premi è gestita da Francesca in zona 3 (`chr_francesca_orgogliosa`). Nessuno sprite è mai stato consegnato per `premi`. Prima di cancellarlo controlla che la scena `premi` in `story.json` non serva ancora come segnaposto di flusso |
 
 ## Lo script master v4.0 e i due strati del lavoro
@@ -109,7 +109,7 @@ esistono**:
 
 | serve | per |
 |---|---|
-| hub a 4 zone con swipe + dot | `[S1.HUB]` lobby |
+| ~~hub a 4 zone con swipe + dot~~ — **fatto**: step `hub`, vedi README | `[S1.HUB]` lobby |
 | carosello stile con descrizione, perk e conferma irreversibile | `[S3.02]` |
 | griglia 3 macroargomenti con stati (attiva/completata/disabilitata) | `[S5.HUB]` |
 | pescaggio casuale di 3 facoltative **al bivio**, non a inizio partita | `[S5.BIVIO]` |
@@ -126,10 +126,10 @@ Ordine consigliato: prima il modello `run` completo e il salvataggio, poi S3
 
 - **Il terminale dice "campo 1/7"…"6/7" ma i campi elencati sono 6.** O ne
   manca uno o l'etichetta è sbagliata: non inventato, va chiesto.
-- **Il genere**: lo script `[S0.03]` chiede 2 bottoni (Maschile/Femminile), il
-  gioco oggi ne ha 3 (con Neutro) e il motore supporta `{g:m|f|x}`. Togliere
-  l'opzione neutra è una decisione di prodotto, non un dettaglio tecnico: **non
-  è stata applicata**, va confermata.
+- ~~**Il genere**~~ — **deciso dall'utente: due opzioni, come da script.**
+  `meta.genderOrder` è `["m","f"]`, l'opzione Neutro non c'è più e tutti i
+  `{g:...}` hanno due varianti. `npm test` controlla che il numero di varianti
+  combaci con `genderOrder`, così una terza reintrodotta per sbaglio non passa.
 - **Le fasce di anzianità** sono state allineate allo script (0-1 / 2-3 / 4-7 /
   8+) e le due battute di Lucas che citavano i vecchi valori ("Cinque, dieci
   anni…", "Più di dieci anni") sono state adattate di conseguenza.
@@ -146,11 +146,29 @@ esistono ancora: la scelta dello stile (camerino, S3), il keynote vero
 teleprompter/recap (S6), il quiz a 3 livelli con timer e perk per stile
 (S8 rifatto).
 
-**Questo non è stato ancora affrontato.** Le correzioni fatte finora sono
-state mirate: ricollegare sprite reali a scene placeholder esistenti,
-sistemare riferimenti rotti, mai riscrivere la logica di gioco. Riscrivere
-le scene per farle aderire allo script v3.0 è un lavoro grosso e separato —
-non improvvisarlo dentro un fix più piccolo.
+**Ora è in corso, una scena alla volta.** L'utente ha chiesto esplicitamente
+di procedere *scena per scena, dialoghi e meccaniche insieme*, non tutti i
+dialoghi prima e le meccaniche poi, e di **non tagliare niente** dallo script
+("non togliere i micro eventi perché c'è assolutamente tempo visto che siamo
+in due"). I giocatori partono il **2 settembre 2026**.
+
+Ordine dei lavori e stato:
+
+| scena | stato |
+|---|---|
+| S0 registrazione | fatto (genere a 2, fasce anzianità, lista iPhone, badge) |
+| **S1 lobby** | **fatto**: hub a 4 zone con swipe, hotspot, zona 4 condizionata a `locked` |
+| S2 l'aggancio | da fare — oggi è la vecchia `ritardo_ceo` |
+| S3 camerino / scelta stile | da fare (le 4 teste di Susan sono già pronte) |
+| S4 → S8 | da fare |
+
+L'ordine delle scene in `story.json` è già stato corretto: `badge` → `lobby`
+(S1) → `ritardo_ceo` (proto-S2). Prima la lobby veniva dopo l'incontro con
+Susan, al contrario dello script.
+
+Le correzioni precedenti erano invece mirate: ricollegare sprite reali a scene
+placeholder, sistemare riferimenti rotti. Non mescolare i due tipi di lavoro
+nella stessa PR.
 
 ## Errori già fatti (per non ripeterli)
 

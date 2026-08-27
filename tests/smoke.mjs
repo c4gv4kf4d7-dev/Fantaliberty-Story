@@ -28,7 +28,7 @@ function partOf(who, kind, id) {
   const c = story.cast?.[who];
   return c && id ? c[kind]?.[id] : undefined;
 }
-const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'avatar', 'show', 'hide', 'prop', 'bg', 'react', 'fx', 'wait', 'set', 'goto', 'end']);
+const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'avatar', 'hub', 'show', 'hide', 'prop', 'bg', 'react', 'fx', 'wait', 'set', 'goto', 'end']);
 assert.ok(story.scenes[story.meta.start], 'meta.start punta a una scena esistente');
 
 for (const [id, sc] of Object.entries(story.scenes)) {
@@ -59,7 +59,51 @@ for (const [id, sc] of Object.entries(story.scenes)) {
       if (st.prop) assert.ok(story.assets.props[st.prop], `scena ${id}: prop "${st.prop}" dichiarato`);
     }
     if (st.t === 'title') assert.ok(st.lines?.length, `scena ${id}: title senza righe`);
+    if (st.t === 'hub') controllaHub(id, st);
   }
+}
+
+/* Un hub sbagliato non fa rumore: il motore salta le zone che non sa risolvere e
+   il giocatore resta chiuso in una lobby senza uscita. Qui si controlla che ogni
+   zona abbia il suo fondale, il suo personaggio e almeno una via d'uscita. */
+function controllaHub(id, st) {
+  const zones = st.zones || [];
+  assert.ok(zones.length, `scena ${id}: hub senza zone`);
+  const visti = new Set();
+  let usciteTotali = 0;
+  for (const z of zones) {
+    assert.ok(z.id, `scena ${id}: zona senza id`);
+    assert.ok(!visti.has(z.id), `scena ${id}: due zone con id "${z.id}"`);
+    visti.add(z.id);
+    assert.ok(story.assets.bg[z.bg], `scena ${id}, zona ${z.id}: bg "${z.bg}" non dichiarato`);
+    if (z.dice) assert.ok(story.cast?.[z.dice], `scena ${id}, zona ${z.id}: "dice" punta a "${z.dice}", non nel cast`);
+    if (z.who) {
+      const c = story.cast?.[z.who];
+      assert.ok(c, `scena ${id}, zona ${z.id}: personaggio "${z.who}" non e' nel cast`);
+      const body = z.body || c.defaultBody;
+      assert.ok(c.bodies?.[body], `scena ${id}, zona ${z.id}: posa "${body}" non dichiarata per ${z.who}`);
+    }
+    for (const h of z.hotspots || []) {
+      assert.ok(h.goto || h.say || h.set,
+        `scena ${id}, zona ${z.id}: hotspot "${h.label}" non fa niente`);
+      if (h.goto) { assert.ok(story.scenes[h.goto], `scena ${id}: hotspot verso "${h.goto}" inesistente`); usciteTotali++; }
+      if (h.richiede) assert.equal(h.richiede, 'swipe',
+        `scena ${id}: "richiede" accetta solo "swipe", non "${h.richiede}"`);
+      if (h.richiede) assert.ok(h.bloccato, `scena ${id}: hotspot bloccato senza battuta di rifiuto`);
+    }
+  }
+  if (st.start) assert.ok(visti.has(st.start), `scena ${id}: hub start "${st.start}" non e' una zona`);
+  if (st.tutorial?.who) {
+    const c = story.cast?.[st.tutorial.who];
+    assert.ok(c?.bodies?.[st.tutorial.body], `scena ${id}: posa tutorial "${st.tutorial.body}" non dichiarata`);
+  }
+  // un hub e' bloccante: senza almeno un'uscita il gioco finisce li'
+  assert.ok(usciteTotali > 0, `scena ${id}: hub senza nessuna uscita`);
+  // le zone condizionate devono coprire tutti i casi: se la zona 4 esistesse solo
+  // con locked=true, prima del lock la lobby ne mostrerebbe tre e i pallini
+  // sarebbero tre, non quattro
+  const senzaCondizione = zones.filter((z) => !z.when).length;
+  assert.ok(senzaCondizione >= 1, `scena ${id}: hub con tutte le zone condizionate`);
 }
 
 /* ---------- 1b. niente asterischi di declinazione nei dialoghi ---------- */
@@ -73,6 +117,13 @@ for (const [id, sc] of Object.entries(story.scenes)) {
       const senzaVarianti = t.replace(/\{g:[^}]*\}/g, '');
       assert.ok(!/\w\*/.test(senzaVarianti),
         `scena ${id}: asterisco di declinazione in "${t.slice(0, 60)}" - usa {g:...}`);
+      // Una variante di troppo non si vede a schermo: il motore prende quella
+      // che serve e ignora le altre. Il test la trova.
+      for (const m of t.matchAll(/\{g:([^}]*)\}/g)) {
+        assert.equal(m[1].split('|').length, story.meta.genderOrder.length,
+          `scena ${id}: "{g:${m[1]}}" ha ${m[1].split('|').length} varianti, ` +
+          `meta.genderOrder ne dichiara ${story.meta.genderOrder.length}`);
+      }
     }
     for (const o of st.options || []) {
       assert.ok(!/\w\*/.test(String(o.label || '')), `scena ${id}: asterisco nell'opzione "${o.label}"`);
@@ -183,7 +234,7 @@ $('tok').onclick();
 // scelta genere -> interpolazione {NOME}
 assert.match(txt(), /Perfetto, FRANCO/, 'interpolazione {NOME}');
 const opts = [...$('choices').querySelectorAll('.ch')];
-assert.equal(opts.length, 3);
+assert.equal(opts.length, 2, 'lo script master prescrive due bottoni: Maschile | Femminile');
 opts[1].onclick({ stopPropagation() {} });              // femminile
 assert.equal(VN.state.genere, 'f');
 assert.equal($('tval_genere').textContent, 'F');
@@ -252,7 +303,9 @@ assert.equal(saved.scene, 'badge');
 
 // nuova sessione: riprende dal checkpoint invece di ricominciare
 VN.boot(story, { speed: 0 });
-assert.match(txt(), /Avevi lasciato il gioco a "Atto 1 — Il badge"/, 'prompt di ripresa');
+// la card di ripresa e' gia' declinata: il genere sta nel salvataggio, non serve
+// aspettare restore() per leggerlo (prima usciva un asterisco a schermo)
+assert.match(txt(), /^Bentornata! Eri arrivata fino a "Atto 1 — Il badge"/, 'prompt di ripresa declinato');
 const resumeBtns = [...$('choices').querySelectorAll('.ch')];
 assert.equal(resumeBtns.length, 2);
 resumeBtns[0].onclick({ stopPropagation() {} });                       // Riprendi
@@ -260,10 +313,19 @@ assert.equal(VN.state.nome, 'Franco', 'variabili ripristinate');
 assert.match(txt(), /non restare qui impalat/, 'ripreso dalla battuta giusta');
 assert.ok($('npcBody').getAttribute('src').includes('chr_lucas_felice'), 'scena ricomposta (posa corretta)');
 
-// ...oppure ricomincia da capo e il salvataggio sparisce
+// ...oppure ricomincia da capo. Cancellare la partita e' irreversibile: lo script
+// chiede conferma prima, non basta il tocco sul bottone
 VN.boot(story, { speed: 0 });
 [...$('choices').querySelectorAll('.ch')][1].onclick({ stopPropagation() {} });   // Ricomincia
+assert.ok($('modal').classList.contains('on'), 'la conferma di reset e\' una modale');
+assert.ok(VN.hasSave(story), 'finche\' non conferma, il salvataggio resta');
+[...$('modalbtns').querySelectorAll('.ch')][1].onclick({ stopPropagation() {} });   // No, torno indietro
+assert.equal($('modal').classList.contains('on'), false, 'modale chiusa');
+assert.ok(VN.hasSave(story), 'annullare non cancella niente');
+[...$('choices').querySelectorAll('.ch')][1].onclick({ stopPropagation() {} });   // Ricomincia, di nuovo
+[...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // Si', ricomincio
 assert.equal(VN.hasSave(story), false, 'salvataggio cancellato');
+assert.equal(VN.state.nome, '', 'le variabili tornano a zero, non restano quelle vecchie');
 assert.ok($('curtain').classList.contains('on'), 'ripartito dall\'intro');
 assert.match($('curtainTxt').textContent, /Cupertino/);
 
@@ -281,6 +343,105 @@ const toni = [...$('choices').querySelectorAll('.ch')];
 assert.equal(toni.length, 2);
 toni[0].onclick({ stopPropagation() {} });
 assert.equal(VN.state.tono, 'sfacciato');
+
+/* ---------- 5b. S1: hub della lobby a quattro zone ----------
+   Il vincolo dello script e' che la tenda NON sia toccabile finche' il giocatore
+   non ha scorso almeno una volta: senza quello entra in sala senza accorgersi che
+   la lobby era visitabile, e la meta' del contenuto di S1 non la vede nessuno. */
+{
+  VN.clearSave();
+  VN.boot(story, { speed: 0, scene: 'lobby' });
+  const spots = () => [...$('hubspots').querySelectorAll('.hspot')];
+  const dots = () => [...$('hdots').querySelectorAll('.hdot')];
+
+  VN.step(); VN.step(); VN.step();      // le tre battute di Francesca prima dell'hub
+  assert.ok($('hub').classList.contains('on'), 'l\'hub si apre dopo l\'introduzione');
+  assert.ok($('hubnav').classList.contains('on'), 'frecce e pallini visibili');
+
+  // quattro zone: la quarta e' quella chiusa, perche' locked e' ancora false
+  assert.equal(dots().length, 4, 'quattro zone, come nello script');
+  assert.equal(dots()[0].classList.contains('sel'), true, 'si parte dalla tenda');
+  assert.equal(VN.state.locked, false);
+
+  // prima dello swipe: la tenda si vede ma non si entra
+  assert.equal(spots().length, 1);
+  assert.ok(spots()[0].classList.contains('chiuso'), 'ENTRA disattivato prima del tutorial');
+  assert.match(txt(), /Scorri per scoprire la lobby/, 'parla il tutorial, non la zona');
+  spots()[0].onclick({ stopPropagation() {} });
+  assert.equal(VN.sceneId, 'lobby', 'toccare ENTRA prima dello swipe non porta via');
+  assert.match(txt(), /prima fatti un giro/i, 'e spiega perche\'');
+
+  // uno swipe: si passa alla Hall of Fame
+  $('hnext').onclick({ stopPropagation() {} });
+  assert.ok(dots()[1].classList.contains('sel'), 'seconda zona');
+  assert.ok($('bg').getAttribute('src').includes('hall_of_fame'), 'fondale della zona 2');
+  assert.match(txt(), /Hall of Fame/);
+  assert.ok($('npcBody').getAttribute('src').includes('chr_francesca_idle'), 'Francesca c\'e\' anche qui');
+  // Lo scorrimento si anima sul fondale, non sul personaggio: #npc ha gia' la sua
+  // animazione d'ingresso, e una seconda la sovrascriveva lasciandolo trasparente
+  // a fine corsa — a schermo Francesca spariva da tutte le zone dopo il primo swipe.
+  assert.ok($('bg').classList.contains('vaiSx'), 'il fondale scorre');
+  assert.equal($('npc').classList.contains('vaiSx'), false, 'il personaggio no');
+  assert.ok($('npc').classList.contains('in'), 'ed entra con la sua animazione');
+  // l'hotspot che commenta e basta non fa uscire dall'hub
+  spots()[0].onclick({ stopPropagation() {} });
+  assert.equal(VN.sceneId, 'lobby');
+  assert.match(txt(), /albo d'oro/);
+
+  // zona 4: Peter dorme finche' i pronostici non sono chiusi
+  $('hnext').onclick({ stopPropagation() {} });
+  $('hnext').onclick({ stopPropagation() {} });
+  assert.ok(dots()[3].classList.contains('sel'), 'quarta zona');
+  assert.ok($('bg').getAttribute('src').includes('quiz_bloccata'), 'zona 4 ancora chiusa');
+  assert.ok($('npcBody').getAttribute('src').includes('chr_peter_occhi_bassi'), 'Peter dorme');
+  // si vede Peter, ma a commentare e' Francesca: chi parla e chi e' in scena
+  // sono due cose diverse
+  assert.equal($('name').textContent, 'Francesca', 'la battuta sulla zona 4 e\' di Francesca');
+  spots()[0].onclick({ stopPropagation() {} });
+  assert.ok($('npcBody').getAttribute('src').includes('chr_peter_alza_occhi'), 'al tocco si sveglia di scatto');
+  assert.equal($('name').textContent, 'Peter', 'ma al tocco parla Peter');
+  assert.match(txt(), /Prima segui il keynote/);
+  assert.equal(VN.sceneId, 'lobby', 'la zona 4 chiusa non porta al quiz');
+
+  // giro completo: si torna alla tenda, e adesso ENTRA e' attivo
+  $('hnext').onclick({ stopPropagation() {} });
+  assert.ok(dots()[0].classList.contains('sel'), 'l\'hub e\' circolare');
+  assert.equal(spots()[0].classList.contains('chiuso'), false, 'dopo lo swipe ENTRA si accende');
+  assert.match(txt(), /La tenda e' quella/, 'ora parla la zona, non piu\' il tutorial');
+
+  // entrare e' irreversibile: prima la conferma
+  spots()[0].onclick({ stopPropagation() {} });
+  assert.ok($('modal').classList.contains('on'), 'conferma prima di entrare in sala');
+  assert.equal(VN.sceneId, 'lobby', 'la modale aperta non ha ancora cambiato scena');
+  [...$('modalbtns').querySelectorAll('.ch')][1].onclick({ stopPropagation() {} });   // Non ancora
+  assert.equal(VN.sceneId, 'lobby', '"Non ancora" riporta nell\'hub');
+  assert.ok($('hub').classList.contains('on'), 'l\'hub e\' ancora aperto');
+
+  spots()[0].onclick({ stopPropagation() {} });
+  [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // Si', entro
+  assert.equal(VN.sceneId, 'ritardo_ceo', 'ENTRA porta in sala');
+  assert.equal($('hub').classList.contains('on'), false, 'uscendo, l\'hub si chiude');
+  assert.equal($('hubspots').children.length, 0, 'e non lascia hotspot appesi sopra la scena');
+}
+
+/* ---------- 5c. la zona 4 cambia faccia quando i pronostici sono chiusi ---------- */
+{
+  VN.clearSave();
+  VN.boot(story, { speed: 0, scene: 'lobby' });
+  VN.state.locked = true;                       // come dopo il lock di S6
+  VN.step(); VN.step(); VN.step();
+  const dots = () => [...$('hdots').querySelectorAll('.hdot')];
+  assert.equal(dots().length, 4, 'restano quattro zone anche dopo il lock');
+  $('hnext').onclick({ stopPropagation() {} });
+  $('hnext').onclick({ stopPropagation() {} });
+  $('hnext').onclick({ stopPropagation() {} });
+  assert.ok($('bg').getAttribute('src').includes('quiz_aperta'), 'zona 4 aperta');
+  assert.ok($('npcBody').getAttribute('src').includes('chr_peter_alza_occhi'), 'Peter sveglio');
+  const spot = $('hubspots').querySelector('.hspot');
+  spot.onclick({ stopPropagation() {} });
+  [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });
+  assert.equal(VN.sceneId, 'quiz', 'ora la zona 4 porta al quiz');
+}
 
 /* ---------- 6. variante maschile, percorso rapido ---------- */
 VN.clearSave();

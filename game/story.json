@@ -7,8 +7,7 @@
     "genderVar": "genere",
     "genderOrder": [
       "m",
-      "f",
-      "x"
+      "f"
     ],
     "note": "Formato: iPhone portrait 390x844. Il terzo inferiore e' area dialogo."
   },
@@ -18,6 +17,11 @@
       "esterno_ingresso": "bg/bg_esterno_ingresso.webp",
       "camerino": "bg/bg_camerino.webp",
       "lobby": "bg/bg_lobby.webp",
+      "lobby_z1_tenda": "bg/bg_lobby_z1_tenda.webp",
+      "lobby_z2_hall_of_fame": "bg/bg_lobby_z2_hall_of_fame.webp",
+      "lobby_z3_premi": "bg/bg_lobby_z3_premi.webp",
+      "lobby_z4_quiz_bloccata": "bg/bg_lobby_z4_quiz_bloccata.webp",
+      "lobby_z4_quiz_aperta": "bg/bg_lobby_z4_quiz_aperta.webp",
       "sala_teatro": "bg/bg_sala_teatro.webp"
     },
     "props": {
@@ -50,10 +54,14 @@
         "spinta_in_scena": "chars/chr_susan_spinta_in_scena.webp",
         "sollievo": "chars/chr_susan_sollievo.webp",
         "sguardo_in_alto": "chars/chr_susan_sguardo_in_alto.webp",
-        "carponi": "chars/chr_susan_carponi.webp"
+        "carponi": "chars/chr_susan_carponi.webp",
+        "commento_drip": "chars/chr_susan_commento_stile_drip.webp",
+        "commento_hawaiano": "chars/chr_susan_commento_stile_hawaiano.webp",
+        "commento_showman": "chars/chr_susan_commento_stile_showman.webp",
+        "commento_ingegnere": "chars/chr_susan_commento_stile_ingegnere.webp"
       },
       "heads": {},
-      "_nota": "Sprite unico per posa (come lucas/francesca): niente head/neck. chr_susan_commento_stile e' uno sprite sheet a 4 teste (una per stile), ancora da tagliare con tools/taglia_sheet.py prima di poterlo usare."
+      "_nota": "Sprite unico per posa (come lucas/francesca): niente head/neck. Le quattro pose commento_* vengono dal foglio chr_susan_commento_stile, tagliato in ordine drip, hawaiano, showman, ingegnere: in S3 si mostra quella che corrisponde a run.stile."
     },
     "francesca": {
       "name": "Francesca",
@@ -131,6 +139,7 @@
     "reparto": null,
     "device": null,
     "stile": null,
+    "locked": false,
     "__ok": ""
   },
   "scenes": {
@@ -198,8 +207,7 @@
           "var": "genere",
           "map": {
             "m": "M",
-            "f": "F",
-            "x": "N"
+            "f": "F"
           }
         },
         {
@@ -278,10 +286,6 @@
             {
               "label": "Femminile",
               "value": "f"
-            },
-            {
-              "label": "Neutro",
-              "value": "x"
             }
           ]
         },
@@ -643,12 +647,14 @@
           "text": "[BOZZA] ...ne riparliamo dopo. Corri!"
         }
       ],
-      "next": "lobby",
+      "next": "backstage",
       "dissolvenza": true
     },
     "lobby": {
-      "title": "Atto 3 — La lobby",
-      "bg": "lobby",
+      "title": "S1 — La lobby",
+      "bg": "lobby_z1_tenda",
+      "dissolvenza": true,
+      "pulviscolo": 8,
       "steps": [
         {
           "t": "hide"
@@ -661,28 +667,157 @@
         {
           "t": "say",
           "who": "francesca",
-          "text": "[BOZZA] Ehi, calma. Prima che ti buttino sul palco, ti faccio vedere com'e' fatto questo posto."
+          "text": "{NOME}! {g:Benvenuto|Benvenuta}. Fai con calma, guardati pure intorno e fai un giro."
         },
         {
-          "t": "choice",
+          "t": "say",
           "who": "francesca",
-          "var": "sezione",
-          "text": "[BOZZA] Da dove vuoi partire?",
-          "options": [
+          "text": "Tanto di la' non si inizia senza di te."
+        },
+        {
+          "t": "show",
+          "who": "francesca",
+          "body": "indica_tenda"
+        },
+        {
+          "t": "say",
+          "who": "francesca",
+          "text": "Quando sei {g:pronto|pronta} vai pure verso la tenda ed entra. Da quel momento... sei a teatro."
+        },
+        {
+          "t": "hub",
+          "var": "zona",
+          "start": "tenda",
+          "_nota": "S1.HUB: quattro zone, swipe libero, nessun ordine imposto. La zona 4 e' scritta due volte, una per stato di run.locked: il motore mostra solo quella la cui condizione e' vera.",
+          "tutorial": {
+            "who": "francesca",
+            "body": "gesto_swipe",
+            "text": "Scorri per scoprire la lobby: le zone sono quattro. Tutto quello che brilla si tocca."
+          },
+          "zones": [
             {
-              "label": "Il gioco delle previsioni",
-              "value": "gioco",
-              "goto": "backstage"
+              "id": "tenda",
+              "bg": "lobby_z1_tenda",
+              "who": "francesca",
+              "body": "indica_tenda",
+              "say": "La tenda e' quella. Di la' c'e' la sala, e non si torna indietro.",
+              "hotspots": [
+                {
+                  "label": "ENTRA",
+                  "x": "40%",
+                  "y": "44%",
+                  "w": "20%",
+                  "h": "42%",
+                  "richiede": "swipe",
+                  "bloccato": "Aspetta, non correre: prima fatti un giro. Scorri con il dito, o usa le frecce qui sotto.",
+                  "conferma": {
+                    "text": "Entrare in sala? Da qui in poi non si torna in lobby.",
+                    "si": "Si', entro",
+                    "no": "Non ancora"
+                  },
+                  "goto": "ritardo_ceo"
+                }
+              ]
             },
             {
-              "label": "I premi",
-              "value": "premi",
-              "goto": "premi"
+              "id": "hall_of_fame",
+              "bg": "lobby_z2_hall_of_fame",
+              "who": "francesca",
+              "body": "idle",
+              "say": "La Hall of Fame. Ogni anno qualcuno giura di aver 'solo tirato a indovinare'.",
+              "hotspots": [
+                {
+                  "label": "LE TARGHE",
+                  "x": "34%",
+                  "y": "48%",
+                  "w": "60%",
+                  "h": "20%",
+                  "who": "francesca",
+                  "say": "Le targhe delle edizioni passate. Vuote, per ora: l'albo d'oro di quest'anno si scrive stasera.",
+                  "react": {
+                    "level": "micro"
+                  }
+                }
+              ]
             },
             {
-              "label": "Il quiz storico",
-              "value": "quiz",
-              "goto": "quiz"
+              "id": "premi",
+              "bg": "lobby_z3_premi",
+              "who": "francesca",
+              "body": "orgogliosa",
+              "say": "E questa e' la teca dei premi.",
+              "hotspots": [
+                {
+                  "label": "LA TECA",
+                  "x": "38%",
+                  "y": "38%",
+                  "w": "38%",
+                  "h": "50%",
+                  "who": "francesca",
+                  "say": "Il nuovo iPhone? Una macchina nuova? Un viaggio? Naa, non credo, siamo in spending review.",
+                  "react": {
+                    "level": "micro"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "quiz_chiuso",
+              "when": {
+                "var": "locked",
+                "is": false
+              },
+              "chiuso": true,
+              "bg": "lobby_z4_quiz_bloccata",
+              "who": "peter",
+              "body": "occhi_bassi",
+              "height": "44%",
+              "bottom": "18%",
+              "dice": "francesca",
+              "say": "Quello e' Peter. Dorme. Lascialo dormire, per adesso.",
+              "hotspots": [
+                {
+                  "label": "IL TAVOLINO",
+                  "x": "38%",
+                  "y": "74%",
+                  "w": "40%",
+                  "h": "23%",
+                  "who": "peter",
+                  "react": {
+                    "level": "pose",
+                    "body": "alza_occhi"
+                  },
+                  "say": "Prima segui il keynote. Poi le domande difficili."
+                }
+              ]
+            },
+            {
+              "id": "quiz_aperto",
+              "when": {
+                "var": "locked",
+                "is": true
+              },
+              "bg": "lobby_z4_quiz_aperta",
+              "who": "peter",
+              "body": "alza_occhi",
+              "height": "44%",
+              "bottom": "18%",
+              "say": "Adesso si': i pronostici sono chiusi, il tavolo e' aperto.",
+              "hotspots": [
+                {
+                  "label": "IL QUIZ",
+                  "x": "38%",
+                  "y": "74%",
+                  "w": "40%",
+                  "h": "23%",
+                  "conferma": {
+                    "text": "Cominciamo il quiz?",
+                    "si": "Si', sono pronto",
+                    "no": "Fra poco"
+                  },
+                  "goto": "quiz"
+                }
+              ]
             }
           ]
         }
@@ -782,7 +917,7 @@
         {
           "t": "say",
           "who": "premi",
-          "text": "[BOZZA] Ta-daaa! Questi te li sei {g:guadagnato|guadagnata|guadagnati}, {NOME}."
+          "text": "[BOZZA] Ta-daaa! Questi te li sei {g:guadagnato|guadagnata}, {NOME}."
         }
       ],
       "next": "finale"
@@ -869,7 +1004,7 @@
           "by": "anni",
           "text": {
             "0": "Da poco in Apple, quindi. Allora questo e' uno dei tuoi primi Keynote: guardati intorno stasera, e' una cosa che ti ricordi per sempre.",
-            "1": "Qualche anno alle spalle: abbastanza per sapere come gira, non abbastanza da {g:esserti stufato|esserti stufata|averne abbastanza}. Il momento migliore, secondo me.",
+            "1": "Qualche anno alle spalle: abbastanza per sapere come gira, non abbastanza da {g:esserti stufato|esserti stufata}. Il momento migliore, secondo me.",
             "2": "Dagli otto ai dodici anni: i Keynote li hai gia' visti tutti. Ma da qui dentro e' un'altra storia, fidati.",
             "3": "Piu' di dodici anni. Tu c'eri quando certe cose le annunciavano ancora su un palco piccolo. Stasera goditela.",
             "*": "Comunque sia andata finora, stasera si riparte da zero come tutti."
@@ -878,10 +1013,10 @@
         {
           "t": "say",
           "who": "lucas",
-          "text": "{g:Benvenuto|Benvenuta|Ti do il benvenuto} allo Steve Jobs Theater. Adesso pero' non restare qui {g:impalato|impalata|fermo li'}: ti aspettano dentro."
+          "text": "{g:Benvenuto|Benvenuta} allo Steve Jobs Theater. Adesso pero' non restare qui {g:impalato|impalata}: ti aspettano dentro."
         }
       ],
-      "next": "ritardo_ceo",
+      "next": "lobby",
       "foglie": 3,
       "pulviscolo": 10
     }

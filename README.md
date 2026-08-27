@@ -100,6 +100,7 @@ Tutto lo script vive in `game/story.json`. Ogni scena e' una lista di `steps`:
 | `show` / `hide` | `{"t":"show","who":"susan","body":"in_piedi","head":"ansia"}` | entra/esce il personaggio |
 | `react` | `{"t":"react","level":"expr","head":"positiva"}` | reazione a 3 livelli (micro/expr/pose) |
 | `avatar` | `{"t":"avatar","text":"Te ne faccio vedere quattro."}` | carosello dei 4 avatar |
+| `hub` | `{"t":"hub","start":"tenda","zones":[…]}` | esplorazione a zone: swipe orizzontale, frecce, pallini. Vedi sotto |
 | `logo` | `{"t":"logo","img":"ui/logo_studio.png"}` | sigla che si accende come un neon |
 | `boot` | `{"t":"boot","ms":2200,"cursore":1600}` | barra LOADING, poi cursore sul nero |
 | `title` | `{"t":"title","lines":[…]}` | cartello nero a righe |
@@ -113,8 +114,50 @@ Tutto lo script vive in `game/story.json`. Ogni scena e' una lista di `steps`:
 Interpolazione nei testi:
 
 * `{nome}` valore variabile, `{NOME}` in maiuscolo
-* `{g:Benvenuto|Benvenuta|Ti do il benvenuto}` variante per genere (`m|f|x`)
+* `{g:Benvenuto|Benvenuta}` variante per genere: una per valore di
+  `meta.genderOrder`, nello stesso ordine (oggi `m|f`)
 * `{label:anni}` etichetta dell'opzione scelta per quella variabile
+
+### Lo step `hub`: esplorare una stanza a zone
+
+La lobby (`[S1.HUB]` dello script master) non e' una sequenza di battute ma un
+posto da girare: quattro zone che si scorrono di lato, senza ordine imposto.
+
+```json
+{ "t": "hub", "start": "tenda", "var": "zona",
+  "tutorial": { "who": "francesca", "body": "gesto_swipe",
+                "text": "Scorri per scoprire la lobby." },
+  "zones": [
+    { "id": "tenda", "bg": "lobby_z1_tenda", "who": "francesca", "body": "indica_tenda",
+      "say": "La tenda e' quella.",
+      "hotspots": [
+        { "label": "ENTRA", "x": "40%", "y": "44%", "w": "20%", "h": "42%",
+          "richiede": "swipe", "bloccato": "Aspetta, prima fatti un giro.",
+          "conferma": { "text": "Entrare in sala?", "si": "Si'", "no": "Non ancora" },
+          "goto": "ritardo_ceo" } ] } ] }
+```
+
+* **zone**: ognuna ha il suo `bg` e, se serve, un personaggio (`who` + `body`,
+  con gli stessi `height`/`bottom`/`right` di `show`). `dice` separa chi parla
+  da chi si vede — nella zona del quiz si vede Peter che dorme, ma commenta
+  Francesca. `say` e' la battuta all'ingresso: la prima volta si scrive, dopo
+  ricompare gia' intera.
+* **hotspots**: rettangoli toccabili posizionati in percentuale sulla parte di
+  schermo sopra il box dialogo. Un hotspot con `say` commenta e basta (si resta
+  nell'hub); con `goto` porta a un'altra scena; con `conferma` chiede prima
+  conferma in una modale. `react` fa reagire il personaggio.
+* **`richiede": "swipe"`**: l'hotspot resta spento finche' il giocatore non ha
+  cambiato zona almeno una volta, e al tocco dice `bloccato`. Serve a non far
+  entrare in sala chi non si e' accorto che la lobby era visitabile.
+* **`tutorial`**: finche' non c'e' stato il primo swipe parla lui al posto della
+  zona, con la posa del gesto.
+* **`when`**: `{"var":"locked","is":true}` su una zona o su un hotspot lo mostra
+  solo se la condizione e' vera. La zona 4 e' scritta due volte, una per stato
+  di `locked`: chiusa con Peter addormentato, aperta con il quiz. I pallini
+  restano quattro in entrambi i casi.
+
+Si scorre con le frecce, con il dito (oltre 40px di trascinamento) o con le
+frecce della tastiera.
 
 La scena puo' definire `terminal`: le righe mostrate sullo schermo del Mac, che si
 compilano da sole man mano che le variabili vengono impostate. Sono tante e lo
