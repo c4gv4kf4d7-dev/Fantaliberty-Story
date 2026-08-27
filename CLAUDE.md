@@ -86,6 +86,54 @@ scene** al nome giusto.
 | `martha` | Martha | Sprite consegnati (`chr_martha_indicatore_regia`, `chr_martha_ritratto_regia`) ma **non collegati e non usati in nessuna scena**. Il manifest la descrive come "nessun corpo, solo icona" — un'icona a 2 frame mostrata *accanto al box dialogo*, non un personaggio `show`/`say` normale. Serve un meccanismo diverso da quello usato per gli altri NPC, non ancora costruito |
 | `premi` | — | **Probabilmente da eliminare.** Non esiste un NPC "Premi" nel manifest: la sezione premi è gestita da Francesca in zona 3 (`chr_francesca_orgogliosa`). Nessuno sprite è mai stato consegnato per `premi`. Prima di cancellarlo controlla che la scena `premi` in `story.json` non serva ancora come segnaposto di flusso |
 
+## Lo script master v4.0 e i due strati del lavoro
+
+`docs/script-master.md` è il **documento unico di riferimento**: scene S0B→S8,
+dialoghi, tutte le domande, il quiz, le formule di punteggio. Sostituisce ogni
+versione precedente dello script. Quando l'utente chiede una modifica al gioco,
+si aggiorna **solo il nodo interessato** (gli id tipo `[S2.01]`, `IPHONE.C1`),
+non l'intero documento.
+
+Il lavoro di aderire allo script si divide in due strati ben distinti:
+
+**Strato contenuti — fatto.** `game/domande.json` (29 domande di pronostico,
+79 opzioni, 316 battute: una per opzione per ciascuno dei 4 stili) e
+`game/quiz.json` (44 domande su due pool per livello). Sono validati da
+`npm test`: i punteggi delle core vengono **ricalcolati** da difficoltà + tipo
+e confrontati con quelli scritti, quindi un errore di trascrizione non passa.
+`npm run indice` rigenera `docs/indice-domande.md` dai dati veri.
+
+**Strato meccaniche — da costruire.** Il motore oggi sa fare scene lineari
+(`say`/`choice`/`input`/`show`/`bg`). Lo script chiede meccaniche che **non
+esistono**:
+
+| serve | per |
+|---|---|
+| hub a 4 zone con swipe + dot | `[S1.HUB]` lobby |
+| carosello stile con descrizione, perk e conferma irreversibile | `[S3.02]` |
+| griglia 3 macroargomenti con stati (attiva/completata/disabilitata) | `[S5.HUB]` |
+| pescaggio casuale di 3 facoltative **al bivio**, non a inizio partita | `[S5.BIVIO]` |
+| battuta risolta per (stile × opzione scelta) dalla banca domande | tutta `[S5]` |
+| recap modificabile + lock irreversibile | `[S6]` |
+| timer per domanda, livelli, due pool, perk per stile | `[S8]` |
+| countdown persistente | `[S7.05]` |
+| punteggio, moltiplicatori, `run.locked`, POST al backend | trasversale |
+
+Ordine consigliato: prima il modello `run` completo e il salvataggio, poi S3
+(stile, perché tutto S5 ne dipende), poi S5, poi S6/S7, infine S8.
+
+### Domande aperte sullo script (non decise da solo)
+
+- **Il terminale dice "campo 1/7"…"6/7" ma i campi elencati sono 6.** O ne
+  manca uno o l'etichetta è sbagliata: non inventato, va chiesto.
+- **Il genere**: lo script `[S0.03]` chiede 2 bottoni (Maschile/Femminile), il
+  gioco oggi ne ha 3 (con Neutro) e il motore supporta `{g:m|f|x}`. Togliere
+  l'opzione neutra è una decisione di prodotto, non un dettaglio tecnico: **non
+  è stata applicata**, va confermata.
+- **Le fasce di anzianità** sono state allineate allo script (0-1 / 2-3 / 4-7 /
+  8+) e le due battute di Lucas che citavano i vecchi valori ("Cinque, dieci
+  anni…", "Più di dieci anni") sono state adattate di conseguenza.
+
 ## La struttura delle scene è più grezza dello script v3.0
 
 `story.json` oggi ha 10 scene con nomi "Atto 1-4" (`registrazione`,

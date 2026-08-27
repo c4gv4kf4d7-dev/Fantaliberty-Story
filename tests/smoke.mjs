@@ -168,11 +168,30 @@ opts[1].onclick({ stopPropagation() {} });              // femminile
 assert.equal(VN.state.genere, 'f');
 assert.equal($('tval_genere').textContent, 'F');
 
-// scelta anzianita'
-assert.match(txt(), /da quanto tempo lavori in Apple/);
-[...$('choices').querySelectorAll('.ch')][2].onclick({ stopPropagation() {} });   // 5-10 anni
+// store (campo aggiunto dallo script master v4.0)
+assert.match(txt(), /In che store lavori/);
+[...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // Piazza Liberty
+assert.equal(VN.state.store, 'liberty');
+assert.equal($('tval_store').textContent, 'LIBERTY');
+
+// dipartimento (campo aggiunto dallo script master v4.0)
+assert.match(txt(), /in che dipartimento/);
+[...$('choices').querySelectorAll('.ch')][2].onclick({ stopPropagation() {} });   // Shopping
+assert.equal(VN.state.reparto, 'shopping');
+assert.equal($('tval_reparto').textContent, 'SHOPPING');
+
+// scelta anzianita' (fasce dello script master: 0-1 / 2-3 / 4-7 / 8+)
+assert.match(txt(), /quanto tempo lavori in Apple/);
+[...$('choices').querySelectorAll('.ch')][2].onclick({ stopPropagation() {} });   // 4-7 anni
 assert.equal(VN.state.anni, '2');
-assert.equal($('tval_anni').textContent, '5-10');
+assert.equal($('tval_anni').textContent, '4-7');
+
+// iPhone in uso (campo aggiunto dallo script master v4.0)
+assert.match(txt(), /che iPhone usi/);
+[...$('choices').querySelectorAll('.ch')][1].onclick({ stopPropagation() {} });   // iPhone 16
+assert.equal(VN.state.device, '16');
+assert.equal($('tval_device').textContent, '16');
+assert.equal($('tval___ruolo').textContent, 'OSPITE', 'il badge stampa il ruolo');
 assert.equal($('tval___ok').textContent, '> BADGE IN STAMPA');
 
 // scena benvenuto: variante di genere femminile + sprite happy
@@ -180,7 +199,7 @@ assert.match(txt(), /^Ecco il tuo badge, FRANCO\./, 'Lucas consegna il badge');
 assert.ok($('npcBody').getAttribute('src').includes('chr_lucas_felice'), 'posa felice dopo il flash');
 
 VN.step();
-assert.match(txt(), /Cinque, dieci anni/, 'Lucas commenta la fascia di anzianita\' scelta');
+assert.match(txt(), /Qualche anno sul campo/, 'Lucas commenta la fascia di anzianita\' scelta');
 VN.step();
 assert.match(txt(), /^Benvenuta allo Steve Jobs Theater\./, 'variante di genere');
 
@@ -230,8 +249,12 @@ VN.boot(story, { speed: 0 });
 VN.step();                    // luci
 VN.step();                    // prima battuta di Lucas
 $('ti').value = 'Luca'; $('ti').oninput(); $('tok').onclick();
-[...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // maschile
-[...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // <1 anno
+const scegli = (i) => [...$('choices').querySelectorAll('.ch')][i].onclick({ stopPropagation() {} });
+scegli(0);   // maschile
+scegli(0);   // store: Piazza Liberty
+scegli(0);   // dipartimento: Operation
+scegli(0);   // anzianita': 0-1 anni
+scegli(0);   // iPhone 17
 assert.match(txt(), /^Ecco il tuo badge, LUCA\./, 'percorso rapido fino al badge');
 
 /* ---------- 7. bug: tap durante la scrittura non deve bloccare il gioco ----------
@@ -259,5 +282,74 @@ assert.match(txt(), /^Ecco il tuo badge, LUCA\./, 'percorso rapido fino al badge
     'bug: un tap durante la scrittura lasciava "pending" vuoto per sempre e il gioco restava fermo sulla riga');
 }
 
+/* ---------- 8. banca domande dei pronostici (game/domande.json) ----------
+   Il valore in punti di ogni opzione core e' ridondante: e' anche calcolabile da
+   difficolta' + tipo. Ricalcolarlo qui trasforma quella ridondanza in un
+   controllo — un punteggio trascritto male dallo script master non passa. */
+const domande = JSON.parse(fs.readFileSync(path.join(ROOT, 'game/domande.json'), 'utf8'));
+const STILI = ['hawaiano', 'showman', 'drip', 'ingegnere'];
+const BONUS = { consenso: 0, plausibile: 1, controcorrente: 2 };
+const idsDomande = new Set();
+let nOpzioni = 0, nBattute = 0;
+
+for (const [cat, c] of Object.entries(domande.categorie)) {
+  assert.equal(c.core.length, c.n_core, `${cat}: n_core dichiarato non corrisponde`);
+  assert.ok(c.extra.length >= c.n_extra_da_pescare,
+    `${cat}: il pool facoltative ha meno domande di quante se ne pescano`);
+  for (const gruppo of ['core', 'extra']) {
+    for (const q of c[gruppo]) {
+      assert.ok(!idsDomande.has(q.id), `id domanda duplicato: ${q.id}`);
+      idsDomande.add(q.id);
+      assert.ok(q.opzioni.length >= 2, `${q.id}: servono almeno 2 opzioni`);
+      for (const o of q.opzioni) {
+        nOpzioni++;
+        for (const s of STILI) {
+          assert.ok(o.battute?.[s]?.length > 10,
+            `${q.id} / "${o.label}": manca la battuta per lo stile ${s}`);
+          nBattute++;
+        }
+        if (gruppo === 'core') {
+          assert.equal(o.pt, q.diff + BONUS[o.tipo],
+            `${q.id} / "${o.label}": pt=${o.pt} ma difficolta' ${q.diff} + ${o.tipo} fa ${q.diff + BONUS[o.tipo]}`);
+        } else {
+          assert.ok([1, 2, 3].includes(o.val), `${q.id} / "${o.label}": val fuori da 1-3`);
+        }
+      }
+    }
+  }
+}
+assert.equal(idsDomande.size, 29, '29 domande: 12 core + 17 facoltative');
+assert.equal(nOpzioni, 79, '79 opzioni in totale');
+assert.equal(nBattute, 316, '316 battute: una per opzione per ciascuno dei 4 stili');
+assert.equal(domande.intermezzi.length, 5, '5 intermezzi di regia fissi');
+assert.equal(Object.keys(domande.eventi_personali).length, 4, 'un evento personale per stile');
+for (const s of STILI) assert.ok(domande.eventi_personali[s], `manca l'evento personale di ${s}`);
+
+/* ---------- 9. quiz di Peter (game/quiz.json) ---------- */
+const quiz = JSON.parse(fs.readFileSync(path.join(ROOT, 'game/quiz.json'), 'utf8'));
+const idsQuiz = new Set();
+let sommaMult = 0;
+for (const [liv, cfg] of Object.entries(quiz.livelli)) {
+  const pools = quiz.pool[liv];
+  assert.equal(pools.length, 2, `${liv}: servono due pool (primo e secondo tentativo)`);
+  assert.ok(cfg.soglia <= cfg.domande, `${liv}: soglia piu' alta del numero di domande`);
+  assert.equal(cfg.mult2, cfg.mult1 / 2, `${liv}: il secondo tentativo vale meta' del primo`);
+  sommaMult += cfg.mult1;
+  for (const [i, p] of pools.entries()) {
+    assert.equal(p.length, cfg.domande, `${liv} pool ${i + 1}: numero di domande sbagliato`);
+    for (const q of p) {
+      assert.ok(!idsQuiz.has(q.id), `id quiz duplicato: ${q.id}`);
+      idsQuiz.add(q.id);
+      assert.ok(q.opzioni.length >= 2, `${q.id}: servono almeno 2 opzioni`);
+      assert.ok(Number.isInteger(q.ok) && q.ok >= 0 && q.ok < q.opzioni.length,
+        `${q.id}: indice della risposta corretta fuori range`);
+    }
+  }
+}
+assert.equal(idsQuiz.size, 44, '44 domande di quiz in totale');
+assert.equal(Number(sommaMult.toFixed(2)), quiz.tetto_mult,
+  'la somma dei moltiplicatori pieni deve fare esattamente il tetto dichiarato');
+
 if (todoAssets.size) console.log(`asset ancora da disegnare (${todoAssets.size}):`, [...todoAssets].join(', '));
+console.log(`banca domande: ${idsDomande.size} domande, ${nBattute} battute · quiz: ${idsQuiz.size} domande`);
 console.log('smoke test: OK');
