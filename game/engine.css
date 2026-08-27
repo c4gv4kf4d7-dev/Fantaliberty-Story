@@ -96,21 +96,18 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #npc.micro{animation:micro .45s ease}
 @keyframes micro{0%,100%{transform:translateY(0) rotate(0)}40%{transform:translateY(-6px) rotate(-1deg)}}
 
-/* ---------- avatar del giocatore ---------- */
-#avatar{position:absolute;left:2%;bottom:20%;height:34%;aspect-ratio:3/5;opacity:0;
- transition:opacity .4s ease}
+
+/* ---------- la figura del giocatore ----------
+   Sta a sinistra perche' gli NPC stanno a destra (#npc): da S4 in poi i due
+   condividono l'inquadratura. Lo sprite e' quello dello stile scelto in S3. */
+#avatar{position:absolute;left:-4%;bottom:14%;height:52%;aspect-ratio:3/5;opacity:0;z-index:1;
+ filter:drop-shadow(0 10px 20px rgba(0,0,0,.55));
+ transition:opacity .4s ease, height .5s ease, bottom .5s ease}
 #avatar.on{opacity:1}
-/* durante la scelta l'avatar va al centro e sale sopra il box, e' lui il soggetto */
-#avatar.pick{left:50%;margin-left:-13%;bottom:36%;height:40%}
+#avatar.entra{animation:entraSx .8s cubic-bezier(.2,.9,.3,1) forwards}
+@keyframes entraSx{from{opacity:0;transform:translateX(-70px)}to{opacity:1;transform:translateX(0)}}
 .alayer{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
  object-position:bottom center;image-rendering:pixelated}
-#avatarImg.slideL{animation:slL .28s ease}
-#avatarImg.slideR{animation:slR .28s ease}
-@keyframes slL{from{opacity:.2;transform:translateX(22px)}to{opacity:1;transform:translateX(0)}}
-@keyframes slR{from{opacity:.2;transform:translateX(-22px)}to{opacity:1;transform:translateX(0)}}
-/* avatar non ancora disegnato: sagoma, cosi' lo scheletro resta leggibile */
-.alayer.missing{background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.03));
- border-radius:10px;border:2px dashed rgba(255,255,255,.18);opacity:.6}
 
 /* ---------- prop / terminale ---------- */
 #propwrap{position:absolute;left:50%;top:7%;width:62%;max-width:420px;opacity:0;
@@ -169,8 +166,14 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #boxwrap.in{opacity:1;transform:translateY(0)}
 #name{align-self:flex-start;background:#1b1f33;border:3px solid #fff;border-radius:10px;
  padding:7px 14px;color:#fff;font-size:clamp(8px,2.15vw,12px);margin-left:12px;position:relative;z-index:2;
- box-shadow:0 4px 0 rgba(0,0,0,.5)}
+ box-shadow:0 4px 0 rgba(0,0,0,.5);display:flex;align-items:center;gap:7px}
 #name.hidden{display:none}
+/* voce in cuffia: l'icona dell'auricolare al posto di uno sprite in scena, e il
+   box di un altro colore — chi parla dalla regia non e' li' davanti a te */
+#voce{display:none;width:1.9em;height:1.9em;object-fit:contain;image-rendering:pixelated}
+#name.incuffia #voce{display:block}
+#boxwrap.incuffia #name{background:#123040;border-color:#7fd4ff}
+#boxwrap.incuffia #box{background:#123040;border-color:#7fd4ff}
 /* altezza riservata: il box non cambia dimensione a ogni carattere (niente scatti) */
 #box{background:#1b1f33;border:3px solid #fff;border-radius:12px;padding:14px 16px;margin-top:-3px;
  color:#fff;font-size:clamp(8px,2.5vw,13px);line-height:1.85;min-height:4.6em;
@@ -178,7 +181,7 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #arrow{text-align:center;color:#fff;font-size:12px;margin-top:5px;opacity:0;animation:bob 1s infinite}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
 
-/* ---------- scelte / input / avatar picker ---------- */
+/* ---------- scelte / input ---------- */
 #choices{margin-top:10px;display:none;flex-direction:column;gap:7px;overflow-y:auto}
 #choices.on{display:flex}
 .ch{background:#2a3050;border:3px solid #fff;border-radius:8px;padding:11px 13px;color:#fff;
@@ -208,19 +211,6 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #tselok{background:#2a3050;border:3px solid #fff;border-radius:8px;color:#fff;font-family:inherit;
  font-size:clamp(8px,2.35vw,12px);padding:10px 13px;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.5)}
 #tselok:disabled{opacity:.35;cursor:default}
-
-#picker{margin-top:10px;display:none;flex-direction:column;gap:8px}
-#picker.on{display:flex}
-/* carosello avatar: frecce + pallini di avanzamento */
-.pnav{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.parrow{background:#2a3050;border:3px solid #fff;border-radius:8px;color:#fff;font-family:inherit;
- font-size:clamp(10px,3vw,15px);padding:8px 16px;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.5)}
-.parrow:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.5)}
-.pdots{display:flex;gap:7px}
-.pdot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.22);
- border:2px solid rgba(255,255,255,.35)}
-.pdot.seen{background:rgba(255,255,255,.5)}
-.pdot.sel{background:#fff;border-color:#fff;transform:scale(1.25)}
 
 /* ---------- discesa verso il palco (parallax) ----------
    Tre layer della stessa sala — sfondo, poltrone, primo piano — che si

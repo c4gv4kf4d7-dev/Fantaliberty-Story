@@ -102,7 +102,8 @@ Tutto lo script vive in `game/story.json`. Ogni scena e' una lista di `steps`:
 | `input` | `{"t":"input","var":"nome","max":14,"text":"Come ti chiami?"}` | campo di testo sanitizzato |
 | `list` | `{"t":"list","var":"device","gruppi":[{"nome":"iPhone 17","opzioni":[{"label":"iPhone 17","value":"17","classe":"md"}]}]}` | lista a tendina: per le scelte troppo lunghe da fare a bottoni. `classeCorpo` + `classe` mettono una classe sul `<body>` (e' cosi' che il modello di iPhone adatta il layout) |
 | `badge` | `{"t":"badge","prop":"badge","nome":"{NOME}"}` | mostra il badge dell'accredito col nome del giocatore sopra; senza l'immagine disegna una cornice di ripiego |
-| `show` / `hide` | `{"t":"show","who":"susan","body":"in_piedi","head":"ansia"}` | entra/esce il personaggio |
+| `show` / `hide` | `{"t":"show","who":"susan","body":"in_piedi","head":"ansia"}` | entra/esce il personaggio (a destra) |
+| `io` | `{"t":"io","posa":"idle_palco"}` · `{"t":"io","hide":true}` | la figura del giocatore (a sinistra): lo sprite dello stile scelto in S3 |
 | `react` | `{"t":"react","level":"expr","head":"positiva"}` | reazione a 3 livelli (micro/expr/pose) |
 | `avatar` | `{"t":"avatar","text":"Te ne faccio vedere quattro."}` | carosello dei 4 avatar |
 | `hub` | `{"t":"hub","start":"tenda","zones":[…]}` | esplorazione a zone: swipe orizzontale, frecce, pallini. Vedi sotto |
@@ -192,6 +193,26 @@ servono anche a S5 e S8.
 Lo step dice solo quale posa mostrare (`posa`), in che variabile salvare (`var`)
 e cosa chiede la conferma. `ordine` puo' forzare l'ordine delle schede; senza,
 si usa quello del blocco.
+
+### Chi c'e' in scena, e chi invece parla soltanto
+
+L'inquadratura ha due posti fissi: **il giocatore a sinistra** (step `io`, sprite
+dello stile scelto in S3) e **gli NPC a destra** (step `show`). Da S4 in poi i
+due condividono la scena.
+
+Un personaggio del cast puo' anche essere dichiarato **voce**, senza pose:
+
+```json
+"martha": { "name": "Martha", "voce": true,
+            "icona": ["chars/chr_martha_indicatore_regia_1.webp",
+                      "chars/chr_martha_indicatore_regia_2.webp"] }
+```
+
+Quando parla, invece di uno sprite in scena compare l'icona accanto al nome —
+alternando i frame, cosi' "trasmette" — e il box del dialogo cambia colore.
+Serve a distinguere una voce in cuffia (Martha, dalla regia) da qualcuno che ti
+sta davvero davanti. `npm test` controlla che una voce non abbia pose e che le
+sue icone esistano.
 
 ### Le pose che dipendono da una variabile
 

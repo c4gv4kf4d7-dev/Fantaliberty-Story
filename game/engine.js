@@ -6,7 +6,7 @@
        area dialogo, quindi i fondali non ci mettono dettagli importanti;
      * i personaggi sono CORPO + TESTA separati (posa + espressione), con punto
        di ancoraggio del collo definito una volta per personaggio;
-     * l'avatar del giocatore e' composto da 4 layer (bottom/top/scarpe/testa).
+     * la figura del giocatore e' lo sprite dello stile scelto in S3, a sinistra.
 
    API pubblica:
      VN.boot(story, opts)   avvia il gioco
@@ -15,9 +15,9 @@
      VN.hasSave() / VN.readSave() / VN.clearSave() / VN.saveNow()
 
    Step supportati:
-     logo | boot | title | say | choice | input | list | badge | avatar | hub |
-     carosello | show | hide | react | prop | bg | fx | carrellata | sipario |
-     wait | set | goto | end
+     logo | boot | title | say | choice | input | list | badge | hub | carosello |
+     show | hide | io | react | prop | bg | fx | carrellata | sipario | wait |
+     set | goto | end
 */
 (function (global) {
   'use strict';
@@ -31,7 +31,7 @@
     // nuovi, id nuovi nell'HTML).
     engine: '5',
     story: null,
-    state: {},      // variabili di gioco (nome, genere, avatar_*, ...)
+    state: {},      // variabili di gioco (nome, genere, stile, ...)
     scene: null,
     sceneId: null,
     i: 0,
@@ -88,7 +88,6 @@
     el.choices.classList.remove('on');
     el.inputform.classList.remove('on');
     if (el.listform) el.listform.classList.remove('on');
-    el.picker.classList.remove('on');
     revealUI = null;
   }
 
@@ -127,8 +126,8 @@
     tId = global.requestAnimationFrame(tick);
   }
 
-  // come type(), ma non chiude la UI aperta: serve al carosello dell'avatar,
-  // che resta a schermo mentre Lucas commenta l'avatar mostrato
+  // come type(), ma non chiude la UI aperta: serve a chi resta a schermo mentre
+  // il testo cambia (l'hub, che continua a mostrare zone e hotspot)
   function typeKeep(line) {
     stopTyping();
     el.arrow.style.opacity = 0;
@@ -361,7 +360,7 @@
     if (s) { try { s.removeItem(SAVE_KEY); } catch (e) {} }
   };
 
-  var VISUAL = { show: 1, hide: 1, react: 1, prop: 1, bg: 1, set: 1, sipario: 1, avatar: 0 };
+  var VISUAL = { show: 1, hide: 1, react: 1, prop: 1, bg: 1, set: 1, sipario: 1, io: 1 };
 
   function restore(save) {
     VN.state = save.state || VN.state;
@@ -371,7 +370,6 @@
     if (sc.bg) setBg(sc.bg, sc.bgFx);
     atmosfera(sc);
     if (sc.terminal) { buildTerminal(sc.terminal); sc.terminal.forEach(function (r) { termSet(r.var); }); }
-    drawAvatar();                                   // l'avatar vive nelle variabili: si ridisegna sempre
     var upto = Math.min(save.i || 0, (sc.steps || []).length);
     for (var k = 0; k < upto; k++) {
       if (VISUAL[sc.steps[k].t]) { silent = true; VN.i = k; exec(sc.steps[k]); silent = false; }
@@ -419,7 +417,7 @@
 
   function exec(st) {
     if (!silent && (st.t === 'say' || st.t === 'choice' || st.t === 'input' ||
-                    st.t === 'avatar' || st.t === 'hub')) VN.saveNow();
+                    st.t === 'carosello' || st.t === 'hub')) VN.saveNow();
 
     switch (st.t) {
 
@@ -430,7 +428,7 @@
         // il typewriter finisca da solo, skip() cancella il tick in corso e la sua
         // callback (quella su type()) non parte mai. Senza questa copia, "pending"
         // restava null per sempre e il gioco si bloccava sulla riga (bug: tap
-        // durante la scrittura -> game freeze). choice/input/avatar gia' se ne
+        // durante la scrittura -> game freeze). choice/input/list gia' se ne
         // proteggevano cosi'; a "say" mancava.
         var avanzaSay = function () { pending = next; el.arrow.style.opacity = 1; };
         type(fmt(testoDi(st)), avanzaSay);
@@ -466,12 +464,10 @@
         revealUI = function () { mostraBadge(st, next); };
         return;
 
-      case 'avatar':
-        el.boxwrap.classList.add('in');
-        setSpeaker(st.who);
-        type(fmt(st.text), function () { showPicker(st); });
-        revealUI = function () { showPicker(st); };
-        return;
+      // la figura del giocatore: entra, cambia posa, esce
+      case 'io':
+        mostraIo(st);
+        return next();
 
       case 'hub':
         return showHub(st);
@@ -653,112 +649,42 @@
     setTimeout(function () { el.npc.classList.remove('micro'); }, 500);
   }
 
-  /* ---------------- avatar del giocatore ----------------
-     Quattro avatar gia' pronti, non componibili: il giocatore li scorre uno a
-     uno e Lucas commenta ognuno. La conferma compare solo dopo che li ha visti
-     tutti; da li' in poi puo' continuare a scorrere finche' non sceglie.
-     La scelta vive in VN.state.avatar, quindi il salvataggio se la porta dietro
-     e l'avatar si ridisegna da solo alla ripresa. */
-  function avatarCfg() { return VN.story.avatar || null; }
+  /* ---------------- la figura del giocatore ----------------
+     Dalla S4 in poi il giocatore e' in scena: si vede lo sprite dello stile
+     scelto in S3. Sta a sinistra, in #avatar, cosi' puo' condividere
+     l'inquadratura con un NPC (che sta a destra, in #npc).
 
-  function avatarSrc(id) {
-    var a = avatarCfg();
-    if (!a || !id) return '';
-    return withBase((a.path || 'avatar/avt_{id}.png').replace('{id}', id));
+     Le pose vengono da story.stili[stile].pose, la stessa tabella che alimenta
+     il carosello di S3 e i perk di S8: lo step dice solo quale posa.
+
+     Il carosello degli avatar componibili del prototipo non c'e' piu' — lo
+     script master lo ha sostituito con il badge in S0 e con gli stili in S3 —
+     e con lui e' sparito l'unico altro pezzo di codice che scriveva su #avatar.
+     Due sistemi sullo stesso nodo si sarebbero pestati i piedi. */
+  function posaStile(posa) {
+    var s = (VN.story.stili || {})[VN.state[VN.story.meta.styleVar || 'stile']];
+    if (!s) return '';
+    return (s.pose && s.pose[posa]) || '';
   }
 
-  function avatarOption(id) {
-    var a = avatarCfg();
-    if (!a) return null;
-    return (a.options || []).filter(function (o) { return o.id === id; })[0] || null;
-  }
-
-  function drawAvatar(id) {
-    var a = avatarCfg();
-    if (!a) return;
-    id = id || VN.state.avatar;
+  function mostraIo(st) {
+    if (st.hide) { el.avatar.classList.remove('on'); return; }
+    var src = posaStile(st.posa || 'idle_palco');
+    if (!src) { el.avatar.classList.remove('on'); return; }   // stile non ancora scelto
     el.avatar.innerHTML = '';
-    if (!id) { el.avatar.classList.remove('on'); return; }
     var img = global.document.createElement('img');
     img.className = 'alayer';
-    img.id = 'avatarImg';
-    img.dataset.avatar = id;
-    img.src = avatarSrc(id);
-    img.onerror = function () {          // avatar non ancora disegnato: sagoma, niente icona rotta
-      img.onerror = null;
-      img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-      img.classList.add('missing');
-    };
+    img.id = 'ioImg';
+    img.src = withBase(src);
+    // file dichiarato ma non consegnato: meglio nessuna figura che l'icona rotta
+    img.onerror = function () { el.avatar.classList.remove('on'); };
     el.avatar.appendChild(img);
-    el.avatar.classList.add('on');
-  }
-
-  function showPicker(st) {
-    var a = avatarCfg();
-    if (!a || !(a.options || []).length) return next();
-    var opts = a.options;
-    var cur = 0;
-    var visti = {};
-
-    function tuttiVisti() { return Object.keys(visti).length >= opts.length; }
-
-    function mostra(i, dir) {
-      cur = (i + opts.length) % opts.length;
-      var o = opts[cur];
-      visti[o.id] = true;
-      VN.state.avatar = o.id;
-      drawAvatar(o.id);
-      var img = $('avatarImg');
-      if (img && dir) { img.classList.add(dir > 0 ? 'slideL' : 'slideR'); }
-      // finche' non li ha visti tutti Lucas presenta l'avatar; poi passa all'invito a scegliere
-      typeKeep(fmt(tuttiVisti() ? (a.prompt || 'Scegline uno.') : (o.say || o.label || '')));
-      render();
-    }
-
-    function render() {
-      el.picker.innerHTML = '';
-
-      var nav = global.document.createElement('div');
-      nav.className = 'pnav';
-
-      var prev = global.document.createElement('button');
-      prev.className = 'parrow'; prev.id = 'pprev'; prev.textContent = '◀';
-      prev.onclick = function (ev) { if (ev && ev.stopPropagation) ev.stopPropagation(); mostra(cur - 1, -1); };
-
-      var dots = global.document.createElement('div');
-      dots.className = 'pdots';
-      opts.forEach(function (o, i) {
-        var d = global.document.createElement('span');
-        d.className = 'pdot' + (i === cur ? ' sel' : '') + (visti[o.id] ? ' seen' : '');
-        dots.appendChild(d);
-      });
-
-      var nextb = global.document.createElement('button');
-      nextb.className = 'parrow'; nextb.id = 'pnext'; nextb.textContent = '▶';
-      nextb.onclick = function (ev) { if (ev && ev.stopPropagation) ev.stopPropagation(); mostra(cur + 1, 1); };
-
-      nav.appendChild(prev); nav.appendChild(dots); nav.appendChild(nextb);
-      el.picker.appendChild(nav);
-
-      if (tuttiVisti()) {
-        var ok = global.document.createElement('button');
-        ok.id = 'pok'; ok.className = 'ch'; ok.textContent = st.confirm || a.confirm || 'Scelgo questo';
-        ok.onclick = function (ev) {
-          if (ev && ev.stopPropagation) ev.stopPropagation();
-          VN.state.avatar = opts[cur].id;
-          VN.state.__label_avatar = opts[cur].label || opts[cur].id;
-          VN.progressed = true;
-          el.avatar.classList.remove('pick');
-          hideUI();
-          next();
-        };
-        el.picker.appendChild(ok);
-      }
-    }
-
-    mostra(0, 0);
-    el.avatar.classList.add('pick');
-    el.picker.classList.add('on');
+    el.avatar.style.height = st.height || '';
+    el.avatar.style.bottom = st.bottom || '';
+    el.avatar.style.left = st.left || '';
+    el.avatar.classList.remove('entra');
+    void el.avatar.offsetWidth;
+    el.avatar.classList.add('on', 'entra');
   }
 
   /* ---------------- carrellata: la camera attraversa un posto ----------------
@@ -1164,11 +1090,27 @@
   }
 
   /* ---------------- UI ---------------- */
+  // Chi parla. Un personaggio dichiarato "voce" (Martha, dalla regia) non ha uno
+  // sprite in scena: al suo posto lampeggia l'icona dell'auricolare accanto al
+  // nome, e il box cambia colore. Serve a distinguere una voce in cuffia da
+  // qualcuno che ti sta davvero davanti.
+  var vId = null;
   function setSpeaker(who) {
     var c = cast(who);
     var label = c ? (c.name || who) : who;
-    if (label) { el.name.textContent = label; el.name.classList.remove('hidden'); }
-    else el.name.classList.add('hidden');
+    el.nametxt.textContent = label || '';
+    el.name.classList.toggle('hidden', !label);
+
+    if (vId) { clearInterval(vId); vId = null; }
+    var frames = (c && c.voce && c.icona) || null;
+    el.name.classList.toggle('incuffia', !!frames);
+    el.boxwrap.classList.toggle('incuffia', !!frames);
+    if (!frames) return;
+
+    var k = 0;
+    var batti = function () { el.voce.src = withBase(frames[k++ % frames.length]); };
+    batti();
+    if (frames.length > 1 && VN.speed) vId = setInterval(batti, 520);
   }
 
   function showChoices(st) {
@@ -1500,11 +1442,12 @@
       curtain: $('curtain'), curtainTxt: $('curtainTxt'), curtainArrow: $('curtainArrow'), hint: $('hint'),
       boot: $('boot'), bootbar: $('bootbar'), logo: $('logo'), logoImg: $('logoImg'),
       avatar: $('avatar'), propwrap: $('propwrap'), prop: $('prop'), screen: $('screen'),
-      boxwrap: $('boxwrap'), name: $('name'), txt: $('txt'), arrow: $('arrow'),
+      boxwrap: $('boxwrap'), name: $('name'), nametxt: $('nametxt'), voce: $('voce'),
+      txt: $('txt'), arrow: $('arrow'),
       choices: $('choices'), inputform: $('inputform'), ti: $('ti'), tok: $('tok'),
       listform: $('listform'), tsel: $('tsel'), tselok: $('tselok'),
       badgewrap: $('badgewrap'), badgeImg: $('badgeImg'), badgeName: $('badgeName'),
-      picker: $('picker'), flash: $('flash'),
+      flash: $('flash'),
       hub: $('hub'), hubspots: $('hubspots'), hubnav: $('hubnav'),
       hprev: $('hprev'), hnext: $('hnext'), hdots: $('hdots'),
       modal: $('modal'), modaltxt: $('modaltxt'), modalbtns: $('modalbtns'),
@@ -1514,7 +1457,7 @@
       carnome: $('carnome'), cardesc: $('cardesc'), carperk: $('carperk'), carok: $('carok')
     };
     el.avatar.innerHTML = '';
-    el.avatar.classList.remove('on');
+    el.avatar.classList.remove('on', 'entra');
     if ($('badgewrap')) $('badgewrap').classList.remove('in');
     hubTasti = null;
     chiudiHub();
@@ -1529,7 +1472,7 @@
            e.target.closest('#listform') || e.target.closest('#hubnav') ||
            e.target.closest('#hubspots') || e.target.closest('#modal') ||
            e.target.closest('#carta') || e.target.closest('#carosello') ||
-           e.target.closest('#picker') || e.target.closest('#propwrap'))) return;
+           e.target.closest('#propwrap'))) return;
       VN.step();
     };
     global.document.onkeydown = function (e) {
@@ -1540,8 +1483,7 @@
       if (e.key !== ' ' && e.key !== 'Enter') return;
       if (el.inputform.classList.contains('on') || el.choices.classList.contains('on') ||
           (el.listform && el.listform.classList.contains('on')) ||
-          (el.modal && el.modal.classList.contains('on')) ||
-          el.picker.classList.contains('on')) return;
+          (el.modal && el.modal.classList.contains('on'))) return;
       VN.step();
     };
 
