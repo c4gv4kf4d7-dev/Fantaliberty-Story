@@ -28,6 +28,12 @@ try:
 except ImportError:
     sys.exit("Serve Pillow: pip install pillow")
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    from _pulizia import pulisci
+except ImportError:
+    pulisci = None          # senza numpy/scipy si converte senza pulire
+
 # dove finisce ogni tipo di asset e oltre quale lato lungo conviene ridimensionare.
 #
 # Questi sono TETTI DI SICUREZZA, non bersagli: fermano un export da 6000 px, non
@@ -136,6 +142,15 @@ def prepara(sorgente, tipo, qualita, lato_max, pixel_art, nome_forzato, prova, r
         # la pixel art va scalata a blocchi netti, un'illustrazione no
         im = im.resize(nuova, Image.NEAREST if pixel_art else Image.LANCZOS)
 
+    # Pulizia PRIMA della conversione, non dopo: se fosse un passaggio separato
+    # la prossima riconversione da _sorgenti/ la cancellerebbe. E' successo — nove
+    # sprite di Susan sono tornati con la scacchiera addosso dopo una riconversione.
+    nota_pulizia = None
+    if cfg["alpha"] and pulisci:
+        pulito, nota_pulizia = pulisci(im)
+        if pulito is not None:
+            im = pulito
+
     im = im.convert("RGBA" if cfg["alpha"] else "RGB")
 
     destinazione = os.path.join(radice, cfg["dir"], nome_uscita(sorgente, tipo, nome_forzato))
@@ -154,6 +169,8 @@ def prepara(sorgente, tipo, qualita, lato_max, pixel_art, nome_forzato, prova, r
           % (dim_prima, kb(prima), im.size, kb(dopo), prima / float(max(dopo, 1))))
     print("    %s%s" % (os.path.relpath(destinazione, radice),
                         "   [prova: non scritto]" if prova else ""))
+    if nota_pulizia:
+        print("    %s" % nota_pulizia)
     if ridotto:
         print("    ATTENZIONE: ridimensionato, il lato lungo superava %d px."
               " Usa --lato per alzare il tetto." % lato)

@@ -31,34 +31,13 @@ import glob
 import os
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 try:
     import numpy as np
-    from PIL import Image, ImageFilter
-    from scipy.ndimage import (binary_dilation, binary_erosion, binary_fill_holes,
-                               distance_transform_edt, label)
+    from PIL import Image
+    from _pulizia import SOGLIA_RESIDUO, maschera_soggetto, sbava_colore, sfuma_alpha
 except ImportError:
     sys.exit("Servono pillow, numpy e scipy:  pip install pillow numpy scipy")
-
-
-def colori_di_sfondo(a, campione=6, tolleranza=12):
-    """Le tinte che occupano i bordi dell'immagine: una se il fondo e' piatto,
-    due se e' una scacchiera."""
-    bordi = np.concatenate([
-        a[:campione, :, :].reshape(-1, 3), a[-campione:, :, :].reshape(-1, 3),
-        a[:, :campione, :].reshape(-1, 3), a[:, -campione:, :].reshape(-1, 3),
-    ])
-    colori, conte = np.unique(bordi, axis=0, return_counts=True)
-    ordine = np.argsort(-conte)
-    scelti = []
-    for i in ordine:
-        c = colori[i]
-        if conte[i] < len(bordi) * 0.02:      # tinta marginale, non e' lo sfondo
-            break
-        if all(np.abs(c.astype(int) - s).max() > tolleranza for s in scelti):
-            scelti.append(c.astype(int))
-        if len(scelti) == 2:                  # oltre due tinte non e' uno sfondo
-            break
-    return scelti
 
 
 def scontorna(percorso, tolleranza, sfuma, prova):
@@ -72,67 +51,28 @@ def scontorna(percorso, tolleranza, sfuma, prova):
         print("  = %-46s ha gia' trasparenza, saltato" % os.path.basename(percorso))
         return False
 
-    tinte = colori_di_sfondo(rgb)
-    if not tinte:
+    esito = maschera_soggetto(rgb, tolleranza)
+    if esito is None:
         print("  ! %-46s non riconosco uno sfondo uniforme sui bordi"
               % os.path.basename(percorso))
         return False
+    soggetto, quanto, residuo = esito
 
-    simile = np.zeros(rgb.shape[:2], bool)
-    for t in tinte:
-        simile |= (np.abs(rgb - t).max(axis=2) <= tolleranza)
-
-    # Una scacchiera esportata in WEBP non ha due tinte pulite: la compressione le
-    # sparpaglia su decine di valori, e i pixel di passaggio fra un quadretto e
-    # l'altro (a meta' strada fra le due tinte) non somigliano a nessuna delle due.
-    # Quei pixel fanno da muro e spezzano il riempimento, che si ferma dopo poco.
-    # Se le tinte sono due e sono entrambe grigie, si accetta tutto il grigio
-    # neutro compreso fra loro: i passaggi vengono inclusi e il muro cade.
-    if len(tinte) == 2:
-        neutre = [t for t in tinte if int(t.max() - t.min()) <= 12]
-        if len(neutre) == 2:
-            lum = rgb.mean(axis=2)
-            basso = min(t.mean() for t in neutre) - tolleranza
-            alto = max(t.mean() for t in neutre) + tolleranza
-            grigio = (rgb.max(axis=2) - rgb.min(axis=2)) <= 14
-            simile |= grigio & (lum >= basso) & (lum <= alto)
-
-    # solo le zone di sfondo COLLEGATE al bordo: il bianco dentro il disegno resta
-    lab, _ = label(simile)
-    sul_bordo = set(lab[0, :]) | set(lab[-1, :]) | set(lab[:, 0]) | set(lab[:, -1])
-    sul_bordo.discard(0)
-    if not sul_bordo:
-        print("  = %-46s nessuno sfondo sui bordi, saltato" % os.path.basename(percorso))
-        return False
-
-    sfondo = np.isin(lab, list(sul_bordo))
-    soggetto = binary_fill_holes(~sfondo)
-    soggetto = binary_erosion(soggetto, iterations=1)     # via l'alone di contorno
-
-    quanto = float(sfondo.mean() * 100)
     if quanto < 2:
         print("  ! %-46s solo il %.1f%% sarebbe sfondo: sospetto, lascio stare"
               % (os.path.basename(percorso), quanto))
         return False
-
-    # Verifica: se dopo il taglio restano opachi tanti pixel che somigliano ancora
-    # allo sfondo, il riempimento si e' fermato a meta' e lo sprite e' peggio di
-    # prima. Meglio non scrivere e dirlo, che riportare un successo falso.
-    residuo = float((simile & soggetto).sum()) / max(soggetto.sum(), 1) * 100
-    if residuo > 8:
+    if residuo > SOGLIA_RESIDUO:
         print("  ! %-46s NON RIUSCITO: resta il %.0f%% di sfondo attaccato al "
               "soggetto.\n      Lo sfondo non e' uniforme: va scontornato a mano."
               % (os.path.basename(percorso), residuo))
         return False
-
     alpha = (soggetto * 255).astype(np.uint8)
     if sfuma:
-        alpha = np.array(Image.fromarray(alpha).filter(ImageFilter.GaussianBlur(0.8)))
-
-    # sbava il colore sotto il nuovo trasparente, altrimenti la sfumatura
-    # ripesca lo sfondo appena tolto e lascia un alone
-    vicino = distance_transform_edt(~soggetto, return_distances=False, return_indices=True)
-    rgb_fuori = a[..., :3][vicino[0], vicino[1]]
+        alpha = sfuma_alpha(alpha)
+    # il colore va sbavato verso l'esterno prima della sfumatura, altrimenti
+    # questa ripesca lo sfondo appena tolto e lascia un alone
+    rgb_fuori = sbava_colore(a[..., :3].astype(np.float32), soggetto)
 
     prima = os.path.getsize(percorso)
     if not prova:
@@ -143,9 +83,8 @@ def scontorna(percorso, tolleranza, sfuma, prova):
     else:
         dopo = prima
 
-    print("  ~ %-46s sfondo %.0f%% (%d tinta%s)  %d KB -> %d KB%s"
-          % (os.path.basename(percorso), quanto, len(tinte),
-             "" if len(tinte) == 1 else "/e", prima / 1024, dopo / 1024,
+    print("  ~ %-46s sfondo %.0f%%, residuo %.1f%%  %d KB -> %d KB%s"
+          % (os.path.basename(percorso), quanto, residuo, prima / 1024, dopo / 1024,
              "   [prova: non scritto]" if prova else ""))
     return True
 

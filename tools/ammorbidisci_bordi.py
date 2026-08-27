@@ -29,19 +29,13 @@ import glob
 import os
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 try:
     import numpy as np
-    from PIL import Image, ImageFilter
-    from scipy.ndimage import distance_transform_edt
+    from PIL import Image
+    from _pulizia import SOGLIA_DURA, percentuale_sfumata, sbava_colore, sfuma_alpha
 except ImportError:
     sys.exit("Servono pillow, numpy e scipy:  pip install pillow numpy scipy")
-
-# sotto questa percentuale di pixel semitrasparenti il contorno e' "duro"
-SOGLIA_DURA = 0.3
-
-
-def percentuale_sfumata(alpha):
-    return float(((alpha > 0) & (alpha < 255)).mean() * 100)
 
 
 def ammorbidisci(percorso, raggio, prova):
@@ -58,16 +52,8 @@ def ammorbidisci(percorso, raggio, prova):
         print("  = %-46s nessuna trasparenza, saltato" % os.path.basename(percorso))
         return False
 
-    # 1. il colore dei pixel opachi piu' vicini riempie la zona trasparente,
-    #    cosi' la sfumatura successiva non tira dentro il vecchio sfondo
-    opaco = alpha > 0
-    vicino = distance_transform_edt(~opaco, return_distances=False, return_indices=True)
-    rgb = rgb[vicino[0], vicino[1]]
-
-    # 2. sfuma solo l'alpha: il disegno resta identico, cambia solo il bordo
-    alpha = np.array(
-        Image.fromarray(alpha.astype(np.uint8)).filter(ImageFilter.GaussianBlur(raggio))
-    ).astype(np.float32)
+    rgb = sbava_colore(rgb, alpha > 0)      # 1. colore verso l'esterno
+    alpha = sfuma_alpha(alpha, raggio)      # 2. sfuma solo il contorno
 
     dopo = percentuale_sfumata(alpha)
     peso_prima = os.path.getsize(percorso)
