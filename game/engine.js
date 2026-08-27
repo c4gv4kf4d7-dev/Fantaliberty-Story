@@ -16,8 +16,8 @@
 
    Step supportati:
      logo | boot | title | say | choice | input | list | badge | avatar | hub |
-     show | hide | react | prop | bg | fx | carrellata | sipario | wait | set |
-     goto | end
+     carosello | show | hide | react | prop | bg | fx | carrellata | sipario |
+     wait | set | goto | end
 */
 (function (global) {
   'use strict';
@@ -29,7 +29,7 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '4',
+    engine: '5',
     story: null,
     state: {},      // variabili di gioco (nome, genere, avatar_*, ...)
     scene: null,
@@ -388,6 +388,7 @@
     var sc = VN.story.scenes[id];
     if (!sc) throw new Error('scena inesistente: ' + id);
     chiudiHub();
+    chiudiCarosello();
     chiudiTransizioni();
     if (el.modal) el.modal.classList.remove('on');
     if (!(sc.steps || []).some(function (s) { return s.t === 'title' || s.t === 'boot' || s.t === 'logo'; })) {
@@ -474,6 +475,9 @@
 
       case 'hub':
         return showHub(st);
+
+      case 'carosello':
+        return showCarosello(st);
 
       // Transizioni: al ripristino non si rigiocano (il giocatore le ha gia'
       // viste), ma il fondale che lasciano dietro va rimesso a posto.
@@ -586,8 +590,11 @@
   function showChar(st) {
     var who = st.who || st.char;               // st.char: forma breve legacy
     var c = cast(who);
-    var body = st.body || (c && c.defaultBody) || 'neutro';
-    var head = st.head || (c && c.defaultHead) || 'neutro';
+    // posa ed espressione passano da fmt(): cosi' una scena puo' scrivere
+    // "commento_{stile}" e far scegliere lo sprite alla variabile, invece di
+    // ripetere lo stesso step una volta per valore
+    var body = fmt(st.body) || (c && c.defaultBody) || 'neutro';
+    var head = fmt(st.head) || (c && c.defaultHead) || 'neutro';
     var bodySrc = partUrl(who, 'bodies', body) || assetUrl('chars', who);   // sprite unico legacy
     if (!bodySrc) {                            // asset non ancora disegnato: scena senza personaggio
       el.npc.classList.remove('in', 'pop');
@@ -891,6 +898,120 @@
     bottone(cfg.si || 'Si\'', onSi);
     bottone(cfg.no || 'Non ancora', onNo);
     el.modal.classList.add('on');
+  }
+
+  /* ---------------- carosello di scelta ----------------
+     La scelta dello stile di S3: si scorrono quattro figure, ognuna con la sua
+     descrizione e il perk che porta al quiz, e si conferma in una modale perche'
+     e' irreversibile — lo stile accompagna tutta la partita.
+
+     Le opzioni non stanno nello step: vengono da un blocco di story.json
+     (story.stili) che serve anche a S5 e S8. Cosi' le pose e i perk sono scritti
+     in un posto solo, e la scena dice soltanto quale posa mostrare. */
+  function opzioniCarosello(st) {
+    var da = VN.story[st.da || 'stili'] || {};
+    var ordine = st.ordine || Object.keys(da);
+    return ordine.filter(function (k) { return da[k]; }).map(function (k) {
+      var o = da[k];
+      return {
+        id: k,
+        nome: o.nome || k,
+        desc: o.desc || '',
+        perk: (o.perk && o.perk.testo) || '',
+        img: (o.pose && o.pose[st.posa]) || o.img || ''
+      };
+    });
+  }
+
+  function showCarosello(st) {
+    var opts = opzioniCarosello(st);
+    if (!opts.length) return next();
+
+    var cur = -1;
+    var visti = {};
+    var uscito = false;
+
+    function mostra(i, dir) {
+      cur = (i + opts.length) % opts.length;
+      var o = opts[cur];
+      visti[o.id] = true;
+      el.carImg.src = withBase(o.img);
+      if (dir) {
+        el.carImg.classList.remove('entraSx', 'entraDx');
+        void el.carImg.offsetWidth;
+        el.carImg.classList.add(dir > 0 ? 'entraSx' : 'entraDx');
+      }
+      el.carnome.textContent = fmt(o.nome);
+      el.cardesc.textContent = fmt(o.desc);
+      el.carperk.textContent = o.perk ? (st.etichettaPerk || 'Al quiz:') + ' ' + fmt(o.perk) : '';
+      el.carperk.style.display = o.perk ? '' : 'none';
+      el.cdots.innerHTML = '';
+      opts.forEach(function (oo, k) {
+        var d = global.document.createElement('span');
+        d.className = 'cdot' + (k === cur ? ' sel' : '') + (visti[oo.id] ? ' seen' : '');
+        el.cdots.appendChild(d);
+      });
+    }
+
+    function conferma() {
+      if (uscito) return;
+      uscito = true;
+      var o = opts[cur];
+      VN.progressed = true;
+      VN.state[st.var] = o.id;
+      VN.state['__label_' + st.var] = o.nome;
+      termSet(st.var);
+      chiudiCarosello();
+      next();
+    }
+
+    el.cprev.onclick = function (ev) { if (ev && ev.stopPropagation) ev.stopPropagation(); mostra(cur - 1, -1); };
+    el.cnext.onclick = function (ev) { if (ev && ev.stopPropagation) ev.stopPropagation(); mostra(cur + 1, 1); };
+    el.carok.textContent = fmt(st.conferma_label || 'Scelgo questo');
+    el.carok.onclick = function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      if (uscito) return;
+      if (st.conferma) return mostraModale(st.conferma, conferma, null);
+      conferma();
+    };
+
+    var x0 = null;
+    el.carosello.ontouchstart = el.carta.ontouchstart = function (e) {
+      x0 = e.touches && e.touches[0] ? e.touches[0].clientX : null;
+    };
+    el.carosello.ontouchend = el.carta.ontouchend = function (e) {
+      if (x0 == null) return;
+      var t = e.changedTouches && e.changedTouches[0];
+      var dx = t ? t.clientX - x0 : 0;
+      x0 = null;
+      if (Math.abs(dx) < 40) return;
+      if (e.preventDefault) e.preventDefault();
+      mostra(cur + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
+    };
+
+    hubTasti = function (k) {
+      if (uscito) return false;
+      if (k === 'ArrowLeft') { mostra(cur - 1, -1); return true; }
+      if (k === 'ArrowRight') { mostra(cur + 1, 1); return true; }
+      return false;
+    };
+
+    // il personaggio che parlava lascia il campo: qui il soggetto e' la figura
+    el.npc.classList.remove('in', 'pop');
+    el.npc.classList.add('out');
+    current.who = null;
+    el.boxwrap.classList.add('in', 'carta');
+    el.carosello.classList.add('on');
+    el.carta.classList.add('on');
+    pending = null;
+    mostra(indiceIniziale(st, opts), 0);
+  }
+
+  function chiudiCarosello() {
+    if (!el.carosello) return;
+    el.carosello.classList.remove('on');
+    el.carta.classList.remove('on');
+    el.boxwrap.classList.remove('carta');
   }
 
   /* ---------------- hub a zone ----------------
@@ -1387,13 +1508,17 @@
       hub: $('hub'), hubspots: $('hubspots'), hubnav: $('hubnav'),
       hprev: $('hprev'), hnext: $('hnext'), hdots: $('hdots'),
       modal: $('modal'), modaltxt: $('modaltxt'), modalbtns: $('modalbtns'),
-      prlx: $('prlx'), tende: $('tende'), tendaSx: $('tendaSx'), tendaDx: $('tendaDx')
+      prlx: $('prlx'), tende: $('tende'), tendaSx: $('tendaSx'), tendaDx: $('tendaDx'),
+      carosello: $('carosello'), carImg: $('carImg'), carta: $('carta'),
+      cprev: $('cprev'), cnext: $('cnext'), cdots: $('cdots'),
+      carnome: $('carnome'), cardesc: $('cardesc'), carperk: $('carperk'), carok: $('carok')
     };
     el.avatar.innerHTML = '';
     el.avatar.classList.remove('on');
     if ($('badgewrap')) $('badgewrap').classList.remove('in');
     hubTasti = null;
     chiudiHub();
+    chiudiCarosello();
     chiudiTransizioni();
     if (el.modal) el.modal.classList.remove('on');
     bgCorrente = null;
@@ -1403,12 +1528,15 @@
           (e.target.closest('#choices') || e.target.closest('#inputform') ||
            e.target.closest('#listform') || e.target.closest('#hubnav') ||
            e.target.closest('#hubspots') || e.target.closest('#modal') ||
+           e.target.closest('#carta') || e.target.closest('#carosello') ||
            e.target.closest('#picker') || e.target.closest('#propwrap'))) return;
       VN.step();
     };
     global.document.onkeydown = function (e) {
-      // frecce: scorrono le zone dell'hub, se e' aperto
-      if (hubTasti && el.hub && el.hub.classList.contains('on') && hubTasti(e.key)) return;
+      // frecce: scorrono le zone dell'hub o le figure del carosello, se aperti
+      var scorribile = (el.hub && el.hub.classList.contains('on'))
+        || (el.carosello && el.carosello.classList.contains('on'));
+      if (hubTasti && scorribile && hubTasti(e.key)) return;
       if (e.key !== ' ' && e.key !== 'Enter') return;
       if (el.inputform.classList.contains('on') || el.choices.classList.contains('on') ||
           (el.listform && el.listform.classList.contains('on')) ||

@@ -126,7 +126,7 @@ esistono**:
 | serve | per |
 |---|---|
 | ~~hub a 4 zone con swipe + dot~~ — **fatto**: step `hub`, vedi README | `[S1.HUB]` lobby |
-| carosello stile con descrizione, perk e conferma irreversibile | `[S3.02]` |
+| ~~carosello stile con descrizione, perk e conferma irreversibile~~ — **fatto**: step `carosello` | `[S3.02]` |
 | griglia 3 macroargomenti con stati (attiva/completata/disabilitata) | `[S5.HUB]` |
 | pescaggio casuale di 3 facoltative **al bivio**, non a inizio partita | `[S5.BIVIO]` |
 | battuta risolta per (stile × opzione scelta) dalla banca domande | tutta `[S5]` |
@@ -175,8 +175,13 @@ Ordine dei lavori e stato:
 | S0 registrazione | fatto (genere a 2, fasce anzianità, lista iPhone, badge) |
 | **S1 lobby** | **fatto**: hub a 4 zone con swipe, hotspot, zona 4 condizionata a `locked` |
 | **S2 l'aggancio** | **fatto**: scena `aggancio`, con il sipario della tenda e la carrellata di discesa |
-| S3 camerino / scelta stile | da fare (le 4 teste di Susan sono già pronte) |
+| **S3 camerino** | **fatto**: carosello dei 4 stili con perk e conferma irreversibile, commento di Susan per stile |
 | S4 → S8 | da fare |
+
+I quattro stili vivono in **`story.stili`**, non dentro la scena: nome,
+descrizione, perk e le 11 pose di ciascuno. È la stessa tabella che serviranno
+S5 (`idle_palco`, `annuncio`, `indica_schermo`, `imbarazzo`, `evento`, le 4
+espressioni) e S8 (i perk). Quando si costruisce S5, si legge da lì.
 
 L'ordine delle scene in `story.json` è già stato corretto: `badge` → `lobby`
 (S1) → `aggancio` (S2). Prima la lobby veniva dopo l'incontro con Susan, al
@@ -213,6 +218,22 @@ chi altro scrive `animation` su quel nodo.
 prende**. Si vedono solo negli screenshot. I test che li presidiano fissano
 l'invariante ("il fondale scorre, il personaggio no"; "la classe micro non resta
 addosso"), non l'effetto visivo.
+
+## Non tutti gli sprite si mostrano alla stessa misura
+
+`#npc` è tarato su una **figura intera** (56% di altezza). Diversi asset
+consegnati non lo sono, e alla misura standard sbagliano di parecchio:
+
+- le `chr_susan_commento_stile_*` sono **ritagli di sola testa** dal foglio a 4
+  teste: a schermo pieno diventavano una faccia alta mezzo schermo. Vanno a
+  `height 30%`, `bottom 14%`, `right 2%` — un primo piano che entra da destra,
+  col taglio delle spalle nascosto dietro il box;
+- `chr_peter_occhi_bassi` è **seduto a un tavolo** in primo piano: `height 44%`;
+- Susan sul palco in fondo alla sala, in S2, è a `height 9%`.
+
+Regola: prima di collegare uno sprite nuovo, guardare **cosa inquadra** —
+figura intera, mezzo busto, testa — e dare al `show` la misura giusta. Il test
+non può accorgersene, si vede solo negli screenshot.
 
 ## Errori già fatti (per non ripeterli)
 

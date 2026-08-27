@@ -28,8 +28,33 @@ function partOf(who, kind, id) {
   const c = story.cast?.[who];
   return c && id ? c[kind]?.[id] : undefined;
 }
-const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'avatar', 'hub', 'show', 'hide', 'prop', 'bg', 'react', 'fx', 'carrellata', 'sipario', 'wait', 'set', 'goto', 'end']);
+const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'avatar', 'hub', 'carosello', 'show', 'hide', 'prop', 'bg', 'react', 'fx', 'carrellata', 'sipario', 'wait', 'set', 'goto', 'end']);
 assert.ok(story.scenes[story.meta.start], 'meta.start punta a una scena esistente');
+
+// Tutti i valori che una variabile puo' assumere, raccolti da chi la scrive.
+// Serve a espandere le pose che dipendono da una scelta ("commento_{stile}").
+function valoriDi(nome) {
+  const fuori = new Set();
+  for (const sc of Object.values(story.scenes)) {
+    for (const st of sc.steps || []) {
+      if (st.var !== nome) continue;
+      if (st.t === 'carosello') Object.keys(story[st.da || 'stili'] || {}).forEach((k) => fuori.add(k));
+      for (const o of st.options || []) fuori.add(String(o.value));
+      for (const g of st.gruppi || []) for (const o of g.opzioni || []) fuori.add(String(o.value));
+    }
+  }
+  return [...fuori];
+}
+
+// "commento_{stile}" -> ["commento_hawaiano", "commento_showman", ...]
+function espandi(s) {
+  if (!s) return [];
+  const m = String(s).match(/\{(\w+)\}/);
+  if (!m) return [s];
+  const valori = valoriDi(m[1]);
+  assert.ok(valori.length, `"${s}" dipende da "${m[1]}", ma nessuno step scrive quella variabile`);
+  return valori.flatMap((v) => espandi(String(s).replace(m[0], v)));
+}
 
 for (const [id, sc] of Object.entries(story.scenes)) {
   assert.ok(Array.isArray(sc.steps) && sc.steps.length, `scena ${id}: steps non vuoti`);
@@ -40,9 +65,16 @@ for (const [id, sc] of Object.entries(story.scenes)) {
     if (st.t === 'show') {
       const c = story.cast?.[st.who];
       assert.ok(c, `scena ${id}: personaggio "${st.who}" non e' nel cast`);
-      const body = st.body || c.defaultBody;
-      assert.ok(c.bodies?.[body], `scena ${id}: posa "${body}" non dichiarata per ${st.who}`);
-      if (st.head) assert.ok(c.heads?.[st.head], `scena ${id}: espressione "${st.head}" non dichiarata per ${st.who}`);
+      // La posa puo' contenere una variabile ("commento_{stile}"): va controllata
+      // per ogni valore che quella variabile puo' prendere, non come stringa
+      // letterale — un solo valore senza sprite lascerebbe la scena senza
+      // personaggio, e solo per quel percorso.
+      for (const body of espandi(st.body || c.defaultBody)) {
+        assert.ok(c.bodies?.[body], `scena ${id}: posa "${body}" non dichiarata per ${st.who}`);
+      }
+      for (const head of espandi(st.head)) {
+        assert.ok(c.heads?.[head], `scena ${id}: espressione "${head}" non dichiarata per ${st.who}`);
+      }
     }
     if (st.t === 'react' && st.level === 'pose') assert.ok(st.body, `scena ${id}: react pose senza body`);
     if (st.t === 'react' && st.level === 'expr') assert.ok(st.head, `scena ${id}: react expr senza head`);
@@ -63,7 +95,16 @@ for (const [id, sc] of Object.entries(story.scenes)) {
       if (st.prop) assert.ok(story.assets.props[st.prop], `scena ${id}: prop "${st.prop}" dichiarato`);
     }
     if (st.t === 'title') assert.ok(st.lines?.length, `scena ${id}: title senza righe`);
+    // battuta che cambia con una variabile: o copre tutti i valori, o ha "*".
+    // Senza, per un percorso il box resterebbe vuoto.
+    if (st.by && typeof st.text === 'object' && !st.text['*']) {
+      for (const v of valoriDi(st.by)) {
+        assert.ok(st.text[v] != null,
+          `scena ${id}: battuta per "${st.by}" senza il caso "${v}" e senza ripiego "*"`);
+      }
+    }
     if (st.t === 'hub') controllaHub(id, st);
+    if (st.t === 'carosello') controllaCarosello(id, st);
     if (st.t === 'sipario') {
       for (const k of ['davanti', 'dietro']) {
         if (st[k]) assert.ok(story.assets.bg[st[k]], `scena ${id}: sipario, "${k}" -> "${st[k]}" non dichiarato`);
@@ -132,6 +173,29 @@ function controllaHub(id, st) {
   // sarebbero tre, non quattro
   const senzaCondizione = zones.filter((z) => !z.when).length;
   assert.ok(senzaCondizione >= 1, `scena ${id}: hub con tutte le zone condizionate`);
+}
+
+/* Il carosello pesca le opzioni da un blocco di story.json, non dallo step: se
+   quel blocco non c'e' o non ha le pose giuste il motore salta lo step e la
+   scelta non avviene mai, senza dire niente. */
+function controllaCarosello(id, st) {
+  assert.ok(st.var, `scena ${id}: carosello senza variabile in cui salvare`);
+  const da = story[st.da || 'stili'];
+  assert.ok(da, `scena ${id}: carosello su "${st.da}", che non esiste in story.json`);
+  const chiavi = st.ordine || Object.keys(da);
+  assert.ok(chiavi.length >= 2, `scena ${id}: carosello con meno di due opzioni`);
+  for (const k of chiavi) {
+    const o = da[k];
+    assert.ok(o, `scena ${id}: carosello, opzione "${k}" non esiste`);
+    assert.ok(o.nome, `scena ${id}: "${k}" senza nome`);
+    assert.ok(o.desc, `scena ${id}: "${k}" senza descrizione`);
+    const img = o.pose?.[st.posa] || o.img;
+    assert.ok(img, `scena ${id}: "${k}" non ha la posa "${st.posa}"`);
+    assert.ok(fs.existsSync(path.join(ROOT, (story.meta.assetBase || '') + img)),
+      `scena ${id}: la posa "${img}" non esiste su disco`);
+  }
+  // la conferma di un passo irreversibile non e' facoltativa
+  assert.ok(st.conferma?.text, `scena ${id}: carosello irreversibile senza modale di conferma`);
 }
 
 /* ---------- 1b. niente asterischi di declinazione nei dialoghi ---------- */
@@ -432,6 +496,61 @@ assert.equal(VN.state.sfacciato, false);
   VN3.boot(story, { speed: 30, scene: 'lobby' });
   assert.equal($3('tende').classList.contains('on'), false, 'la transizione interrotta si chiude');
   assert.equal($3('prlx').children.length, 0);
+}
+
+/* ---------- 5d. S3: il camerino e la scelta dello stile ----------
+   Lo stile decide gli sprite di S4-S7 e il perk di S8: e' la scelta piu' pesante
+   del gioco, e l'unica che non si puo' rifare. */
+{
+  VN.clearSave();
+  VN.boot(story, { speed: 0, scene: 'camerino' });
+  VN.state.genere = 'f';
+  const dots = () => [...$('cdots').querySelectorAll('.cdot')];
+
+  assert.match(txt(), /Scegli il tuo stile/, 'Susan apre la scena');
+  assert.ok($('npcBody').getAttribute('src').includes('chr_susan_guarda_orologio'));
+  VN.step();
+
+  assert.ok($('carosello').classList.contains('on'), 'si apre il carosello');
+  assert.ok($('boxwrap').classList.contains('carta'), 'e il box del dialogo lascia il posto alla scheda');
+  assert.equal(dots().length, 4, 'quattro stili');
+  assert.equal($('carnome').textContent, 'Hawaiano', 'si parte dal primo dello script');
+  assert.match($('cardesc').textContent, /Non sa che ore sono/);
+  // il perk e' l'informazione che decide la scelta: deve stare sulla scheda,
+  // non aspettare il quiz
+  assert.match($('carperk').textContent, /un tentativo fallito non si conta/);
+  assert.ok($('carImg').getAttribute('src').includes('stile_hawaiano_idle_camerino'));
+
+  $('cnext').onclick({ stopPropagation() {} });
+  assert.equal($('carnome').textContent, 'Showman');
+  assert.match($('carperk').textContent, /ordine libero/);
+  $('cprev').onclick({ stopPropagation() {} });
+  $('cprev').onclick({ stopPropagation() {} });
+  assert.equal($('carnome').textContent, 'Ingegnere', 'il carosello gira');
+  assert.match($('carperk').textContent, /\+3 secondi/);
+  assert.ok($('carImg').getAttribute('src').includes('stile_ingegnere_idle_camerino'));
+
+  // confermare e' irreversibile: prima la modale, e "Fammi ripensare" non sceglie
+  $('carok').onclick({ stopPropagation() {} });
+  assert.ok($('modal').classList.contains('on'), 'conferma prima di bloccare lo stile');
+  assert.match($('modaltxt').textContent, /^Sei sicura\?/, 'la conferma e\' declinata');
+  assert.equal(VN.state.stile, null, 'con la modale aperta lo stile non e\' ancora scelto');
+  [...$('modalbtns').querySelectorAll('.ch')][1].onclick({ stopPropagation() {} });   // Fammi ripensare
+  assert.equal(VN.state.stile, null, '"Fammi ripensare" non sceglie');
+  assert.ok($('carosello').classList.contains('on'), 'e si resta nel carosello');
+  assert.equal($('carnome').textContent, 'Ingegnere', 'sullo stile che si stava guardando');
+
+  $('carok').onclick({ stopPropagation() {} });
+  [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // Si', sono io
+  assert.equal(VN.state.stile, 'ingegnere', 'lo stile e\' scelto');
+  assert.equal($('carosello').classList.contains('on'), false, 'il carosello si chiude');
+  assert.equal($('boxwrap').classList.contains('carta'), false, 'e il box del dialogo torna');
+
+  // [S3.04] Susan commenta con la testa dello stile scelto: lo sprite lo decide
+  // la variabile, non uno step per valore
+  assert.ok($('npcBody').getAttribute('src').includes('chr_susan_commento_stile_ingegnere'),
+    'la posa "commento_{stile}" si risolve sulla scelta');
+  assert.match(txt(), /^Una che sembra sapere quello che dice/, 'commento dello stile giusto, declinato');
 }
 
 /* ---------- 5b. S1: hub della lobby a quattro zone ----------

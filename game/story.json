@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "FantaLiberty — Nexus",
-    "version": "0.6.0",
+    "version": "0.7.0",
     "start": "arrivo",
     "assetBase": "assets/",
     "genderVar": "genere",
@@ -702,6 +702,63 @@
           "text": "Camerino, ultima porta a destra. Hai quattro minuti e ne hai gia' persi due."
         }
       ],
+      "next": "camerino"
+    },
+    "camerino": {
+      "title": "S3 — Il camerino",
+      "bg": "camerino",
+      "dissolvenza": true,
+      "steps": [
+        {
+          "t": "hide"
+        },
+        {
+          "t": "show",
+          "who": "susan",
+          "body": "guarda_orologio"
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "text": "Scegli il tuo stile e cambiati. Veloce, la platea perdona tutto tranne l'esitazione."
+        },
+        {
+          "t": "carosello",
+          "var": "stile",
+          "da": "stili",
+          "posa": "idle_camerino",
+          "_nota": "S3.02-S3.03. Le opzioni vengono da story.stili, non da qui: le stesse pose e gli stessi perk servono a S5 e S8. La conferma e' irreversibile — dopo, niente riscrive 'stile'.",
+          "etichettaPerk": "Al quiz:",
+          "conferma_label": "Sono io",
+          "conferma": {
+            "text": "Sei {g:sicuro|sicura}? Questo stile ti accompagna per tutta la partita. Non si cambia.",
+            "si": "Si', sono io",
+            "no": "Fammi ripensare"
+          }
+        },
+        {
+          "t": "show",
+          "who": "susan",
+          "body": "commento_{stile}",
+          "pop": true,
+          "_nota": "Le pose commento_* sono ritagli di sola testa dal foglio a 4 teste, non figure intere: alla misura standard (56% di altezza) riempiono mezzo schermo con una faccia. Vanno mostrate piccole, a lato, come un primo piano.",
+          "height": "30%",
+          "bottom": "14%",
+          "right": "2%"
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "by": "stile",
+          "text": {
+            "hawaiano": "...{g:coraggioso|coraggiosa}. Speriamo tu sia {g:sveglio|sveglia} quanto sei {g:rilassato|rilassata}.",
+            "showman": "Wow... sembri essere {g:nato|nata} per questo...",
+            "drip": "Capisco la meta' di quello che dici, ma sono certa che andra' bene.",
+            "ingegnere": "{g:Uno|Una} che sembra sapere quello che dice. Basta e avanza.",
+            "*": "Bene. Adesso muoviti, che ci aspettano."
+          }
+        }
+      ],
       "next": "backstage"
     },
     "lobby": {
@@ -1101,6 +1158,96 @@
           "origine": "62% 25%"
         }
       ]
+    }
+  },
+  "stili": {
+    "hawaiano": {
+      "nome": "Hawaiano",
+      "desc": "Non sa che ore sono, ma sa sempre cosa dire.",
+      "perk": {
+        "id": "seconda_chance",
+        "testo": "un tentativo fallito non si conta, una volta per livello."
+      },
+      "evento": "stacchetto",
+      "pose": {
+        "idle_camerino": "stili/stile_hawaiano_idle_camerino.webp",
+        "idle_palco": "stili/stile_hawaiano_idle_palco.webp",
+        "annuncio": "stili/stile_hawaiano_annuncio.webp",
+        "indica_schermo": "stili/stile_hawaiano_indica_schermo.webp",
+        "imbarazzo": "stili/stile_hawaiano_imbarazzo.webp",
+        "saluto_finale": "stili/stile_hawaiano_saluto_finale.webp",
+        "evento": "stili/stile_hawaiano_evento_stacchetto.webp",
+        "neutro": "stili/stile_hawaiano_espressioni_neutro.webp",
+        "sicuro": "stili/stile_hawaiano_espressioni_sicuro.webp",
+        "sorpreso": "stili/stile_hawaiano_espressioni_sorpreso.webp",
+        "difficolta": "stili/stile_hawaiano_espressioni_difficolta.webp"
+      }
+    },
+    "showman": {
+      "nome": "Showman",
+      "desc": "Crede a tutto cio' che dice, per davvero.",
+      "perk": {
+        "id": "tutto_sbloccato",
+        "testo": "tutte le difficolta' sbloccate da subito, in ordine libero."
+      },
+      "evento": "assolo",
+      "pose": {
+        "idle_camerino": "stili/stile_showman_idle_camerino.webp",
+        "idle_palco": "stili/stile_showman_idle_palco.webp",
+        "annuncio": "stili/stile_showman_annuncio.webp",
+        "indica_schermo": "stili/stile_showman_indica_schermo.webp",
+        "imbarazzo": "stili/stile_showman_imbarazzo.webp",
+        "saluto_finale": "stili/stile_showman_saluto_finale.webp",
+        "evento": "stili/stile_showman_evento_assolo.webp",
+        "neutro": "stili/stile_showman_espressioni_neutro.webp",
+        "sicuro": "stili/stile_showman_espressioni_sicuro.webp",
+        "sorpreso": "stili/stile_showman_espressioni_sorpreso.webp",
+        "difficolta": "stili/stile_showman_espressioni_difficolta.webp"
+      }
+    },
+    "drip": {
+      "nome": "Drip",
+      "desc": "Non le importa, ma lo fa con piu' stile di te.",
+      "perk": {
+        "id": "cinquanta",
+        "testo": "un 50/50 per livello: elimina due risposte sbagliate."
+      },
+      "evento": "rider",
+      "pose": {
+        "idle_camerino": "stili/stile_drip_idle_camerino.webp",
+        "idle_palco": "stili/stile_drip_idle_palco.webp",
+        "annuncio": "stili/stile_drip_annuncio.webp",
+        "indica_schermo": "stili/stile_drip_indica_schermo.webp",
+        "imbarazzo": "stili/stile_drip_imbarazzo.webp",
+        "saluto_finale": "stili/stile_drip_saluto_finale.webp",
+        "evento": "stili/stile_drip_evento_rider.webp",
+        "neutro": "stili/stile_drip_espressioni_neutro.webp",
+        "sicuro": "stili/stile_drip_espressioni_sicuro.webp",
+        "sorpreso": "stili/stile_drip_espressioni_sorpreso.webp",
+        "difficolta": "stili/stile_drip_espressioni_difficolta.webp"
+      }
+    },
+    "ingegnere": {
+      "nome": "Ingegnere",
+      "desc": "Ha gia' letto le specifiche che tu non sapevi esistessero.",
+      "perk": {
+        "id": "tempo",
+        "testo": "+3 secondi su ogni domanda."
+      },
+      "evento": "domanda",
+      "pose": {
+        "idle_camerino": "stili/stile_ingegnere_idle_camerino.webp",
+        "idle_palco": "stili/stile_ingegnere_idle_palco.webp",
+        "annuncio": "stili/stile_ingegnere_annuncio.webp",
+        "indica_schermo": "stili/stile_ingegnere_indica_schermo.webp",
+        "imbarazzo": "stili/stile_ingegnere_imbarazzo.webp",
+        "saluto_finale": "stili/stile_ingegnere_saluto_finale.webp",
+        "evento": "stili/stile_ingegnere_evento_domanda.webp",
+        "neutro": "stili/stile_ingegnere_espressioni_neutro.webp",
+        "sicuro": "stili/stile_ingegnere_espressioni_sicuro.webp",
+        "sorpreso": "stili/stile_ingegnere_espressioni_sorpreso.webp",
+        "difficolta": "stili/stile_ingegnere_espressioni_difficolta.webp"
+      }
     }
   }
 }
