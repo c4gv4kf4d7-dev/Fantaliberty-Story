@@ -301,6 +301,47 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 /* zona ancora chiusa a chiave: il pallino resta spento */
 .hdot.chiuso{background:transparent;border-style:dashed}
 
+/* ---------- carosello di scelta (gli stili di S3) ----------
+   La figura sta in mezzo alla scena, la scheda che la descrive sotto, al posto
+   del box del dialogo: la scelta dello stile e' l'unica cosa a schermo, e ci
+   deve stare tutta senza scorrere. */
+/* I piedi vanno sul pavimento in primo piano, non a meta' altezza: fermandosi
+   dove comincia la scheda la figura restava in piedi sulla poltrona del
+   camerino. Meglio farle coprire un po' la scheda che farla levitare. */
+#carosello{position:absolute;left:46%;top:3%;bottom:25%;width:58%;
+ transform:translateX(-50%);display:none;z-index:2;pointer-events:none}
+#carosello.on{display:block}
+#carImg{width:100%;height:100%;object-fit:contain;object-position:bottom center;
+ image-rendering:pixelated;filter:drop-shadow(0 12px 24px rgba(0,0,0,.55))}
+#carImg.entraSx{animation:carSx .3s ease}
+#carImg.entraDx{animation:carDx .3s ease}
+@keyframes carSx{from{opacity:.2;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
+@keyframes carDx{from{opacity:.2;transform:translateX(-24px)}to{opacity:1;transform:translateX(0)}}
+
+#carta{display:none;flex-direction:column;gap:9px}
+#carta.on{display:flex}
+/* mentre si sceglie lo stile il box del dialogo non serve: la scheda lo sostituisce */
+#boxwrap.carta #box,#boxwrap.carta #name,#boxwrap.carta #arrow{display:none}
+#carnav{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#cprev,#cnext{background:#2a3050;border:3px solid #fff;border-radius:8px;color:#fff;
+ font-family:inherit;font-size:clamp(10px,3vw,15px);padding:8px 16px;cursor:pointer;
+ box-shadow:0 3px 0 rgba(0,0,0,.5)}
+#cprev:active,#cnext:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.5)}
+#cdots{display:flex;gap:7px}
+.cdot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.22);
+ border:2px solid rgba(255,255,255,.35)}
+.cdot.seen{background:rgba(255,255,255,.5)}
+.cdot.sel{background:#fff;border-color:#fff;transform:scale(1.25)}
+#carnome{background:#1b1f33;border:3px solid #fff;border-radius:10px;padding:9px 13px;
+ color:#fff;font-size:clamp(9px,2.8vw,14px);text-align:center;
+ box-shadow:0 4px 0 rgba(0,0,0,.5)}
+#cardesc{color:#fff;font-size:clamp(7px,2.2vw,11px);line-height:1.8;text-align:center;
+ text-shadow:0 2px 6px rgba(0,0,0,.9)}
+/* il perk e' l'informazione che decide la scelta: si stacca dalla descrizione */
+#carperk{background:rgba(20,26,44,.85);border:2px solid rgba(255,255,255,.35);
+ border-radius:8px;padding:8px 11px;color:#cfe0ff;font-size:clamp(6px,1.9vw,10px);
+ line-height:1.7;text-align:center}
+
 /* ---------- modale di conferma ----------
    Per i passi senza ritorno. Copre la scena: finche' e' aperta non si tocca
    altro, cosi' non si entra in sala per sbaglio con uno swipe storto. */

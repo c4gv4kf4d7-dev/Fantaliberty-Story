@@ -106,6 +106,7 @@ Tutto lo script vive in `game/story.json`. Ogni scena e' una lista di `steps`:
 | `react` | `{"t":"react","level":"expr","head":"positiva"}` | reazione a 3 livelli (micro/expr/pose) |
 | `avatar` | `{"t":"avatar","text":"Te ne faccio vedere quattro."}` | carosello dei 4 avatar |
 | `hub` | `{"t":"hub","start":"tenda","zones":[…]}` | esplorazione a zone: swipe orizzontale, frecce, pallini. Vedi sotto |
+| `carosello` | `{"t":"carosello","var":"stile","da":"stili","posa":"idle_camerino","conferma":{…}}` | scelta a schede: figura, descrizione, perk, conferma. Vedi sotto |
 | `logo` | `{"t":"logo","img":"ui/logo_studio.png"}` | sigla che si accende come un neon |
 | `boot` | `{"t":"boot","ms":2200,"cursore":1600}` | barra LOADING, poi cursore sul nero |
 | `title` | `{"t":"title","lines":[…]}` | cartello nero a righe |
@@ -165,6 +166,44 @@ posto da girare: quattro zone che si scorrono di lato, senza ordine imposto.
 
 Si scorre con le frecce, con il dito (oltre 40px di trascinamento) o con le
 frecce della tastiera.
+
+### Lo step `carosello`: scegliere fra piu' schede
+
+La scelta dello stile di `[S3.02]`: si scorrono quattro figure, ognuna con la sua
+descrizione e il perk che porta al quiz, e si conferma in una modale perche' e'
+irreversibile.
+
+Le opzioni **non stanno nello step**: vengono da un blocco a parte di
+`story.json` (`da`, di norma `stili`), perche' le stesse pose e gli stessi perk
+servono anche a S5 e S8.
+
+```json
+"stili": {
+  "hawaiano": {
+    "nome": "Hawaiano",
+    "desc": "Non sa che ore sono, ma sa sempre cosa dire.",
+    "perk": { "id": "seconda_chance", "testo": "un tentativo fallito non si conta, una volta per livello." },
+    "evento": "stacchetto",
+    "pose": { "idle_camerino": "…", "idle_palco": "…", "annuncio": "…", "…": "…" }
+  }
+}
+```
+
+Lo step dice solo quale posa mostrare (`posa`), in che variabile salvare (`var`)
+e cosa chiede la conferma. `ordine` puo' forzare l'ordine delle schede; senza,
+si usa quello del blocco.
+
+### Le pose che dipendono da una variabile
+
+`show` passa `body` e `head` dall'interpolazione, quindi una scena puo' scrivere
+`"body": "commento_{stile}"` e lasciare che sia la scelta a decidere lo sprite,
+invece di ripetere lo stesso step una volta per valore. `npm test` espande la
+posa su **tutti** i valori che quella variabile puo' prendere — li raccoglie da
+chi la scrive — e controlla che ognuno esista: se ne mancasse uno, la scena
+resterebbe senza personaggio solo su quel percorso.
+
+Stessa cosa per le battute con `by`: o coprono tutti i valori, o hanno il
+ripiego `"*"`.
 
 ### Le due transizioni: `sipario` e `carrellata`
 
