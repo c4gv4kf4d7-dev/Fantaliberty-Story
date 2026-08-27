@@ -39,10 +39,20 @@ except ImportError:
 TIPI = {
     "bg":     {"dir": "assets/bg",     "lato": 2560, "alpha": False, "prefisso": "bg_"},
     "chars":  {"dir": "assets/chars",  "lato": 2560, "alpha": True,  "prefisso": "chr_"},
+    "stili":  {"dir": "assets/stili",  "lato": 2560, "alpha": True,  "prefisso": "stile_"},
     "props":  {"dir": "assets/props",  "lato": 2560, "alpha": True,  "prefisso": "prop_"},
     "avatar": {"dir": "assets/avatar", "lato": 1200, "alpha": True,  "prefisso": "avt_"},
     "ui":     {"dir": "assets/ui",     "lato": 1600, "alpha": True,  "prefisso": ""},
 }
+
+# Prefissi alternativi usati da chi disegna. Il file finisce nella cartella del
+# tipo, ma il nome viene riportato al prefisso canonico del repo: una cartella
+# con meta' prop_ e meta' obj_ e' solo un modo per non ritrovare piu' niente.
+ALIAS = {"obj_": "props", "chr_": "chars"}
+
+# Le tavole di riferimento (model sheet, fogli espressioni) servono a chi disegna,
+# non al gioco: non vanno nel repo.
+RIFERIMENTI = ("model_sheet", "modelsheet", "reference", "riferimento")
 
 
 def kb(n):
@@ -57,26 +67,43 @@ def base_pulita(sorgente):
 
 # prefisso del nome -> tipo, per riconoscere da solo dove va un file
 DA_PREFISSO = dict((cfg["prefisso"], t) for t, cfg in TIPI.items() if cfg["prefisso"])
+DA_PREFISSO.update(ALIAS)
 
 
 def tipo_dal_nome(sorgente):
-    """Deduce il tipo dal prefisso del nome, o None se non lo riconosce."""
+    """Deduce il tipo dal prefisso del nome, o None se non lo riconosce.
+
+    I prefissi piu' lunghi vanno provati per primi, altrimenti 'stile_' non
+    verrebbe mai riconosciuto da un ipotetico 's_'.
+    """
     base = base_pulita(sorgente)
-    for pref, tipo in DA_PREFISSO.items():
+    for pref in sorted(DA_PREFISSO, key=len, reverse=True):
         if base.startswith(pref):
-            return tipo
+            return DA_PREFISSO[pref]
     return None
+
+
+def e_riferimento(sorgente):
+    base = base_pulita(sorgente)
+    return any(m in base for m in RIFERIMENTI)
 
 
 def nome_uscita(sorgente, tipo, nome_forzato):
     if nome_forzato:
-        base = nome_forzato
-    else:
-        base = base_pulita(sorgente)
-        pref = TIPI[tipo]["prefisso"]
-        if pref and not base.startswith(pref):
-            base = pref + base
-    return base + ".webp"
+        return nome_forzato + ".webp"
+
+    base = base_pulita(sorgente)
+    pref = TIPI[tipo]["prefisso"]
+    if not pref:
+        return base + ".webp"
+    if base.startswith(pref):
+        return base + ".webp"
+    # arrivato per un prefisso alternativo (obj_ -> prop_): si sostituisce,
+    # non si impila, altrimenti obj_badge diventerebbe prop_obj_badge
+    for alias, t in ALIAS.items():
+        if t == tipo and base.startswith(alias):
+            return pref + base[len(alias):] + ".webp"
+    return pref + base + ".webp"
 
 
 def prepara(sorgente, tipo, qualita, lato_max, pixel_art, nome_forzato, prova, radice):
@@ -138,6 +165,9 @@ def main():
     ap.add_argument("--pixel-art", action="store_true",
                     help="ridimensiona a blocchi netti invece che sfumando")
     ap.add_argument("--prova", action="store_true", help="mostra il risultato senza scrivere")
+    ap.add_argument("--tutto", action="store_true",
+                    help="converti anche le tavole di riferimento (model sheet), "
+                         "che di norma vengono saltate")
     args = ap.parse_args()
 
     if args.nome and len(args.sorgenti) > 1:
@@ -150,7 +180,11 @@ def main():
     # chr_bg_qualcosa.webp e lo infilerebbe fra i personaggi.
     da_fare = []
     dubbi = []
+    riferimenti = []
     for s in args.sorgenti:
+        if e_riferimento(s) and not args.tutto:
+            riferimenti.append(s)
+            continue
         dedotto = tipo_dal_nome(s)
         if dedotto:
             if args.tipo and args.tipo != dedotto:
@@ -161,6 +195,13 @@ def main():
             da_fare.append((s, args.tipo))
         else:
             dubbi.append(s)
+
+    if riferimenti:
+        print("Saltate %d tavole di riferimento (servono a chi disegna, non al "
+              "gioco). Usa --tutto per convertirle comunque.\n" % len(riferimenti))
+        for s in riferimenti:
+            print("  - %s" % os.path.basename(s))
+        print()
 
     if dubbi:
         print("Non capisco dove vanno questi %d file: il nome non inizia per "
