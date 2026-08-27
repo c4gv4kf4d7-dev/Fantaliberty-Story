@@ -209,11 +209,11 @@ assert.equal(VN.hasSave(story), false, 'salvataggio cancellato');
 assert.ok($('curtain').classList.contains('on'), 'ripartito dall\'intro');
 assert.match($('curtainTxt').textContent, /Cupertino/);
 
-/* ---------- 5. atto 2: personaggi ancora senza sprite ---------- */
+/* ---------- 5. atto 2: Susan (sprite reale, un file per posa) ---------- */
 VN.boot(story, { speed: 0, scene: 'ritardo_ceo' });
 assert.match(txt(), /Ternus e' in ritardo/, 'atto 2 raggiungibile');
 assert.equal($('name').textContent, 'Susan', 'nome parlante preso dal cast');
-assert.ok($('npcBody').getAttribute('src').includes('chr_susan_corpo_in_piedi'), 'posa di Susan referenziata');
+assert.ok($('npcBody').getAttribute('src').includes('chr_susan_panico_telefoni'), 'posa di Susan referenziata');
 assert.equal(typeof $('npcBody').onerror, 'function', 'file mancante: il personaggio viene nascosto, niente immagine rotta');
 
 // la reazione segue il TONO della scelta, mai il contenuto del pronostico

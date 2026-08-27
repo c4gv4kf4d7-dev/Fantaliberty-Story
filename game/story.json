@@ -31,32 +31,28 @@
       "defaultBody": "neutro",
       "defaultHead": "neutro",
       "bodies": {
-        "neutro": "chars/chr_lucas_neutro.png",
-        "felice": "chars/chr_lucas_felice.png"
+        "neutro": "chars/chr_lucas_neutro.webp",
+        "felice": "chars/chr_lucas_felice.webp"
       },
       "heads": {},
       "_nota": "Sprite unico (prototipo). I personaggi nuovi vanno consegnati con corpo e testa separati: 'bodies' = pose, 'heads' = espressioni, 'neck' = ancoraggio."
     },
     "susan": {
       "name": "Susan",
-      "defaultBody": "in_piedi",
-      "defaultHead": "ansia",
-      "neck": {
-        "x": "50%",
-        "y": "3%",
-        "w": "32%"
-      },
+      "defaultBody": "panico_telefoni",
+      "defaultHead": "neutro",
       "bodies": {
-        "in_piedi": "chars/chr_susan_corpo_in_piedi@3x.webp",
-        "spinta": "chars/chr_susan_corpo_spinta@3x.webp"
+        "panico_telefoni": "chars/chr_susan_panico_telefoni.webp",
+        "mani_capelli": "chars/chr_susan_mani_capelli.webp",
+        "indica_camerino": "chars/chr_susan_indica_camerino.webp",
+        "guarda_orologio": "chars/chr_susan_guarda_orologio.webp",
+        "spinta_in_scena": "chars/chr_susan_spinta_in_scena.webp",
+        "sollievo": "chars/chr_susan_sollievo.webp",
+        "sguardo_in_alto": "chars/chr_susan_sguardo_in_alto.webp",
+        "carponi": "chars/chr_susan_carponi.webp"
       },
-      "heads": {
-        "neutro": "chars/chr_susan_testa_neutro@3x.webp",
-        "ansia": "chars/chr_susan_testa_ansia@3x.webp",
-        "sorpresa": "chars/chr_susan_testa_sorpresa@3x.webp",
-        "scettica": "chars/chr_susan_testa_scettica@3x.webp",
-        "positiva": "chars/chr_susan_testa_positiva@3x.webp"
-      }
+      "heads": {},
+      "_nota": "Sprite unico per posa (come lucas/francesca): niente head/neck. chr_susan_commento_stile e' uno sprite sheet a 4 teste (una per stile), ancora da tagliare con tools/taglia_sheet.py prima di poterlo usare."
     },
     "francesca": {
       "name": "Francesca",
@@ -91,23 +87,20 @@
         "positivo": "chars/chr_martha_testa_positivo@3x.webp"
       }
     },
-    "veterano": {
-      "name": "Veterano",
-      "defaultBody": "seduto",
+    "peter": {
+      "name": "Peter",
+      "defaultBody": "occhi_bassi",
       "defaultHead": "neutro",
-      "neck": {
-        "x": "50%",
-        "y": "5%",
-        "w": "32%"
-      },
       "bodies": {
-        "seduto": "chars/chr_veterano_corpo_seduto@3x.webp"
+        "occhi_bassi": "chars/chr_peter_occhi_bassi.webp",
+        "alza_occhi": "chars/chr_peter_alza_occhi.webp",
+        "annuisce": "chars/chr_peter_annuisce.webp",
+        "scuote_testa": "chars/chr_peter_scuote_testa.webp",
+        "applauso_ironico": "chars/chr_peter_applauso_ironico.webp",
+        "guarda_orologio": "chars/chr_peter_guarda_orologio.webp"
       },
-      "heads": {
-        "neutro": "chars/chr_veterano_testa_neutro@3x.webp",
-        "compiaciuto": "chars/chr_veterano_testa_compiaciuto@3x.webp",
-        "scettico": "chars/chr_veterano_testa_scettico@3x.webp"
-      }
+      "heads": {},
+      "_nota": "Sprite unico per posa. Nel manifest e' 'addormentato' (occhi_bassi) finche' run.locked e' false, si sveglia (alza_occhi) solo in S8: la scena 'quiz' qui sotto e' ancora la vecchia placeholder e non modella quello stato."
     },
     "premi": {
       "name": "???",
@@ -323,8 +316,7 @@
         {
           "t": "show",
           "who": "susan",
-          "body": "in_piedi",
-          "head": "ansia"
+          "body": "panico_telefoni"
         },
         {
           "t": "say",
@@ -344,27 +336,18 @@
           "options": [
             {
               "label": "Ti seguo, andiamo",
-              "value": "sfacciato",
-              "react": {
-                "level": "expr",
-                "head": "positiva"
-              }
+              "value": "sfacciato"
             },
             {
               "label": "Aspetta, chi sei?",
-              "value": "prudente",
-              "react": {
-                "level": "expr",
-                "head": "scettica"
-              }
+              "value": "prudente"
             }
           ]
         },
         {
           "t": "react",
           "level": "pose",
-          "body": "spinta",
-          "head": "ansia"
+          "body": "spinta_in_scena"
         },
         {
           "t": "say",
@@ -450,16 +433,17 @@
         },
         {
           "t": "show",
-          "who": "veterano"
+          "who": "peter",
+          "body": "alza_occhi"
         },
         {
           "t": "say",
-          "who": "veterano",
+          "who": "peter",
           "text": "[BOZZA] Io c'ero nel 2007. Vediamo se te la cavi."
         },
         {
           "t": "choice",
-          "who": "veterano",
+          "who": "peter",
           "var": "quiz1",
           "text": "[BOZZA] In che anno e' stato presentato il primo iPhone?",
           "options": [
@@ -471,8 +455,8 @@
               "label": "2007",
               "value": "si",
               "react": {
-                "level": "expr",
-                "head": "compiaciuto"
+                "level": "pose",
+                "body": "annuisce"
               }
             },
             {
@@ -483,7 +467,7 @@
         },
         {
           "t": "say",
-          "who": "veterano",
+          "who": "peter",
           "text": "[BOZZA] (qui la valutazione della risposta e l'assegnazione dei punti)"
         }
       ],
