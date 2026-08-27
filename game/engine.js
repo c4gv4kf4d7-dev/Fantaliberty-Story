@@ -772,6 +772,45 @@
     var c = global.document.createElement('span');
     c.className = 'cur'; c.id = 'tcur'; c.textContent = ' ';
     el.screen.appendChild(c);
+    osservaTerminale();
+    adattaTerminale();
+  }
+
+  // Lo schermo del Mac e' un ritaglio a misura fissa dentro l'immagine del prop:
+  // non puo' crescere. Aggiungendo campi al terminale il testo sfora e sparisce
+  // sotto overflow:hidden, in silenzio. Qui la scritta viene rimpicciolita finche'
+  // non ci sta: cosi' aggiungere una riga allo script non fa piu' sparire le altre.
+  // Sotto questa altezza il riquadro non e' ancora quello vero: #propwrap prende
+  // l'altezza dall'immagine del Mac, quindi finche' il PNG non e' caricato lo
+  // schermo e' alto quanto il suo solo padding. Misurare li' rimpicciolirebbe il
+  // testo al minimo per sempre.
+  var TERM_H_MIN = 24;
+  var TERM_FS_MIN = 3.2;
+  function adattaTerminale() {
+    var s = el && el.screen;
+    if (!s || s.clientHeight < TERM_H_MIN) return;
+    s.style.fontSize = '';                     // riparti dalla misura del CSS
+    var fs = parseFloat(global.getComputedStyle(s).fontSize) || 10;
+    // scrollHeight non scende mai sotto clientHeight: quando i due coincidono il
+    // testo ci sta, e il ciclo si ferma da solo
+    for (var i = 0; i < 12 && s.scrollHeight > s.clientHeight && fs > TERM_FS_MIN; i++) {
+      fs = Math.max(TERM_FS_MIN, fs * 0.94);
+      s.style.fontSize = fs.toFixed(2) + 'px';
+    }
+  }
+
+  // Rimisura quando il riquadro cambia davvero: immagine del Mac caricata,
+  // rotazione, ridimensionamento della finestra.
+  var termOsservatore = null;
+  function osservaTerminale() {
+    if (termOsservatore || !el || !el.screen) return;
+    if (typeof global.ResizeObserver === 'function') {
+      termOsservatore = new global.ResizeObserver(function () { adattaTerminale(); });
+      termOsservatore.observe(el.screen);
+    } else {
+      global.addEventListener('resize', adattaTerminale);   // ripiego
+      termOsservatore = true;
+    }
   }
 
   function termSet(varName) {

@@ -120,8 +120,15 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #propwrap.out{opacity:0;transform:translate(-50%,-40px) scale(.8)}
 #prop{width:100%;display:block;image-rendering:pixelated;filter:drop-shadow(0 16px 30px rgba(0,0,0,.65))}
 #screen{position:absolute;left:28.6%;top:12.6%;width:43%;height:27%;
- padding:3% 4%;color:#0f3b34;font-size:clamp(6px,1.7vw,12px);line-height:1.75;overflow:hidden}
-.frow{margin-bottom:.5em;white-space:nowrap;overflow:hidden}
+ padding:.35em .7em;color:#0f3b34;font-size:clamp(6px,1.7vw,12px);line-height:1.25;overflow:hidden}
+/* padding in em, non in %: le percentuali si calcolano sulla LARGHEZZA del
+   contenitore (il prop intero, ~250px), non su questo schermetto alto 74px —
+   erano 15px di margine verticale, un quinto dello spazio utile. */
+/* Interlinea stretta: lo schermo del Mac e' piccolo e le righe del terminale sono
+   otto (i sei campi del form, il ruolo e la riga di stato). Con l'interlinea
+   larga di prima ce ne stavano cinque e le altre sparivano sotto overflow:hidden.
+   Se un domani se ne aggiungono altre, adattaTerminale() in engine.js rimpicciolisce. */
+.frow{margin-bottom:.18em;white-space:nowrap;overflow:hidden}
 .fk{opacity:.75}
 .fv{font-weight:bold}
 .cur{display:inline-block;width:.55em;background:#0f3b34;animation:bl .6s steps(1) infinite}
