@@ -15,8 +15,9 @@
      VN.hasSave() / VN.readSave() / VN.clearSave() / VN.saveNow()
 
    Step supportati:
-     logo | boot | title | say | choice | input | list | badge | avatar | show | hide |
-     react | prop | bg | fx | wait | set | goto | end
+     logo | boot | title | say | choice | input | list | badge | avatar | hub |
+     show | hide | react | prop | bg | fx | carrellata | sipario | wait | set |
+     goto | end
 */
 (function (global) {
   'use strict';
@@ -96,6 +97,13 @@
     el.hub.classList.remove('on');
     el.hubnav.classList.remove('on');
     el.hubspots.innerHTML = '';
+  }
+
+  // Le transizioni durano piu' di un tap: se si cambia scena mentre una e' in
+  // corso, quello che resta a schermo va tolto o copre la scena nuova.
+  function chiudiTransizioni() {
+    if (el.prlx) { el.prlx.classList.remove('on'); el.prlx.innerHTML = ''; }
+    if (el.tende) el.tende.classList.remove('on', 'apri');
   }
 
   // Il testo si scrive su requestAnimationFrame invece che con setInterval:
@@ -353,7 +361,7 @@
     if (s) { try { s.removeItem(SAVE_KEY); } catch (e) {} }
   };
 
-  var VISUAL = { show: 1, hide: 1, react: 1, prop: 1, bg: 1, set: 1, avatar: 0 };
+  var VISUAL = { show: 1, hide: 1, react: 1, prop: 1, bg: 1, set: 1, sipario: 1, avatar: 0 };
 
   function restore(save) {
     VN.state = save.state || VN.state;
@@ -380,6 +388,7 @@
     var sc = VN.story.scenes[id];
     if (!sc) throw new Error('scena inesistente: ' + id);
     chiudiHub();
+    chiudiTransizioni();
     if (el.modal) el.modal.classList.remove('on');
     if (!(sc.steps || []).some(function (s) { return s.t === 'title' || s.t === 'boot' || s.t === 'logo'; })) {
       el.curtain.classList.remove('on', 'lights');
@@ -465,6 +474,16 @@
 
       case 'hub':
         return showHub(st);
+
+      // Transizioni: al ripristino non si rigiocano (il giocatore le ha gia'
+      // viste), ma il fondale che lasciano dietro va rimesso a posto.
+      case 'carrellata':
+        if (silent) return next();
+        return carrellata(st, next);
+
+      case 'sipario':
+        if (silent) { if (st.dietro) setBg(st.dietro, st.fx); return next(); }
+        return sipario(st, next);
 
       case 'logo':
         el.boxwrap.classList.remove('in');
@@ -594,7 +613,7 @@
     el.npc.style.bottom = st.bottom || '';
     el.npc.style.right = st.right || '';
 
-    el.npc.classList.remove('out');
+    el.npc.classList.remove('out', 'micro');
     if (st.pop) { el.npc.classList.remove('in'); void el.npc.offsetWidth; el.npc.classList.add('pop'); }
     else { el.npc.classList.remove('pop'); void el.npc.offsetWidth; el.npc.classList.add('in'); }
   }
@@ -620,6 +639,11 @@
     if (level === 'expr' && st.head) { setHead(st.head); return; }
     // micro: nessun asset nuovo, solo un movimento minimo
     el.npc.classList.remove('micro'); void el.npc.offsetWidth; el.npc.classList.add('micro');
+    // La classe va tolta appena finisce. Restando addosso, la sua animazione
+    // sostituisce quella d'ingresso del personaggio successivo (stessa proprieta',
+    // regola piu' in basso nel CSS) e siccome non e' "forwards" lo lascia
+    // trasparente: Susan spariva dal corridoio subito dopo una reazione micro.
+    setTimeout(function () { el.npc.classList.remove('micro'); }, 500);
   }
 
   /* ---------------- avatar del giocatore ----------------
@@ -728,6 +752,106 @@
     mostra(0, 0);
     el.avatar.classList.add('pick');
     el.picker.classList.add('on');
+  }
+
+  /* ---------------- carrellata: la camera attraversa un posto ----------------
+     I tre file della discesa in sala non sono i livelli di un'unica immagine da
+     sovrapporre — provato: si coprono a vicenda, il piu' vicino nasconde tutto.
+     Sono tre INQUADRATURE successive dello stesso percorso: la sala dall'alto,
+     il passaggio accanto a un pilastro, le poltrone davanti al palco.
+
+     Quindi si giocano in fila: ognuna entra in dissolvenza sopra la precedente
+     mentre continua a ingrandirsi. E' l'ingrandimento che non si ferma mai,
+     attraverso il cambio di inquadratura, a dare la sensazione di una camera
+     che scende senza stacchi.
+
+     Il movimento e' una transition CSS e non un @keyframes: le scale arrivano
+     dallo script, e una transition si imposta con due valori senza dover
+     generare regole a runtime. */
+  function carrellata(st, done) {
+    var cfg = (VN.story.carrellate && VN.story.carrellate[st.id]) || st;
+    var shots = cfg.shots || [];
+    if (!shots.length || !VN.speed) return done();       // speed 0 = test: si salta
+
+    var ms = st.ms || cfg.ms || 2800;
+    var dissolvenza = cfg.dissolvenza || 700;
+    // Le inquadrature partono a distanza regolare, ma l'ultima deve restare in
+    // campo un po' prima della fine: dividendo per il numero esatto di
+    // inquadrature finirebbe di dissolvere proprio mentre la carrellata si
+    // chiude, e l'arrivo sarebbe un mezzo fotogramma sfumato.
+    var passo = ms / (shots.length + 0.5);
+
+    el.prlx.innerHTML = '';
+    var nodi = shots.map(function (s, i) {
+      var img = global.document.createElement('img');
+      img.className = 'plyr';
+      img.src = withBase(s.img);
+      img.style.transformOrigin = s.origine || cfg.origine || '50% 45%';
+      img.style.transform = 'scale(' + (s.da != null ? s.da : 1) + ')';
+      img.style.opacity = i === 0 ? 1 : 0;              // la prima e' gia' in campo
+      el.prlx.appendChild(img);
+      return img;
+    });
+
+    // via il dialogo e il personaggio: la carrellata e' un'inquadratura sola,
+    // e i file della sala hanno i bordi trasparenti — chi resta dietro si vede
+    el.boxwrap.classList.remove('in');
+    el.npc.classList.remove('in', 'pop');
+    el.npc.classList.add('out');
+    current.who = null;
+    el.hint.style.opacity = 0;
+    el.prlx.classList.add('on');
+
+    var timers = [];
+    nodi.forEach(function (img, i) {
+      var s = shots[i];
+      var parte = function () {
+        img.style.transition = 'transform ' + Math.max(ms - i * passo, 200) + 'ms linear, '
+          + 'opacity ' + dissolvenza + 'ms ease-in';
+        img.style.transform = 'scale(' + (s.a != null ? s.a : 1.3) + ')';
+        img.style.opacity = 1;
+      };
+      // il primo fotogramma dopo: cambiare i valori subito non farebbe partire
+      // niente, il browser non ha ancora disegnato lo stato iniziale
+      if (i === 0) global.requestAnimationFrame(function () { global.requestAnimationFrame(parte); });
+      else timers.push(setTimeout(parte, i * passo));
+    });
+
+    timers.push(setTimeout(function () {
+      timers.forEach(clearTimeout);
+      el.prlx.classList.remove('on');
+      el.prlx.innerHTML = '';
+      el.hint.style.opacity = '';
+      done();
+    }, ms));
+  }
+
+  /* ---------------- sipario: il fondale si apre in due ----------------
+     La tenda della lobby e il sipario del palco sono lo stesso effetto: si
+     fotografa il fondale che c'e' adesso nelle due meta', si mette dietro quello
+     nuovo, e le due meta' scorrono via ai lati. Il manifest chiede proprio
+     questo — nessun secondo fondale "tenda aperta" e' mai stato disegnato. */
+  function sipario(st, done) {
+    // "davanti" dice esplicitamente cosa si apre. Senza, si usa il fondale che
+    // c'e' adesso — comodo, ma vale solo se la scena e' stata raggiunta dal
+    // punto giusto: saltandoci dentro per lo sviluppo (?scene=...) il fondale
+    // di partenza e' gia' quello nuovo e non ci sarebbe niente da aprire.
+    var vecchio = st.davanti ? assetUrl('bg', st.davanti) : el.bg.getAttribute('src');
+    if (st.dietro) setBg(st.dietro, st.fx);
+    if (!vecchio || !VN.speed) return done();
+
+    el.tendaSx.style.backgroundImage = 'url("' + vecchio + '")';
+    el.tendaDx.style.backgroundImage = 'url("' + vecchio + '")';
+    el.tende.classList.remove('apri');
+    el.tende.classList.add('on');
+    el.boxwrap.classList.remove('in');
+    void el.tende.offsetWidth;
+    el.tende.classList.add('apri');
+
+    setTimeout(function () {
+      el.tende.classList.remove('on', 'apri');
+      done();
+    }, st.ms || 1600);
   }
 
   /* ---------------- condizioni ----------------
@@ -1262,13 +1386,15 @@
       picker: $('picker'), flash: $('flash'),
       hub: $('hub'), hubspots: $('hubspots'), hubnav: $('hubnav'),
       hprev: $('hprev'), hnext: $('hnext'), hdots: $('hdots'),
-      modal: $('modal'), modaltxt: $('modaltxt'), modalbtns: $('modalbtns')
+      modal: $('modal'), modaltxt: $('modaltxt'), modalbtns: $('modalbtns'),
+      prlx: $('prlx'), tende: $('tende'), tendaSx: $('tendaSx'), tendaDx: $('tendaDx')
     };
     el.avatar.innerHTML = '';
     el.avatar.classList.remove('on');
     if ($('badgewrap')) $('badgewrap').classList.remove('in');
     hubTasti = null;
     chiudiHub();
+    chiudiTransizioni();
     if (el.modal) el.modal.classList.remove('on');
     bgCorrente = null;
 

@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "FantaLiberty — Nexus",
-    "version": "0.5.0",
+    "version": "0.6.0",
     "start": "arrivo",
     "assetBase": "assets/",
     "genderVar": "genere",
@@ -16,6 +16,7 @@
       "esterno_vialetto": "bg/bg_esterno_vialetto.webp",
       "esterno_ingresso": "bg/bg_esterno_ingresso.webp",
       "camerino": "bg/bg_camerino.webp",
+      "backstage_corridoio": "bg/bg_backstage_corridoio.webp",
       "lobby": "bg/bg_lobby.webp",
       "lobby_z1_tenda": "bg/bg_lobby_z1_tenda.webp",
       "lobby_z2_hall_of_fame": "bg/bg_lobby_z2_hall_of_fame.webp",
@@ -140,7 +141,8 @@
     "device": null,
     "stile": null,
     "locked": false,
-    "__ok": ""
+    "__ok": "",
+    "sfacciato": false
   },
   "scenes": {
     "arrivo": {
@@ -594,61 +596,113 @@
       "foglie": 2,
       "pulviscolo": 8
     },
-    "ritardo_ceo": {
-      "title": "Atto 2 — Il camerino",
-      "bg": "camerino",
+    "aggancio": {
+      "title": "S2 — L'aggancio",
+      "bg": "lobby_z1_tenda",
+      "_nota": "La scena si apre ancora sulla tenda della lobby: e' quella che si divide in due. Dietro c'e' bg_sala_teatro — lo script master lo chiama bg_sala_ingresso_superiore, e' lo stesso file: la sala vista dall'alto del corridoio, con il palco in fondo.",
       "steps": [
         {
           "t": "hide"
         },
         {
-          "t": "wait",
-          "ms": 400
+          "t": "sipario",
+          "davanti": "lobby_z1_tenda",
+          "dietro": "sala_teatro",
+          "ms": 1700
         },
         {
           "t": "show",
           "who": "susan",
-          "body": "panico_telefoni"
+          "body": "panico_telefoni",
+          "height": "9%",
+          "bottom": "48%",
+          "right": "45%"
+        },
+        {
+          "t": "wait",
+          "ms": 700
         },
         {
           "t": "say",
           "who": "susan",
-          "text": "[BOZZA] {NOME}? {NOME}! Meno male. Abbiamo un problema: Ternus e' in ritardo e il keynote inizia tra venti minuti."
+          "text": "Ehi TU! Si', tu! Scendi!"
+        },
+        {
+          "t": "carrellata",
+          "id": "discesa_palco"
+        },
+        {
+          "t": "bg",
+          "id": "sala_teatro",
+          "fx": "zoom"
+        },
+        {
+          "t": "show",
+          "who": "susan",
+          "body": "mani_capelli",
+          "pop": true
         },
         {
           "t": "say",
           "who": "susan",
-          "text": "[BOZZA] No, non hai capito. TU adesso vieni con me dietro le quinte. Muoviti!"
+          "text": "Ascolta. Il CEO e' bloccato in tangenziale, no in autostrada... insomma e' fermo."
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "text": "Tra quaranta minuti c'e' la prova generale. Con la regia, le luci, i grafici, tutto. Se non la facciamo, stasera non si va in onda."
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "text": "Tu sei l'unico essere umano in questa sala. Congratulazioni: fai l'host tu."
         },
         {
           "t": "choice",
           "who": "susan",
-          "var": "tono",
-          "text": "[BOZZA] Allora? Che facciamo?",
+          "var": "sfacciato",
+          "_nota": "Nessun effetto su punteggio o stato: cambia solo il tono. L'opzione sfacciata abilita chr_susan_carponi in S5.",
+          "text": "Allora?",
           "options": [
             {
-              "label": "Ti seguo, andiamo",
-              "value": "sfacciato"
+              "label": "Io? Ma non ho studiato niente!",
+              "value": false
             },
             {
-              "label": "Aspetta, chi sei?",
-              "value": "prudente"
+              "label": "Finalmente qualcuno se n'e' accorto.",
+              "value": true,
+              "react": {
+                "level": "micro"
+              }
+            },
+            {
+              "label": "(annuire in silenzio)",
+              "value": false
             }
           ]
         },
         {
-          "t": "react",
-          "level": "pose",
-          "body": "spinta_in_scena"
+          "t": "bg",
+          "id": "backstage_corridoio",
+          "dissolvenza": true
+        },
+        {
+          "t": "show",
+          "who": "susan",
+          "body": "indica_camerino"
         },
         {
           "t": "say",
           "who": "susan",
-          "text": "[BOZZA] ...ne riparliamo dopo. Corri!"
+          "text": "Ottimo, hai detto si'."
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "text": "Camerino, ultima porta a destra. Hai quattro minuti e ne hai gia' persi due."
         }
       ],
-      "next": "backstage",
-      "dissolvenza": true
+      "next": "backstage"
     },
     "lobby": {
       "title": "S1 — La lobby",
@@ -715,7 +769,7 @@
                     "si": "Si', entro",
                     "no": "Non ancora"
                   },
-                  "goto": "ritardo_ceo"
+                  "goto": "aggancio"
                 }
               ]
             },
@@ -1019,6 +1073,34 @@
       "next": "lobby",
       "foglie": 3,
       "pulviscolo": 10
+    }
+  },
+  "carrellate": {
+    "discesa_palco": {
+      "_nota": "S2: tre inquadrature in fila, non tre livelli sovrapposti — i file si coprono a vicenda. Ognuna entra in dissolvenza sopra la precedente mentre continua a ingrandirsi: e' l'ingrandimento che non si ferma, attraverso i cambi di inquadratura, a fare la discesa.",
+      "ms": 3400,
+      "dissolvenza": 450,
+      "origine": "50% 45%",
+      "shots": [
+        {
+          "img": "bg/bg_sala_discesa_palco_layer1_sfondo.webp",
+          "da": 1.0,
+          "a": 1.5,
+          "origine": "50% 40%"
+        },
+        {
+          "img": "bg/bg_sala_discesa_palco_layer3_primopiano.webp",
+          "da": 1.1,
+          "a": 1.9,
+          "origine": "30% 45%"
+        },
+        {
+          "img": "bg/bg_sala_discesa_palco_layer2_poltrone.webp",
+          "da": 1.05,
+          "a": 1.35,
+          "origine": "62% 25%"
+        }
+      ]
     }
   }
 }

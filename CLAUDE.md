@@ -42,6 +42,22 @@ personaggio o una scena, la storia di Git esplode (è già successo: 19 MB di
 - `tools/taglia_sheet.py` — per i file consegnati come sprite sheet (più pose
   in un'unica immagine): li taglia in pezzi separati *prima* della
   conversione.
+- `tools/rimuovi_sfondo.py` — scontorna lo sfondo che **tocca i bordi**
+  dell'immagine (riempimento dai bordi).
+- `tools/togli_scacchiera.py` — le toppe di quadretti **chiuse dentro** il
+  disegno (fra le braccia alzate, fra braccio e fianco). Sono il caso che
+  `rimuovi_sfondo.py` non può raggiungere per costruzione: dal bordo non ci si
+  arriva, e `binary_fill_holes` le considera apposta parte del soggetto —
+  è la stessa regola che salva denti e riflessi.
+
+**Gli strumenti di pulizia vanno verificati a occhio prima di lanciarli.** La
+prima versione di `togli_scacchiera.py` segnalava 12 file: fra questi i capelli
+bianchi di Peter e l'arco del lucchetto, che avrebbe cancellato. Riconosceva le
+scacchiere dal fatto che chiaro e scuro si alternassero — e i capelli alternano
+a ogni pixel. Il criterio giusto è il **lato del quadretto**: strisce tutte
+lunghe uguali, ~22 px, con due tinte piatte. Da 12 file si è passati a 2, quelli
+veri. Il modo per accorgersene è stato comporre le zone candidate in magenta e
+guardarle, non leggere i numeri.
 - `tools/optimize_assets.py` — ricomprime *sul posto* file già dentro
   `assets/`, per la build single-file. Diverso scopo, non confonderlo con
   `prepara_asset.py`.
@@ -158,17 +174,45 @@ Ordine dei lavori e stato:
 |---|---|
 | S0 registrazione | fatto (genere a 2, fasce anzianità, lista iPhone, badge) |
 | **S1 lobby** | **fatto**: hub a 4 zone con swipe, hotspot, zona 4 condizionata a `locked` |
-| S2 l'aggancio | da fare — oggi è la vecchia `ritardo_ceo` |
+| **S2 l'aggancio** | **fatto**: scena `aggancio`, con il sipario della tenda e la carrellata di discesa |
 | S3 camerino / scelta stile | da fare (le 4 teste di Susan sono già pronte) |
 | S4 → S8 | da fare |
 
 L'ordine delle scene in `story.json` è già stato corretto: `badge` → `lobby`
-(S1) → `ritardo_ceo` (proto-S2). Prima la lobby veniva dopo l'incontro con
-Susan, al contrario dello script.
+(S1) → `aggancio` (S2). Prima la lobby veniva dopo l'incontro con Susan, al
+contrario dello script. La vecchia `ritardo_ceo` **non esiste più**: era la
+bozza di S2 ed è stata assorbita, non affiancata.
+
+Attenzione ai nomi: lo script master chiama `bg_sala_ingresso_superiore` il
+fondale di S2, che è stato consegnato come **`bg_sala_teatro`** — è lo stesso
+file. Stessa cosa dei personaggi (`maurice`→`francesca`, `veterano`→`peter`):
+prima di dichiarare mancante un asset del manifest, cerca se esiste sotto un
+altro nome.
 
 Le correzioni precedenti erano invece mirate: ricollegare sprite reali a scene
 placeholder, sistemare riferimenti rotti. Non mescolare i due tipi di lavoro
 nella stessa PR.
+
+## Animazioni CSS: due classi sullo stesso nodo si combattono
+
+Successo due volte in due giorni, con lo stesso sintomo — **il personaggio
+sparisce, con lo sprite giusto caricato**:
+
+- lo scorrimento dell'hub metteva la sua animazione anche su `#npc`, e quella
+  vinceva su `#npc.in` (stessa proprietà `animation`, regola più in basso nel
+  CSS). Non essendo `forwards`, a fine corsa il nodo tornava a `opacity:0`;
+- la classe `micro` della reazione restava addosso dopo l'animazione e faceva
+  esattamente lo stesso al personaggio mostrato subito dopo.
+
+Regola: **`#npc` porta una sola animazione alla volta.** Le classi di reazione
+si tolgono da sole quando finiscono, e `showChar()` le ripulisce comunque.
+Chi aggiunge un'animazione nuova su `#npc` la mette `forwards` **e** controlla
+chi altro scrive `animation` su quel nodo.
+
+`npm test` gira in jsdom, che non calcola le animazioni: questi bug **non li
+prende**. Si vedono solo negli screenshot. I test che li presidiano fissano
+l'invariante ("il fondale scorre, il personaggio no"; "la classe micro non resta
+addosso"), non l'effetto visivo.
 
 ## Errori già fatti (per non ripeterli)
 
