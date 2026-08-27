@@ -28,7 +28,7 @@ function partOf(who, kind, id) {
   const c = story.cast?.[who];
   return c && id ? c[kind]?.[id] : undefined;
 }
-const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'avatar', 'hub', 'carosello', 'show', 'hide', 'prop', 'bg', 'react', 'fx', 'carrellata', 'sipario', 'wait', 'set', 'goto', 'end']);
+const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'hub', 'carosello', 'show', 'hide', 'io', 'prop', 'bg', 'react', 'fx', 'carrellata', 'sipario', 'wait', 'set', 'goto', 'end']);
 assert.ok(story.scenes[story.meta.start], 'meta.start punta a una scena esistente');
 
 // Tutti i valori che una variabile puo' assumere, raccolti da chi la scrive.
@@ -101,6 +101,17 @@ for (const [id, sc] of Object.entries(story.scenes)) {
       for (const v of valoriDi(st.by)) {
         assert.ok(st.text[v] != null,
           `scena ${id}: battuta per "${st.by}" senza il caso "${v}" e senza ripiego "*"`);
+      }
+    }
+    // la figura del giocatore: la posa deve esistere per OGNI stile, altrimenti
+    // chi ha scelto quello sbagliato resta senza figura in scena
+    if (st.t === 'io' && !st.hide) {
+      const posa = st.posa || 'idle_palco';
+      for (const [k, s2] of Object.entries(story.stili || {})) {
+        const f = s2.pose?.[posa];
+        assert.ok(f, `scena ${id}: lo stile "${k}" non ha la posa "${posa}"`);
+        assert.ok(fs.existsSync(path.join(ROOT, (story.meta.assetBase || '') + f)),
+          `scena ${id}: la posa "${f}" non esiste su disco`);
       }
     }
     if (st.t === 'hub') controllaHub(id, st);
@@ -250,6 +261,15 @@ for (const [who, c] of Object.entries(story.cast || {})) {
       if (!onDisk(rel)) todoAssets.add(`${who}/${kind}/${id}`);
     }
   }
+  // una voce in cuffia non ha sprite in scena: al suo posto serve l'icona
+  if (c.voce) {
+    assert.ok(c.icona?.length, `cast ${who}: dichiarato "voce" ma senza icona`);
+    for (const f of c.icona) {
+      assert.ok(fs.existsSync(path.join(ROOT, base + f)), `cast ${who}: icona "${f}" non esiste`);
+    }
+    assert.equal(Object.keys(c.bodies || {}).length, 0,
+      `cast ${who}: e' una voce, non deve avere pose in scena`);
+  }
   // corpo e testa separati: se ci sono espressioni serve l'ancoraggio del collo
   if (Object.keys(c.heads || {}).length) assert.ok(c.neck, `cast ${who}: manca "neck" (ancoraggio collo)`);
 }
@@ -280,10 +300,9 @@ assert.ok(story.scenes.arrivo.foglie > 0 && story.scenes.arrivo.pulviscolo > 0,
   'foglie e pulviscolo rendono viva la scena d\'apertura');
 assert.equal(story.scenes.ingresso.bg, 'esterno_ingresso');
 assert.ok(story.scenes.ingresso.dissolvenza, 'il cambio fondale e\' in dissolvenza');
-// niente piu' scelta avatar: Lucas consegna il badge
+// niente piu' scelta avatar: Lucas consegna il badge, e la figura del giocatore
+// e' lo sprite dello stile scelto in S3
 assert.ok(!story.avatar, 'il carosello avatar non e\' piu\' nell\'apertura');
-assert.ok(!Object.values(story.scenes).some((sc) => sc.steps.some((st) => st.t === 'avatar')),
-  'nessuno step avatar nelle scene');
 const perAnni = story.scenes.badge.steps.find((s) => s.by === 'anni');
 assert.ok(perAnni, 'una battuta cambia in base agli anni');
 for (const k of ['0', '1', '2', '3']) {
@@ -551,6 +570,62 @@ assert.equal(VN.state.sfacciato, false);
   assert.ok($('npcBody').getAttribute('src').includes('chr_susan_commento_stile_ingegnere'),
     'la posa "commento_{stile}" si risolve sulla scelta');
   assert.match(txt(), /^Una che sembra sapere quello che dice/, 'commento dello stile giusto, declinato');
+}
+
+/* ---------- 5e. S4: dietro le quinte ----------
+   Qui succedono due cose per la prima volta: il giocatore entra in scena come
+   figura, e qualcuno parla senza esserci (Martha, dalla regia). */
+{
+  // Si entra da S3, non saltando direttamente qui: lo stile va scelto prima che
+  // la scena parta, perche' e' lui a decidere lo sprite del giocatore.
+  VN.clearSave();
+  VN.boot(story, { speed: 0, scene: 'camerino' });
+  VN.state.genere = 'f';
+  VN.step();                                                   // -> carosello
+  $('cnext').onclick({ stopPropagation() {} });                // Showman
+  $('carok').onclick({ stopPropagation() {} });
+  [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });
+  assert.equal(VN.state.stile, 'showman');
+  VN.step();                                                   // -> scena quinte
+
+  assert.equal(VN.sceneId, 'quinte', 'da S3 si passa a S4');
+  assert.ok($('ioImg').getAttribute('src').includes('stile_showman_idle_camerino'),
+    'il giocatore entra in scena con lo stile che ha scelto');
+  assert.match(txt(), /Studiato, vero\?/);
+  VN.step();
+  const scelte = [...$('choices').querySelectorAll('.ch')];
+  assert.equal(scelte.length, 2);
+  scelte[1].onclick({ stopPropagation() {} });                 // "No."
+  assert.equal(VN.state.studiato, false);
+  assert.match(txt(), /^Onesta\./, 'la risposta e\' declinata');
+  VN.step();
+
+  assert.ok($('avatar').classList.contains('on'), 'il giocatore e\' in scena');
+  assert.ok($('ioImg').getAttribute('src').includes('stile_showman_idle_palco'),
+    'con lo sprite dello stile scelto, non uno generico');
+  assert.ok($('npcBody').getAttribute('src').includes('chr_susan_spinta_in_scena'));
+  assert.match(txt(), /Non guardare in alto/);
+  VN.step();
+
+  // il sipario del palco e' lo stesso effetto della tenda della lobby
+  const sip = story.scenes.quinte.steps.find((s) => s.t === 'sipario');
+  assert.equal(sip.davanti, 'palco_sipario_chiuso');
+  assert.equal(sip.dietro, 'palco_platea_piena');
+  assert.ok($('bg').getAttribute('src').includes('palco_platea_piena'), 'si apre sul palco');
+
+  // Martha parla dalla regia: niente sprite in scena, icona e box di un altro colore
+  assert.equal($('nametxt').textContent, 'Martha');
+  assert.ok($('name').classList.contains('incuffia'), 'accanto al nome c\'e\' l\'auricolare');
+  assert.ok($('boxwrap').classList.contains('incuffia'), 'e il box cambia colore');
+  assert.ok($('voce').getAttribute('src').includes('chr_martha_indicatore_regia'));
+  assert.match(txt(), /sono Martha, regia/);
+  VN.step(); VN.step();
+  assert.match(txt(), /Quando sei pronta tu/, 'ultima riga, declinata');
+
+  // e quando riprende a parlare qualcuno che c'e' davvero, la cuffia sparisce
+  VN.boot(story, { speed: 0, scene: 'camerino' });
+  assert.equal($('name').classList.contains('incuffia'), false);
+  assert.equal($('boxwrap').classList.contains('incuffia'), false);
 }
 
 /* ---------- 5b. S1: hub della lobby a quattro zone ----------

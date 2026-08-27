@@ -97,9 +97,9 @@ scene** al nome giusto.
 |---|---|---|
 | `lucas` | Lucas | 2 pose collegate (`neutro`, `felice`, i nomi del prototipo). Il manifest ne descrive altre 3 già consegnate e **non ancora collegate**: `chr_lucas_idle`, `chr_lucas_indica_terminale` (più `chr_lucas_saluto`, `chr_lucas_pollice_su`, `chr_lucas_divertito`, mai disegnate) |
 | `francesca` | Francesca | 7 pose, tutte collegate |
-| `susan` | Susan | 12 pose collegate, comprese le 4 `commento_*` tagliate dal foglio `chr_susan_commento_stile` (ordine confermato dall'utente: 1 drip, 2 hawaiano, 3 showman, 4 ingegnere). Servono a S3, non ancora usate |
+| `susan` | Susan | 12 pose collegate, comprese le 4 `commento_*` (ordine confermato dall'utente: 1 drip, 2 hawaiano, 3 showman, 4 ingegnere), usate in S3 |
 | `peter` (ex `veterano`) | Peter | 6 pose collegate. Lo stato *dorme finché `locked` è falso, si sveglia dopo* **è modellato nella lobby** (zona 4, due varianti con `when`). La scena `quiz` resta la vecchia placeholder |
-| `martha` | Martha | Sprite consegnati (`chr_martha_indicatore_regia`, `chr_martha_ritratto_regia`) ma **non collegati e non usati in nessuna scena**. Il cast punta ancora a 3 file `@3x` mai disegnati. Il manifest la descrive come "nessun corpo, solo icona" — un'icona a 2 frame mostrata *accanto al box dialogo*, non un personaggio `show`/`say` normale. Serve un meccanismo diverso da quello usato per gli altri NPC, non ancora costruito |
+| `martha` | Martha | **Voce, non personaggio**: `voce: true` + `icona` a 2 frame, come chiede il manifest. Parla in S4 dalla regia — icona dell'auricolare accanto al nome e box di un altro colore, nessuno sprite in scena. I 3 file `@3x` del segnaposto non esistono più. `chr_martha_ritratto_regia` resta da collegare al finale (S7) |
 | `premi` | — | **Probabilmente da eliminare.** Non esiste un NPC "Premi" nel manifest: la sezione premi è gestita da Francesca in zona 3 (`chr_francesca_orgogliosa`). Nessuno sprite è mai stato consegnato per `premi`. Prima di cancellarlo controlla che la scena `premi` in `story.json` non serva ancora come segnaposto di flusso |
 
 ## Lo script master v4.0 e i due strati del lavoro
@@ -176,7 +176,8 @@ Ordine dei lavori e stato:
 | **S1 lobby** | **fatto**: hub a 4 zone con swipe, hotspot, zona 4 condizionata a `locked` |
 | **S2 l'aggancio** | **fatto**: scena `aggancio`, con il sipario della tenda e la carrellata di discesa |
 | **S3 camerino** | **fatto**: carosello dei 4 stili con perk e conferma irreversibile, commento di Susan per stile |
-| S4 → S8 | da fare |
+| **S4 dietro le quinte** | **fatto**: il giocatore entra in scena (step `io`), il sipario del palco riusa lo step di S2, Martha entra come voce in cuffia |
+| S5 → S8 | da fare |
 
 I quattro stili vivono in **`story.stili`**, non dentro la scena: nome,
 descrizione, perk e le 11 pose di ciascuno. È la stessa tabella che serviranno
@@ -218,6 +219,19 @@ chi altro scrive `animation` su quel nodo.
 prende**. Si vedono solo negli screenshot. I test che li presidiano fissano
 l'invariante ("il fondale scorre, il personaggio no"; "la classe micro non resta
 addosso"), non l'effetto visivo.
+
+## Chi c'è in scena e chi parla soltanto
+
+L'inquadratura ha due posti fissi: **il giocatore a sinistra** (`#avatar`, step
+`io`, sprite dello stile scelto in S3) e **gli NPC a destra** (`#npc`, step
+`show`). Da S4 in poi i due condividono la scena, e per questo il vecchio
+carosello degli avatar componibili è stato **eliminato**: era l'unico altro
+pezzo di codice che scriveva su `#avatar`, e due sistemi sullo stesso nodo si
+sarebbero pestati i piedi come già successo con le animazioni.
+
+Un personaggio può anche essere una **voce** (`voce: true` + `icona` a 2
+frame): niente sprite, l'icona lampeggia accanto al nome e il box cambia
+colore. È il caso di Martha, che parla dalla regia.
 
 ## Non tutti gli sprite si mostrano alla stessa misura
 

@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "FantaLiberty — Nexus",
-    "version": "0.7.0",
+    "version": "0.8.0",
     "start": "arrivo",
     "assetBase": "assets/",
     "genderVar": "genere",
@@ -23,7 +23,10 @@
       "lobby_z3_premi": "bg/bg_lobby_z3_premi.webp",
       "lobby_z4_quiz_bloccata": "bg/bg_lobby_z4_quiz_bloccata.webp",
       "lobby_z4_quiz_aperta": "bg/bg_lobby_z4_quiz_aperta.webp",
-      "sala_teatro": "bg/bg_sala_teatro.webp"
+      "sala_teatro": "bg/bg_sala_teatro.webp",
+      "dietro_le_quinte": "bg/bg_dietro_le_quinte.webp",
+      "palco_sipario_chiuso": "bg/bg_palco_sipario_chiuso.webp",
+      "palco_platea_piena": "bg/bg_palco_platea_piena.webp"
     },
     "props": {
       "mac_terminale": "props/prop_mac_terminale.webp",
@@ -82,20 +85,14 @@
     },
     "martha": {
       "name": "Martha",
-      "defaultBody": "in_piedi",
-      "defaultHead": "neutro",
-      "neck": {
-        "x": "50%",
-        "y": "3%",
-        "w": "32%"
-      },
-      "bodies": {
-        "in_piedi": "chars/chr_martha_corpo_in_piedi@3x.webp"
-      },
-      "heads": {
-        "neutro": "chars/chr_martha_testa_neutro@3x.webp",
-        "positivo": "chars/chr_martha_testa_positivo@3x.webp"
-      }
+      "voce": true,
+      "icona": [
+        "chars/chr_martha_indicatore_regia_1.webp",
+        "chars/chr_martha_indicatore_regia_2.webp"
+      ],
+      "bodies": {},
+      "heads": {},
+      "_nota": "Nel manifest: 'nessun corpo, solo icona'. Parla dalla regia, quindi niente sprite in scena — accanto al nome lampeggia l'auricolare a due frame e il box cambia colore. chr_martha_ritratto_regia serve solo al finale (S7), in un riquadro stile monitor."
     },
     "peter": {
       "name": "Peter",
@@ -142,7 +139,8 @@
     "stile": null,
     "locked": false,
     "__ok": "",
-    "sfacciato": false
+    "sfacciato": false,
+    "studiato": null
   },
   "scenes": {
     "arrivo": {
@@ -757,6 +755,107 @@
             "ingegnere": "{g:Uno|Una} che sembra sapere quello che dice. Basta e avanza.",
             "*": "Bene. Adesso muoviti, che ci aspettano."
           }
+        }
+      ],
+      "next": "quinte"
+    },
+    "quinte": {
+      "title": "S4 — Dietro le quinte",
+      "bg": "dietro_le_quinte",
+      "dissolvenza": true,
+      "steps": [
+        {
+          "t": "hide"
+        },
+        {
+          "t": "io",
+          "posa": "idle_camerino"
+        },
+        {
+          "t": "show",
+          "who": "susan",
+          "body": "indica_camerino",
+          "_nota": "Lo script segnala il buco: non esiste uno sprite 'Susan infila l'auricolare'. indica_camerino e' il segnaposto che indica lui stesso."
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "text": "Studiato, vero?"
+        },
+        {
+          "t": "choice",
+          "who": "susan",
+          "var": "studiato",
+          "text": "Studiato, vero?",
+          "options": [
+            {
+              "label": "Certo.",
+              "value": true
+            },
+            {
+              "label": "No.",
+              "value": false
+            }
+          ]
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "by": "studiato",
+          "text": {
+            "true": "Che {g:bugiardo|bugiarda}. Adoro, sei gia' nel personaggio.",
+            "false": "{g:Onesto|Onesta}. Sara' un problema tuo, non mio. Vai."
+          }
+        },
+        {
+          "t": "io",
+          "posa": "idle_palco"
+        },
+        {
+          "t": "show",
+          "who": "susan",
+          "body": "spinta_in_scena"
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "text": "Le luci sono calde. Non guardare in alto. Vai."
+        },
+        {
+          "t": "hide"
+        },
+        {
+          "t": "bg",
+          "id": "palco_sipario_chiuso"
+        },
+        {
+          "t": "wait",
+          "ms": 500
+        },
+        {
+          "t": "sipario",
+          "davanti": "palco_sipario_chiuso",
+          "dietro": "palco_platea_piena",
+          "ms": 2000
+        },
+        {
+          "t": "wait",
+          "ms": 400
+        },
+        {
+          "t": "say",
+          "who": "martha",
+          "text": "Ciao, sono Martha, regia. Ti sento bene, tu senti me."
+        },
+        {
+          "t": "say",
+          "who": "martha",
+          "text": "Non esistono risposte sbagliate. Esistono solo risposte che qualcuno ha raccontato con poca sicurezza."
+        },
+        {
+          "t": "say",
+          "who": "martha",
+          "text": "Quando sei {g:pronto|pronta} tu."
         }
       ],
       "next": "backstage"
