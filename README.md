@@ -179,8 +179,10 @@ Poi:
 2. `npm test` verifica che ogni asset referenziato esista davvero.
 3. `npm run bump` prima di pubblicare.
 
-I sorgenti pesanti tienili fuori dal repo (Drive, iCloud, Notion): servono solo a
-rigenerare, il gioco non li carica mai.
+I sorgenti pesanti non vanno committati: servono solo a rigenerare, il gioco non li
+carica mai. Tienili dove preferisci (Drive, iCloud, Scrivania) oppure, se e' comodo
+averli a portata di mano, in una cartella `_sorgenti/` dentro il repo: e' nel
+`.gitignore`, quindi Git la ignora e non rischi di caricare 200 MB di PNG per sbaglio.
 
 **`optimize_assets.py` e' un'altra cosa**: ricomprime *sul posto* file gia' dentro
 `assets/` (resize + quantizzazione a 64 colori con alpha preservato), utile per
