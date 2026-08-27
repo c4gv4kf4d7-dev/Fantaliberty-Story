@@ -246,6 +246,20 @@ carica mai. Tienili dove preferisci (Drive, iCloud, Scrivania) oppure, se e' com
 averli a portata di mano, in una cartella `_sorgenti/` dentro il repo: e' nel
 `.gitignore`, quindi Git la ignora e non rischi di caricare 200 MB di PNG per sbaglio.
 
+Se uno sprite ha il **contorno a scaletta** ("ritagliato male"), la causa e' quasi
+sempre l'alpha binaria: solo 0 o 255, nessuna sfumatura, quindi ogni bordo curvo o
+diagonale diventa un gradino netto — e si nota ancora di piu' perche' il gioco
+mostra le immagini rimpicciolite.
+
+```bash
+python3 tools/ammorbidisci_bordi.py --controlla     # chi ne ha bisogno
+python3 tools/ammorbidisci_bordi.py assets/props/prop_mac_terminale.webp
+```
+
+Sbava il colore dei bordi verso l'esterno (senza, riaffiora il bianco del vecchio
+sfondo come un alone) e poi sfuma solo l'alpha: l'interno resta pixel art nitida.
+Salta da solo gli sprite gia' a posto, quindi si puo' lanciare su una cartella intera.
+
 **`optimize_assets.py` e' un'altra cosa**: ricomprime *sul posto* file gia' dentro
 `assets/` (resize + quantizzazione a 64 colori con alpha preservato), utile per
 alleggerire la build single-file. Salta le cartelle `_originali/` proprio perche'

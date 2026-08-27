@@ -14,7 +14,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"
       media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="./game/engine.css?v=19">
+<link rel="stylesheet" href="./game/engine.css?v=20">
 </head>
 <body>
 <div id="stage">
@@ -72,7 +72,7 @@
   </div>
 </div>
 
-<script src="./game/engine.js?v=19"></script>
+<script src="./game/engine.js?v=20"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -133,7 +133,7 @@
   // in quel caso non serve nessuna richiesta HTTP e il gioco gira anche da file://
   if (window.STORY_INLINE) return start(window.STORY_INLINE);
 
-  fetch('./game/story.json?v=19', { cache: 'no-cache' })
+  fetch('./game/story.json?v=20', { cache: 'no-cache' })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(start)
     .catch(function (e) {
