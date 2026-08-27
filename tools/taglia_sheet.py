@@ -39,6 +39,59 @@ except ImportError:
     sys.exit("Serve Pillow: pip install pillow")
 
 
+def bande(im, verso):
+    """Trova i pezzi separati da spazi trasparenti, invece di dividere in parti
+    uguali. Serve per i fogli esportati con un margine fra un frame e l'altro:
+    li' le dimensioni non si dividono in modo esatto e il taglio a griglia
+    sbaglierebbe di qualche pixel su ogni pezzo."""
+    import numpy as np
+    alpha = np.array(im.convert("RGBA"))[..., 3] > 8
+    pieno = alpha.any(axis=1) if verso == "righe" else alpha.any(axis=0)
+    tagli, dentro, inizio = [], False, 0
+    for i, v in enumerate(pieno):
+        if v and not dentro:
+            dentro, inizio = True, i
+        elif not v and dentro:
+            dentro = False
+            if i - inizio > 4:
+                tagli.append((inizio, i))
+    if dentro:
+        tagli.append((inizio, len(pieno)))
+    return tagli
+
+
+def taglia_bande(sorgente, verso, nomi, prova):
+    base_dir = os.path.dirname(os.path.abspath(sorgente))
+    base_nome = os.path.splitext(os.path.basename(sorgente))[0]
+    im = Image.open(sorgente).convert("RGBA")
+    w, h = im.size
+    tratti = bande(im, verso)
+
+    if nomi and len(nomi) != len(tratti):
+        print("  ! %s: trovate %d bande ma --nomi ne elenca %d."
+              % (os.path.basename(sorgente), len(tratti), len(nomi)))
+        for i, (a, b) in enumerate(tratti):
+            print("      banda %d: %d-%d (%d px)" % (i + 1, a, b, b - a))
+        return []
+
+    pezzi = []
+    for i, (a, b) in enumerate(tratti):
+        box = (0, a, w, b) if verso == "righe" else (a, 0, b, h)
+        ritaglio = im.crop(box)
+        suffisso = nomi[i] if nomi else str(i + 1)
+        percorso = os.path.join(base_dir, "%s_%s.png" % (base_nome, suffisso))
+        pezzi.append((percorso, ritaglio.size))
+        if not prova:
+            ritaglio.save(percorso, "PNG")
+
+    print("  %s  (%dx%d)  ->  %d bande per %s%s"
+          % (os.path.basename(sorgente), w, h, len(pezzi), verso,
+             "   [prova: non scritto]" if prova else ""))
+    for percorso, dim in pezzi:
+        print("    %s  %s" % (os.path.basename(percorso), dim))
+    return pezzi
+
+
 def taglia(sorgente, righe, colonne, nomi, prova):
     base_dir = os.path.dirname(os.path.abspath(sorgente))
     base_nome = os.path.splitext(os.path.basename(sorgente))[0]
@@ -103,22 +156,30 @@ def main():
                     help="un suffisso per pezzo, letto riga per riga da sinistra "
                          "a destra (es. neutro sicuro sorpreso indifficolta). "
                          "Senza, i pezzi si chiamano _1, _2, ...")
+    ap.add_argument("--auto", choices=["righe", "colonne"],
+                    help="trova i pezzi dagli spazi trasparenti invece di dividere "
+                         "in parti uguali: serve quando il foglio ha margini fra un "
+                         "frame e l'altro e le dimensioni non si dividono esatte")
     ap.add_argument("--prova", action="store_true",
                     help="mostra i tagli senza scrivere ne' spostare nulla")
     args = ap.parse_args()
 
+    if args.auto and (args.pezzi or args.righe or args.colonne):
+        ap.error("--auto trova i pezzi da solo: non passare anche --pezzi/--righe/--colonne")
     if args.pezzi and (args.righe or args.colonne):
         ap.error("--pezzi e --righe/--colonne sono alternativi: --pezzi e' gia' "
                   "una griglia a 1 riga")
-    if args.pezzi:
+    if args.auto:
+        righe = colonne = None
+    elif args.pezzi:
         righe, colonne = 1, args.pezzi
     elif args.righe and args.colonne:
         righe, colonne = args.righe, args.colonne
     else:
-        ap.error("serve --pezzi N, oppure --righe R --colonne C")
+        ap.error("serve --pezzi N, --righe R --colonne C, oppure --auto righe|colonne")
 
-    totale_pezzi = righe * colonne
-    if args.nomi and len(args.nomi) != totale_pezzi:
+    totale_pezzi = None if args.auto else righe * colonne
+    if totale_pezzi and args.nomi and len(args.nomi) != totale_pezzi:
         ap.error("--nomi ne elenca %d, ma la griglia fa %d pezzi (%d righe x %d colonne)"
                   % (len(args.nomi), totale_pezzi, righe, colonne))
 
@@ -127,7 +188,8 @@ def main():
         if not os.path.isfile(s):
             print("  ! non trovato: %s" % s)
             continue
-        pezzi = taglia(s, righe, colonne, args.nomi, args.prova)
+        pezzi = (taglia_bande(s, args.auto, args.nomi, args.prova) if args.auto
+                 else taglia(s, righe, colonne, args.nomi, args.prova))
         if pezzi:
             almeno_uno = True
             sposta_originale(s, args.prova)
