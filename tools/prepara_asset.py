@@ -30,16 +30,18 @@ except ImportError:
 
 # dove finisce ogni tipo di asset e oltre quale lato lungo conviene ridimensionare.
 #
-# Questi sono TETTI, non bersagli: servono a fermare un export da 4000 px, non a
-# rimpicciolire l'arte che gia' funziona. Sono scelti sopra le dimensioni di tutto
-# quello che oggi e' nel repo (il fondale piu' grande e' 1520), cosi' la conversione
-# cambia il peso e non la resa. Il gioco e' 390x844 pt: 1688 e' il 2x pieno.
+# Questi sono TETTI DI SICUREZZA, non bersagli: fermano un export da 6000 px, non
+# rimpiccioliscono l'arte buona. Il guadagno vero viene dal WebP (4-170x), non dal
+# ridimensionamento, quindi in dubbio si preferisce non toccare i pixel.
+# Il gioco e' 390x844 pt: a 3x un personaggio a tutta altezza sta in 2532, ed e'
+# la scala con cui sono nominati gli sprite (@3x). 2560 li lascia intatti.
+# Quando un tetto scatta davvero, lo script lo dice a schermo.
 TIPI = {
-    "bg":     {"dir": "assets/bg",     "lato": 1688, "alpha": False, "prefisso": "bg_"},
-    "chars":  {"dir": "assets/chars",  "lato": 1400, "alpha": True,  "prefisso": "chr_"},
-    "props":  {"dir": "assets/props",  "lato": 1400, "alpha": True,  "prefisso": "prop_"},
-    "avatar": {"dir": "assets/avatar", "lato": 800,  "alpha": True,  "prefisso": "avt_"},
-    "ui":     {"dir": "assets/ui",     "lato": 1400, "alpha": True,  "prefisso": ""},
+    "bg":     {"dir": "assets/bg",     "lato": 2560, "alpha": False, "prefisso": "bg_"},
+    "chars":  {"dir": "assets/chars",  "lato": 2560, "alpha": True,  "prefisso": "chr_"},
+    "props":  {"dir": "assets/props",  "lato": 2560, "alpha": True,  "prefisso": "prop_"},
+    "avatar": {"dir": "assets/avatar", "lato": 1200, "alpha": True,  "prefisso": "avt_"},
+    "ui":     {"dir": "assets/ui",     "lato": 1600, "alpha": True,  "prefisso": ""},
 }
 
 
@@ -71,7 +73,8 @@ def prepara(sorgente, tipo, qualita, lato_max, pixel_art, nome_forzato, prova, r
     dim_prima = im.size
 
     lato = lato_max or cfg["lato"]
-    if max(im.size) > lato:
+    ridotto = max(im.size) > lato
+    if ridotto:
         r = lato / float(max(im.size))
         nuova = (max(1, round(im.size[0] * r)), max(1, round(im.size[1] * r)))
         # la pixel art va scalata a blocchi netti, un'illustrazione no
@@ -95,6 +98,9 @@ def prepara(sorgente, tipo, qualita, lato_max, pixel_art, nome_forzato, prova, r
           % (dim_prima, kb(prima), im.size, kb(dopo), prima / float(max(dopo, 1))))
     print("    %s%s" % (os.path.relpath(destinazione, radice),
                         "   [prova: non scritto]" if prova else ""))
+    if ridotto:
+        print("    ATTENZIONE: ridimensionato, il lato lungo superava %d px."
+              " Usa --lato per alzare il tetto." % lato)
     return dopo
 
 
