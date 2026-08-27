@@ -234,5 +234,30 @@ $('ti').value = 'Luca'; $('ti').oninput(); $('tok').onclick();
 [...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // <1 anno
 assert.match(txt(), /^Ecco il tuo badge, LUCA\./, 'percorso rapido fino al badge');
 
+/* ---------- 7. bug: tap durante la scrittura non deve bloccare il gioco ----------
+   Con speed:0 (test 3-6 sopra) il typewriter e' gia' bypassato e non lo si vede
+   mai scrivere: serve una run con velocita' reale per riprodurre il bug.
+   Non servono timer veri: type() imposta typing=true in modo sincrono PRIMA di
+   avviare l'animazione (il tick parte su requestAnimationFrame, mai nello stesso
+   giro), quindi un secondo VN.step() chiamato subito dopo l'inizio dello step
+   "say" e' indistinguibile, per il motore, da un tap arrivato mentre la riga si
+   sta ancora scrivendo. */
+{
+  const dom2 = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://fantaliberty.com/' });
+  dom2.window.eval(fs.readFileSync(path.join(ROOT, 'game/engine.js'), 'utf8'));
+  const { VN: VN2, document: doc2 } = dom2.window;
+  const $2 = (id) => doc2.getElementById(id);
+
+  VN2.boot(story, { speed: 30, scene: 'quiz' });          // hide+show sono istantanei,
+  // il motore e' gia' fermo sullo step "say" successivo, a meta' della scrittura
+  VN2.step();                                             // tap #1: skip, mostra la riga intera
+  const dopoSkip = $2('txt').textContent;
+  assert.match(dopoSkip, /2007/, 'skip mostra subito la riga intera');
+
+  VN2.step();                                             // tap #2: deve avanzare allo step dopo
+  assert.notEqual($2('txt').textContent, dopoSkip,
+    'bug: un tap durante la scrittura lasciava "pending" vuoto per sempre e il gioco restava fermo sulla riga');
+}
+
 if (todoAssets.size) console.log(`asset ancora da disegnare (${todoAssets.size}):`, [...todoAssets].join(', '));
 console.log('smoke test: OK');

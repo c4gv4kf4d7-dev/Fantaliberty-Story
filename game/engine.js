@@ -402,7 +402,15 @@
       case 'say':
         el.boxwrap.classList.add('in');
         setSpeaker(st.who);
-        type(fmt(testoDi(st)), function () { pending = next; el.arrow.style.opacity = 1; });
+        // revealUI duplica il completamento di type(): se il tap arriva PRIMA che
+        // il typewriter finisca da solo, skip() cancella il tick in corso e la sua
+        // callback (quella su type()) non parte mai. Senza questa copia, "pending"
+        // restava null per sempre e il gioco si bloccava sulla riga (bug: tap
+        // durante la scrittura -> game freeze). choice/input/avatar gia' se ne
+        // proteggevano cosi'; a "say" mancava.
+        var avanzaSay = function () { pending = next; el.arrow.style.opacity = 1; };
+        type(fmt(testoDi(st)), avanzaSay);
+        revealUI = avanzaSay;
         return;
 
       case 'choice':
