@@ -12,6 +12,8 @@ game/
   engine.css            stile pixel-art + animazioni (@keyframes, non transition)
   engine.js             motore VN data-driven (state machine, ~350 righe)
   story.json            SCRIPT DEL GIOCO: scene, battute, scelte, asset  <- si edita qui
+  domande.json          banca pronostici [S5]: 29 domande, 316 battute (una per stile)
+  quiz.json             quiz di Peter [S8]: 44 domande, due pool per livello
 assets/
   bg/                   sfondi
   chars/                sprite personaggi (un file per espressione)
@@ -19,6 +21,10 @@ assets/
 tools/
   optimize_assets.py    resize + quantizzazione colore (Pillow)
   build_single_file.py  compila tutto in dist/nexus_game.html (asset inline base64)
+docs/
+  script-master.md      DOCUMENTO UNICO di riferimento: scene S0B-S8, formule
+  manifest-asset.md     quale file grafico serve in quale scena
+  indice-domande.md     indice degli id, rigenerato da `npm run indice`
 tests/smoke.mjs         smoke test headless con jsdom
 archivio/wwdc26/        edizione precedente (classifica, previsioni, pagina di manutenzione)
 ```
@@ -27,6 +33,7 @@ archivio/wwdc26/        edizione precedente (classifica, previsioni, pagina di m
 
 ```bash
 npm run bump       # alza ?v= sugli asset: obbligatorio prima di pubblicare
+npm run indice     # rigenera docs/indice-domande.md dalla banca domande
 npm run serve      # http://localhost:8080  (serve un web server: story.json via fetch)
 npm install        # solo per i test
 npm test           # smoke test del flusso: input -> variabili -> scene

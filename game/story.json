@@ -125,7 +125,12 @@
     "nome": "",
     "genere": null,
     "anni": null,
-    "punti": 0
+    "punti": 0,
+    "store": null,
+    "reparto": null,
+    "device": null,
+    "stile": null,
+    "__ruolo": ""
   },
   "scenes": {
     "arrivo": {
@@ -197,14 +202,48 @@
           }
         },
         {
+          "key": "STORE:",
+          "var": "store",
+          "map": {
+            "liberty": "LIBERTY",
+            "carosello": "CAROSELLO",
+            "fiordaliso": "FIORDALISO"
+          }
+        },
+        {
+          "key": "REPARTO:",
+          "var": "reparto",
+          "map": {
+            "operation": "OPERATION",
+            "support": "SUPPORT",
+            "shopping": "SHOPPING",
+            "leadership": "LEADERSHIP",
+            "people": "PEOPLE"
+          }
+        },
+        {
           "key": "ANNI:",
           "var": "anni",
           "map": {
-            "0": "<1",
-            "1": "1-5",
-            "2": "5-10",
-            "3": "10+"
+            "0": "0-1",
+            "1": "2-3",
+            "2": "4-7",
+            "3": "8+"
           }
+        },
+        {
+          "key": "IPHONE:",
+          "var": "device",
+          "map": {
+            "17": "17",
+            "16": "16",
+            "15": "15",
+            "vecchio": "14 O PREC."
+          }
+        },
+        {
+          "key": "RUOLO:",
+          "var": "__ruolo"
         },
         {
           "key": "",
@@ -258,30 +297,107 @@
         {
           "t": "choice",
           "who": "lucas",
-          "var": "anni",
-          "text": "Annotato. E da quanto tempo lavori in Apple?",
+          "var": "store",
+          "text": "Annotato. In che store lavori?",
           "options": [
             {
-              "label": "Meno di 1 anno",
+              "label": "Piazza Liberty",
+              "value": "liberty"
+            },
+            {
+              "label": "Carosello",
+              "value": "carosello"
+            },
+            {
+              "label": "Fiordaliso",
+              "value": "fiordaliso"
+            }
+          ]
+        },
+        {
+          "t": "choice",
+          "who": "lucas",
+          "var": "reparto",
+          "text": "E in che dipartimento?",
+          "options": [
+            {
+              "label": "Operation",
+              "value": "operation"
+            },
+            {
+              "label": "Support",
+              "value": "support"
+            },
+            {
+              "label": "Shopping",
+              "value": "shopping"
+            },
+            {
+              "label": "Leadership",
+              "value": "leadership"
+            },
+            {
+              "label": "People",
+              "value": "people"
+            }
+          ]
+        },
+        {
+          "t": "choice",
+          "who": "lucas",
+          "var": "anni",
+          "text": "Da quanto tempo lavori in Apple?",
+          "options": [
+            {
+              "label": "0-1 anni",
               "say": "Meno di un anno",
               "value": "0"
             },
             {
-              "label": "Da 1 a 5 anni",
-              "say": "Da 1 a 5 anni",
+              "label": "2-3 anni",
+              "say": "Due o tre anni",
               "value": "1"
             },
             {
-              "label": "Da 5 a 10 anni",
-              "say": "Da 5 a 10 anni",
+              "label": "4-7 anni",
+              "say": "Dai quattro ai sette anni",
               "value": "2"
             },
             {
-              "label": "Piu' di 10 anni",
-              "say": "Piu' di 10 anni",
+              "label": "8 anni o piu'",
+              "say": "Otto anni o piu'",
               "value": "3"
             }
           ]
+        },
+        {
+          "t": "choice",
+          "who": "lucas",
+          "var": "device",
+          "text": "Ultima cosa: che iPhone usi?",
+          "options": [
+            {
+              "label": "iPhone 17 / 17 Pro",
+              "value": "17"
+            },
+            {
+              "label": "iPhone 16 / 16 Pro",
+              "value": "16"
+            },
+            {
+              "label": "iPhone 15 / 15 Pro",
+              "value": "15"
+            },
+            {
+              "label": "iPhone 14 o precedente",
+              "value": "vecchio"
+            }
+          ]
+        },
+        {
+          "t": "set",
+          "var": "__ruolo",
+          "value": "OSPITE"
         },
         {
           "t": "set",
@@ -577,8 +693,8 @@
           "text": {
             "0": "Primo anno, eh? Allora questo e' il tuo primo Keynote. Guardati intorno stasera: e' una cosa che ti ricordi per sempre.",
             "1": "Qualche anno alle spalle: abbastanza per sapere come gira, non abbastanza da {g:esserti stufato|esserti stufata|averne abbastanza}. Il momento migliore, secondo me.",
-            "2": "Cinque, dieci anni... tu i Keynote li hai gia' visti. Ma da qui dentro e' un'altra storia, fidati.",
-            "3": "Piu' di dieci anni. Tu c'eri quando certe cose le annunciavano ancora su un palco piccolo. Stasera goditela.",
+            "2": "Qualche anno sul campo: i Keynote li hai gia' visti. Ma da qui dentro e' un'altra storia, fidati.",
+            "3": "Otto anni o piu'. Tu c'eri quando certe cose le annunciavano ancora su un palco piccolo. Stasera goditela.",
             "*": "Comunque sia andata finora, stasera si riparte da zero come tutti."
           }
         },
