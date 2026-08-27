@@ -28,7 +28,7 @@ function partOf(who, kind, id) {
   const c = story.cast?.[who];
   return c && id ? c[kind]?.[id] : undefined;
 }
-const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'avatar', 'show', 'hide', 'prop', 'bg', 'react', 'fx', 'wait', 'set', 'goto', 'end']);
+const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'avatar', 'show', 'hide', 'prop', 'bg', 'react', 'fx', 'wait', 'set', 'goto', 'end']);
 assert.ok(story.scenes[story.meta.start], 'meta.start punta a una scena esistente');
 
 for (const [id, sc] of Object.entries(story.scenes)) {
@@ -49,6 +49,15 @@ for (const [id, sc] of Object.entries(story.scenes)) {
     if (st.t === 'prop' && st.id) assert.ok(story.assets.props[st.id], `scena ${id}: prop "${st.id}" dichiarato`);
     if (st.t === 'goto') assert.ok(story.scenes[st.scene], `scena ${id}: goto "${st.scene}" esiste`);
     if (st.t === 'choice') assert.ok(st.options?.length, `scena ${id}: choice senza opzioni`);
+    if (st.t === 'list') {
+      const opz = (st.gruppi || []).flatMap((g) => g.opzioni || []).concat(st.options || []);
+      assert.ok(opz.length, `scena ${id}: list senza opzioni`);
+      assert.ok(st.var, `scena ${id}: list senza variabile in cui salvare`);
+    }
+    if (st.t === 'badge') {
+      assert.ok(st.prop || st.img, `scena ${id}: badge senza immagine`);
+      if (st.prop) assert.ok(story.assets.props[st.prop], `scena ${id}: prop "${st.prop}" dichiarato`);
+    }
     if (st.t === 'title') assert.ok(st.lines?.length, `scena ${id}: title senza righe`);
   }
 }
@@ -76,10 +85,21 @@ for (const [id, sc] of Object.entries(story.scenes)) {
 const base = story.meta.assetBase || '';
 const onDisk = (rel) => fs.existsSync(path.join(ROOT, base + rel));
 
+// Fondali e oggetti devono esistere sul disco: un percorso sbagliato qui e' un
+// errore, non un lavoro in corso. L'unica eccezione sono i file dichiarati in
+// meta.assetiInArrivo — arte gia' disegnata ma non ancora convertita e caricata:
+// vengono elencati come "da caricare" invece di far fallire il test, e il motore
+// disegna un ripiego al posto loro.
+const inArrivo = new Set(story.meta.assetiInArrivo || []);
 for (const kind of ['bg', 'props']) {
   for (const rel of Object.values(story.assets[kind] || {})) {
+    if (inArrivo.has(rel)) { if (!onDisk(rel)) todoAssets.add(rel + ' (da convertire)'); continue; }
     assert.ok(onDisk(rel), `asset mancante: ${base + rel}`);
   }
+}
+for (const rel of inArrivo) {
+  assert.ok(Object.values(story.assets).some((m) => Object.values(m).includes(rel)),
+    `meta.assetiInArrivo elenca "${rel}" che nessuna scena usa: toglilo`);
 }
 for (const [who, c] of Object.entries(story.cast || {})) {
   for (const kind of ['bodies', 'heads']) {
@@ -180,26 +200,45 @@ assert.match(txt(), /in che dipartimento/);
 assert.equal(VN.state.reparto, 'shopping');
 assert.equal($('tval_reparto').textContent, 'SHOPPING');
 
-// scelta anzianita' (fasce dello script master: 0-1 / 2-3 / 4-7 / 8+)
+// scelta anzianita' (fasce: 0-2 / 3-7 / 8-12 / 12+)
 assert.match(txt(), /quanto tempo lavori in Apple/);
-[...$('choices').querySelectorAll('.ch')][2].onclick({ stopPropagation() {} });   // 4-7 anni
+[...$('choices').querySelectorAll('.ch')][2].onclick({ stopPropagation() {} });   // 8-12 anni
 assert.equal(VN.state.anni, '2');
-assert.equal($('tval_anni').textContent, '4-7');
+assert.equal($('tval_anni').textContent, '8-12');
 
-// iPhone in uso (campo aggiunto dallo script master v4.0)
+// iPhone in uso: lista a tendina, 32 modelli, non bottoni
 assert.match(txt(), /che iPhone usi/);
-[...$('choices').querySelectorAll('.ch')][1].onclick({ stopPropagation() {} });   // iPhone 16
-assert.equal(VN.state.device, '16');
-assert.equal($('tval_device').textContent, '16');
-assert.equal($('tval___ruolo').textContent, 'OSPITE', 'il badge stampa il ruolo');
+assert.ok($('listform').classList.contains('on'), 'la lista a tendina e\' aperta');
+const modelli = [...$('tsel').querySelectorAll('option')].filter((o) => o.value);
+assert.equal(modelli.length, 32, 'la lista completa dell\'edizione WWDC26');
+assert.ok($('tsel').querySelectorAll('optgroup').length >= 8, 'modelli raggruppati per generazione');
+$('tsel').value = '16 Pro';
+$('tsel').onchange();
+$('tselok').onclick({ stopPropagation() {} });
+assert.equal(VN.state.device, '16 Pro');
+// niente controllo su tval_device: appena scelto il modello parte lo step badge,
+// che sostituisce le righe del terminale con la tessera stampata (verificata sotto)
+// il modello scelto adatta il layout: 16 Pro -> 6.3", fascia "lg"
+assert.ok(document.body.classList.contains('disp-lg'),
+  'il modello di iPhone applica la classe di layout al body');
+
+// il terminale resta la lista dei campi: il badge non si stampa piu' li'
+const term = [...$('screen').querySelectorAll('.frow')].map((d) => d.textContent);
+assert.match(term[0], /NOME: FRANCO/, 'il terminale mostra i campi compilati');
 assert.equal($('tval___ok').textContent, '> BADGE IN STAMPA');
 
 // scena benvenuto: variante di genere femminile + sprite happy
 assert.match(txt(), /^Ecco il tuo badge, FRANCO\./, 'Lucas consegna il badge');
 assert.ok($('npcBody').getAttribute('src').includes('chr_lucas_felice'), 'posa felice dopo il flash');
 
-VN.step();
-assert.match(txt(), /Qualche anno sul campo/, 'Lucas commenta la fascia di anzianita\' scelta');
+// Lucas consegna il badge: oggetto a schermo, con sopra il nome del giocatore
+VN.step();                                              // tap sulla battuta
+assert.ok($('badgewrap').classList.contains('in'), 'il badge compare');
+assert.equal($('badgeName').textContent, 'FRANCO', 'sul badge c\'e\' il nome, e basta');
+VN.step();                                              // tap: via il badge
+assert.equal($('badgewrap').classList.contains('in'), false, 'il badge sparisce al tap');
+
+assert.match(txt(), /otto ai dodici anni/, 'Lucas commenta la fascia di anzianita\' scelta');
 VN.step();
 assert.match(txt(), /^Benvenuta allo Steve Jobs Theater\./, 'variante di genere');
 
@@ -253,8 +292,9 @@ const scegli = (i) => [...$('choices').querySelectorAll('.ch')][i].onclick({ sto
 scegli(0);   // maschile
 scegli(0);   // store: Piazza Liberty
 scegli(0);   // dipartimento: Operation
-scegli(0);   // anzianita': 0-1 anni
-scegli(0);   // iPhone 17
+scegli(0);   // anzianita': 0-2 anni
+$('tsel').value = '17'; $('tsel').onchange(); $('tselok').onclick({ stopPropagation() {} });
+VN.step();   // via il badge stampato
 assert.match(txt(), /^Ecco il tuo badge, LUCA\./, 'percorso rapido fino al badge');
 
 /* ---------- 7. bug: tap durante la scrittura non deve bloccare il gioco ----------

@@ -10,7 +10,10 @@
       "f",
       "x"
     ],
-    "note": "Formato: iPhone portrait 390x844. Il terzo inferiore e' area dialogo."
+    "note": "Formato: iPhone portrait 390x844. Il terzo inferiore e' area dialogo.",
+    "assetiInArrivo": [
+      "props/prop_badge.webp"
+    ]
   },
   "assets": {
     "bg": {
@@ -21,7 +24,8 @@
       "sala_teatro": "bg/bg_sala_teatro.webp"
     },
     "props": {
-      "mac_terminale": "props/prop_mac_terminale.webp"
+      "mac_terminale": "props/prop_mac_terminale.webp",
+      "badge": "props/prop_badge.webp"
     },
     "chars": {}
   },
@@ -130,7 +134,7 @@
     "reparto": null,
     "device": null,
     "stile": null,
-    "__ruolo": ""
+    "__ok": ""
   },
   "scenes": {
     "arrivo": {
@@ -225,25 +229,15 @@
           "key": "ANNI:",
           "var": "anni",
           "map": {
-            "0": "0-1",
-            "1": "2-3",
-            "2": "4-7",
-            "3": "8+"
+            "0": "0-2",
+            "1": "3-7",
+            "2": "8-12",
+            "3": "12+"
           }
         },
         {
           "key": "IPHONE:",
-          "var": "device",
-          "map": {
-            "17": "17",
-            "16": "16",
-            "15": "15",
-            "vecchio": "14 O PREC."
-          }
-        },
-        {
-          "key": "RUOLO:",
-          "var": "__ruolo"
+          "var": "device"
         },
         {
           "key": "",
@@ -349,55 +343,236 @@
           "text": "Da quanto tempo lavori in Apple?",
           "options": [
             {
-              "label": "0-1 anni",
-              "say": "Meno di un anno",
+              "label": "0-2 anni",
+              "say": "Da zero a due anni",
               "value": "0"
             },
             {
-              "label": "2-3 anni",
-              "say": "Due o tre anni",
+              "label": "3-7 anni",
+              "say": "Dai tre ai sette anni",
               "value": "1"
             },
             {
-              "label": "4-7 anni",
-              "say": "Dai quattro ai sette anni",
+              "label": "8-12 anni",
+              "say": "Dagli otto ai dodici anni",
               "value": "2"
             },
             {
-              "label": "8 anni o piu'",
-              "say": "Otto anni o piu'",
+              "label": "Piu' di 12 anni",
+              "say": "Piu' di dodici anni",
               "value": "3"
             }
           ]
         },
         {
-          "t": "choice",
+          "t": "list",
           "who": "lucas",
           "var": "device",
-          "text": "Ultima cosa: che iPhone usi?",
-          "options": [
+          "text": "Ultima cosa: che iPhone usi? Mi serve per adattare lo schermo.",
+          "placeholder": "Scegli il modello",
+          "classeCorpo": "disp-",
+          "gruppi": [
             {
-              "label": "iPhone 17 / 17 Pro",
-              "value": "17"
+              "nome": "iPhone 17",
+              "opzioni": [
+                {
+                  "label": "iPhone 17",
+                  "value": "17",
+                  "classe": "md"
+                },
+                {
+                  "label": "iPhone Air",
+                  "value": "Air",
+                  "classe": "lg"
+                },
+                {
+                  "label": "iPhone 17 Pro",
+                  "value": "17 Pro",
+                  "classe": "lg"
+                },
+                {
+                  "label": "iPhone 17 Pro Max",
+                  "value": "17 Pro Max",
+                  "classe": "xxl"
+                }
+              ]
             },
             {
-              "label": "iPhone 16 / 16 Pro",
-              "value": "16"
+              "nome": "iPhone 16",
+              "opzioni": [
+                {
+                  "label": "iPhone 16e",
+                  "value": "16e",
+                  "classe": "md"
+                },
+                {
+                  "label": "iPhone 16",
+                  "value": "16",
+                  "classe": "md"
+                },
+                {
+                  "label": "iPhone 16 Plus",
+                  "value": "16 Plus",
+                  "classe": "xl"
+                },
+                {
+                  "label": "iPhone 16 Pro",
+                  "value": "16 Pro",
+                  "classe": "lg"
+                },
+                {
+                  "label": "iPhone 16 Pro Max",
+                  "value": "16 Pro Max",
+                  "classe": "xxl"
+                }
+              ]
             },
             {
-              "label": "iPhone 15 / 15 Pro",
-              "value": "15"
+              "nome": "iPhone 15",
+              "opzioni": [
+                {
+                  "label": "iPhone 15",
+                  "value": "15",
+                  "classe": "md"
+                },
+                {
+                  "label": "iPhone 15 Plus",
+                  "value": "15 Plus",
+                  "classe": "xl"
+                },
+                {
+                  "label": "iPhone 15 Pro",
+                  "value": "15 Pro",
+                  "classe": "md"
+                },
+                {
+                  "label": "iPhone 15 Pro Max",
+                  "value": "15 Pro Max",
+                  "classe": "xl"
+                }
+              ]
             },
             {
-              "label": "iPhone 14 o precedente",
-              "value": "vecchio"
+              "nome": "iPhone 14",
+              "opzioni": [
+                {
+                  "label": "iPhone 14",
+                  "value": "14",
+                  "classe": "md"
+                },
+                {
+                  "label": "iPhone 14 Plus",
+                  "value": "14 Plus",
+                  "classe": "xl"
+                },
+                {
+                  "label": "iPhone 14 Pro",
+                  "value": "14 Pro",
+                  "classe": "md"
+                },
+                {
+                  "label": "iPhone 14 Pro Max",
+                  "value": "14 Pro Max",
+                  "classe": "xl"
+                }
+              ]
+            },
+            {
+              "nome": "iPhone 13",
+              "opzioni": [
+                {
+                  "label": "iPhone 13 mini",
+                  "value": "13 mini",
+                  "classe": "xs"
+                },
+                {
+                  "label": "iPhone 13",
+                  "value": "13",
+                  "classe": "md"
+                },
+                {
+                  "label": "iPhone 13 Pro",
+                  "value": "13 Pro",
+                  "classe": "md"
+                },
+                {
+                  "label": "iPhone 13 Pro Max",
+                  "value": "13 Pro Max",
+                  "classe": "xl"
+                }
+              ]
+            },
+            {
+              "nome": "iPhone 12",
+              "opzioni": [
+                {
+                  "label": "iPhone 12 mini",
+                  "value": "12 mini",
+                  "classe": "xs"
+                },
+                {
+                  "label": "iPhone 12",
+                  "value": "12",
+                  "classe": "md"
+                },
+                {
+                  "label": "iPhone 12 Pro",
+                  "value": "12 Pro",
+                  "classe": "md"
+                },
+                {
+                  "label": "iPhone 12 Pro Max",
+                  "value": "12 Pro Max",
+                  "classe": "xl"
+                }
+              ]
+            },
+            {
+              "nome": "iPhone 11",
+              "opzioni": [
+                {
+                  "label": "iPhone 11",
+                  "value": "11",
+                  "classe": "md"
+                },
+                {
+                  "label": "iPhone 11 Pro",
+                  "value": "11 Pro",
+                  "classe": "sm"
+                },
+                {
+                  "label": "iPhone 11 Pro Max",
+                  "value": "11 Pro Max",
+                  "classe": "lg"
+                }
+              ]
+            },
+            {
+              "nome": "Precedenti",
+              "opzioni": [
+                {
+                  "label": "iPhone XS Max",
+                  "value": "XS Max",
+                  "classe": "lg"
+                },
+                {
+                  "label": "iPhone XS",
+                  "value": "XS",
+                  "classe": "sm"
+                },
+                {
+                  "label": "iPhone XR",
+                  "value": "XR",
+                  "classe": "md"
+                },
+                {
+                  "label": "iPhone X",
+                  "value": "X",
+                  "classe": "sm"
+                }
+              ]
             }
           ]
-        },
-        {
-          "t": "set",
-          "var": "__ruolo",
-          "value": "OSPITE"
         },
         {
           "t": "set",
@@ -687,14 +862,19 @@
           "text": "Ecco il tuo badge, {NOME}. Tienilo al collo e non perderlo: qui dentro senza quello non vai da nessuna parte."
         },
         {
+          "t": "badge",
+          "prop": "badge",
+          "nome": "{NOME}"
+        },
+        {
           "t": "say",
           "who": "lucas",
           "by": "anni",
           "text": {
-            "0": "Primo anno, eh? Allora questo e' il tuo primo Keynote. Guardati intorno stasera: e' una cosa che ti ricordi per sempre.",
+            "0": "Da poco in Apple, quindi. Allora questo e' uno dei tuoi primi Keynote: guardati intorno stasera, e' una cosa che ti ricordi per sempre.",
             "1": "Qualche anno alle spalle: abbastanza per sapere come gira, non abbastanza da {g:esserti stufato|esserti stufata|averne abbastanza}. Il momento migliore, secondo me.",
-            "2": "Qualche anno sul campo: i Keynote li hai gia' visti. Ma da qui dentro e' un'altra storia, fidati.",
-            "3": "Otto anni o piu'. Tu c'eri quando certe cose le annunciavano ancora su un palco piccolo. Stasera goditela.",
+            "2": "Dagli otto ai dodici anni: i Keynote li hai gia' visti tutti. Ma da qui dentro e' un'altra storia, fidati.",
+            "3": "Piu' di dodici anni. Tu c'eri quando certe cose le annunciavano ancora su un palco piccolo. Stasera goditela.",
             "*": "Comunque sia andata finora, stasera si riparte da zero come tutti."
           }
         },
