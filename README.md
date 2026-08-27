@@ -161,13 +161,19 @@ Convertilo prima: `prepara_asset.py` lo importa da fuori, ne fa un WebP e lo scr
 nella cartella giusta, **senza toccare il sorgente**.
 
 ```bash
-python3 tools/prepara_asset.py ~/Desktop/camerino.png --tipo bg
-python3 tools/prepara_asset.py ~/Desktop/susan_ansia.png --tipo chars --nome chr_susan_ansia
-python3 tools/prepara_asset.py ~/Desktop/logo.png --tipo ui --prova   # stima, non scrive
+python3 tools/prepara_asset.py _sorgenti/*.png --prova       # stima, non scrive
+python3 tools/prepara_asset.py _sorgenti/*.png               # tutta la cartella
+python3 tools/prepara_asset.py ~/Desktop/logo.png --tipo ui --nome logo_studio
 ```
 
-`--tipo` sceglie la destinazione (`bg`, `chars`, `props`, `avatar`, `ui`) e il
-prefisso del nome. Sui fondali il guadagno e' di **70-170 volte** (6 MB -> 36 KB) a
+**Il tipo si deduce dal prefisso del nome** (`bg_`, `chr_`, `prop_`, `avt_`), quindi
+una cartella mista si converte in un colpo solo e ogni file finisce nella sua
+sottocartella. I file dal nome non riconoscibile vengono elencati e saltati invece
+che indovinati: rinominali, o passali a parte con `--tipo`. Se `--tipo` contraddice
+il nome vince il nome, altrimenti `--tipo chars` su uno sfondo produrrebbe un
+`chr_bg_qualcosa.webp` in mezzo ai personaggi.
+
+Sui fondali il guadagno e' di **70-170 volte** (6 MB -> 36 KB) a
 parita' di risoluzione: le soglie di ridimensionamento stanno sopra le dimensioni di
 tutto quello che e' gia' nel repo, quindi la conversione cambia il peso e non la resa.
 Usa `--pixel-art` se l'immagine va scalata a blocchi netti, `--qualita` per alzare o
@@ -179,8 +185,10 @@ Poi:
 2. `npm test` verifica che ogni asset referenziato esista davvero.
 3. `npm run bump` prima di pubblicare.
 
-I sorgenti pesanti tienili fuori dal repo (Drive, iCloud, Notion): servono solo a
-rigenerare, il gioco non li carica mai.
+I sorgenti pesanti non vanno committati: servono solo a rigenerare, il gioco non li
+carica mai. Tienili dove preferisci (Drive, iCloud, Scrivania) oppure, se e' comodo
+averli a portata di mano, in una cartella `_sorgenti/` dentro il repo: e' nel
+`.gitignore`, quindi Git la ignora e non rischi di caricare 200 MB di PNG per sbaglio.
 
 **`optimize_assets.py` e' un'altra cosa**: ricomprime *sul posto* file gia' dentro
 `assets/` (resize + quantizzazione a 64 colori con alpha preservato), utile per

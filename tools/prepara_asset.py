@@ -49,13 +49,30 @@ def kb(n):
     return "%.0f KB" % (n / 1024.0)
 
 
+def base_pulita(sorgente):
+    """Nome del file senza estensione, normalizzato per stare in un URL."""
+    base = os.path.splitext(os.path.basename(sorgente))[0]
+    return base.lower().replace(" ", "_").replace("-", "_")
+
+
+# prefisso del nome -> tipo, per riconoscere da solo dove va un file
+DA_PREFISSO = dict((cfg["prefisso"], t) for t, cfg in TIPI.items() if cfg["prefisso"])
+
+
+def tipo_dal_nome(sorgente):
+    """Deduce il tipo dal prefisso del nome, o None se non lo riconosce."""
+    base = base_pulita(sorgente)
+    for pref, tipo in DA_PREFISSO.items():
+        if base.startswith(pref):
+            return tipo
+    return None
+
+
 def nome_uscita(sorgente, tipo, nome_forzato):
     if nome_forzato:
         base = nome_forzato
     else:
-        base = os.path.splitext(os.path.basename(sorgente))[0]
-        # spazi e maiuscole nei nomi file danno problemi negli URL: via
-        base = base.lower().replace(" ", "_").replace("-", "_")
+        base = base_pulita(sorgente)
         pref = TIPI[tipo]["prefisso"]
         if pref and not base.startswith(pref):
             base = pref + base
@@ -108,8 +125,11 @@ def main():
     ap = argparse.ArgumentParser(
         description="Converte un'immagine pesante in WebP e la mette in assets/.")
     ap.add_argument("sorgenti", nargs="+", help="i file da importare (restano intatti)")
-    ap.add_argument("--tipo", required=True, choices=sorted(TIPI),
-                    help="dove va a finire: bg, chars, props, avatar, ui")
+    ap.add_argument("--tipo", choices=sorted(TIPI),
+                    help="dove va a finire: bg, chars, props, avatar, ui. "
+                         "Se lo ometti viene dedotto dal prefisso del nome "
+                         "(bg_, chr_, prop_, avt_), cosi' puoi dare in pasto "
+                         "una cartella mista in un colpo solo")
     ap.add_argument("--nome", help="nome del file di uscita senza estensione "
                                    "(solo con una sorgente alla volta)")
     ap.add_argument("--qualita", type=int, default=82,
@@ -125,11 +145,43 @@ def main():
 
     radice = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    print("Destinazione: %s/  (qualita' %d)\n" % (TIPI[args.tipo]["dir"], args.qualita))
+    # Decide il tipo file per file: il nome comanda sull'opzione, altrimenti
+    # "--tipo chars" su una cartella mista battezzerebbe uno sfondo
+    # chr_bg_qualcosa.webp e lo infilerebbe fra i personaggi.
+    da_fare = []
+    dubbi = []
+    for s in args.sorgenti:
+        dedotto = tipo_dal_nome(s)
+        if dedotto:
+            if args.tipo and args.tipo != dedotto:
+                print("  ~ %s: il nome dice '%s', non '%s'. Seguo il nome."
+                      % (os.path.basename(s), dedotto, args.tipo))
+            da_fare.append((s, dedotto))
+        elif args.tipo:
+            da_fare.append((s, args.tipo))
+        else:
+            dubbi.append(s)
+
+    if dubbi:
+        print("Non capisco dove vanno questi %d file: il nome non inizia per "
+              "bg_, chr_, prop_ o avt_.\nRinominali, oppure passali a parte "
+              "con --tipo.\n" % len(dubbi))
+        for s in dubbi:
+            print("  ? %s" % os.path.basename(s))
+        print()
+    if not da_fare:
+        return
+
+    print("Qualita' %d. Destinazioni:" % args.qualita)
+    for t in sorted(set(t for _, t in da_fare)):
+        n = len([1 for _, tt in da_fare if tt == t])
+        print("  %-14s %d file" % (TIPI[t]["dir"] + "/", n))
+    print()
+
     totale = 0
     fatti = 0
-    for s in args.sorgenti:
-        d = prepara(s, args.tipo, args.qualita, args.lato, args.pixel_art,
+    for s, t in da_fare:
+        d = prepara(s, t, args.qualita, args.lato, args.pixel_art,
                     args.nome, args.prova, radice)
         if d:
             totale += d
@@ -139,8 +191,9 @@ def main():
     if fatti:
         print("%d file, %s in totale." % (fatti, kb(totale)))
         if not args.prova:
-            print("\nOra dichiaralo in game/story.json sotto assets.%s, poi:"
-                  % ("bg" if args.tipo == "bg" else args.tipo))
+            tipi = sorted(set(t for _, t in da_fare))
+            print("\nOra dichiarali in game/story.json sotto %s, poi:"
+                  % ", ".join("assets." + t for t in tipi))
             print("  npm test      # verifica che gli asset citati esistano")
             print("  npm run bump  # obbligatorio prima di pubblicare")
 

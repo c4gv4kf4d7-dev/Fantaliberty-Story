@@ -2,3 +2,9 @@ node_modules/
 package-lock.json
 .DS_Store
 shots/
+
+# Sorgenti grafici pesanti (PNG da 1-6 MB appena usciti dal programma di disegno).
+# Mettili qui dentro e convertili con tools/prepara_asset.py: nel repo ci va solo
+# il WebP che ne esce. Git li ignora, cosi' non finiscono committati per sbaglio.
+_sorgenti/
+assets/**/_originali/
