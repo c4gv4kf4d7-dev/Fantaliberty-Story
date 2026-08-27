@@ -58,23 +58,21 @@
         "positiva": "chars/chr_susan_testa_positiva@3x.webp"
       }
     },
-    "maurice": {
-      "name": "Maurice",
-      "defaultBody": "in_piedi",
+    "francesca": {
+      "name": "Francesca",
+      "defaultBody": "idle",
       "defaultHead": "neutro",
-      "neck": {
-        "x": "50%",
-        "y": "3%",
-        "w": "32%"
-      },
       "bodies": {
-        "in_piedi": "chars/chr_maurice_corpo_in_piedi@3x.webp"
+        "idle": "chars/chr_francesca_idle.webp",
+        "benvenuto": "chars/chr_francesca_benvenuto.webp",
+        "gesto_swipe": "chars/chr_francesca_gesto_swipe.webp",
+        "indica_tenda": "chars/chr_francesca_indica_tenda.webp",
+        "orgogliosa": "chars/chr_francesca_orgogliosa.webp",
+        "ride": "chars/chr_francesca_ride.webp",
+        "scettica": "chars/chr_francesca_scettica.webp"
       },
-      "heads": {
-        "neutro": "chars/chr_maurice_testa_neutro@3x.webp",
-        "positivo": "chars/chr_maurice_testa_positivo@3x.webp",
-        "sorpreso": "chars/chr_maurice_testa_sorpreso@3x.webp"
-      }
+      "heads": {},
+      "_nota": "Sprite unico per posa (come lucas): niente head/neck, ogni posa e' un'immagine intera."
     },
     "martha": {
       "name": "Martha",
@@ -386,16 +384,17 @@
         },
         {
           "t": "show",
-          "who": "maurice"
+          "who": "francesca",
+          "body": "benvenuto"
         },
         {
           "t": "say",
-          "who": "maurice",
+          "who": "francesca",
           "text": "[BOZZA] Ehi, calma. Prima che ti buttino sul palco, ti faccio vedere com'e' fatto questo posto."
         },
         {
           "t": "choice",
-          "who": "maurice",
+          "who": "francesca",
           "var": "sezione",
           "text": "[BOZZA] Da dove vuoi partire?",
           "options": [

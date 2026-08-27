@@ -183,6 +183,10 @@ un colpo solo e ogni file finisce nella sua sottocartella:
 canonico (`obj_badge.png` -> `prop_badge.webp`): una cartella meta' `prop_` e meta'
 `obj_` e' solo un modo per non ritrovare piu' niente.
 
+`obj_zaino_rider` e' un'eccezione dichiarata (`ECCEZIONI` in cima allo script): nel
+manifest e' un personaggio pixel-art completo, non un oggetto isolato, quindi finisce
+in `assets/chars/chr_zaino_rider.webp` anche se il nome inizia per `obj_`.
+
 I file dal nome non riconoscibile vengono elencati e saltati invece che indovinati:
 rinominali, o passali a parte con `--tipo`. Se `--tipo` contraddice il nome vince il
 nome, altrimenti `--tipo chars` su uno sfondo produrrebbe un `chr_bg_qualcosa.webp`
@@ -196,6 +200,33 @@ parita' di risoluzione: le soglie di ridimensionamento stanno sopra le dimension
 tutto quello che e' gia' nel repo, quindi la conversione cambia il peso e non la resa.
 Usa `--pixel-art` se l'immagine va scalata a blocchi netti, `--qualita` per alzare o
 abbassare la compressione (default 82; sotto 70 si inizia a vedere).
+
+### Sprite sheet: un file consegnato come piu' pose in uno
+
+Il manifest asset chiede alcuni file "a foglio": 4 teste affiancate
+(`stile_X_espressioni`, `chr_susan_commento_stile`), 2 frame affiancati
+(`obj_tavolino_buzzer_peter`, `obj_lucchetto_zona4`, `obj_clicker`). Il gioco
+vuole un file per posa, quindi vanno tagliati **prima** di `prepara_asset.py`:
+
+```bash
+# 4 teste in una riga
+python3 tools/taglia_sheet.py _sorgenti/stile_drip_espressioni.png \
+    --pezzi 4 --nomi neutro sicuro sorpreso indifficolta
+
+# 2 frame affiancati
+python3 tools/taglia_sheet.py _sorgenti/obj_tavolino_buzzer_peter.png \
+    --pezzi 2 --nomi non_premuto premuto
+
+# una griglia vera (righe x colonne), letta riga per riga
+python3 tools/taglia_sheet.py _sorgenti/foglio.png --righe 2 --colonne 2 --nomi a b c d
+```
+
+Ogni pezzo esce come `<nome_base>_<suffisso>.png` accanto al foglio originale, gia'
+col prefisso giusto, pronto per il comando di conversione di sempre. Il foglio
+originale viene spostato in `_sorgenti/_tagliati/`: resta li' come promemoria ma non
+viene piu' raccolto dal glob `_sorgenti/*.png`, altrimenti verrebbe convertito anche
+lui oltre ai suoi pezzi. Se le dimensioni non si dividono in modo esatto per la
+griglia data, lo script si ferma con un errore invece di tagliare storto.
 
 Poi:
 

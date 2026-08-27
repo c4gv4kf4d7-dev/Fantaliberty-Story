@@ -56,6 +56,12 @@ ALIAS = {"obj_": "props", "chr_": "chars"}
 # non al gioco: non vanno nel repo.
 RIFERIMENTI = ("model_sheet", "modelsheet", "reference", "riferimento")
 
+# File il cui prefisso mentirebbe sul tipo: nel manifest asset "obj_zaino_rider"
+# e' un personaggio pixel-art completo (l'evento del rider, stile Drip), non un
+# oggetto di scena isolato. Nome base (prima della normalizzazione del prefisso)
+# -> tipo vero.
+ECCEZIONI = {"obj_zaino_rider": "chars"}
+
 
 def kb(n):
     return "%.0f KB" % (n / 1024.0)
@@ -79,6 +85,8 @@ def tipo_dal_nome(sorgente):
     verrebbe mai riconosciuto da un ipotetico 's_'.
     """
     base = base_pulita(sorgente)
+    if base in ECCEZIONI:
+        return ECCEZIONI[base]
     for pref in sorted(DA_PREFISSO, key=len, reverse=True):
         if base.startswith(pref):
             return DA_PREFISSO[pref]
@@ -98,13 +106,15 @@ def nome_uscita(sorgente, tipo, nome_forzato):
     pref = TIPI[tipo]["prefisso"]
     if not pref:
         return base + ".webp"
-    if base.startswith(pref):
-        return base + ".webp"
-    # arrivato per un prefisso alternativo (obj_ -> prop_): si sostituisce,
-    # non si impila, altrimenti obj_badge diventerebbe prop_obj_badge
-    for alias, t in ALIAS.items():
-        if t == tipo and base.startswith(alias):
-            return pref + base[len(alias):] + ".webp"
+
+    # toglie QUALSIASI prefisso noto gia' in testa al nome (bg_, chr_, obj_...),
+    # cosi' non si impila mai (obj_badge -> prop_badge, non prop_obj_badge) e
+    # un'eccezione per nome (obj_zaino_rider -> chars) riscrive il prefisso
+    # anche se non compare fra gli alias di quel tipo
+    for altro in sorted(DA_PREFISSO, key=len, reverse=True):
+        if base.startswith(altro):
+            base = base[len(altro):]
+            break
     return pref + base + ".webp"
 
 
