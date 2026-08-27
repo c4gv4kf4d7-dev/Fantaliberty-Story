@@ -149,10 +149,15 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  background:conic-gradient(#5fb04b,#e8c33a,#e08c2f,#cf4b3d,#8e4ea0,#3f8fd0);
  -webkit-mask:radial-gradient(circle at 50% 58%,#000 42%,transparent 43%);
  mask:radial-gradient(circle at 50% 58%,#000 42%,transparent 43%)}
-#badgeName{position:absolute;left:8%;right:8%;bottom:16%;text-align:center;
- color:#1b1b22;font-size:clamp(7px,2vw,13px);line-height:1.3;
- white-space:nowrap;overflow:hidden;text-overflow:clip}
-#badgewrap.senzaimg #badgeName{position:static;color:#1b1b22}
+/* Il nome va nella barra grigia che il template lascia vuota apposta: misurata
+   sull'immagine, sta fra il 43% e il 49% dell'altezza e fra il 23% e il 78%
+   della larghezza. Il riquadro grande sotto e' lo spazio per la foto. */
+#badgeName{position:absolute;left:23%;right:22%;top:43%;height:6.5%;
+ display:flex;align-items:center;justify-content:center;
+ color:#1b1b22;font-size:clamp(6px,1.7vw,11px);line-height:1;
+ white-space:nowrap;overflow:hidden}
+#badgewrap.senzaimg #badgeName{position:static;height:auto;color:#1b1b22;
+ font-size:clamp(7px,2vw,13px)}
 .fv{font-weight:bold}
 .cur{display:inline-block;width:.55em;background:#0f3b34;animation:bl .6s steps(1) infinite}
 @keyframes bl{50%{opacity:0}}
