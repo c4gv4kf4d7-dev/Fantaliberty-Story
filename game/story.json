@@ -21,7 +21,7 @@
       "sala_teatro": "bg/bg_sala_teatro.webp"
     },
     "props": {
-      "mac_terminale": "props/prop_mac_terminale.png"
+      "mac_terminale": "props/prop_mac_terminale.webp"
     },
     "chars": {}
   },
