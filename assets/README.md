@@ -99,8 +99,19 @@ alla figura. A schermo pieno si notano.
 python3 tools/pulisci_bordi.py assets/chars/chr_susan_corpo_in_piedi.png
 ```
 
-Li ricopre col colore che hanno intorno (non li rende trasparenti, altrimenti si
-aprirebbero buchi). Denti, bianco degli occhi e riflessi vengono risparmiati.
+Fa tre cose:
+
+1. cancella le **isole staccate** dalla figura (puntini rimasti attorno al soggetto)
+2. toglie l'**alone di scontorno**: il pixel piu' esterno molto piu' chiaro di
+   quello che ha subito dentro e' sfondo rimasto attaccato. Si vede **solo sui
+   fondali scuri**, per questo sfugge a occhio finche' non e' in gioco
+3. **ricopre** le macchie chiare interne col colore che hanno intorno (non le
+   rende trasparenti, altrimenti si aprirebbero buchi nel disegno)
+
+Denti, bianco degli occhi e riflessi vengono risparmiati.
+
+Controlla sempre lo sprite **su fondo scuro** prima di dire che e' pulito: su
+fondo chiaro un alone bianco e' invisibile.
 
 ## Dopo aver caricato
 

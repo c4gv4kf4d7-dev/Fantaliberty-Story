@@ -53,6 +53,24 @@ for (const [id, sc] of Object.entries(story.scenes)) {
   }
 }
 
+/* ---------- 1b. niente asterischi di declinazione nei dialoghi ---------- */
+// Dopo che il giocatore ha detto come rivolgersi a lui, ogni frase deve essere
+// declinata: "impalat*" a schermo e' un difetto visibile.
+for (const [id, sc] of Object.entries(story.scenes)) {
+  for (const st of sc.steps) {
+    const testi = typeof st.text === 'string' ? [st.text]
+      : (st.text && typeof st.text === 'object' ? Object.values(st.text) : []);
+    for (const t of testi) {
+      const senzaVarianti = t.replace(/\{g:[^}]*\}/g, '');
+      assert.ok(!/\w\*/.test(senzaVarianti),
+        `scena ${id}: asterisco di declinazione in "${t.slice(0, 60)}" - usa {g:...}`);
+    }
+    for (const o of st.options || []) {
+      assert.ok(!/\w\*/.test(String(o.label || '')), `scena ${id}: asterisco nell'opzione "${o.label}"`);
+    }
+  }
+}
+
 /* ---------- 2. asset: fondali e prop devono esistere; i personaggi non ancora
    disegnati sono ammessi (il motore mostra la scena senza personaggio) ---------- */
 const base = story.meta.assetBase || '';
