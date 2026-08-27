@@ -156,11 +156,36 @@ marcati `[BOZZA]` e vanno riscritti.
 
 ## Aggiungere asset
 
-1. Metti il PNG in `assets/chars/` (o `bg/`, `props/`).
-2. `python3 tools/optimize_assets.py assets/chars/nuovo.png` — resize + 64 colori
-   FASTOCTREE con alpha preservato: su pixel art e' impercettibile e taglia il peso 10-20x.
-3. Dichiaralo in `story.json` sotto `assets.chars` e usalo negli step.
-4. `npm test` verifica che ogni asset referenziato esista davvero.
+Il file che esce dal programma di grafica pesa 1-6 MB e **non va committato cosi'**.
+Convertilo prima: `prepara_asset.py` lo importa da fuori, ne fa un WebP e lo scrive
+nella cartella giusta, **senza toccare il sorgente**.
+
+```bash
+python3 tools/prepara_asset.py ~/Desktop/camerino.png --tipo bg
+python3 tools/prepara_asset.py ~/Desktop/susan_ansia.png --tipo chars --nome chr_susan_ansia
+python3 tools/prepara_asset.py ~/Desktop/logo.png --tipo ui --prova   # stima, non scrive
+```
+
+`--tipo` sceglie la destinazione (`bg`, `chars`, `props`, `avatar`, `ui`) e il
+prefisso del nome. Sui fondali il guadagno e' di **70-170 volte** (6 MB -> 36 KB) a
+parita' di risoluzione: le soglie di ridimensionamento stanno sopra le dimensioni di
+tutto quello che e' gia' nel repo, quindi la conversione cambia il peso e non la resa.
+Usa `--pixel-art` se l'immagine va scalata a blocchi netti, `--qualita` per alzare o
+abbassare la compressione (default 82; sotto 70 si inizia a vedere).
+
+Poi:
+
+1. Dichiaralo in `story.json` sotto `assets.chars` (o `bg`, `props`) e usalo negli step.
+2. `npm test` verifica che ogni asset referenziato esista davvero.
+3. `npm run bump` prima di pubblicare.
+
+I sorgenti pesanti tienili fuori dal repo (Drive, iCloud, Notion): servono solo a
+rigenerare, il gioco non li carica mai.
+
+**`optimize_assets.py` e' un'altra cosa**: ricomprime *sul posto* file gia' dentro
+`assets/` (resize + quantizzazione a 64 colori con alpha preservato), utile per
+alleggerire la build single-file. Salta le cartelle `_originali/` proprio perche'
+riscrive i file che gli passi.
 
 Regola pratica: tenere il totale degli asset sotto ~1 MB, altrimenti la build
 single-file diventa ingestibile su mobile.
