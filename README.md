@@ -166,12 +166,30 @@ python3 tools/prepara_asset.py _sorgenti/*.png               # tutta la cartella
 python3 tools/prepara_asset.py ~/Desktop/logo.png --tipo ui --nome logo_studio
 ```
 
-**Il tipo si deduce dal prefisso del nome** (`bg_`, `chr_`, `prop_`, `avt_`), quindi
-una cartella mista si converte in un colpo solo e ogni file finisce nella sua
-sottocartella. I file dal nome non riconoscibile vengono elencati e saltati invece
-che indovinati: rinominali, o passali a parte con `--tipo`. Se `--tipo` contraddice
-il nome vince il nome, altrimenti `--tipo chars` su uno sfondo produrrebbe un
-`chr_bg_qualcosa.webp` in mezzo ai personaggi.
+**Il tipo si deduce dal prefisso del nome**, quindi una cartella mista si converte in
+un colpo solo e ogni file finisce nella sua sottocartella:
+
+| prefisso | va in | cos'e' |
+|---|---|---|
+| `bg_` | `assets/bg/` | fondali |
+| `chr_` | `assets/chars/` | NPC (Lucas, Francesca, Peter, Susan, Martha) |
+| `stile_` | `assets/stili/` | i 4 stili del personaggio giocante |
+| `prop_` (o `obj_`) | `assets/props/` | oggetti di scena |
+| `pla_` | `assets/platea/` | layer di reazione della platea |
+| `fx_` | `assets/fx/` | overlay di effetto |
+| `avt_` | `assets/avatar/` | avatar |
+
+`obj_` e' accettato come sinonimo di `prop_` e il nome viene riportato al prefisso
+canonico (`obj_badge.png` -> `prop_badge.webp`): una cartella meta' `prop_` e meta'
+`obj_` e' solo un modo per non ritrovare piu' niente.
+
+I file dal nome non riconoscibile vengono elencati e saltati invece che indovinati:
+rinominali, o passali a parte con `--tipo`. Se `--tipo` contraddice il nome vince il
+nome, altrimenti `--tipo chars` su uno sfondo produrrebbe un `chr_bg_qualcosa.webp`
+in mezzo ai personaggi.
+
+Le **tavole di riferimento** (`*_model_sheet`, `*_reference`) vengono saltate: servono
+a chi disegna, non al gioco. `--tutto` le converte comunque.
 
 Sui fondali il guadagno e' di **70-170 volte** (6 MB -> 36 KB) a
 parita' di risoluzione: le soglie di ridimensionamento stanno sopra le dimensioni di
