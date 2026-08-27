@@ -175,6 +175,8 @@ un colpo solo e ogni file finisce nella sua sottocartella:
 | `chr_` | `assets/chars/` | NPC (Lucas, Francesca, Peter, Susan, Martha) |
 | `stile_` | `assets/stili/` | i 4 stili del personaggio giocante |
 | `prop_` (o `obj_`) | `assets/props/` | oggetti di scena |
+| `pla_` | `assets/platea/` | layer di reazione della platea |
+| `fx_` | `assets/fx/` | overlay di effetto |
 | `avt_` | `assets/avatar/` | avatar |
 
 `obj_` e' accettato come sinonimo di `prop_` e il nome viene riportato al prefisso

@@ -41,6 +41,8 @@ TIPI = {
     "chars":  {"dir": "assets/chars",  "lato": 2560, "alpha": True,  "prefisso": "chr_"},
     "stili":  {"dir": "assets/stili",  "lato": 2560, "alpha": True,  "prefisso": "stile_"},
     "props":  {"dir": "assets/props",  "lato": 2560, "alpha": True,  "prefisso": "prop_"},
+    "platea": {"dir": "assets/platea", "lato": 2560, "alpha": True,  "prefisso": "pla_"},
+    "fx":     {"dir": "assets/fx",     "lato": 2560, "alpha": True,  "prefisso": "fx_"},
     "avatar": {"dir": "assets/avatar", "lato": 1200, "alpha": True,  "prefisso": "avt_"},
     "ui":     {"dir": "assets/ui",     "lato": 1600, "alpha": True,  "prefisso": ""},
 }
