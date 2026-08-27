@@ -28,7 +28,7 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '3',
+    engine: '4',
     story: null,
     state: {},      // variabili di gioco (nome, genere, avatar_*, ...)
     scene: null,
@@ -42,19 +42,22 @@
   var el = {};
   var typing = false, tId = null, pending = null, curLine = '', revealUI = null;
   var typeTarget = null;   // nodo su cui si sta scrivendo (box dialogo o cartello)
+  var hubTasti = null;     // frecce della tastiera mentre l'hub e' aperto
   var current = { who: null, body: null, head: null };   // NPC in scena
 
   /* ---------------- testo: interpolazione ---------------- */
   // {nome} valore · {NOME} maiuscolo · {label:anni} etichetta scelta
-  // {g:uno|una|neutro} variante per la variabile di genere (m|f|x)
+  // {g:uno|una} variante per la variabile di genere (m|f), nell'ordine di
+  // meta.genderOrder. Se il genere non e' ancora stato scelto si usa la prima
+  // variante: capita solo nelle righe prima di [S0.03].
   function fmt(s) {
     if (!s) return '';
     var genderVar = (VN.story.meta && VN.story.meta.genderVar) || 'genere';
-    var order = (VN.story.meta && VN.story.meta.genderOrder) || ['m', 'f', 'x'];
+    var order = (VN.story.meta && VN.story.meta.genderOrder) || ['m', 'f'];
     s = s.replace(/\{g:([^}]*)\}/g, function (_, body) {
       var parts = body.split('|');
       var idx = order.indexOf(VN.state[genderVar]);
-      if (idx < 0) idx = order.length - 1;
+      if (idx < 0) idx = 0;
       return parts[Math.min(idx, parts.length - 1)] || '';
     });
     s = s.replace(/\{label:(\w+)\}/g, function (_, k) {
@@ -86,6 +89,13 @@
     if (el.listform) el.listform.classList.remove('on');
     el.picker.classList.remove('on');
     revealUI = null;
+  }
+
+  function chiudiHub() {
+    if (!el.hub) return;
+    el.hub.classList.remove('on');
+    el.hubnav.classList.remove('on');
+    el.hubspots.innerHTML = '';
   }
 
   // Il testo si scrive su requestAnimationFrame invece che con setInterval:
@@ -369,6 +379,8 @@
   function goScene(id) {
     var sc = VN.story.scenes[id];
     if (!sc) throw new Error('scena inesistente: ' + id);
+    chiudiHub();
+    if (el.modal) el.modal.classList.remove('on');
     if (!(sc.steps || []).some(function (s) { return s.t === 'title' || s.t === 'boot' || s.t === 'logo'; })) {
       el.curtain.classList.remove('on', 'lights');
     }
@@ -396,7 +408,8 @@
   }
 
   function exec(st) {
-    if (!silent && (st.t === 'say' || st.t === 'choice' || st.t === 'input' || st.t === 'avatar')) VN.saveNow();
+    if (!silent && (st.t === 'say' || st.t === 'choice' || st.t === 'input' ||
+                    st.t === 'avatar' || st.t === 'hub')) VN.saveNow();
 
     switch (st.t) {
 
@@ -449,6 +462,9 @@
         type(fmt(st.text), function () { showPicker(st); });
         revealUI = function () { showPicker(st); };
         return;
+
+      case 'hub':
+        return showHub(st);
 
       case 'logo':
         el.boxwrap.classList.remove('in');
@@ -712,6 +728,194 @@
     mostra(0, 0);
     el.avatar.classList.add('pick');
     el.picker.classList.add('on');
+  }
+
+  /* ---------------- condizioni ----------------
+     Forma dichiarativa, niente eval: una zona o un'area toccabile compare solo
+     se la condizione e' vera. Serve alla zona 4 della lobby, che lo script
+     descrive due volte — chiusa finche' i pronostici non sono bloccati, aperta
+     dopo — e in generale a tutto quello che dipende da run.locked. */
+  function condizioneOk(cond) {
+    if (cond == null) return true;
+    if (Array.isArray(cond)) return cond.every(condizioneOk);
+    var v = VN.state[cond.var];
+    if ('is' in cond) return v === cond.is;
+    if ('non' in cond) return v !== cond.non;
+    if ('almeno' in cond) return Number(v) >= Number(cond.almeno);
+    return true;
+  }
+
+  /* ---------------- modale di conferma ----------------
+     Copre tutto: finche' e' aperta niente altro e' toccabile. La usano i passi
+     senza ritorno (entrare in sala, confermare lo stile, chiudere i pronostici),
+     dove un tocco per sbaglio costerebbe la partita. */
+  function mostraModale(cfg, onSi, onNo) {
+    el.modaltxt.textContent = fmt(cfg.text || 'Sicuro?');
+    el.modalbtns.innerHTML = '';
+    var bottone = function (testo, azione) {
+      var b = global.document.createElement('button');
+      b.className = 'ch';
+      b.textContent = fmt(testo);
+      b.onclick = function (ev) {
+        if (ev && ev.stopPropagation) ev.stopPropagation();
+        el.modal.classList.remove('on');
+        if (azione) azione();
+      };
+      el.modalbtns.appendChild(b);
+      return b;
+    };
+    bottone(cfg.si || 'Si\'', onSi);
+    bottone(cfg.no || 'Non ancora', onNo);
+    el.modal.classList.add('on');
+  }
+
+  /* ---------------- hub a zone ----------------
+     La lobby dello script: quattro zone che si scorrono di lato, senza ordine
+     imposto, ognuna con il suo fondale, il suo personaggio e le sue aree
+     toccabili. Il fondale e il personaggio passano dai soliti setBg()/showChar():
+     l'hub aggiunge solo lo scorrimento e gli hotspot.
+
+     Il tutorial e' un vincolo dello script: l'area che porta avanti la storia
+     resta disattivata finche' il giocatore non ha scorso almeno una volta —
+     altrimenti entra in sala senza accorgersi che la lobby era visitabile. */
+  function showHub(st) {
+    var zones = (st.zones || []).filter(function (z) { return condizioneOk(z.when); });
+    if (!zones.length) return next();
+
+    var cur = -1;
+    var visti = {};
+    var scorso = false;                 // il giocatore ha gia' cambiato zona?
+    var uscito = false;                 // l'hub ha gia' ceduto il turno: niente doppi goto
+
+    function entra(i, dir) {
+      var nuova = (i + zones.length) % zones.length;
+      if (nuova === cur) return;
+      if (cur >= 0) scorso = true;
+      cur = nuova;
+      var z = zones[cur];
+      var primaVolta = !visti[z.id];
+      visti[z.id] = true;
+
+      if (z.bg) setBg(z.bg, z.bgFx);
+      if (z.who) showChar(z);
+      else { el.npc.classList.remove('in', 'pop'); el.npc.classList.add('out'); current.who = null; }
+
+      if (dir) {
+        var verso = dir > 0 ? 'vaiSx' : 'vaiDx';
+        [el.hub, el.bg].forEach(function (n) {
+          n.classList.remove('vaiSx', 'vaiDx');
+          void n.offsetWidth;
+          n.classList.add(verso);
+        });
+      }
+
+      // finche' non ha scorso, parla il tutorial; poi ogni zona ha la sua battuta.
+      // "dice" separa chi parla da chi si vede: nella zona del quiz si vede Peter
+      // che dorme, ma a commentare e' Francesca.
+      var battuta = (!scorso && st.tutorial && st.tutorial.text) || z.say;
+      var chi = (!scorso && st.tutorial && st.tutorial.who) || z.dice || z.who;
+      if (battuta) {
+        setSpeaker(chi);
+        // gia' vista: si rimette a schermo intera, senza rifarla scrivere
+        if (primaVolta) typeKeep(fmt(battuta));
+        else { stopTyping(); typing = false; el.txt.textContent = fmt(battuta); }
+      }
+      if (!scorso && st.tutorial && st.tutorial.body) {
+        showChar({ who: chi, body: st.tutorial.body });
+      }
+      render();
+    }
+
+    function render() {
+      var z = zones[cur];
+      el.hubspots.innerHTML = '';
+      (z.hotspots || []).forEach(function (h) {
+        if (!condizioneOk(h.when)) return;
+        var bloccato = h.richiede === 'swipe' && !scorso;
+        var b = global.document.createElement('button');
+        b.className = 'hspot' + (bloccato ? ' chiuso' : '');
+        b.textContent = fmt(h.label || '');
+        b.style.left = h.x || '35%';
+        b.style.top = h.y || '40%';
+        b.style.width = h.w || '30%';
+        b.style.height = h.h || '22%';
+        b.onclick = function (ev) {
+          if (ev && ev.stopPropagation) ev.stopPropagation();
+          tocca(h, bloccato);
+        };
+        el.hubspots.appendChild(b);
+      });
+
+      el.hdots.innerHTML = '';
+      zones.forEach(function (zz, i) {
+        var d = global.document.createElement('span');
+        d.className = 'hdot' + (i === cur ? ' sel' : '') + (visti[zz.id] ? ' seen' : '')
+          + (zz.chiuso ? ' chiuso' : '');
+        el.hdots.appendChild(d);
+      });
+    }
+
+    function tocca(h, bloccato) {
+      if (uscito) return;
+      if (bloccato) {
+        setSpeaker(h.who || zones[cur].who);
+        typeKeep(fmt(h.bloccato || 'Non ancora: prima guardati intorno.'));
+        return;
+      }
+      if (h.react) react(h.react);
+      var vai = function () {
+        if (uscito) return;
+        if (h.set) { VN.state[h.set.var] = h.set.value; termSet(h.set.var); }
+        if (h.say) {                      // commento e basta: si resta nell'hub
+          setSpeaker(h.who || zones[cur].who);
+          typeKeep(fmt(h.say));
+          return;
+        }
+        uscito = true;
+        VN.progressed = true;
+        chiudiHub();
+        hideUI();
+        if (h.goto) return goScene(h.goto);
+        next();
+      };
+      if (h.conferma) return mostraModale(h.conferma, vai, null);
+      vai();
+    }
+
+    // scorrimento: frecce, trascinamento col dito, e frecce della tastiera
+    el.hprev.onclick = function (ev) { if (ev && ev.stopPropagation) ev.stopPropagation(); entra(cur - 1, -1); };
+    el.hnext.onclick = function (ev) { if (ev && ev.stopPropagation) ev.stopPropagation(); entra(cur + 1, 1); };
+
+    var x0 = null;
+    el.hub.ontouchstart = function (e) { x0 = e.touches && e.touches[0] ? e.touches[0].clientX : null; };
+    el.hub.ontouchend = function (e) {
+      if (x0 == null) return;
+      var t = e.changedTouches && e.changedTouches[0];
+      var dx = t ? t.clientX - x0 : 0;
+      x0 = null;
+      if (Math.abs(dx) < 40) return;                       // sotto i 40px e' un tocco, non uno swipe
+      if (e.preventDefault) e.preventDefault();            // non farlo diventare anche un click
+      entra(cur + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
+    };
+
+    hubTasti = function (k) {
+      if (uscito) return false;
+      if (k === 'ArrowLeft') { entra(cur - 1, -1); return true; }
+      if (k === 'ArrowRight') { entra(cur + 1, 1); return true; }
+      return false;
+    };
+
+    el.boxwrap.classList.add('in');
+    el.hub.classList.add('on');
+    el.hubnav.classList.add('on');
+    pending = null;
+    entra(indiceIniziale(st, zones), 0);
+  }
+
+  function indiceIniziale(st, zones) {
+    if (!st.start) return 0;
+    for (var i = 0; i < zones.length; i++) if (zones[i].id === st.start) return i;
+    return 0;
   }
 
   /* ---------------- UI ---------------- */
@@ -1031,20 +1235,18 @@
     }
   }
 
-  function applicaFx(node, fx) {
-    node.classList.remove('zoom', 'zoomlento', 'blur');
-    if (fx) String(fx).split(' ').forEach(function (f) { if (f) node.classList.add(f); });
+  /* ---------------- boot ---------------- */
+  function azzeraVars(story) {
+    VN.state = {};
+    VN.progressed = false;
+    Object.keys(story.vars || {}).forEach(function (k) { VN.state[k] = story.vars[k]; });
   }
 
-
-  /* ---------------- boot ---------------- */
   VN.boot = function (story, opts) {
     opts = opts || {};
     VN.story = story;
-    VN.state = {};
-    VN.progressed = false;
     current = { who: null, body: null, head: null };
-    Object.keys(story.vars || {}).forEach(function (k) { VN.state[k] = story.vars[k]; });
+    azzeraVars(story);
     if (opts.speed != null) VN.speed = opts.speed;
     VN.onEnd = opts.onEnd || null;
 
@@ -1057,24 +1259,34 @@
       choices: $('choices'), inputform: $('inputform'), ti: $('ti'), tok: $('tok'),
       listform: $('listform'), tsel: $('tsel'), tselok: $('tselok'),
       badgewrap: $('badgewrap'), badgeImg: $('badgeImg'), badgeName: $('badgeName'),
-      picker: $('picker'), flash: $('flash')
+      picker: $('picker'), flash: $('flash'),
+      hub: $('hub'), hubspots: $('hubspots'), hubnav: $('hubnav'),
+      hprev: $('hprev'), hnext: $('hnext'), hdots: $('hdots'),
+      modal: $('modal'), modaltxt: $('modaltxt'), modalbtns: $('modalbtns')
     };
     el.avatar.innerHTML = '';
     el.avatar.classList.remove('on');
     if ($('badgewrap')) $('badgewrap').classList.remove('in');
+    hubTasti = null;
+    chiudiHub();
+    if (el.modal) el.modal.classList.remove('on');
     bgCorrente = null;
 
     el.stage.onclick = function (e) {
       if (e && e.target && e.target.closest &&
           (e.target.closest('#choices') || e.target.closest('#inputform') ||
-           e.target.closest('#listform') ||
+           e.target.closest('#listform') || e.target.closest('#hubnav') ||
+           e.target.closest('#hubspots') || e.target.closest('#modal') ||
            e.target.closest('#picker') || e.target.closest('#propwrap'))) return;
       VN.step();
     };
     global.document.onkeydown = function (e) {
+      // frecce: scorrono le zone dell'hub, se e' aperto
+      if (hubTasti && el.hub && el.hub.classList.contains('on') && hubTasti(e.key)) return;
       if (e.key !== ' ' && e.key !== 'Enter') return;
       if (el.inputform.classList.contains('on') || el.choices.classList.contains('on') ||
           (el.listform && el.listform.classList.contains('on')) ||
+          (el.modal && el.modal.classList.contains('on')) ||
           el.picker.classList.contains('on')) return;
       VN.step();
     };
@@ -1089,15 +1301,26 @@
       setSpeaker(null);
       var sc = story.scenes[save.scene];
       var where = (sc && sc.title) || save.scene;
+      // il genere salvato serve gia' qui, per declinare "bentornato/a": le
+      // variabili vengono rimesse a posto da restore(), ma la card di ripresa si
+      // scrive prima. Senza questa riga usciva un asterisco a schermo.
+      VN.state = save.state || VN.state;
       var resumeUI = function () {
         showChoices({
           options: [
             { label: 'Riprendi', value: 'r', _do: function () { restore(save); } },
-            { label: 'Ricomincia da capo', value: 'n', _do: function () { VN.clearSave(); goScene(start); } }
+            { label: 'Ricomincia da capo', value: 'n', _do: function () {
+                // ricominciare cancella la partita: lo script chiede una conferma
+                mostraModale({
+                  text: 'Sicuro? Perdi tutti i progressi di questa partita.',
+                  si: 'Si\', ricomincio', no: 'No, torno indietro'
+                }, function () { VN.clearSave(); azzeraVars(story); goScene(start); },
+                   function () { el.boxwrap.classList.add('in'); resumeUI(); });
+              } }
           ]
         });
       };
-      type('Bentornat*! Avevi lasciato il gioco a "' + where + '". Vuoi riprendere da li\'?', resumeUI);
+      type(fmt('{g:Bentornato|Bentornata}! Eri arrivat{g:o|a} fino a "' + where + '". Vuoi riprendere da li\'?'), resumeUI);
       revealUI = resumeUI;
       return;
     }
