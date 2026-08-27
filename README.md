@@ -19,6 +19,11 @@ assets/
   chars/                sprite personaggi (un file per espressione)
   props/                oggetti di scena (es. il terminale Mac)
 tools/
+  prepara_asset.py      PNG pesanti -> WebP in assets/, con pulizia inclusa
+  taglia_sheet.py       un foglio con piu' pose -> un file per posa
+  rimuovi_sfondo.py     scontorna: sfondo che tocca i bordi dell'immagine
+  togli_scacchiera.py   toglie le toppe di quadretti chiuse DENTRO uno sprite
+  ammorbidisci_bordi.py sfuma i contorni a scaletta (alpha binaria)
   optimize_assets.py    resize + quantizzazione colore (Pillow)
   build_single_file.py  compila tutto in dist/nexus_game.html (asset inline base64)
 docs/
@@ -107,6 +112,8 @@ Tutto lo script vive in `game/story.json`. Ogni scena e' una lista di `steps`:
 | `prop` | `{"t":"prop","id":"mac_terminal","show":true}` | mostra/nasconde l'oggetto di scena |
 | `bg` | `{"t":"bg","id":"sjt_stage","fx":"zoom"}` | cambia sfondo / effetto |
 | `fx` | `{"t":"fx","name":"flash"}` | `flash`, `blur`, `unblur` |
+| `sipario` | `{"t":"sipario","davanti":"lobby_z1_tenda","dietro":"sala_teatro"}` | il fondale si apre in due meta' che scorrono ai lati, dietro c'e' quello nuovo |
+| `carrellata` | `{"t":"carrellata","id":"discesa_palco"}` | piu' inquadrature in fila che si ingrandiscono e si dissolvono una nell'altra. Vedi sotto |
 | `wait` | `{"t":"wait","ms":600}` | pausa |
 | `set` | `{"t":"set","var":"__ok","value":"OK"}` | scrive una variabile |
 | `goto` / `end` | `{"t":"goto","scene":"benvenuto"}` | salta di scena / fine |
@@ -158,6 +165,41 @@ posto da girare: quattro zone che si scorrono di lato, senza ordine imposto.
 
 Si scorre con le frecce, con il dito (oltre 40px di trascinamento) o con le
 frecce della tastiera.
+
+### Le due transizioni: `sipario` e `carrellata`
+
+**`sipario`** apre il fondale in due meta' che scorrono ai lati, scoprendo
+quello dichiarato in `dietro`. Serve alla tenda della lobby (S1 → S2) e al
+sipario del palco (S4): il manifest asset chiede proprio questo, e nessun
+fondale "tenda aperta" e' mai stato disegnato. `davanti` dice esplicitamente
+cosa si apre; senza, si usa il fondale che c'e' in quel momento — comodo, ma
+saltando dentro la scena con `?scene=...` il fondale di partenza e' gia' quello
+nuovo e non ci sarebbe niente da aprire.
+
+**`carrellata`** e' una serie di inquadrature che si ingrandiscono e si
+dissolvono una nell'altra, definite in `story.carrellate`:
+
+```json
+"discesa_palco": {
+  "ms": 3400, "dissolvenza": 450, "origine": "50% 45%",
+  "shots": [
+    { "img": "bg/bg_sala_discesa_palco_layer1_sfondo.webp", "da": 1.0, "a": 1.5, "origine": "50% 40%" },
+    { "img": "bg/bg_sala_discesa_palco_layer3_primopiano.webp", "da": 1.1, "a": 1.9, "origine": "30% 45%" },
+    { "img": "bg/bg_sala_discesa_palco_layer2_poltrone.webp", "da": 1.05, "a": 1.35, "origine": "62% 25%" }
+  ]
+}
+```
+
+Le inquadrature stanno in fila, non sovrapposte. I tre file della discesa in
+sala si chiamano `layer1/2/3` e sembrano i livelli di un'unica immagine, ma
+provando a sovrapporli si coprono a vicenda: sono tre riprese successive dello
+stesso percorso. Vanno giocate in ordine di percorso, non di nome — la
+`discesa_palco` mette il primo piano (`layer3`) **in mezzo**, cosi' finisce
+sulle poltrone davanti al palco invece che su un pilastro sfocato.
+
+Il livello della carrellata non ha fondo proprio: sotto resta `#bg`. I tre file
+sono ritagli con i bordi trasparenti, e su un fondo pieno quei bordi
+diventerebbero buchi neri.
 
 La scena puo' definire `terminal`: le righe mostrate sullo schermo del Mac, che si
 compilano da sole man mano che le variabili vengono impostate. Sono tante e lo
@@ -310,6 +352,23 @@ python3 tools/ammorbidisci_bordi.py assets/props/prop_mac_terminale.webp
 Sbava il colore dei bordi verso l'esterno (senza, riaffiora il bianco del vecchio
 sfondo come un alone) e poi sfuma solo l'alpha: l'interno resta pixel art nitida.
 Salta da solo gli sprite gia' a posto, quindi si puo' lanciare su una cartella intera.
+
+Se invece uno sprite ha **i quadretti della trasparenza addosso** in una zona
+chiusa — fra le braccia alzate, fra un braccio e il fianco — `rimuovi_sfondo.py`
+non ci arriva: quello riempie a partire dai bordi dell'immagine, e una toppa
+circondata dal disegno dal bordo non si raggiunge. Anzi, viene tenuta apposta,
+e' la stessa regola che salva i denti e i riflessi negli occhi.
+
+```bash
+python3 tools/togli_scacchiera.py --controlla       # chi ha quadretti chiusi dentro
+python3 tools/togli_scacchiera.py assets/chars/chr_susan_mani_capelli.webp
+```
+
+Riconosce una scacchiera dal **lato dei quadretti**: strisce tutte lunghe uguali,
+una ventina di pixel, con due tinte piatte. Un primo tentativo si accontentava
+che chiaro e scuro si alternassero spesso, e voleva cancellare i capelli bianchi
+di Peter e l'arco del lucchetto — che alternano a ogni pixel. Prima di lanciarlo
+su file nuovi conviene guardare cosa toglierebbe con `--prova`.
 
 **`optimize_assets.py` e' un'altra cosa**: ricomprime *sul posto* file gia' dentro
 `assets/` (resize + quantizzazione a 64 colori con alpha preservato), utile per

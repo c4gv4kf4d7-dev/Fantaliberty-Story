@@ -8,3 +8,7 @@ shots/
 # il WebP che ne esce. Git li ignora, cosi' non finiscono committati per sbaglio.
 _sorgenti/
 assets/**/_originali/
+
+# cache di Python degli strumenti in tools/
+__pycache__/
+*.pyc

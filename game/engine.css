@@ -222,6 +222,36 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 .pdot.seen{background:rgba(255,255,255,.5)}
 .pdot.sel{background:#fff;border-color:#fff;transform:scale(1.25)}
 
+/* ---------- discesa verso il palco (parallax) ----------
+   Tre layer della stessa sala — sfondo, poltrone, primo piano — che si
+   allargano a velocita' diverse verso lo stesso punto di fuga. Non c'e' nessun
+   movimento vero: e' l'ingrandimento diverso a dare la sensazione di scendere
+   lungo il corridoio. Il layer piu' vicino cresce di piu' e sfuma via, come se
+   la camera gli passasse attraverso. */
+/* niente fondo pieno qui sotto: i tre file della sala sono ritagli con i bordi
+   trasparenti, e su un fondo nero quei bordi diventano buchi neri. Lasciando
+   passare #bg (la sala, gia' a posto dietro) i buchi mostrano il teatro e la
+   carrellata resta di un pezzo solo. */
+#prlx{position:absolute;inset:0;z-index:3;display:none;overflow:hidden}
+#prlx.on{display:block}
+.plyr{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+ object-position:center;image-rendering:pixelated;transform-origin:50% 45%;
+ will-change:transform,opacity}
+
+/* ---------- sipario: il fondale si apre in due ----------
+   Le due meta' sono lo stesso fondale mostrato per meta' ciascuna
+   (background-size:200%), cosi' rimesse insieme ricompongono l'immagine intera.
+   Serve alla tenda della lobby e al sipario del palco: stesso effetto. */
+#tende{position:absolute;inset:0;z-index:4;display:none;pointer-events:none}
+#tende.on{display:block}
+#tendaSx,#tendaDx{position:absolute;top:0;bottom:0;width:50%;
+ background-size:200% 100%;background-repeat:no-repeat;
+ transition:transform 1.5s cubic-bezier(.5,0,.4,1)}
+#tendaSx{left:0;background-position:left top}
+#tendaDx{right:0;background-position:right top}
+#tende.apri #tendaSx{transform:translateX(-100%)}
+#tende.apri #tendaDx{transform:translateX(100%)}
+
 /* ---------- hub della lobby ----------
    Quattro zone che si scorrono di lato. Il fondale e il personaggio restano
    quelli di sempre (#bg, #npc): l'hub aggiunge solo le aree toccabili sopra la

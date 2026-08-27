@@ -28,7 +28,7 @@ function partOf(who, kind, id) {
   const c = story.cast?.[who];
   return c && id ? c[kind]?.[id] : undefined;
 }
-const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'avatar', 'hub', 'show', 'hide', 'prop', 'bg', 'react', 'fx', 'wait', 'set', 'goto', 'end']);
+const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'avatar', 'hub', 'show', 'hide', 'prop', 'bg', 'react', 'fx', 'carrellata', 'sipario', 'wait', 'set', 'goto', 'end']);
 assert.ok(story.scenes[story.meta.start], 'meta.start punta a una scena esistente');
 
 for (const [id, sc] of Object.entries(story.scenes)) {
@@ -47,6 +47,10 @@ for (const [id, sc] of Object.entries(story.scenes)) {
     if (st.t === 'react' && st.level === 'pose') assert.ok(st.body, `scena ${id}: react pose senza body`);
     if (st.t === 'react' && st.level === 'expr') assert.ok(st.head, `scena ${id}: react expr senza head`);
     if (st.t === 'prop' && st.id) assert.ok(story.assets.props[st.id], `scena ${id}: prop "${st.id}" dichiarato`);
+    // Un id di fondale non dichiarato non da' nessun errore: setBg() mette una
+    // src vuota e la scena resta con il fondale di prima. Successo con
+    // backstage_corridoio, che esisteva su disco ma non in assets.bg.
+    if (st.t === 'bg' && st.id) assert.ok(story.assets.bg[st.id], `scena ${id}: bg "${st.id}" non dichiarato`);
     if (st.t === 'goto') assert.ok(story.scenes[st.scene], `scena ${id}: goto "${st.scene}" esiste`);
     if (st.t === 'choice') assert.ok(st.options?.length, `scena ${id}: choice senza opzioni`);
     if (st.t === 'list') {
@@ -60,6 +64,30 @@ for (const [id, sc] of Object.entries(story.scenes)) {
     }
     if (st.t === 'title') assert.ok(st.lines?.length, `scena ${id}: title senza righe`);
     if (st.t === 'hub') controllaHub(id, st);
+    if (st.t === 'sipario') {
+      for (const k of ['davanti', 'dietro']) {
+        if (st[k]) assert.ok(story.assets.bg[st[k]], `scena ${id}: sipario, "${k}" -> "${st[k]}" non dichiarato`);
+      }
+      assert.ok(st.dietro, `scena ${id}: sipario senza "dietro" - si apre sul nulla`);
+    }
+    if (st.t === 'carrellata') {
+      const cfg = st.id ? story.carrellate?.[st.id] : st;
+      assert.ok(cfg, `scena ${id}: carrellata "${st.id}" non definita in story.carrellate`);
+      assert.ok(cfg.shots?.length >= 2,
+        `scena ${id}: carrellata "${st.id}" con meno di due inquadrature - e' uno stacco, non una carrellata`);
+      for (const s of cfg.shots) {
+        assert.ok(s.img, `scena ${id}: inquadratura di "${st.id}" senza immagine`);
+        assert.ok(fs.existsSync(path.join(ROOT, (story.meta.assetBase || '') + s.img)),
+          `scena ${id}: inquadratura "${s.img}" non esiste su disco`);
+        // La camera va sempre avanti: se un'inquadratura si rimpicciolisse,
+        // a meta' discesa si tornerebbe indietro.
+        assert.ok((s.a != null ? s.a : 1.3) > (s.da != null ? s.da : 1),
+          `scena ${id}: l'inquadratura "${s.img}" si stringe invece di avvicinarsi`);
+      }
+      const ms = st.ms || cfg.ms || 2800;
+      assert.ok((cfg.dissolvenza || 700) < ms,
+        `scena ${id}: la dissolvenza di "${st.id}" dura piu' della carrellata intera`);
+    }
   }
 }
 
@@ -329,20 +357,82 @@ assert.equal(VN.state.nome, '', 'le variabili tornano a zero, non restano quelle
 assert.ok($('curtain').classList.contains('on'), 'ripartito dall\'intro');
 assert.match($('curtainTxt').textContent, /Cupertino/);
 
-/* ---------- 5. atto 2: Susan (sprite reale, un file per posa) ---------- */
-VN.boot(story, { speed: 0, scene: 'ritardo_ceo' });
-assert.match(txt(), /Ternus e' in ritardo/, 'atto 2 raggiungibile');
+/* ---------- 5. S2: l'aggancio ---------- */
+VN.boot(story, { speed: 0, scene: 'aggancio' });
+assert.match(txt(), /Ehi TU/, 'Susan urla dal palco in fondo');
 assert.equal($('name').textContent, 'Susan', 'nome parlante preso dal cast');
 assert.ok($('npcBody').getAttribute('src').includes('chr_susan_panico_telefoni'), 'posa di Susan referenziata');
 assert.equal(typeof $('npcBody').onerror, 'function', 'file mancante: il personaggio viene nascosto, niente immagine rotta');
+// da lassu' Susan e' lontana: lo sprite va rimpicciolito e alzato, altrimenti
+// e' grande come nel primo piano e la distanza non si legge
+assert.equal($('npc').style.height, '9%', 'Susan piccola, in fondo alla sala');
 
-// la reazione segue il TONO della scelta, mai il contenuto del pronostico
+VN.step();                                          // discesa (saltata a speed 0) + primo piano
+assert.ok($('npcBody').getAttribute('src').includes('chr_susan_mani_capelli'), 'ravvicinata dopo la discesa');
+assert.equal($('npc').style.height, '', 'e a grandezza normale');
+assert.match(txt(), /bloccato in tangenziale/);
 VN.step();
+assert.match(txt(), /prova generale/);
 VN.step();
+assert.match(txt(), /fai l'host tu/);
+VN.step();
+
+// [S2.03] tre opzioni, solo tono: nessuna tocca il punteggio
 const toni = [...$('choices').querySelectorAll('.ch')];
-assert.equal(toni.length, 2);
-toni[0].onclick({ stopPropagation() {} });
-assert.equal(VN.state.tono, 'sfacciato');
+assert.equal(toni.length, 3, 'tre risposte, come nello script');
+const puntiPrima = VN.state.punti;
+toni[1].onclick({ stopPropagation() {} });          // la sfacciata
+assert.equal(VN.state.sfacciato, true, 'la risposta sfacciata si ricorda: sblocca Susan carponi in S5');
+assert.equal(VN.state.punti, puntiPrima, 'il tono non da\' punti');
+
+// [S2.04] due tap in corridoio
+assert.ok($('bg').getAttribute('src').includes('backstage_corridoio'), 'si passa al corridoio');
+assert.ok($('npcBody').getAttribute('src').includes('chr_susan_indica_camerino'));
+// La reazione "micro" della battuta sfacciata lasciava addosso la sua classe:
+// la sua animazione sostituiva quella d'ingresso del personaggio dopo (stessa
+// proprieta', regola piu' in basso nel CSS) e non essendo "forwards" lo lasciava
+// trasparente. Susan spariva dal corridoio, con lo sprite giusto caricato.
+assert.equal($('npc').classList.contains('micro'), false,
+  'bug: la classe della reazione micro restava addosso e rendeva invisibile il personaggio dopo');
+assert.ok($('npc').classList.contains('in'), 'e il personaggio entra con la sua animazione');
+assert.match(txt(), /hai detto si'/);
+VN.step();
+assert.match(txt(), /ultima porta a destra/);
+
+// le altre due risposte non alzano il flag
+VN.boot(story, { speed: 0, scene: 'aggancio' });
+for (let i = 0; i < 4; i++) VN.step();
+[...$('choices').querySelectorAll('.ch')][2].onclick({ stopPropagation() {} });   // annuire in silenzio
+assert.equal(VN.state.sfacciato, false);
+
+/* ---------- 5a. le due transizioni nuove ----------
+   Con speed 0 non partono (sono animazioni, non contenuto) e devono cedere
+   subito il turno: una transizione che non chiama il seguito blocca il gioco. */
+{
+  const sc = story.scenes.aggancio;
+  const sip = sc.steps.find((s) => s.t === 'sipario');
+  assert.ok(sip, 'S2 si apre con la tenda della lobby che si divide');
+  assert.equal(sip.dietro, 'sala_teatro', 'dietro la tenda c\'e\' la sala');
+  const car = sc.steps.find((s) => s.t === 'carrellata');
+  assert.ok(car, 'e la discesa verso il palco e\' una carrellata, non uno stacco');
+  assert.equal(story.carrellate[car.id].shots.length, 3, 'tre inquadrature come i file consegnati');
+
+  // a velocita' vera le transizioni partono e non lasciano niente a schermo
+  const dom3 = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://fantaliberty.com/' });
+  dom3.window.eval(fs.readFileSync(path.join(ROOT, 'game/engine.js'), 'utf8'));
+  const { VN: VN3, document: doc3 } = dom3.window;
+  const $3 = (id) => doc3.getElementById(id);
+  VN3.boot(story, { speed: 30, scene: 'aggancio' });
+  assert.ok($3('tende').classList.contains('on'), 'le due meta\' della tenda sono a schermo');
+  assert.ok($3('tendaSx').style.backgroundImage.includes('lobby_z1_tenda'),
+    'e portano il fondale che c\'era prima, non quello nuovo');
+  assert.ok($3('bg').getAttribute('src').includes('sala_teatro'), 'dietro c\'e\' gia\' la sala');
+  // cambiare scena mentre una transizione e' in corso non deve lasciare
+  // mezzo fondale appeso sopra quella nuova
+  VN3.boot(story, { speed: 30, scene: 'lobby' });
+  assert.equal($3('tende').classList.contains('on'), false, 'la transizione interrotta si chiude');
+  assert.equal($3('prlx').children.length, 0);
+}
 
 /* ---------- 5b. S1: hub della lobby a quattro zone ----------
    Il vincolo dello script e' che la tenda NON sia toccabile finche' il giocatore
@@ -419,7 +509,7 @@ assert.equal(VN.state.tono, 'sfacciato');
 
   spots()[0].onclick({ stopPropagation() {} });
   [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // Si', entro
-  assert.equal(VN.sceneId, 'ritardo_ceo', 'ENTRA porta in sala');
+  assert.equal(VN.sceneId, 'aggancio', 'ENTRA porta in sala');
   assert.equal($('hub').classList.contains('on'), false, 'uscendo, l\'hub si chiude');
   assert.equal($('hubspots').children.length, 0, 'e non lascia hotspot appesi sopra la scena');
 }
