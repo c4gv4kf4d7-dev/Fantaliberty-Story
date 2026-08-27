@@ -68,7 +68,11 @@ def main():
 
     targets = list(args.paths)
     if args.all:
-        for root, _, files in os.walk("assets"):
+        for root, dirs, files in os.walk("assets"):
+            # questo script riscrive i file SUL POSTO: le cartelle _originali/
+            # contengono i sorgenti prima della conversione e vanno saltate,
+            # altrimenti --all li degrada in silenzio
+            dirs[:] = [d for d in dirs if d != "_originali"]
             targets += [os.path.join(root, f) for f in files if f.lower().endswith(EXTS)]
     if not targets:
         ap.error("nessun file: passa dei path oppure --all")
