@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "FantaLiberty — Nexus",
-    "version": "0.4.2",
+    "version": "0.5.0",
     "start": "arrivo",
     "assetBase": "assets/",
     "genderVar": "genere",
@@ -141,7 +141,7 @@
       "title": "Atto 1 — L'arrivo",
       "bg": "esterno_vialetto",
       "bgFx": "zoomlento",
-      "uccelli": 4,
+      "uccelli": 8,
       "steps": [
         {
           "t": "logo",
@@ -180,10 +180,12 @@
         },
         {
           "t": "wait",
-          "ms": 4200
+          "ms": 6200
         }
       ],
-      "next": "ingresso"
+      "next": "ingresso",
+      "foglie": 7,
+      "pulviscolo": 14
     },
     "registrazione": {
       "title": "Atto 1 — Registrazione",
@@ -304,7 +306,10 @@
           "show": false
         }
       ],
-      "next": "badge"
+      "next": "badge",
+      "uccelli": 0,
+      "foglie": 2,
+      "pulviscolo": 8
     },
     "ritardo_ceo": {
       "title": "Atto 2 — Il camerino",
@@ -538,7 +543,7 @@
       "title": "Atto 1 — All'ingresso",
       "bg": "esterno_ingresso",
       "dissolvenza": true,
-      "uccelli": 0,
+      "uccelli": 2,
       "steps": [
         {
           "t": "wait",
@@ -559,7 +564,9 @@
           "text": "Ciao! Io sono Lucas... ti stavamo aspettando allo Steve Jobs Theater!"
         }
       ],
-      "next": "registrazione"
+      "next": "registrazione",
+      "foglie": 3,
+      "pulviscolo": 10
     },
     "badge": {
       "title": "Atto 1 — Il badge",
@@ -598,7 +605,9 @@
           "text": "{g:Benvenuto|Benvenuta|Ti do il benvenuto} allo Steve Jobs Theater. Adesso pero' non restare qui {g:impalato|impalata|fermo li'}: ti aspettano dentro."
         }
       ],
-      "next": "ritardo_ceo"
+      "next": "ritardo_ceo",
+      "foglie": 3,
+      "pulviscolo": 10
     }
   }
 }

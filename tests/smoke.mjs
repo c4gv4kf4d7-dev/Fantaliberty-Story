@@ -112,7 +112,9 @@ const primi = story.scenes[story.meta.start].steps.map((s) => s.t);
 assert.deepEqual(primi.slice(0, 3), ['logo', 'boot', 'title'], 'sigla, poi loading, poi cartello');
 // l'apertura sta su due fondali: vialetto con gli uccelli, poi ingresso in dissolvenza
 assert.equal(story.scenes.arrivo.bg, 'esterno_vialetto');
-assert.ok(story.scenes.arrivo.uccelli > 0, 'uccelli in cielo sul vialetto');
+assert.ok(story.scenes.arrivo.uccelli >= 8, 'stormo sul vialetto');
+assert.ok(story.scenes.arrivo.foglie > 0 && story.scenes.arrivo.pulviscolo > 0,
+  'foglie e pulviscolo rendono viva la scena d\'apertura');
 assert.equal(story.scenes.ingresso.bg, 'esterno_ingresso');
 assert.ok(story.scenes.ingresso.dissolvenza, 'il cambio fondale e\' in dissolvenza');
 // niente piu' scelta avatar: Lucas consegna il badge

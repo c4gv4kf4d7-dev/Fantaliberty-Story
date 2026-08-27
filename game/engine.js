@@ -350,7 +350,7 @@
     var sc = VN.story.scenes[save.scene];
     VN.scene = sc; VN.sceneId = save.scene;
     if (sc.bg) setBg(sc.bg, sc.bgFx);
-    gabbiani(sc.uccelli || 0);
+    atmosfera(sc);
     if (sc.terminal) { buildTerminal(sc.terminal); sc.terminal.forEach(function (r) { termSet(r.var); }); }
     drawAvatar();                                   // l'avatar vive nelle variabili: si ridisegna sempre
     var upto = Math.min(save.i || 0, (sc.steps || []).length);
@@ -373,7 +373,7 @@
     }
     VN.scene = sc; VN.sceneId = id; VN.i = 0;
     if (sc.bg) setBg(sc.bg, sc.bgFx, sc.dissolvenza);
-    gabbiani(sc.uccelli || 0);
+    atmosfera(sc);
     if (sc.terminal) buildTerminal(sc.terminal);
     run();
   }
@@ -477,7 +477,7 @@
 
       case 'bg':
         setBg(st.id || (VN.scene && VN.scene.bg), st.fx, st.dissolvenza);
-        if (st.uccelli != null) gabbiani(st.uccelli);
+        if (st.uccelli != null || st.foglie != null || st.pulviscolo != null) atmosfera(st);
         return next();
 
       case 'fx':
@@ -821,28 +821,75 @@
     if (fx) String(fx).split(' ').forEach(function (f) { if (f) node.classList.add(f); });
   }
 
-  function gabbiani(quanti) {
+  // Atmosfera della scena: uccelli in cielo, foglie portate dalla brezza,
+  // pulviscolo controluce. Ogni elemento parte con tempi e traiettorie diverse,
+  // e alcuni sono gia' a meta' corsa all'apertura, cosi' non si vede "l'inizio".
+  function caso(a, b) { return a + Math.random() * (b - a); }
+
+  function atmosfera(sc) {
+    sc = sc || {};
+    var uccelli = sc.uccelli || 0, foglie = sc.foglie || 0, pulviscolo = sc.pulviscolo || 0;
     el.sky.innerHTML = '';
-    el.sky.classList.toggle('on', !!quanti);
-    for (var i = 0; i < (quanti || 0); i++) {
-      var b = global.document.createElement('div');
-      b.className = 'bird';
-      b.innerHTML =
+    el.sky.classList.toggle('on', !!(uccelli || foglie || pulviscolo));
+
+    var i, e;
+    for (i = 0; i < uccelli; i++) {
+      e = global.document.createElement('div');
+      e.className = 'bird';
+      e.innerHTML =
         '<svg viewBox="0 0 64 26" aria-hidden="true"><g class="ali">' +
         '<path d="M2 6c6 .5 11 3.6 14.5 7.4 2 2.2 3.6 3.9 5.2 4.7 1.7.9 3.3.9 5 0' +
         ' 1.7-.9 3.3-2.6 5.3-4.8C35.6 9.4 40.5 6.4 46.6 6c-4.5 2.6-7.6 6-10 9.3' +
         '-1.6 2.2-3 4.2-4.7 5.5-1.3 1-2.6 1.5-4 1.5s-2.7-.5-4-1.5c-1.7-1.3-3.1-3.3' +
         '-4.7-5.5C16.8 12 13.7 8.6 9.2 6c-2.5-.1-5-.1-7.2 0z"/>' +
         '</g></svg>';
-      b.style.top = (7 + Math.random() * 26) + '%';
-      b.style.width = (16 + Math.random() * 18) + 'px';
-      b.style.animationDuration = (26 + Math.random() * 20) + 's';
-      b.style.animationDelay = (-Math.random() * 40) + 's';   // gia' in volo all'apertura
-      var ali = b.querySelector('.ali');
-      if (ali) ali.style.animationDuration = (1.25 + Math.random() * 0.7) + 's';
-      el.sky.appendChild(b);
+      e.style.top = caso(5, 34) + '%';
+      e.style.width = caso(14, 34) + 'px';
+      e.style.animationDuration = caso(24, 48) + 's';
+      e.style.animationDelay = -caso(0, 46) + 's';
+      var ali = e.querySelector('.ali');
+      if (ali) ali.style.animationDuration = caso(1.2, 2) + 's';
+      el.sky.appendChild(e);
+    }
+
+    var verdi = ['rgba(86,104,62,.62)', 'rgba(108,116,66,.6)', 'rgba(124,98,56,.58)',
+                 'rgba(96,112,70,.55)', 'rgba(136,110,62,.5)'];
+    for (i = 0; i < foglie; i++) {
+      e = global.document.createElement('div');
+      e.className = 'leaf';
+      e.innerHTML = '<i></i>';
+      e.style.left = caso(-4, 96) + '%';
+      e.style.setProperty('--drift', caso(6, 26) + 'vw');
+      var g = caso(0.5, 1.05);
+      e.style.width = (9 * g) + 'px';
+      e.style.height = (12 * g) + 'px';
+      e.style.animationDuration = caso(16, 30) + 's';
+      e.style.animationDelay = -caso(0, 28) + 's';
+      var foglia = e.querySelector('i');
+      foglia.style.background = verdi[i % verdi.length];
+      foglia.style.animationDuration = caso(2.4, 4.6) + 's';
+      foglia.style.animationDelay = -caso(0, 4) + 's';
+      el.sky.appendChild(e);
+    }
+
+    for (i = 0; i < pulviscolo; i++) {
+      e = global.document.createElement('div');
+      e.className = 'mote';
+      e.style.left = caso(2, 98) + '%';
+      e.style.top = caso(52, 96) + '%';         // sale dal basso, dove batte la luce
+      e.style.setProperty('--drift', caso(-6, 8) + 'vw');
+      e.style.animationDuration = caso(11, 22) + 's';
+      e.style.animationDelay = -caso(0, 20) + 's';
+      e.style.opacity = caso(0.35, 0.9);
+      el.sky.appendChild(e);
     }
   }
+
+  function applicaFx(node, fx) {
+    node.classList.remove('zoom', 'zoomlento', 'blur');
+    if (fx) String(fx).split(' ').forEach(function (f) { if (f) node.classList.add(f); });
+  }
+
 
   /* ---------------- boot ---------------- */
   VN.boot = function (story, opts) {

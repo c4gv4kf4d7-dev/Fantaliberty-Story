@@ -129,6 +129,24 @@ Una scelta puo' portarsi dietro la sua reazione con `"react": {...}`.
 **Regola inderogabile**: le reazioni seguono il *tono* della risposta, mai il
 contenuto del pronostico, altrimenti il gioco suggerisce le risposte.
 
+## Atmosfera delle scene
+
+Una scena puo' dichiarare quanti elementi vivi mettere in campo:
+
+```json
+"uccelli": 8, "foglie": 7, "pulviscolo": 14
+```
+
+* **uccelli** — silhouette che attraversano il cielo, ali che battono e planate
+* **foglie** — scendono ondeggiando, portate da una brezza, tinte smorzate
+* **pulviscolo** — puntini dorati controluce che salgono dal basso
+
+Sono disegnati in CSS, nessun asset da caricare. Ogni elemento parte con durata,
+traiettoria e ritardo diversi, e alcuni sono gia' a meta' corsa quando la scena
+si apre: cosi' non si vede mai "l'inizio" dell'animazione e il ciclo non si
+riconosce a occhio. Dosare: negli interni bastano due o tre foglie, il grosso va
+sulle inquadrature aperte.
+
 ## Stato dello script
 
 Atto 1 (arrivo → registrazione → benvenuto) e' completo e corrisponde al database

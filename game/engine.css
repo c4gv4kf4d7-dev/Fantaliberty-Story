@@ -25,11 +25,14 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 @keyframes zoom{from{transform:scale(1.06)}to{transform:scale(1.16)}}
 @keyframes zoomlento{from{transform:scale(1.02)}to{transform:scale(1.13)}}
 
-/* ---------- uccelli in cielo ----------
-   Silhouette scure che attraversano l'inquadratura, stile Ghibli: sagoma piena,
-   ali che battono lente e planate. Disegnati in SVG, nessun asset da caricare. */
+/* ---------- atmosfera ----------
+   Uccelli, foglie e pulviscolo: pochi elementi che si muovono con tempi diversi
+   e non si ripetono a occhio, cosi' la scena sembra respirare invece di essere
+   una cartolina. Tutto in CSS, nessun asset da caricare. */
 #sky{position:absolute;inset:0;pointer-events:none;overflow:hidden;display:none}
 #sky.on{display:block}
+
+/* uccelli: silhouette che attraversano l'inquadratura */
 .bird{position:absolute;left:0;width:26px;animation:vola linear infinite;will-change:transform}
 .bird svg{display:block;width:100%;height:auto;fill:rgba(18,22,32,.82)}
 .bird .ali{transform-origin:50% 62%;animation:battito 1.5s ease-in-out infinite}
@@ -40,12 +43,36 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
   62%{transform:scaleY(.92)}                    /* planata */
   82%{transform:scaleY(1)}
 }
-/* la traiettoria sale e scende appena, come chi sfrutta le correnti */
 @keyframes vola{
   0%{transform:translate(-18vw,0) scale(.85)}
   35%{transform:translate(28vw,-3.5vh) scale(1)}
   70%{transform:translate(72vw,-1vh) scale(1.05)}
   100%{transform:translate(120vw,-5vh) scale(.9)}
+}
+
+/* foglie: scendono lente ondeggiando, come portate da una brezza */
+.leaf{position:absolute;top:-6vh;width:9px;height:12px;border-radius:60% 10% 60% 10%;
+ opacity:.55;animation:cade linear infinite;will-change:transform}
+.leaf i{display:block;width:100%;height:100%;border-radius:inherit;
+ animation:ondeggia ease-in-out infinite}
+@keyframes cade{
+  0%{transform:translate(0,-8vh) rotate(0)}
+  100%{transform:translate(var(--drift,14vw),112vh) rotate(540deg)}
+}
+@keyframes ondeggia{
+  0%,100%{transform:translateX(-1.6vw) rotate(-18deg)}
+  50%{transform:translateX(1.6vw) rotate(22deg)}
+}
+
+/* pulviscolo dorato controluce: sale appena e respira */
+.mote{position:absolute;width:2px;height:2px;border-radius:50%;
+ background:rgba(255,228,178,.75);box-shadow:0 0 5px rgba(255,206,130,.55);
+ animation:sale linear infinite;will-change:transform,opacity}
+@keyframes sale{
+  0%{transform:translate(0,0);opacity:0}
+  18%{opacity:.85}
+  70%{opacity:.6}
+  100%{transform:translate(var(--drift,4vw),-26vh);opacity:0}
 }
 
 /* ---------- NPC: corpo + testa ----------
