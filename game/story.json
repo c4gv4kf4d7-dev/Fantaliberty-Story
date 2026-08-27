@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "FantaLiberty — Nexus",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "start": "arrivo",
     "assetBase": "assets/",
     "genderVar": "genere",
@@ -198,19 +198,19 @@
           "key": "GENERE:",
           "var": "genere",
           "map": {
-            "m": "MASCHILE",
-            "f": "FEMMINILE",
-            "x": "NEUTRO"
+            "m": "M",
+            "f": "F",
+            "x": "N"
           }
         },
         {
-          "key": "ANZIANITA':",
+          "key": "ANNI:",
           "var": "anni",
           "map": {
-            "0": "<1 ANNO",
-            "1": "1-5 ANNI",
-            "2": "5-10 ANNI",
-            "3": "10+ ANNI"
+            "0": "<1",
+            "1": "1-5",
+            "2": "5-10",
+            "3": "10+"
           }
         },
         {
@@ -228,8 +228,8 @@
           "t": "prop",
           "id": "mac_terminale",
           "show": true,
-          "size": "54%",
-          "top": "5%"
+          "size": "64%",
+          "top": "4%"
         },
         {
           "t": "wait",
@@ -578,17 +578,24 @@
         {
           "t": "say",
           "who": "lucas",
-          "text": "Ecco il tuo badge, {NOME}. [BOZZA] Tienilo al collo e non perderlo: qui dentro senza quello non vai da nessuna parte."
+          "text": "Ecco il tuo badge, {NOME}. Tienilo al collo e non perderlo: qui dentro senza quello non vai da nessuna parte."
         },
         {
           "t": "say",
           "who": "lucas",
-          "text": "{g:Benvenuto|Benvenuta|Ti do il benvenuto} allo Steve Jobs Theater. {label:anni} in Apple: esperienza che qui conta parecchio."
+          "by": "anni",
+          "text": {
+            "0": "Primo anno, eh? Allora questo e' il tuo primo Keynote. Guardati intorno stasera: e' una cosa che ti ricordi per sempre.",
+            "1": "Qualche anno alle spalle: abbastanza per sapere come gira, non abbastanza da esserti stufat*. Il momento migliore, secondo me.",
+            "2": "Cinque, dieci anni... tu i Keynote li hai gia' visti. Ma da qui dentro e' un'altra storia, fidati.",
+            "3": "Piu' di dieci anni. Tu c'eri quando certe cose le annunciavano ancora su un palco piccolo. Stasera goditela.",
+            "*": "Comunque sia andata finora, stasera si riparte da zero come tutti."
+          }
         },
         {
           "t": "say",
           "who": "lucas",
-          "text": "[BOZZA] Adesso pero' non restare qui impalat*. Ti aspettano dentro."
+          "text": "{g:Benvenuto|Benvenuta|Ti do il benvenuto} allo Steve Jobs Theater. Adesso pero' non restare qui impalat*: ti aspettano dentro."
         }
       ],
       "next": "ritardo_ceo"

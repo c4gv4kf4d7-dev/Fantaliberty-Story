@@ -68,6 +68,17 @@
     });
   }
 
+  // Il testo di una battuta puo' dipendere da una variabile: si scrive "by" con
+  // il nome della variabile e "text" come oggetto valore -> frase ("*" e' il
+  // ripiego). Serve per far dire a Lucas cose diverse a seconda delle risposte.
+  function testoDi(st) {
+    if (typeof st.text === 'string') return st.text;
+    if (!st.text) return '';
+    var v = st.by ? VN.state[st.by] : null;
+    var scelto = st.text[String(v)];
+    return scelto != null ? scelto : (st.text['*'] || '');
+  }
+
   /* ---------------- typewriter ---------------- */
   function hideUI() {
     el.choices.classList.remove('on');
@@ -391,7 +402,7 @@
       case 'say':
         el.boxwrap.classList.add('in');
         setSpeaker(st.who);
-        type(fmt(st.text), function () { pending = next; el.arrow.style.opacity = 1; });
+        type(fmt(testoDi(st)), function () { pending = next; el.arrow.style.opacity = 1; });
         return;
 
       case 'choice':

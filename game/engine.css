@@ -93,7 +93,7 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #propwrap.out{opacity:0;transform:translate(-50%,-40px) scale(.8)}
 #prop{width:100%;display:block;image-rendering:pixelated;filter:drop-shadow(0 16px 30px rgba(0,0,0,.65))}
 #screen{position:absolute;left:28.6%;top:12.6%;width:43%;height:27%;
- padding:3% 4%;color:#0f3b34;font-size:clamp(5px,1.35vw,10px);line-height:1.7;overflow:hidden}
+ padding:3% 4%;color:#0f3b34;font-size:clamp(6px,1.7vw,12px);line-height:1.75;overflow:hidden}
 .frow{margin-bottom:.5em;white-space:nowrap;overflow:hidden}
 .fk{opacity:.75}
 .fv{font-weight:bold}

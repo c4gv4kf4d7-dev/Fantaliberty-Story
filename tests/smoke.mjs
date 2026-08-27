@@ -101,7 +101,13 @@ assert.ok(story.scenes.ingresso.dissolvenza, 'il cambio fondale e\' in dissolven
 assert.ok(!story.avatar, 'il carosello avatar non e\' piu\' nell\'apertura');
 assert.ok(!Object.values(story.scenes).some((sc) => sc.steps.some((st) => st.t === 'avatar')),
   'nessuno step avatar nelle scene');
-assert.match(story.scenes.badge.steps.map((s) => s.text || '').join(' '), /Ecco il tuo badge/);
+const perAnni = story.scenes.badge.steps.find((s) => s.by === 'anni');
+assert.ok(perAnni, 'una battuta cambia in base agli anni');
+for (const k of ['0', '1', '2', '3']) {
+  assert.ok(perAnni.text[k]?.length > 20, `manca la battuta per la fascia ${k}`);
+}
+assert.ok(perAnni.text['*'], 'serve anche un ripiego');
+assert.match(JSON.stringify(story.scenes.badge.steps), /Ecco il tuo badge/);
 
 // intro: cartello nero, righe scritte una dopo l'altra
 assert.ok($('curtain').classList.contains('on'), 'sipario nero visibile all\'avvio');
@@ -140,13 +146,13 @@ const opts = [...$('choices').querySelectorAll('.ch')];
 assert.equal(opts.length, 3);
 opts[1].onclick({ stopPropagation() {} });              // femminile
 assert.equal(VN.state.genere, 'f');
-assert.equal($('tval_genere').textContent, 'FEMMINILE');
+assert.equal($('tval_genere').textContent, 'F');
 
 // scelta anzianita'
 assert.match(txt(), /da quanto tempo lavori in Apple/);
 [...$('choices').querySelectorAll('.ch')][2].onclick({ stopPropagation() {} });   // 5-10 anni
 assert.equal(VN.state.anni, '2');
-assert.equal($('tval_anni').textContent, '5-10 ANNI');
+assert.equal($('tval_anni').textContent, '5-10');
 assert.equal($('tval___ok').textContent, '> BADGE IN STAMPA');
 
 // scena benvenuto: variante di genere femminile + sprite happy
@@ -154,10 +160,11 @@ assert.match(txt(), /^Ecco il tuo badge, FRANCO\./, 'Lucas consegna il badge');
 assert.ok($('npcBody').getAttribute('src').includes('chr_lucas_felice'), 'posa felice dopo il flash');
 
 VN.step();
-assert.match(txt(), /^Benvenuta allo Steve Jobs Theater\. Da 5 a 10 anni in Apple/, 'genere e anzianita\' nel testo');
-
+assert.match(txt(), /Cinque, dieci anni/, 'Lucas commenta la fascia di anzianita\' scelta');
 VN.step();
-assert.match(txt(), /non restare qui impalat/);
+assert.match(txt(), /^Benvenuta allo Steve Jobs Theater\./, 'variante di genere');
+
+
 
 /* ---------- 4. salvataggio / ripresa ---------- */
 assert.ok(VN.hasSave(story), 'partita salvata in localStorage');

@@ -84,7 +84,8 @@ Tutto lo script vive in `game/story.json`. Ogni scena e' una lista di `steps`:
 
 | step | esempio | effetto |
 |---|---|---|
-| `say` | `{"t":"say","who":"Lucas","text":"Ciao {NOME}!"}` | battuta + typewriter, avanza al tap |
+| `say` | `{"t":"say","who":"lucas","text":"Ciao {NOME}!"}` | battuta + typewriter, avanza al tap |
+| `say` a bivio | `{"t":"say","by":"anni","text":{"0":"…","3":"…","*":"…"}}` | la battuta cambia col valore della variabile (`*` = ripiego) |
 | `choice` | `{"t":"choice","var":"genere","text":"...","options":[{"label":"Maschile","value":"m"}]}` | bottoni; salva in `var`; `goto` opzionale per opzione |
 | `input` | `{"t":"input","var":"nome","max":14,"text":"Come ti chiami?"}` | campo di testo sanitizzato |
 | `show` / `hide` | `{"t":"show","who":"susan","body":"in_piedi","head":"ansia"}` | entra/esce il personaggio |
