@@ -1,0 +1,176 @@
+# FANTALIBERTY — MANIFEST ASSET
+### Cosa sono, dove si usano, come li carica il codice
+
+Questo documento accompagna lo script (v3.0) e serve a Claude Code per capire
+**quale file corrisponde a quale elemento del gioco**, in che scena appare,
+e con che meccanica va gestito (stato fisso, sprite intercambiabile, layer
+sovrapposto, ecc.). I nomi file sono quelli usati in produzione.
+
+Formato per ogni voce: **file** → *scena* → uso.
+
+---
+
+## FONDALI
+Uno sfondo intero per schermata, sempre presente sotto ogni altra cosa.
+
+| File | Scena | Uso |
+|---|---|---|
+| `bg_esterno_vialetto` | S0 | Primo frame assoluto del gioco, prima di qualunque interazione |
+| `bg_esterno_ingresso` | S0 | Dietro Lucas e il terminale durante la registrazione |
+| `bg_lobby_z1_tenda` | S1 | Zona 1 della lobby. Ha l'hotspot ENTRA al centro. **L'apertura si anima in codice** (fade o split delle due metà dell'immagine), non serve un secondo fondale "tenda aperta" |
+| `bg_lobby_z2_hall_of_fame` | S1 | Zona 2. Sopra ci vanno le targhe (`obj_targa_hall_of_fame`) come layer cliccabili |
+| `bg_lobby_z3_premi` | S1 | Zona 3. Sopra ci va la teca (`obj_teca_premi`) e lo sprite di Francesca |
+| `bg_lobby_z4_quiz_bloccata` | S1 | Zona 4 prima del lock. Sopra: `obj_tavolino_buzzer_peter` + Peter addormentato |
+| `bg_lobby_z4_quiz_aperta` | S8 | Stessa zona, generata come derivato diretto della bloccata con le luci alzate — va usata al posto della precedente non appena `run.locked === true` |
+| `bg_sala_ingresso_superiore` | S2 | Appare subito dopo la transizione della tenda. Susan piccola sul palco in fondo |
+| `bg_sala_discesa_palco` | S2 | Opzionale/P1 — solo se si implementa il parallax a 3 layer invece del fade semplice tra S2 e S4 |
+| `bg_backstage_corridoio` | S2 | Corridoio verso il camerino, durante la corsa |
+| `bg_camerino` | S3 | Fondale della scelta stile — il più a lungo osservato del gioco |
+| `bg_dietro_le_quinte` | S4 | Subito prima dell'ingresso in scena |
+| `bg_palco_sipario_chiuso` | S4 | Frame 1 dell'apertura sipario. **Simmetrico sull'asse centrale**: si taglia in due metà via codice per l'animazione, non serve un asset per il sipario a metà apertura |
+| `bg_palco_platea_piena` | S5 | Fondale di base del palco per tutta la Scena 5. La platea qui è neutra/in attesa — le reazioni vere sono layer separati (vedi PLATEA) |
+| `bg_palco_schermo_categorie` | S5 | Variante di `bg_palco_platea_piena` con lo schermo dietro in evidenza, diviso in 3 pannelli vuoti dove vanno sovrapposte `obj_icone_categorie` |
+| `bg_palco_luci_calate` | S6 | Fondale del teleprompter — derivato da `bg_palco_platea_piena` con luci abbassate |
+| `bg_finale_porta_illuminata` | S7 | La porta col rettangolo di luce vuoto: sopra ci va lo sprite `chr_ceo_sagoma` / `chr_ceo_pollice_su` |
+| `bg_countdown_nero` | S7 | Schermata post-lock, riaperta ogni giorno fino al keynote vero |
+
+---
+
+## PERSONAGGI FISSI (NPC)
+Ogni file è uno sprite PNG trasparente intero (non a layer). Il codice
+sceglie quale mostrare in base allo stato della scena/dialogo corrente.
+
+### Lucas — solo Scena 0
+`chr_lucas_idle` · `chr_lucas_saluto` · `chr_lucas_indica_terminale` ·
+`chr_lucas_pollice_su` (dopo accredito) · `chr_lucas_divertito` (P2, reazione
+a nickname/input buffi)
+
+### Francesca — solo Scena 1
+`chr_francesca_idle` · `chr_francesca_benvenuto` · `chr_francesca_gesto_swipe`
+(tutorial — **deve coincidere col gesto reale richiesto**, verificare
+l'animazione dello swipe implementata prima di finalizzare l'asset) ·
+`chr_francesca_indica_tenda` (tono neutro, no spoiler) ·
+`chr_francesca_orgogliosa` (zona premi) · `chr_francesca_ride` (P2, solo
+testa) · `chr_francesca_scettica` (P2, solo testa, se il giocatore ritocca
+lo stesso hotspot 3+ volte)
+
+### Susan — Scene 2, 3, 4, 5 (evento carponi), 7
+`chr_susan_panico_telefoni` (S2, primo incontro) · `chr_susan_mani_capelli`
+(S2) · `chr_susan_indica_camerino` (S2) · `chr_susan_guarda_orologio` (S3, se
+il giocatore impiega troppo a scegliere lo stile) ·
+`chr_susan_commento_stile` (S3 — **sprite sheet con 4 teste**, una per
+stile: va tagliato in 4 file separati e mostrato in base a `run.style`) ·
+`chr_susan_spinta_in_scena` (S4, posa piena) · `chr_susan_sollievo` (S7) ·
+`chr_susan_sguardo_in_alto` (S7, verso la porta) · `chr_susan_carponi` (S5,
+P2, solo se scelta sfacciata in S2)
+
+### Peter — Scene 1 e 8
+`chr_peter_occhi_bassi` (S1, ora **addormentato** — versione riveduta) ·
+`chr_peter_alza_occhi` (S8, si sveglia di scatto) · `chr_peter_annuisce`
+(S8, risposta corretta — feedback lecito qui) · `chr_peter_scuote_testa`
+(S8, risposta sbagliata — **frame singolo**, non più a 2 frame) ·
+`chr_peter_applauso_ironico` (S8, P2, punteggio pieno) ·
+`chr_peter_guarda_orologio` (S8, timer sotto i 3 secondi)
+
+### Martha — nessun corpo, solo in Scene 4, 5, 8, 7
+`chr_martha_indicatore_regia` — **icona, non personaggio**: 2 frame di
+cuffia+onde sonore, mostrata accanto al box dialogo ogni volta che Martha
+parla (box con colore diverso dagli altri, per distinguere "voce" da
+"presenza fisica")
+`chr_martha_ritratto_regia` (P2, opzionale) — unica immagine con un volto,
+usata solo nel finale (S7) in un riquadro stile monitor
+
+### CEO — solo Scena 7
+`chr_ceo_sagoma` (silhouette, immobile) → `chr_ceo_pollice_su` (2° frame,
+stessa posizione/scala, solo il braccio cambia) — sovrapposti al rettangolo
+vuoto di `bg_finale_porta_illuminata`
+
+---
+
+## I 4 STILI GIOCABILI
+Ogni stile ha 9 file. Una volta scelto in `run.style` durante la S3,
+**quello stesso sprite set** viene usato per tutta la partita (S4→S7). Non
+sono layer componibili: ogni posa è un'immagine intera.
+
+| File (per ogni stile: hawaiano / showman / drip / ingegnere) | Dove |
+|---|---|
+| `stile_X_idle_camerino` | S3 — carosello di scelta |
+| `stile_X_idle_palco` | S4-S5 — stato di attesa, ha l'auricolare disegnato dentro |
+| `stile_X_annuncio` | S5 — **la posa più usata di tutto il gioco**, mostrata a ogni risposta data |
+| `stile_X_indica_schermo` | S5 — si alterna casualmente con `_annuncio` per dare varietà |
+| `stile_X_imbarazzo` | S5 — mostrata sui micro-eventi generali che vanno storti |
+| `stile_X_saluto_finale` | S7 — usata anche nella card condivisibile esportata |
+| `stile_X_espressioni` | **sprite sheet 4 teste** (neutro/sicuro/sorpreso/in difficoltà) — va tagliato in 4 file e sovrapposto come variante di espressione dove serve una reazione più fine senza cambiare tutta la posa |
+| `stile_X_evento_STACCHETTO/ASSOLO/RIDER/DOMANDA` | S5 — mostrata solo durante l'evento personale specifico di quello stile |
+
+*Nota per il codice:* `run.style` determina quale set di 9 file caricare
+all'inizio della S4 e non cambia più per tutta la sessione.
+
+---
+
+## OGGETTI E PROPS
+
+| File | Dove | Uso |
+|---|---|---|
+| `obj_terminale_accrediti` | S0 | Il Macintosh vintage. **Lo schermo CRT è vuoto/generico nell'immagine** — il testo dei 6 campi del form è HTML/UI vera sovrapposta, non parte della grafica |
+| `obj_badge` | S0, S7 | Template riutilizzabile: nome e foto/avatar restano placeholder vuoti nell'immagine, riempiti via codice. Riusato identico nella card condivisibile finale |
+| `obj_targa_hall_of_fame` | S1 | Template unico, il testo per edizione (anno, vincitore) è overlay dinamico, non richiede una nuova immagine per ogni edizione |
+| `obj_teca_premi` | S1 | Il contenuto della teca (i premi dell'anno) va sovrapposto come layer separato/variabile, la teca stessa è fissa |
+| `obj_lucchetto_zona4` | S1, S8 | **2 frame** (chiuso/che si apre): mostrato sopra Peter finché `run.locked === false`, poi sostituito dal frame "aperto" con un piccolo effetto una tantum al momento dello sblocco |
+| `obj_tavolino_buzzer_peter` | S1, S8 | **2 frame** (non premuto/premuto), da tagliare a metà dal file consegnato — sono due immagini identiche affiancate, split orizzontale semplice |
+| `obj_clicker` | S5 | **2 frame** (integro/inceppato), usato durante il micro-evento "il clicker si inceppa" |
+| `obj_gobbo_teleprompter` | S6 | Cornice UI del recap — il testo scorrevole delle scelte è HTML/UI vera, non grafica |
+| `obj_slide_compleanno` | S5 | Immagine intera mostrata per un attimo sullo schermo del palco durante il relativo micro-evento |
+| `obj_schermo_slide_categoria` | S5 | **3 varianti** (iPhone/Watch/Altro) — mostrate sullo schermo dietro il personaggio quando quel macroargomento è selezionato e attivo |
+| `obj_icone_categorie` | S5 | **9 file** (3 icone × 3 stati: attiva/completata/disabilitata) — sovrapposte sui 3 pannelli vuoti di `bg_palco_schermo_categorie`, lo stato cambia in base a `picks[categoria]` completo o no |
+| `obj_card_condivisibile` | S7 | Template finale: combina `stile_X_saluto_finale`, `obj_badge` compilato, nome e store — esportato client-side come immagine 1080×1920/1080×1350 |
+| `obj_zaino_rider` | S5 | **Ora è un personaggio pixel-art completo** (rider con zaino termico), non un oggetto isolato — appare solo nell'evento personale della Drip |
+
+---
+
+## PLATEA
+Layer sovrapposti a `bg_palco_platea_piena`, mai correlati al contenuto
+della risposta data.
+
+| File | Uso |
+|---|---|
+| `pla_platea_idle` | Stato di default, sempre presente sotto le altre reazioni |
+| `pla_applauso_pieno` | Reazione casuale dopo una risposta, **mai legata a quale opzione è stata scelta** |
+| `pla_applauso_tiepido` | Idem, variante più contenuta |
+| `pla_risata` | Sui micro-eventi comici |
+| `pla_silenzio_imbarazzato` | Sul micro-evento marimba |
+| `pla_coro_nome` | Solo durante l'evento personale dello Showman (L'assolo) |
+
+---
+
+## EFFETTI
+
+| File | Dove | Uso |
+|---|---|---|
+| `fx_apertura_sipario` | S4 | Applicato tagliando `bg_palco_sipario_chiuso` in due metà e animandole verso i lati — non un asset separato da generare, è una tecnica di codice sull'immagine esistente |
+| `fx_fascio_luce_porta` | S7 | Overlay luminoso sopra `bg_finale_porta_illuminata` |
+| `fx_transizioni_base` | Trasversale | Fade nero, parallax dello swipe in lobby, shake — 3 effetti CSS/codice, riusati ovunque serva un cambio scena |
+
+---
+
+## UI (nessun asset grafico — solo codice/CSS)
+
+box dialogo (variante colore per Martha) · bottone scelta · navigazione
+lobby (frecce+dot) · hotspot pulsante · carosello scelta stile · card
+domanda · schermata recap · modale conferma · timer domanda (10s, +3s per
+l'Ingegnere) · badge/salvadanaio moltiplicatore quiz · banner notifica
+fantasma · countdown finale · card "bentornato" (ripresa partita)
+
+---
+
+## ASSET SCARTATI IN FASE DI PROGETTAZIONE
+Segnati qui per evitare che Claude Code li cerchi per errore.
+
+- **`obj_tenda_ingresso`** — eliminato. L'apertura della tenda è un effetto
+  di codice su `bg_lobby_z1_tenda`, non un oggetto separato.
+- **`obj_auricolare`** — eliminato come asset a sé. È disegnato direttamente
+  dentro ogni `stile_X_idle_palco` e le pose successive di ciascuno stile.
+- **`obj_specchio_camerino`** — assorbito dentro `bg_camerino` come parte
+  fissa del fondale, non serve come oggetto separato.
+- Un ipotetico fondale "tenda aperta" — non esiste, si salta direttamente a
+  `bg_sala_ingresso_superiore` dopo la transizione in codice.
