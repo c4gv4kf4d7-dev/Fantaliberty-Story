@@ -13,9 +13,40 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 /* il fondale sta su un layer suo: cosi' il testo che si scrive non lo fa ridisegnare */
 #bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;
  image-rendering:pixelated;transition:filter .8s ease;transform:translateZ(0);will-change:filter,transform}
-#bg.zoom{animation:zoom 6s ease-out forwards}
+/* secondo fondale: sta sopra e sfuma per il cambio scena */
+#bg2{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;
+ image-rendering:pixelated;opacity:0;transform:translateZ(0)}
+#bg2.mostra{animation:bgfade 1.4s ease forwards}
+@keyframes bgfade{from{opacity:0}to{opacity:1}}
+
+#bg.zoom,#bg2.zoom{animation:zoom 6s ease-out forwards}
+/* zoom lento: per le inquadrature che devono respirare a lungo */
+#bg.zoomlento,#bg2.zoomlento{animation:zoomlento 22s linear forwards}
 @keyframes zoom{from{transform:scale(1.06)}to{transform:scale(1.16)}}
-#bg.blur{filter:blur(6px) brightness(.55)}
+@keyframes zoomlento{from{transform:scale(1.02)}to{transform:scale(1.13)}}
+
+/* ---------- uccelli in cielo ----------
+   Silhouette scure che attraversano l'inquadratura, stile Ghibli: sagoma piena,
+   ali che battono lente e planate. Disegnati in SVG, nessun asset da caricare. */
+#sky{position:absolute;inset:0;pointer-events:none;overflow:hidden;display:none}
+#sky.on{display:block}
+.bird{position:absolute;left:0;width:26px;animation:vola linear infinite;will-change:transform}
+.bird svg{display:block;width:100%;height:auto;fill:rgba(18,22,32,.82)}
+.bird .ali{transform-origin:50% 62%;animation:battito 1.5s ease-in-out infinite}
+@keyframes battito{
+  0%,100%{transform:scaleY(1)}
+  22%{transform:scaleY(.34) translateY(2%)}    /* ali in basso */
+  46%{transform:scaleY(1.06)}
+  62%{transform:scaleY(.92)}                    /* planata */
+  82%{transform:scaleY(1)}
+}
+/* la traiettoria sale e scende appena, come chi sfrutta le correnti */
+@keyframes vola{
+  0%{transform:translate(-18vw,0) scale(.85)}
+  35%{transform:translate(28vw,-3.5vh) scale(1)}
+  70%{transform:translate(72vw,-1vh) scale(1.05)}
+  100%{transform:translate(120vw,-5vh) scale(.9)}
+}
 
 /* ---------- NPC: corpo + testa ----------
    #npc e' il riquadro del personaggio; la testa e' posizionata in percentuale
@@ -182,9 +213,11 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #flash.go{animation:fl .55s ease-out}
 @keyframes fl{0%{opacity:.85}100%{opacity:0}}
 
-#loaderr{position:absolute;inset:0;display:none;place-items:center;padding:8vw;color:#ffb4b4;
- font-size:12px;line-height:2;text-align:center}
+#loaderr{position:absolute;inset:0;z-index:9;background:#0a0a0f;display:none;place-items:center;
+ padding:8vw;color:#ffd9d9;font-size:12px;line-height:2;text-align:center}
 #loaderr.on{display:grid}
+#loaderr button{margin-top:18px;background:#2a3050;border:3px solid #fff;border-radius:8px;
+ color:#fff;font-family:inherit;font-size:12px;padding:12px 16px;cursor:pointer}
 
 /* Schermi larghi (Safari su Mac, tablet): niente stiramento a tutto schermo.
    Si disegna una cornice con le proporzioni di un iPhone (390x844) centrata,

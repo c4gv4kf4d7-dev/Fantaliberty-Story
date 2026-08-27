@@ -73,16 +73,6 @@ for (const [who, c] of Object.entries(story.cast || {})) {
   if (Object.keys(c.heads || {}).length) assert.ok(c.neck, `cast ${who}: manca "neck" (ancoraggio collo)`);
 }
 
-// avatar: quattro avatar gia' pronti, ognuno con la sua battuta di Lucas
-const av = story.avatar;
-assert.equal(av?.options?.length, 4, 'avatar: servono 4 avatar');
-for (const o of av.options) {
-  assert.ok(o.id && o.say, `avatar "${o.id}": manca la battuta di Lucas`);
-  const rel = av.path.replace('{id}', o.id);
-  if (!onDisk(rel)) todoAssets.add(`avatar/${o.id}`);
-}
-assert.ok(av.prompt && av.confirm, 'avatar: servono prompt e testo di conferma');
-
 /* ---------- 3. flusso di gioco in jsdom ---------- */
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8')
   .replace(/<script src=".*?"><\/script>/, '')
@@ -102,6 +92,16 @@ VN.boot(story, { speed: 0, onEnd: (s) => { ended = s; } });   // speed 0 = nient
 // avvio: la barra di caricamento precede il cartello
 const primi = story.scenes[story.meta.start].steps.map((s) => s.t);
 assert.deepEqual(primi.slice(0, 3), ['logo', 'boot', 'title'], 'sigla, poi loading, poi cartello');
+// l'apertura sta su due fondali: vialetto con gli uccelli, poi ingresso in dissolvenza
+assert.equal(story.scenes.arrivo.bg, 'esterno_vialetto');
+assert.ok(story.scenes.arrivo.uccelli > 0, 'uccelli in cielo sul vialetto');
+assert.equal(story.scenes.ingresso.bg, 'esterno_ingresso');
+assert.ok(story.scenes.ingresso.dissolvenza, 'il cambio fondale e\' in dissolvenza');
+// niente piu' scelta avatar: Lucas consegna il badge
+assert.ok(!story.avatar, 'il carosello avatar non e\' piu\' nell\'apertura');
+assert.ok(!Object.values(story.scenes).some((sc) => sc.steps.some((st) => st.t === 'avatar')),
+  'nessuno step avatar nelle scene');
+assert.match(story.scenes.badge.steps.map((s) => s.text || '').join(' '), /Ecco il tuo badge/);
 
 // intro: cartello nero, righe scritte una dopo l'altra
 assert.ok($('curtain').classList.contains('on'), 'sipario nero visibile all\'avvio');
@@ -147,65 +147,32 @@ assert.match(txt(), /da quanto tempo lavori in Apple/);
 [...$('choices').querySelectorAll('.ch')][2].onclick({ stopPropagation() {} });   // 5-10 anni
 assert.equal(VN.state.anni, '2');
 assert.equal($('tval_anni').textContent, '5-10 ANNI');
-assert.equal($('tval___ok').textContent, '> REGISTRAZIONE OK');
-
-// carosello avatar: si scorrono tutti e 4, la conferma appare solo alla fine
-assert.ok($('picker').classList.contains('on'), 'carosello avatar visibile');
-assert.equal($('avatar').querySelectorAll('.alayer').length, 1, 'un avatar per volta');
-assert.equal(VN.state.avatar, 'a', 'parte dal primo');
-assert.match(txt(), /Questo e' il classico/, 'Lucas commenta il primo avatar');
-assert.equal($('pok'), null, 'niente conferma prima di averli visti tutti');
-
-$('pnext').onclick({ stopPropagation() {} });
-assert.equal(VN.state.avatar, 'b');
-assert.match(txt(), /meta' del reparto Retail/, 'Lucas commenta il secondo');
-assert.equal($('pok'), null);
-$('pnext').onclick({ stopPropagation() {} });
-assert.equal($('pok'), null, 'ancora niente conferma al terzo');
-$('pnext').onclick({ stopPropagation() {} });
-
-// visti tutti e quattro: ora Lucas invita a scegliere e compare la conferma
-assert.equal(VN.state.avatar, 'd');
-assert.match(txt(), /Scorri ancora se vuoi/, 'invito a scegliere');
-assert.ok($('pok'), 'conferma disponibile dopo il quarto');
-assert.equal($('picker').querySelectorAll('.pdot.seen').length, 4, 'tutti i pallini segnati');
-
-// puo' continuare a scorrere: torna indietro e sceglie il primo
-$('pprev').onclick({ stopPropagation() {} });
-$('pprev').onclick({ stopPropagation() {} });
-$('pprev').onclick({ stopPropagation() {} });
-assert.equal(VN.state.avatar, 'a', 'tornato al primo scorrendo indietro');
-assert.ok($('pok'), 'la conferma resta disponibile');
-$('pok').onclick({ stopPropagation() {} });
-assert.equal(VN.state.avatar, 'a', 'avatar confermato');
-
-// l'avatar scelto resta in scena
-assert.equal($('avatar').querySelector('.alayer')?.dataset.avatar, 'a', 'avatar ancora in scena');
+assert.equal($('tval___ok').textContent, '> BADGE IN STAMPA');
 
 // scena benvenuto: variante di genere femminile + sprite happy
-assert.match(txt(), /^Benvenuta allo Steve Jobs Theater, FRANCO!/, 'variante {g:} femminile');
+assert.match(txt(), /^Ecco il tuo badge, FRANCO\./, 'Lucas consegna il badge');
 assert.ok($('npcBody').getAttribute('src').includes('chr_lucas_felice'), 'posa felice dopo il flash');
 
 VN.step();
-assert.match(txt(), /Ti sei registrata senza intoppi\. Da 5 a 10 anni in Apple/, 'label scelta riusata nel testo');
+assert.match(txt(), /^Benvenuta allo Steve Jobs Theater\. Da 5 a 10 anni in Apple/, 'genere e anzianita\' nel testo');
 
 VN.step();
-assert.match(txt(), /Direi che sei pronta/);
+assert.match(txt(), /non restare qui impalat/);
 
 /* ---------- 4. salvataggio / ripresa ---------- */
 assert.ok(VN.hasSave(story), 'partita salvata in localStorage');
 const saved = VN.readSave();
 assert.equal(saved.state.nome, 'Franco');
-assert.equal(saved.scene, 'benvenuto');
+assert.equal(saved.scene, 'badge');
 
 // nuova sessione: riprende dal checkpoint invece di ricominciare
 VN.boot(story, { speed: 0 });
-assert.match(txt(), /Avevi lasciato il gioco a "Atto 1 — Benvenuto"/, 'prompt di ripresa');
+assert.match(txt(), /Avevi lasciato il gioco a "Atto 1 — Il badge"/, 'prompt di ripresa');
 const resumeBtns = [...$('choices').querySelectorAll('.ch')];
 assert.equal(resumeBtns.length, 2);
 resumeBtns[0].onclick({ stopPropagation() {} });                       // Riprendi
 assert.equal(VN.state.nome, 'Franco', 'variabili ripristinate');
-assert.match(txt(), /Direi che sei pronta/, 'ripreso dalla battuta giusta');
+assert.match(txt(), /non restare qui impalat/, 'ripreso dalla battuta giusta');
 assert.ok($('npcBody').getAttribute('src').includes('chr_lucas_felice'), 'scena ricomposta (posa corretta)');
 
 // ...oppure ricomincia da capo e il salvataggio sparisce
@@ -238,9 +205,7 @@ VN.step();                    // prima battuta di Lucas
 $('ti').value = 'Luca'; $('ti').oninput(); $('tok').onclick();
 [...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // maschile
 [...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // <1 anno
-[...Array(3)].forEach(() => $('pnext').onclick({ stopPropagation() {} }));       // scorre gli avatar
-$('pok').onclick({ stopPropagation() {} });
-assert.match(txt(), /^Benvenuto allo Steve Jobs Theater, LUCA!/, 'variante {g:} maschile');
+assert.match(txt(), /^Ecco il tuo badge, LUCA\./, 'percorso rapido fino al badge');
 
 if (todoAssets.size) console.log(`asset ancora da disegnare (${todoAssets.size}):`, [...todoAssets].join(', '));
 console.log('smoke test: OK');

@@ -55,6 +55,21 @@ Actions del repo, workflow "pages build and deployment". Se resta *queued* a lun
 il sito continua a servire la versione precedente: non e' cache del browser, e'
 il deploy che non e' ancora passato.
 
+## Se il gioco resta nero
+
+La pagina parte nera per l'intro, quindi un errore all'avvio si vedrebbe come uno
+schermo nero muto. Tre reti di sicurezza:
+
+* **motore e pagina devono avere la stessa versione** (`VN.engine` in engine.js e
+  `ENGINE_ATTESO` in index.html). Se il browser mescola una pagina nuova con un
+  motore vecchio preso dalla cache, il gioco si ricarica una volta sola con un
+  indirizzo che la cache non puo' servire. Alza `VN.engine` **e** `ENGINE_ATTESO`
+  insieme quando cambi il contratto (step nuovi, id nuovi nell'HTML)
+* **paracadute a 8 secondi**: se non e' partito niente si esce dal nero e compare
+  "Riparti da capo", che cancella il salvataggio e ricarica pulito
+* **salvataggi di versioni precedenti** dello script vengono scartati invece che
+  ripristinati (`meta.version` in story.json fa da chiave)
+
 ## Salvataggio
 
 La partita si salva da sola in `localStorage` (chiave `fl_nexus_save_v1`) a ogni

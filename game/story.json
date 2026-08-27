@@ -1,17 +1,22 @@
 {
   "meta": {
     "title": "FantaLiberty — Nexus",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "start": "arrivo",
     "assetBase": "assets/",
     "genderVar": "genere",
-    "genderOrder": ["m", "f", "x"],
+    "genderOrder": [
+      "m",
+      "f",
+      "x"
+    ],
     "note": "Formato: iPhone portrait 390x844. Il terzo inferiore e' area dialogo."
   },
-
   "assets": {
     "bg": {
-      "esterno_teatro": "bg/bg_esterno_teatro.webp",
+      "esterno_vialetto": "bg/bg_esterno_vialetto.webp",
+      "esterno_ingresso": "bg/bg_esterno_ingresso.webp",
+      "camerino": "bg/bg_camerino.webp",
       "lobby": "bg/bg_lobby.webp",
       "sala_teatro": "bg/bg_sala_teatro.webp"
     },
@@ -20,7 +25,6 @@
     },
     "chars": {}
   },
-
   "cast": {
     "lucas": {
       "name": "Lucas",
@@ -37,7 +41,11 @@
       "name": "Susan",
       "defaultBody": "in_piedi",
       "defaultHead": "ansia",
-      "neck": { "x": "50%", "y": "3%", "w": "32%" },
+      "neck": {
+        "x": "50%",
+        "y": "3%",
+        "w": "32%"
+      },
       "bodies": {
         "in_piedi": "chars/chr_susan_corpo_in_piedi@3x.webp",
         "spinta": "chars/chr_susan_corpo_spinta@3x.webp"
@@ -54,8 +62,14 @@
       "name": "Maurice",
       "defaultBody": "in_piedi",
       "defaultHead": "neutro",
-      "neck": { "x": "50%", "y": "3%", "w": "32%" },
-      "bodies": { "in_piedi": "chars/chr_maurice_corpo_in_piedi@3x.webp" },
+      "neck": {
+        "x": "50%",
+        "y": "3%",
+        "w": "32%"
+      },
+      "bodies": {
+        "in_piedi": "chars/chr_maurice_corpo_in_piedi@3x.webp"
+      },
       "heads": {
         "neutro": "chars/chr_maurice_testa_neutro@3x.webp",
         "positivo": "chars/chr_maurice_testa_positivo@3x.webp",
@@ -66,8 +80,14 @@
       "name": "Martha",
       "defaultBody": "in_piedi",
       "defaultHead": "neutro",
-      "neck": { "x": "50%", "y": "3%", "w": "32%" },
-      "bodies": { "in_piedi": "chars/chr_martha_corpo_in_piedi@3x.webp" },
+      "neck": {
+        "x": "50%",
+        "y": "3%",
+        "w": "32%"
+      },
+      "bodies": {
+        "in_piedi": "chars/chr_martha_corpo_in_piedi@3x.webp"
+      },
       "heads": {
         "neutro": "chars/chr_martha_testa_neutro@3x.webp",
         "positivo": "chars/chr_martha_testa_positivo@3x.webp"
@@ -77,8 +97,14 @@
       "name": "Veterano",
       "defaultBody": "seduto",
       "defaultHead": "neutro",
-      "neck": { "x": "50%", "y": "5%", "w": "32%" },
-      "bodies": { "seduto": "chars/chr_veterano_corpo_seduto@3x.webp" },
+      "neck": {
+        "x": "50%",
+        "y": "5%",
+        "w": "32%"
+      },
+      "bodies": {
+        "seduto": "chars/chr_veterano_corpo_seduto@3x.webp"
+      },
       "heads": {
         "neutro": "chars/chr_veterano_testa_neutro@3x.webp",
         "compiaciuto": "chars/chr_veterano_testa_compiaciuto@3x.webp",
@@ -89,7 +115,11 @@
       "name": "???",
       "defaultBody": "in_piedi",
       "defaultHead": "neutro",
-      "neck": { "x": "50%", "y": "3%", "w": "32%" },
+      "neck": {
+        "x": "50%",
+        "y": "3%",
+        "w": "32%"
+      },
       "bodies": {
         "in_piedi": "chars/chr_premi_corpo_in_piedi@3x.webp",
         "tada": "chars/chr_premi_corpo_tada@3x.webp"
@@ -100,223 +130,468 @@
       }
     }
   },
-
-  "avatar": {
-    "path": "avatar/avt_{id}.png",
-    "prompt": "Allora, chi sei stasera? Scorri ancora se vuoi, poi conferma.",
-    "confirm": "Scelgo questo",
-    "options": [
-      { "id": "a", "label": "Avatar 1", "say": "[BOZZA] Questo e' il classico: badge dritto, sguardo sveglio. Non sbagli mai." },
-      { "id": "b", "label": "Avatar 2", "say": "[BOZZA] Questo invece l'ha scelto meta' del reparto Retail. Fai un po' te." },
-      { "id": "c", "label": "Avatar 3", "say": "[BOZZA] Ah, questo mi piace. Sembra uno che le domande le fa davvero." },
-      { "id": "d", "label": "Avatar 4", "say": "[BOZZA] E poi c'e' questo. Diciamo che si fa notare." }
-    ]
-  },
-
   "vars": {
     "nome": "",
-    "avatar": null,
     "genere": null,
     "anni": null,
     "punti": 0
   },
-
   "scenes": {
-
     "arrivo": {
       "title": "Atto 1 — L'arrivo",
-      "bg": "esterno_teatro",
-      "bgFx": "zoom",
+      "bg": "esterno_vialetto",
+      "bgFx": "zoomlento",
+      "uccelli": 4,
       "steps": [
         {
-          "t": "logo", "img": "ui/logo_studio.png",
-          "nero": 1000, "accensione": 1000, "fisso": 2000, "uscita": 900
+          "t": "logo",
+          "img": "ui/logo_studio.png",
+          "nero": 1000,
+          "accensione": 1000,
+          "fisso": 2000,
+          "uscita": 900
         },
-        { "t": "boot", "blocchi": 9, "ms": 2200, "cursore": 1600 },
+        {
+          "t": "boot",
+          "blocchi": 9,
+          "ms": 2200,
+          "cursore": 1600
+        },
         {
           "t": "title",
           "lines": [
-            { "text": "Cupertino, California.", "pausa": 950 },
-            { "text": "Apple Park.", "pausa": 1150 },
-            { "text": "-1 ora al Keynote.", "big": true }
+            {
+              "text": "Cupertino, California.",
+              "pausa": 950
+            },
+            {
+              "text": "Apple Park.",
+              "pausa": 1150
+            },
+            {
+              "text": "-1 ora al Keynote.",
+              "big": true
+            }
           ]
         },
-        { "t": "fx", "name": "lights" },
-        { "t": "wait", "ms": 3600 },
-        { "t": "show", "who": "lucas", "body": "neutro" },
-        { "t": "wait", "ms": 600 },
-        { "t": "say", "who": "lucas", "text": "Ciao! Io sono Lucas... ti stavamo aspettando allo Steve Jobs Theater!" }
+        {
+          "t": "fx",
+          "name": "lights"
+        },
+        {
+          "t": "wait",
+          "ms": 4200
+        }
       ],
-      "next": "registrazione"
+      "next": "ingresso"
     },
-
     "registrazione": {
       "title": "Atto 1 — Registrazione",
-      "bg": "esterno_teatro",
+      "bg": "esterno_ingresso",
       "bgFx": "blur",
       "terminal": [
-        { "key": "NOME:", "var": "nome" },
-        { "key": "GENERE:", "var": "genere", "map": { "m": "MASCHILE", "f": "FEMMINILE", "x": "NEUTRO" } },
-        { "key": "ANZIANITA':", "var": "anni", "map": { "0": "<1 ANNO", "1": "1-5 ANNI", "2": "5-10 ANNI", "3": "10+ ANNI" } },
-        { "key": "", "var": "__ok" }
+        {
+          "key": "NOME:",
+          "var": "nome"
+        },
+        {
+          "key": "GENERE:",
+          "var": "genere",
+          "map": {
+            "m": "MASCHILE",
+            "f": "FEMMINILE",
+            "x": "NEUTRO"
+          }
+        },
+        {
+          "key": "ANZIANITA':",
+          "var": "anni",
+          "map": {
+            "0": "<1 ANNO",
+            "1": "1-5 ANNI",
+            "2": "5-10 ANNI",
+            "3": "10+ ANNI"
+          }
+        },
+        {
+          "key": "",
+          "var": "__ok"
+        }
       ],
       "steps": [
-        { "t": "show", "who": "lucas", "body": "neutro" },
-        { "t": "prop", "id": "mac_terminale", "show": true, "size": "54%", "top": "5%" },
-        { "t": "wait", "ms": 600 },
         {
-          "t": "input", "who": "lucas", "var": "nome", "max": 14,
+          "t": "show",
+          "who": "lucas",
+          "body": "neutro"
+        },
+        {
+          "t": "prop",
+          "id": "mac_terminale",
+          "show": true,
+          "size": "54%",
+          "top": "5%"
+        },
+        {
+          "t": "wait",
+          "ms": 600
+        },
+        {
+          "t": "input",
+          "who": "lucas",
+          "var": "nome",
+          "max": 14,
           "text": "Registriamoti al terminale. Come ti chiami?"
         },
         {
-          "t": "choice", "who": "lucas", "var": "genere",
+          "t": "choice",
+          "who": "lucas",
+          "var": "genere",
           "text": "Perfetto, {NOME}. Come preferisci che mi rivolga a te?",
           "options": [
-            { "label": "Maschile", "value": "m" },
-            { "label": "Femminile", "value": "f" },
-            { "label": "Neutro", "value": "x" }
+            {
+              "label": "Maschile",
+              "value": "m"
+            },
+            {
+              "label": "Femminile",
+              "value": "f"
+            },
+            {
+              "label": "Neutro",
+              "value": "x"
+            }
           ]
         },
         {
-          "t": "choice", "who": "lucas", "var": "anni",
+          "t": "choice",
+          "who": "lucas",
+          "var": "anni",
           "text": "Annotato. E da quanto tempo lavori in Apple?",
           "options": [
-            { "label": "Meno di 1 anno", "say": "Meno di un anno", "value": "0" },
-            { "label": "Da 1 a 5 anni", "say": "Da 1 a 5 anni", "value": "1" },
-            { "label": "Da 5 a 10 anni", "say": "Da 5 a 10 anni", "value": "2" },
-            { "label": "Piu' di 10 anni", "say": "Piu' di 10 anni", "value": "3" }
+            {
+              "label": "Meno di 1 anno",
+              "say": "Meno di un anno",
+              "value": "0"
+            },
+            {
+              "label": "Da 1 a 5 anni",
+              "say": "Da 1 a 5 anni",
+              "value": "1"
+            },
+            {
+              "label": "Da 5 a 10 anni",
+              "say": "Da 5 a 10 anni",
+              "value": "2"
+            },
+            {
+              "label": "Piu' di 10 anni",
+              "say": "Piu' di 10 anni",
+              "value": "3"
+            }
           ]
         },
-        { "t": "set", "var": "__ok", "value": "> REGISTRAZIONE OK" },
-        { "t": "wait", "ms": 700 },
-        { "t": "prop", "show": false },
         {
-          "t": "avatar", "who": "lucas",
-          "text": "Ultima cosa: il badge vuole una faccia. Te ne faccio vedere quattro."
-        }
-      ],
-      "next": "benvenuto"
-    },
-
-    "benvenuto": {
-      "title": "Atto 1 — Benvenuto",
-      "bg": "esterno_teatro",
-      "steps": [
-        { "t": "fx", "name": "flash" },
-        { "t": "fx", "name": "unblur" },
-        { "t": "show", "who": "lucas", "body": "felice", "pop": true },
-        {
-          "t": "say", "who": "lucas",
-          "text": "{g:Benvenuto|Benvenuta|Ti do il benvenuto} allo Steve Jobs Theater, {NOME}! Grazie, ben fatto."
+          "t": "set",
+          "var": "__ok",
+          "value": "> BADGE IN STAMPA"
         },
         {
-          "t": "say", "who": "lucas",
-          "text": "{g:Ti sei registrato senza intoppi.|Ti sei registrata senza intoppi.|La registrazione e' andata a buon fine.} {label:anni} in Apple: esperienza che qui conta parecchio."
+          "t": "wait",
+          "ms": 900
         },
         {
-          "t": "say", "who": "lucas",
-          "text": "Il badge e' attivo. {g:Direi che sei pronto.|Direi che sei pronta.|Direi che hai tutto quello che serve.} Puoi entrare... che aspetti?"
+          "t": "prop",
+          "show": false
         }
       ],
-      "next": "ritardo_ceo"
+      "next": "badge"
     },
-
     "ritardo_ceo": {
-      "title": "Atto 2 — Il ritardo del CEO",
-      "bg": "sala_teatro",
+      "title": "Atto 2 — Il camerino",
+      "bg": "camerino",
       "steps": [
-        { "t": "hide" },
-        { "t": "wait", "ms": 400 },
-        { "t": "show", "who": "susan", "body": "in_piedi", "head": "ansia" },
-        { "t": "say", "who": "susan", "text": "[BOZZA] {NOME}? {NOME}! Meno male. Abbiamo un problema: Ternus e' in ritardo e il keynote inizia tra venti minuti." },
-        { "t": "say", "who": "susan", "text": "[BOZZA] No, non hai capito. TU adesso vieni con me dietro le quinte. Muoviti!" },
         {
-          "t": "choice", "who": "susan", "var": "tono",
+          "t": "hide"
+        },
+        {
+          "t": "wait",
+          "ms": 400
+        },
+        {
+          "t": "show",
+          "who": "susan",
+          "body": "in_piedi",
+          "head": "ansia"
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "text": "[BOZZA] {NOME}? {NOME}! Meno male. Abbiamo un problema: Ternus e' in ritardo e il keynote inizia tra venti minuti."
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "text": "[BOZZA] No, non hai capito. TU adesso vieni con me dietro le quinte. Muoviti!"
+        },
+        {
+          "t": "choice",
+          "who": "susan",
+          "var": "tono",
           "text": "[BOZZA] Allora? Che facciamo?",
           "options": [
-            { "label": "Ti seguo, andiamo", "value": "sfacciato", "react": { "level": "expr", "head": "positiva" } },
-            { "label": "Aspetta, chi sei?", "value": "prudente", "react": { "level": "expr", "head": "scettica" } }
+            {
+              "label": "Ti seguo, andiamo",
+              "value": "sfacciato",
+              "react": {
+                "level": "expr",
+                "head": "positiva"
+              }
+            },
+            {
+              "label": "Aspetta, chi sei?",
+              "value": "prudente",
+              "react": {
+                "level": "expr",
+                "head": "scettica"
+              }
+            }
           ]
         },
-        { "t": "react", "level": "pose", "body": "spinta", "head": "ansia" },
-        { "t": "say", "who": "susan", "text": "[BOZZA] ...ne riparliamo dopo. Corri!" }
+        {
+          "t": "react",
+          "level": "pose",
+          "body": "spinta",
+          "head": "ansia"
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "text": "[BOZZA] ...ne riparliamo dopo. Corri!"
+        }
       ],
-      "next": "lobby"
+      "next": "lobby",
+      "dissolvenza": true
     },
-
     "lobby": {
       "title": "Atto 3 — La lobby",
       "bg": "lobby",
       "steps": [
-        { "t": "hide" },
-        { "t": "show", "who": "maurice" },
-        { "t": "say", "who": "maurice", "text": "[BOZZA] Ehi, calma. Prima che ti buttino sul palco, ti faccio vedere com'e' fatto questo posto." },
         {
-          "t": "choice", "who": "maurice", "var": "sezione",
+          "t": "hide"
+        },
+        {
+          "t": "show",
+          "who": "maurice"
+        },
+        {
+          "t": "say",
+          "who": "maurice",
+          "text": "[BOZZA] Ehi, calma. Prima che ti buttino sul palco, ti faccio vedere com'e' fatto questo posto."
+        },
+        {
+          "t": "choice",
+          "who": "maurice",
+          "var": "sezione",
           "text": "[BOZZA] Da dove vuoi partire?",
           "options": [
-            { "label": "Il gioco delle previsioni", "value": "gioco", "goto": "backstage" },
-            { "label": "I premi", "value": "premi", "goto": "premi" },
-            { "label": "Il quiz storico", "value": "quiz", "goto": "quiz" }
+            {
+              "label": "Il gioco delle previsioni",
+              "value": "gioco",
+              "goto": "backstage"
+            },
+            {
+              "label": "I premi",
+              "value": "premi",
+              "goto": "premi"
+            },
+            {
+              "label": "Il quiz storico",
+              "value": "quiz",
+              "goto": "quiz"
+            }
           ]
         }
       ]
     },
-
     "backstage": {
       "title": "Atto 4 — Backstage / regia",
       "bg": "sala_teatro",
       "steps": [
-        { "t": "hide" },
-        { "t": "show", "who": "martha" },
-        { "t": "say", "who": "martha", "text": "[BOZZA] Cuffie, microfono, tre minuti. Qui si decide come va lo show: le tue previsioni sul keynote." },
-        { "t": "say", "who": "martha", "text": "[BOZZA] (qui va il blocco previsioni FantaLiberty. Regola: le reazioni degli NPC e della platea seguono il TONO della risposta, mai il contenuto del pronostico.)" }
+        {
+          "t": "hide"
+        },
+        {
+          "t": "show",
+          "who": "martha"
+        },
+        {
+          "t": "say",
+          "who": "martha",
+          "text": "[BOZZA] Cuffie, microfono, tre minuti. Qui si decide come va lo show: le tue previsioni sul keynote."
+        },
+        {
+          "t": "say",
+          "who": "martha",
+          "text": "[BOZZA] (qui va il blocco previsioni FantaLiberty. Regola: le reazioni degli NPC e della platea seguono il TONO della risposta, mai il contenuto del pronostico.)"
+        }
       ],
       "next": "finale"
     },
-
     "quiz": {
       "title": "Atto 4 — Quiz storico",
       "bg": "lobby",
       "steps": [
-        { "t": "hide" },
-        { "t": "show", "who": "veterano" },
-        { "t": "say", "who": "veterano", "text": "[BOZZA] Io c'ero nel 2007. Vediamo se te la cavi." },
         {
-          "t": "choice", "who": "veterano", "var": "quiz1",
+          "t": "hide"
+        },
+        {
+          "t": "show",
+          "who": "veterano"
+        },
+        {
+          "t": "say",
+          "who": "veterano",
+          "text": "[BOZZA] Io c'ero nel 2007. Vediamo se te la cavi."
+        },
+        {
+          "t": "choice",
+          "who": "veterano",
+          "var": "quiz1",
           "text": "[BOZZA] In che anno e' stato presentato il primo iPhone?",
           "options": [
-            { "label": "2005", "value": "no" },
-            { "label": "2007", "value": "si", "react": { "level": "expr", "head": "compiaciuto" } },
-            { "label": "2009", "value": "no" }
+            {
+              "label": "2005",
+              "value": "no"
+            },
+            {
+              "label": "2007",
+              "value": "si",
+              "react": {
+                "level": "expr",
+                "head": "compiaciuto"
+              }
+            },
+            {
+              "label": "2009",
+              "value": "no"
+            }
           ]
         },
-        { "t": "say", "who": "veterano", "text": "[BOZZA] (qui la valutazione della risposta e l'assegnazione dei punti)" }
+        {
+          "t": "say",
+          "who": "veterano",
+          "text": "[BOZZA] (qui la valutazione della risposta e l'assegnazione dei punti)"
+        }
       ],
       "next": "premi"
     },
-
     "premi": {
       "title": "Atto 4 — Premi",
       "bg": "lobby",
       "steps": [
-        { "t": "hide" },
-        { "t": "show", "who": "premi", "body": "tada", "head": "positivo", "pop": true },
-        { "t": "fx", "name": "flash" },
-        { "t": "say", "who": "premi", "text": "[BOZZA] Ta-daaa! Questi te li sei {g:guadagnato|guadagnata|guadagnati}, {NOME}." }
+        {
+          "t": "hide"
+        },
+        {
+          "t": "show",
+          "who": "premi",
+          "body": "tada",
+          "head": "positivo",
+          "pop": true
+        },
+        {
+          "t": "fx",
+          "name": "flash"
+        },
+        {
+          "t": "say",
+          "who": "premi",
+          "text": "[BOZZA] Ta-daaa! Questi te li sei {g:guadagnato|guadagnata|guadagnati}, {NOME}."
+        }
       ],
       "next": "finale"
     },
-
     "finale": {
       "title": "Finale",
       "bg": "lobby",
       "steps": [
-        { "t": "hide" },
-        { "t": "show", "who": "lucas", "body": "felice", "pop": true },
-        { "t": "say", "who": "lucas", "text": "[BOZZA] E' andata alla grande, {NOME}! Il tuo risultato e' salvato: ci vediamo in classifica." },
-        { "t": "end" }
+        {
+          "t": "hide"
+        },
+        {
+          "t": "show",
+          "who": "lucas",
+          "body": "felice",
+          "pop": true
+        },
+        {
+          "t": "say",
+          "who": "lucas",
+          "text": "[BOZZA] E' andata alla grande, {NOME}! Il tuo risultato e' salvato: ci vediamo in classifica."
+        },
+        {
+          "t": "end"
+        }
       ]
+    },
+    "ingresso": {
+      "title": "Atto 1 — All'ingresso",
+      "bg": "esterno_ingresso",
+      "dissolvenza": true,
+      "uccelli": 0,
+      "steps": [
+        {
+          "t": "wait",
+          "ms": 1600
+        },
+        {
+          "t": "show",
+          "who": "lucas",
+          "body": "neutro"
+        },
+        {
+          "t": "wait",
+          "ms": 600
+        },
+        {
+          "t": "say",
+          "who": "lucas",
+          "text": "Ciao! Io sono Lucas... ti stavamo aspettando allo Steve Jobs Theater!"
+        }
+      ],
+      "next": "registrazione"
+    },
+    "badge": {
+      "title": "Atto 1 — Il badge",
+      "bg": "esterno_ingresso",
+      "steps": [
+        {
+          "t": "fx",
+          "name": "flash"
+        },
+        {
+          "t": "show",
+          "who": "lucas",
+          "body": "felice",
+          "pop": true
+        },
+        {
+          "t": "say",
+          "who": "lucas",
+          "text": "Ecco il tuo badge, {NOME}. [BOZZA] Tienilo al collo e non perderlo: qui dentro senza quello non vai da nessuna parte."
+        },
+        {
+          "t": "say",
+          "who": "lucas",
+          "text": "{g:Benvenuto|Benvenuta|Ti do il benvenuto} allo Steve Jobs Theater. {label:anni} in Apple: esperienza che qui conta parecchio."
+        },
+        {
+          "t": "say",
+          "who": "lucas",
+          "text": "[BOZZA] Adesso pero' non restare qui impalat*. Ti aspettano dentro."
+        }
+      ],
+      "next": "ritardo_ceo"
     }
   }
 }

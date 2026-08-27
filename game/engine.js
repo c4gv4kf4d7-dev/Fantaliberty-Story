@@ -24,6 +24,11 @@
   var $ = function (id) { return global.document.getElementById(id); };
 
   var VN = {
+    // Versione del motore. index.html controlla che sia quella che si aspetta:
+    // se il browser mescola una pagina nuova con un motore vecchio preso dalla
+    // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
+    // nuovi, id nuovi nell'HTML).
+    engine: '2',
     story: null,
     state: {},      // variabili di gioco (nome, genere, avatar_*, ...)
     scene: null,
@@ -313,6 +318,9 @@
     var d = VN.readSave();
     if (!d) return false;
     var st = story || VN.story;
+    // salvataggio di una versione precedente dello script: si scarta, altrimenti
+    // il ripristino punta a scene o step che non esistono piu'
+    if (st && st.meta && d.v !== (st.meta.version || '0')) { VN.clearSave(); return false; }
     if (st && !st.scenes[d.scene]) return false;                // scena rimossa dallo script
     if (st && d.scene === st.meta.start && !d.i) return false;
     return true;
@@ -331,6 +339,7 @@
     var sc = VN.story.scenes[save.scene];
     VN.scene = sc; VN.sceneId = save.scene;
     if (sc.bg) setBg(sc.bg, sc.bgFx);
+    gabbiani(sc.uccelli || 0);
     if (sc.terminal) { buildTerminal(sc.terminal); sc.terminal.forEach(function (r) { termSet(r.var); }); }
     drawAvatar();                                   // l'avatar vive nelle variabili: si ridisegna sempre
     var upto = Math.min(save.i || 0, (sc.steps || []).length);
@@ -352,7 +361,8 @@
       el.curtain.classList.remove('on', 'lights');
     }
     VN.scene = sc; VN.sceneId = id; VN.i = 0;
-    if (sc.bg) setBg(sc.bg, sc.bgFx);
+    if (sc.bg) setBg(sc.bg, sc.bgFx, sc.dissolvenza);
+    gabbiani(sc.uccelli || 0);
     if (sc.terminal) buildTerminal(sc.terminal);
     run();
   }
@@ -455,7 +465,8 @@
         return next();
 
       case 'bg':
-        setBg(st.id || (VN.scene && VN.scene.bg), st.fx);
+        setBg(st.id || (VN.scene && VN.scene.bg), st.fx, st.dissolvenza);
+        if (st.uccelli != null) gabbiani(st.uccelli);
         return next();
 
       case 'fx':
@@ -769,10 +780,57 @@
     return a ? withBase(a) : '';
   }
 
-  function setBg(id, fx) {
-    if (id) el.bg.src = assetUrl('bg', id);
-    el.bg.classList.remove('zoom', 'blur');
-    if (fx) String(fx).split(' ').forEach(function (f) { if (f) el.bg.classList.add(f); });
+  // Cambio fondale. Con "dissolvenza" il nuovo entra sopra il vecchio e prende
+  // il suo posto a transizione finita, cosi' il passaggio non e' uno stacco secco.
+  var bgCorrente = null;
+  function setBg(id, fx, dissolvenza) {
+    var src = id ? assetUrl('bg', id) : el.bg.src;
+
+    if (dissolvenza && VN.speed && bgCorrente && id !== bgCorrente) {
+      el.bg2.src = src;
+      el.bg2.className = '';
+      void el.bg2.offsetWidth;
+      applicaFx(el.bg2, fx);
+      el.bg2.classList.add('mostra');
+      setTimeout(function () {
+        el.bg.src = src;
+        applicaFx(el.bg, fx);
+        el.bg2.className = '';
+      }, 1400);
+    } else {
+      if (id) el.bg.src = src;
+      applicaFx(el.bg, fx);
+      el.bg2.className = '';
+    }
+    if (id) bgCorrente = id;
+  }
+
+  function applicaFx(node, fx) {
+    node.classList.remove('zoom', 'zoomlento', 'blur');
+    if (fx) String(fx).split(' ').forEach(function (f) { if (f) node.classList.add(f); });
+  }
+
+  function gabbiani(quanti) {
+    el.sky.innerHTML = '';
+    el.sky.classList.toggle('on', !!quanti);
+    for (var i = 0; i < (quanti || 0); i++) {
+      var b = global.document.createElement('div');
+      b.className = 'bird';
+      b.innerHTML =
+        '<svg viewBox="0 0 64 26" aria-hidden="true"><g class="ali">' +
+        '<path d="M2 6c6 .5 11 3.6 14.5 7.4 2 2.2 3.6 3.9 5.2 4.7 1.7.9 3.3.9 5 0' +
+        ' 1.7-.9 3.3-2.6 5.3-4.8C35.6 9.4 40.5 6.4 46.6 6c-4.5 2.6-7.6 6-10 9.3' +
+        '-1.6 2.2-3 4.2-4.7 5.5-1.3 1-2.6 1.5-4 1.5s-2.7-.5-4-1.5c-1.7-1.3-3.1-3.3' +
+        '-4.7-5.5C16.8 12 13.7 8.6 9.2 6c-2.5-.1-5-.1-7.2 0z"/>' +
+        '</g></svg>';
+      b.style.top = (7 + Math.random() * 26) + '%';
+      b.style.width = (16 + Math.random() * 18) + 'px';
+      b.style.animationDuration = (26 + Math.random() * 20) + 's';
+      b.style.animationDelay = (-Math.random() * 40) + 's';   // gia' in volo all'apertura
+      var ali = b.querySelector('.ali');
+      if (ali) ali.style.animationDuration = (1.25 + Math.random() * 0.7) + 's';
+      el.sky.appendChild(b);
+    }
   }
 
   /* ---------------- boot ---------------- */
@@ -787,7 +845,7 @@
     VN.onEnd = opts.onEnd || null;
 
     el = {
-      stage: $('stage'), bg: $('bg'), npc: $('npc'), npcBody: $('npcBody'), npcHead: $('npcHead'),
+      stage: $('stage'), bg: $('bg'), bg2: $('bg2'), sky: $('sky'), npc: $('npc'), npcBody: $('npcBody'), npcHead: $('npcHead'),
       curtain: $('curtain'), curtainTxt: $('curtainTxt'), curtainArrow: $('curtainArrow'), hint: $('hint'),
       boot: $('boot'), bootbar: $('bootbar'), logo: $('logo'), logoImg: $('logoImg'),
       avatar: $('avatar'), propwrap: $('propwrap'), prop: $('prop'), screen: $('screen'),
@@ -797,6 +855,7 @@
     };
     el.avatar.innerHTML = '';
     el.avatar.classList.remove('on');
+    bgCorrente = null;
 
     el.stage.onclick = function (e) {
       if (e && e.target && e.target.closest &&

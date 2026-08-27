@@ -25,8 +25,10 @@ await p.screenshot({ path: 'shots/0-intro.png' });
 await p.click('#stage');                                  // tap: si accendono le luci
 await p.waitForTimeout(1600);
 await p.screenshot({ path: 'shots/0-accensione.png' });
-await p.waitForTimeout(3000);
-await p.screenshot({ path: 'shots/1-arrivo.png' });
+await p.waitForTimeout(2200);
+await p.screenshot({ path: 'shots/1-vialetto.png' });     // vialetto con gli uccelli
+await p.waitForTimeout(3600);
+await p.screenshot({ path: 'shots/1-ingresso.png' });     // dopo la dissolvenza, Lucas
 await p.evaluate(() => { VN.speed = 0; });                 // il resto in fretta
 // avanza finche' non compare il campo del nome
 for (let i = 0; i < 6 && !(await p.isVisible('#ti')); i++) {
@@ -47,6 +49,6 @@ await p.click('#pnext'); await p.waitForTimeout(1200);
 await p.screenshot({ path: 'shots/4-avatar-4.png' });
 await p.click('#pok');
 await p.waitForTimeout(900);
-await p.screenshot({ path: 'shots/5-benvenuto.png' });
+await p.screenshot({ path: 'shots/5-badge.png' });
 console.log(errs.length ? errs.join('\n') : 'nessun errore JS/rete');
 await b.close();
