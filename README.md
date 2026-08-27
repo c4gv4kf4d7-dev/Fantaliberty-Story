@@ -1,4 +1,4 @@
-# FantaLiberty — Nexus (visual novel)
+# FantaLiberty — Story (visual novel)
 
 Visual novel / onboarding gamificato. **Sito statico puro**: HTML5 + CSS3 + JS vanilla,
 nessun framework, nessun build step obbligatorio, nessun backend. Gira su GitHub Pages
