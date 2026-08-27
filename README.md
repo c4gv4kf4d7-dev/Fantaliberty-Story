@@ -95,6 +95,8 @@ Tutto lo script vive in `game/story.json`. Ogni scena e' una lista di `steps`:
 | `say` a bivio | `{"t":"say","by":"anni","text":{"0":"…","3":"…","*":"…"}}` | la battuta cambia col valore della variabile (`*` = ripiego) |
 | `choice` | `{"t":"choice","var":"genere","text":"...","options":[{"label":"Maschile","value":"m"}]}` | bottoni; salva in `var`; `goto` opzionale per opzione |
 | `input` | `{"t":"input","var":"nome","max":14,"text":"Come ti chiami?"}` | campo di testo sanitizzato |
+| `list` | `{"t":"list","var":"device","gruppi":[{"nome":"iPhone 17","opzioni":[{"label":"iPhone 17","value":"17","classe":"md"}]}]}` | lista a tendina: per le scelte troppo lunghe da fare a bottoni. `classeCorpo` + `classe` mettono una classe sul `<body>` (e' cosi' che il modello di iPhone adatta il layout) |
+| `badge` | `{"t":"badge","prop":"badge","nome":"{NOME}"}` | mostra il badge dell'accredito col nome del giocatore sopra; senza l'immagine disegna una cornice di ripiego |
 | `show` / `hide` | `{"t":"show","who":"susan","body":"in_piedi","head":"ansia"}` | entra/esce il personaggio |
 | `react` | `{"t":"react","level":"expr","head":"positiva"}` | reazione a 3 livelli (micro/expr/pose) |
 | `avatar` | `{"t":"avatar","text":"Te ne faccio vedere quattro."}` | carosello dei 4 avatar |
@@ -115,7 +117,13 @@ Interpolazione nei testi:
 * `{label:anni}` etichetta dell'opzione scelta per quella variabile
 
 La scena puo' definire `terminal`: le righe mostrate sullo schermo del Mac, che si
-compilano da sole man mano che le variabili vengono impostate.
+compilano da sole man mano che le variabili vengono impostate. Sono tante e lo
+schermo e' piccolo: il motore rimpicciolisce il testo finche' ci sta, e rimisura
+quando l'immagine del Mac finisce di caricarsi.
+
+`meta.assetiInArrivo` elenca i file gia' disegnati ma non ancora convertiti e
+caricati: `npm test` li segnala come "da convertire" invece di fallire, e il
+motore disegna un ripiego al posto loro.
 
 ## Formato e layout
 

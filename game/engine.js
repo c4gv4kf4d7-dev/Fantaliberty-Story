@@ -15,8 +15,8 @@
      VN.hasSave() / VN.readSave() / VN.clearSave() / VN.saveNow()
 
    Step supportati:
-     logo | boot | title | say | choice | input | avatar | show | hide | react | prop | bg |
-     fx | wait | set | goto | end
+     logo | boot | title | say | choice | input | list | badge | avatar | show | hide |
+     react | prop | bg | fx | wait | set | goto | end
 */
 (function (global) {
   'use strict';
@@ -28,7 +28,7 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '2',
+    engine: '3',
     story: null,
     state: {},      // variabili di gioco (nome, genere, avatar_*, ...)
     scene: null,
@@ -83,6 +83,7 @@
   function hideUI() {
     el.choices.classList.remove('on');
     el.inputform.classList.remove('on');
+    if (el.listform) el.listform.classList.remove('on');
     el.picker.classList.remove('on');
     revealUI = null;
   }
@@ -427,6 +428,21 @@
         revealUI = function () { showInput(st); };
         return;
 
+      case 'list':
+        el.boxwrap.classList.add('in');
+        setSpeaker(st.who);
+        type(fmt(st.text), function () { showList(st); });
+        revealUI = function () { showList(st); };
+        return;
+
+      case 'badge':
+        el.boxwrap.classList.add('in');
+        if (st.who) setSpeaker(st.who);
+        if (st.text) type(fmt(st.text), function () { mostraBadge(st, next); });
+        else mostraBadge(st, next);
+        revealUI = function () { mostraBadge(st, next); };
+        return;
+
       case 'avatar':
         el.boxwrap.classList.add('in');
         setSpeaker(st.who);
@@ -757,6 +773,66 @@
     setTimeout(function () { try { el.ti.focus(); } catch (e) {} }, 80);
   }
 
+  /* Scelta da lista: come "choice" ma con un <select> invece dei bottoni.
+     Serve quando le opzioni sono troppe per stare a schermo — i 31 modelli di
+     iPhone — e su iOS apre il selettore nativo, molto piu' comodo di una
+     colonna di bottoni lunga tre schermate.
+     Le opzioni possono portarsi dietro una classe (`classe`) che viene messa sul
+     <body> con il prefisso dichiarato in `classeCorpo`: e' cosi' che il modello
+     di iPhone scelto adatta il layout, come faceva l'edizione WWDC26. */
+  function showList(st) {
+    var gruppi = st.gruppi || [{ opzioni: st.options || [] }];
+    el.tsel.innerHTML = '';
+
+    if (st.placeholder !== false) {
+      var vuota = global.document.createElement('option');
+      vuota.value = ''; vuota.textContent = st.placeholder || 'Scegli…';
+      vuota.disabled = true; vuota.selected = true;
+      el.tsel.appendChild(vuota);
+    }
+    gruppi.forEach(function (g) {
+      var dove = el.tsel;
+      if (g.nome) {
+        dove = global.document.createElement('optgroup');
+        dove.label = g.nome;
+        el.tsel.appendChild(dove);
+      }
+      (g.opzioni || []).forEach(function (o) {
+        var op = global.document.createElement('option');
+        op.value = o.value;
+        op.textContent = o.label;
+        if (o.classe) op.dataset.classe = o.classe;
+        dove.appendChild(op);
+      });
+    });
+
+    el.tselok.disabled = st.placeholder !== false;
+    el.tsel.onchange = function () { el.tselok.disabled = !el.tsel.value; };
+    el.tselok.onclick = function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      if (el.tselok.disabled) return;
+      var scelta = el.tsel.options[el.tsel.selectedIndex];
+      VN.state[st.var] = el.tsel.value;
+      VN.state['__label_' + st.var] = scelta.textContent;
+      if (st.classeCorpo && scelta.dataset.classe) applicaClasseCorpo(st.classeCorpo, scelta.dataset.classe);
+      termSet(st.var);
+      VN.progressed = true;
+      hideUI();
+      next();
+    };
+    el.listform.classList.add('on');
+  }
+
+  // Toglie le classi precedenti con lo stesso prefisso e mette quella nuova,
+  // cosi' due scelte di fila non lasciano due classi addosso al body.
+  function applicaClasseCorpo(prefisso, valore) {
+    var b = global.document.body;
+    [].slice.call(b.classList).forEach(function (c) {
+      if (c.indexOf(prefisso) === 0) b.classList.remove(c);
+    });
+    b.classList.add(prefisso + valore);
+  }
+
   /* ---------------- terminale del prop ---------------- */
   var termRows = [];
   function buildTerminal(rows) {
@@ -825,6 +901,29 @@
   }
 
   function termCursorOff() { var c = $('tcur'); if (c) c.style.display = 'none'; }
+
+  /* Badge dell'accredito: Lucas lo consegna a fine registrazione. L'immagine e'
+     un template con la mela gia' disegnata e lo spazio del nome vuoto (vedi
+     docs/manifest-asset.md); il nome ci viene scritto sopra qui.
+     Se il file non c'e' ancora, la cornice viene disegnata in CSS: il nome
+     resta leggibile e la scena non mostra un'icona di immagine rotta. */
+  function mostraBadge(st, done) {
+    if (!el.badgewrap) return done();
+    el.badgeName.textContent = fmt(st.nome || '{NOME}');
+    el.badgewrap.classList.remove('senzaimg');
+
+    var src = st.img ? withBase(st.img) : (st.prop ? assetUrl('props', st.prop) : '');
+    if (src) {
+      el.badgeImg.onerror = function () { el.badgewrap.classList.add('senzaimg'); };
+      el.badgeImg.src = src;
+    } else {
+      el.badgewrap.classList.add('senzaimg');
+    }
+
+    el.badgewrap.classList.add('in');
+    pending = function () { el.badgewrap.classList.remove('in'); done(); };
+    el.arrow.style.opacity = 1;
+  }
 
   /* ---------------- asset ---------------- */
   function withBase(rel) {
@@ -956,21 +1055,26 @@
       avatar: $('avatar'), propwrap: $('propwrap'), prop: $('prop'), screen: $('screen'),
       boxwrap: $('boxwrap'), name: $('name'), txt: $('txt'), arrow: $('arrow'),
       choices: $('choices'), inputform: $('inputform'), ti: $('ti'), tok: $('tok'),
+      listform: $('listform'), tsel: $('tsel'), tselok: $('tselok'),
+      badgewrap: $('badgewrap'), badgeImg: $('badgeImg'), badgeName: $('badgeName'),
       picker: $('picker'), flash: $('flash')
     };
     el.avatar.innerHTML = '';
     el.avatar.classList.remove('on');
+    if ($('badgewrap')) $('badgewrap').classList.remove('in');
     bgCorrente = null;
 
     el.stage.onclick = function (e) {
       if (e && e.target && e.target.closest &&
           (e.target.closest('#choices') || e.target.closest('#inputform') ||
+           e.target.closest('#listform') ||
            e.target.closest('#picker') || e.target.closest('#propwrap'))) return;
       VN.step();
     };
     global.document.onkeydown = function (e) {
       if (e.key !== ' ' && e.key !== 'Enter') return;
       if (el.inputform.classList.contains('on') || el.choices.classList.contains('on') ||
+          (el.listform && el.listform.classList.contains('on')) ||
           el.picker.classList.contains('on')) return;
       VN.step();
     };
