@@ -250,15 +250,27 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
    su un ambiente dove Google Fonts non rispondeva, e il box usciva tarato a tre
    righe — sui telefoni veri il testo spariva sotto il bordo. Per questo ora il
    font sta nel repo (vedi @font-face in cima).
-   Cinque righe occupano il 18% dello schermo sull'iPhone piu' piccolo, quindi
-   non serve rimpicciolire il testo per farcele stare.
+   MA cinque righe fisse coprivano il personaggio anche quando la battuta ne
+   occupava una: 371 battute su 595 stanno in una o due righe, quindi per il 62%
+   del gioco c'erano tre righe di scatolone vuoto davanti a Lucas.
+   Percio' l'altezza e' fissa da due righe in giu' e cresce solo quando serve
+   davvero, fino a cinque. Il salto mentre si scrive — che era il difetto di
+   partenza — non torna: type() misura la frase intera PRIMA di cominciare e
+   fissa subito l'altezza definitiva (vedi riservaAltezza nel motore). Quindi il
+   box non si muove mai durante la battuta; cambia solo fra una battuta e
+   l'altra, e per due volte su tre nemmeno quello.
+   Niente scorrimento del testo: con 425 battute su 595 che occupano tre righe o
+   piu', vorrebbe dire far scorrere il 71% dei dialoghi, e una battuta che si
+   legge solo scorrendo e' una battuta che qualcuno non legge.
    Il testo sta in alto: centrandolo, la prima riga si sposterebbe su nel
    momento in cui compare la seconda — cioe' proprio lo scatto da togliere. */
 #box{background:#1b1f33;border:3px solid #fff;border-radius:12px;padding:14px 16px;margin-top:-3px;
  color:#fff;font-size:clamp(8px,2.5vw,13px);line-height:1.7;
  /* con box-sizing:border-box nell'altezza ci stanno anche padding e bordo,
-    quindi vanno sommati: 3 righe + 2x14 di padding + 2x3 di bordo */
- height:calc(5 * 1.7em + 2 * 14px + 2 * 3px);box-sizing:border-box;overflow:hidden;
+    quindi vanno sommati: righe + 2x14 di padding + 2x3 di bordo */
+ min-height:calc(2 * 1.7em + 2 * 14px + 2 * 3px);
+ max-height:calc(5 * 1.7em + 2 * 14px + 2 * 3px);
+ box-sizing:border-box;overflow:hidden;
  display:flex;align-items:center;
  box-shadow:0 6px 0 rgba(0,0,0,.5)}
 /* La riga di sistema e' sempre corta e non la dice nessuno: la' in mezzo sta
