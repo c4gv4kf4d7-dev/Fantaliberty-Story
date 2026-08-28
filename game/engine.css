@@ -280,6 +280,9 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  font-family:inherit;font-size:clamp(8px,2.35vw,12px);cursor:pointer;text-align:left;
  box-shadow:0 3px 0 rgba(0,0,0,.5)}
 .ch:hover,.ch:focus{background:#3d466e;outline:none}
+/* voce visibile ma non toccabile: dice perche' quella strada e' chiusa */
+.ch.spento{opacity:.45;cursor:default;border-color:rgba(255,255,255,.35);box-shadow:none}
+.ch.spento:hover{background:#2a3050}
 
 #inputform{margin-top:10px;display:none;gap:7px}
 #inputform.on{display:flex}
@@ -458,6 +461,59 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.5);letter-spacing:.04em}
 #blocca:hover,#blocca:focus{background:#a83333;outline:none}
 #blocca:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.5)}
+
+/* ---------- quiz di Peter (S8) ----------
+   Sopra il box: a che punto sei del livello e la barra del tempo. Sotto i tre
+   secondi diventa rossa e pulsa — e' l'unico avviso oltre a Peter che guarda
+   l'orologio. */
+/* la griglia dei livelli convive con le azioni sotto: il box si stringe, come
+   nel recap, altrimenti la terza fila esce dallo schermo */
+#boxwrap.quizhub{max-height:62%}
+#boxwrap.quizhub #box{height:auto;overflow:visible;font-size:clamp(7px,2vw,11px);line-height:1.6}
+#quizbar{display:none;flex-direction:column;gap:5px;margin-bottom:7px}
+#quizbar.on{display:flex}
+/* sta sopra il fondale, non dentro il box: senza uno sfondo suo spariva sul
+   marmo chiaro della lobby */
+#qinfo{align-self:flex-start;background:rgba(10,12,22,.85);border-radius:6px;
+ padding:4px 8px;color:#9fb4d8;font-size:clamp(6px,1.7vw,9px);letter-spacing:.06em}
+#qtimer{position:relative;height:12px;background:#1b1f33;border:2px solid #fff;
+ border-radius:7px;overflow:hidden}
+#qbar{height:100%;background:#6fce7c;transition:width .1s linear}
+#qsec{position:absolute;right:6px;top:50%;transform:translateY(-50%);
+ color:#fff;font-size:clamp(5px,1.5vw,8px);text-shadow:0 0 3px #000}
+#qtimer.poco #qbar{background:#e8604c}
+#qtimer.poco{animation:qpulsa .5s infinite}
+@keyframes qpulsa{0%,100%{border-color:#fff}50%{border-color:#e8604c}}
+/* il perk del drip: si vede che e' un bottone diverso dalle risposte, e sta
+   sotto a tutta larghezza anche quando le risposte sono su due colonne */
+.ch.perk{background:#3a2a52;border-color:#c07be0;font-size:clamp(7px,2vw,10px)}
+#choices.due .ch.perk{grid-column:1/-1}
+.ch.perk:hover,.ch.perk:focus{background:#4c3769}
+
+/* ---------- assegnazione dei moltiplicatori [S8.FINALE] ----------
+   Una riga per macroargomento, meno e piu' a passi di 0.05. Si conferma solo
+   quando la banca e' distribuita tutta: nessun avanzo da buttare. */
+#multwrap{margin-top:10px;display:none;flex-direction:column;gap:8px}
+#multwrap.on{display:flex}
+#boxwrap.mult #box{height:auto;overflow:visible;font-size:clamp(7px,2vw,11px);line-height:1.6}
+#multrighe{display:flex;flex-direction:column;gap:6px}
+.mriga{display:flex;align-items:center;gap:8px;background:#2a3050;
+ border:2px solid rgba(255,255,255,.55);border-radius:7px;padding:7px 9px}
+.mnome{flex:1;color:#fff;font-size:clamp(7px,2vw,10px)}
+.mval{color:#ffd98a;font-size:clamp(8px,2.3vw,12px);min-width:4.2em;text-align:center}
+.mmeno,.mpiu{background:#1b1f33;border:2px solid #fff;border-radius:6px;color:#fff;
+ font-family:inherit;font-size:clamp(8px,2.3vw,12px);width:2.2em;height:2.2em;
+ cursor:pointer;line-height:1}
+.mmeno:hover,.mpiu:hover{background:#3d466e}
+.mmeno:disabled,.mpiu:disabled{opacity:.3;cursor:default}
+/* come #qinfo: sta sopra il fondale chiaro della lobby, gli serve uno sfondo suo */
+#multresto{align-self:center;background:rgba(10,12,22,.85);border-radius:6px;padding:4px 10px;
+ color:#9fb4d8;font-size:clamp(6px,1.8vw,9px);text-align:center;letter-spacing:.06em}
+#multok{background:#2a5a34;border:3px solid #9ae0a6;border-radius:8px;color:#fff;
+ font-family:inherit;font-size:clamp(8px,2.3vw,12px);padding:12px 13px;cursor:pointer;
+ box-shadow:0 3px 0 rgba(0,0,0,.5);letter-spacing:.04em}
+#multok:hover:enabled,#multok:focus:enabled{background:#357043;outline:none}
+#multok:disabled{opacity:.4;cursor:default;box-shadow:none}
 
 /* ---------- carosello di scelta (gli stili di S3) ----------
    Qui si sceglie chi sarai per tutta la partita: la figura e' il soggetto,

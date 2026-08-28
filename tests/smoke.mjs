@@ -22,6 +22,8 @@ const story = JSON.parse(fs.readFileSync(path.join(ROOT, 'game/story.json'), 'ut
 // La banca dei pronostici e' un file a parte, ma story.json ci fa riferimento
 // (le categorie della griglia, gli id delle domande): serve gia' qui.
 const banca = JSON.parse(fs.readFileSync(path.join(ROOT, 'game/domande.json'), 'utf8'));
+// il quiz di Peter (S8) sta in un terzo file: le scene ci fanno riferimento
+const quiz = JSON.parse(fs.readFileSync(path.join(ROOT, 'game/quiz.json'), 'utf8'));
 
 /* ---------- 1. validazione dello script ---------- */
 const todoAssets = new Set();
@@ -31,7 +33,7 @@ function partOf(who, kind, id) {
   const c = story.cast?.[who];
   return c && id ? c[kind]?.[id] : undefined;
 }
-const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'hub', 'carosello', 'griglia', 'domande', 'bivio', 'intermezzo', 'recap', 'countdown', 'show', 'hide', 'io', 'prop', 'bg', 'react', 'fx', 'carrellata', 'sipario', 'nero', 'luce', 'wait', 'set', 'goto', 'end']);
+const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'hub', 'carosello', 'griglia', 'domande', 'bivio', 'intermezzo', 'recap', 'countdown', 'quizhub', 'quizlivello', 'quizmult', 'show', 'hide', 'io', 'prop', 'bg', 'react', 'fx', 'carrellata', 'sipario', 'nero', 'luce', 'wait', 'set', 'goto', 'end']);
 assert.ok(story.scenes[story.meta.start], 'meta.start punta a una scena esistente');
 
 // Tutti i valori che una variabile puo' assumere, raccolti da chi la scrive.
@@ -401,7 +403,7 @@ const $ = (id) => document.getElementById(id);
 const txt = () => $('txt').textContent;
 
 let ended = null;
-VN.boot(story, { speed: 0, banca, onEnd: (s) => { ended = s; } });   // speed 0 = niente timer
+VN.boot(story, { speed: 0, banca, quiz, onEnd: (s) => { ended = s; } });   // speed 0 = niente timer
 
 // avvio: la barra di caricamento precede il cartello
 const primi = story.scenes[story.meta.start].steps.map((s) => s.t);
@@ -532,7 +534,7 @@ assert.equal(saved.state.nome, 'Franco');
 assert.equal(saved.scene, 'badge');
 
 // nuova sessione: riprende dal checkpoint invece di ricominciare
-VN.boot(story, { speed: 0, banca });
+VN.boot(story, { speed: 0, banca, quiz });
 // la card di ripresa e' gia' declinata: il genere sta nel salvataggio, non serve
 // aspettare restore() per leggerlo (prima usciva un asterisco a schermo)
 assert.match(txt(), /^Bentornata! Eri arrivata fino a "Atto 1 — Il badge"/, 'prompt di ripresa declinato');
@@ -545,7 +547,7 @@ assert.ok($('npcBody').getAttribute('src').includes('chr_lucas_felice'), 'scena 
 
 // ...oppure ricomincia da capo. Cancellare la partita e' irreversibile: lo script
 // chiede conferma prima, non basta il tocco sul bottone
-VN.boot(story, { speed: 0, banca });
+VN.boot(story, { speed: 0, banca, quiz });
 [...$('choices').querySelectorAll('.ch')][1].onclick({ stopPropagation() {} });   // Ricomincia
 assert.ok($('modal').classList.contains('on'), 'la conferma di reset e\' una modale');
 assert.ok(VN.hasSave(story), 'finche\' non conferma, il salvataggio resta');
@@ -560,7 +562,7 @@ assert.ok($('curtain').classList.contains('on'), 'ripartito dall\'intro');
 assert.match($('curtainTxt').textContent, /Cupertino/);
 
 /* ---------- 5. S2: l'aggancio ---------- */
-VN.boot(story, { speed: 0, banca, scene: 'aggancio' });
+VN.boot(story, { speed: 0, banca, quiz, scene: 'aggancio' });
 assert.match(txt(), /Ehi TU/, 'Susan urla dal palco in fondo');
 assert.equal($('name').textContent, 'Susan', 'nome parlante preso dal cast');
 assert.ok($('npcBody').getAttribute('src').includes('chr_susan_panico_telefoni'), 'posa di Susan referenziata');
@@ -604,7 +606,7 @@ assert.ok($('npc').classList.contains('in'), 'e il personaggio entra con la sua 
 assert.match(txt(), /ultima porta a destra/, 'fondale e battuta del camerino arrivano insieme');
 
 // le altre due risposte non alzano il flag
-VN.boot(story, { speed: 0, banca, scene: 'aggancio' });
+VN.boot(story, { speed: 0, banca, quiz, scene: 'aggancio' });
 for (let i = 0; i < 4; i++) VN.step();
 [...$('choices').querySelectorAll('.ch')][2].onclick({ stopPropagation() {} });   // annuire in silenzio
 assert.equal(VN.state.sfacciato, false);
@@ -626,14 +628,14 @@ assert.equal(VN.state.sfacciato, false);
   dom3.window.eval(fs.readFileSync(path.join(ROOT, 'game/engine.js'), 'utf8'));
   const { VN: VN3, document: doc3 } = dom3.window;
   const $3 = (id) => doc3.getElementById(id);
-  VN3.boot(story, { speed: 30, banca, scene: 'aggancio' });
+  VN3.boot(story, { speed: 30, banca, quiz, scene: 'aggancio' });
   assert.ok($3('tende').classList.contains('on'), 'le due meta\' della tenda sono a schermo');
   assert.ok($3('tendaSx').style.backgroundImage.includes('lobby_z1_tenda'),
     'e portano il fondale che c\'era prima, non quello nuovo');
   assert.ok($3('bg').getAttribute('src').includes('sala_teatro'), 'dietro c\'e\' gia\' la sala');
   // cambiare scena mentre una transizione e' in corso non deve lasciare
   // mezzo fondale appeso sopra quella nuova
-  VN3.boot(story, { speed: 30, banca, scene: 'lobby' });
+  VN3.boot(story, { speed: 30, banca, quiz, scene: 'lobby' });
   assert.equal($3('tende').classList.contains('on'), false, 'la transizione interrotta si chiude');
   assert.equal($3('prlx').children.length, 0);
 }
@@ -643,7 +645,7 @@ assert.equal(VN.state.sfacciato, false);
    del gioco, e l'unica che non si puo' rifare. */
 {
   VN.clearSave();
-  VN.boot(story, { speed: 0, banca, scene: 'camerino' });
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'camerino' });
   VN.state.genere = 'f';
   const dots = () => [...$('cdots').querySelectorAll('.cdot')];
 
@@ -702,7 +704,7 @@ assert.equal(VN.state.sfacciato, false);
   // Si entra da S3, non saltando direttamente qui: lo stile va scelto prima che
   // la scena parta, perche' e' lui a decidere lo sprite del giocatore.
   VN.clearSave();
-  VN.boot(story, { speed: 0, banca, scene: 'camerino' });
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'camerino' });
   VN.state.genere = 'f';
   VN.step();                                                   // -> carosello
   $('cnext').onclick({ stopPropagation() {} });                // Showman
@@ -746,7 +748,7 @@ assert.equal(VN.state.sfacciato, false);
   assert.match(txt(), /Quando sei pronta tu/, 'ultima riga, declinata');
 
   // e quando riprende a parlare qualcuno che c'e' davvero, la cuffia sparisce
-  VN.boot(story, { speed: 0, banca, scene: 'camerino' });
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'camerino' });
   assert.equal($('name').classList.contains('incuffia'), false);
   assert.equal($('boxwrap').classList.contains('incuffia'), false);
 }
@@ -760,7 +762,7 @@ assert.equal(VN.state.sfacciato, false);
   const celle = () => [...$('griglia').querySelectorAll('.gcell')];
 
   VN.clearSave();
-  VN.boot(story, { speed: 0, banca, scene: 'keynote' });
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'keynote' });
   VN.state.genere = 'f'; VN.state.stile = 'drip'; VN.state.nome = 'Franca';
 
   // [S5.INTERMEZZO.R1/R2]: due scommesse di regia prima di cominciare
@@ -872,7 +874,7 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
    pannelli tutti spenti. */
 {
   VN.clearSave();
-  VN.boot(story, { speed: 0, banca, scene: 'keynote' });
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'keynote' });
   VN.state.genere = 'f'; VN.state.stile = 'ingegnere'; VN.state.nome = 'Franca';
 
   const bottoni = () => [...$('choices').querySelectorAll('.ch')];
@@ -979,7 +981,7 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
     // parte subito all'avvio, quindi impostare le variabili dopo un boot diretto
     // arriverebbe troppo tardi e il giro delle domande verrebbe saltato.
     VN.clearSave();
-    VN.boot(story, { speed: 0, banca, scene: 'argomenti' });
+    VN.boot(story, { speed: 0, banca, quiz, scene: 'argomenti' });
     VN.state.stile = 'drip'; VN.state.nome = 'Franca';
     [...$('griglia').querySelectorAll('.gcell')][0].onclick({ stopPropagation() {} });
     $('plateaImg').removeAttribute('src');                     // niente residui dal giro prima
@@ -995,7 +997,7 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
 /* ---------- 5j. S7: finale, countdown, card ---------- */
 {
   VN.clearSave();
-  VN.boot(story, { speed: 0, banca, scene: 'finale' });
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'finale' });
   VN.state.genere = 'f'; VN.state.stile = 'drip'; VN.state.nome = 'Franca';
   VN.state.store = 'liberty'; VN.state.locked = true;
   VN.state.picks = { iphone: { core: { 'IPHONE.C1': { v: 'x', p: 6 } } } };
@@ -1011,7 +1013,7 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   // persone nella stessa porta.
   assert.ok(!story.cast.ceo, 'il CEO non e\' un personaggio in scena: e\' nei fondali');
 
-  VN.boot(story, { speed: 0, banca, scene: 'countdown' });
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'countdown' });
   VN.state.nome = 'Franca'; VN.state.stile = 'drip';
   VN.state.picks = { iphone: { core: { 'IPHONE.C1': { v: 'x', p: 6 } } } };
   VN.i = 0; VN.step();
@@ -1030,13 +1032,13 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
    countdown invece di offrire "riprendi da dove eri". */
 {
   VN.clearSave();
-  VN.boot(story, { speed: 0, banca, scene: 'countdown' });
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'countdown' });
   VN.state.nome = 'Franca'; VN.state.locked = true; VN.state.stile = 'drip';
   VN.progressed = true;
   VN.saveNow();
   assert.ok(VN.hasSave(story));
 
-  VN.boot(story, { speed: 0, banca });
+  VN.boot(story, { speed: 0, banca, quiz });
   assert.equal(VN.sceneId, 'countdown', 'chi ha gia\' bloccato torna al countdown');
   assert.equal($('choices').classList.contains('on'), false,
     'e non gli viene chiesto se vuole riprendere: non c\'e\' niente da riprendere');
@@ -1049,7 +1051,7 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
    la lobby era visitabile, e la meta' del contenuto di S1 non la vede nessuno. */
 {
   VN.clearSave();
-  VN.boot(story, { speed: 0, banca, scene: 'lobby' });
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'lobby' });
   const spots = () => [...$('hubspots').querySelectorAll('.hspot')];
   const dots = () => [...$('hdots').querySelectorAll('.hdot')];
 
@@ -1129,7 +1131,7 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
 /* ---------- 5c. la zona 4 cambia faccia quando i pronostici sono chiusi ---------- */
 {
   VN.clearSave();
-  VN.boot(story, { speed: 0, banca, scene: 'lobby' });
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'lobby' });
   VN.state.locked = true;                       // come dopo il lock di S6
   VN.step(); VN.step(); VN.step();
   const dots = () => [...$('hdots').querySelectorAll('.hdot')];
@@ -1147,7 +1149,7 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
 
 /* ---------- 6. variante maschile, percorso rapido ---------- */
 VN.clearSave();
-VN.boot(story, { speed: 0, banca });
+VN.boot(story, { speed: 0, banca, quiz });
 VN.step();                    // luci
 VN.step();                    // prima battuta di Lucas
 $('ti').value = 'Luca'; $('ti').oninput(); $('tok').onclick();
@@ -1174,11 +1176,11 @@ assert.match(txt(), /^Ecco il tuo badge, LUCA\./, 'percorso rapido fino al badge
   const { VN: VN2, document: doc2 } = dom2.window;
   const $2 = (id) => doc2.getElementById(id);
 
-  VN2.boot(story, { speed: 30, banca, scene: 'quiz' });          // hide+show sono istantanei,
+  VN2.boot(story, { speed: 30, banca, quiz, scene: 'quiz' });          // hide+show sono istantanei,
   // il motore e' gia' fermo sullo step "say" successivo, a meta' della scrittura
   VN2.step();                                             // tap #1: skip, mostra la riga intera
   const dopoSkip = $2('txt').textContent;
-  assert.match(dopoSkip, /Le domande le faccio io/, 'skip mostra subito la riga intera');
+  assert.match(dopoSkip, /conosci quelli passati/, 'skip mostra subito la riga intera');
 
   VN2.step();                                             // tap #2: deve avanzare allo step dopo
   assert.notEqual($2('txt').textContent, dopoSkip,
@@ -1229,7 +1231,6 @@ assert.equal(Object.keys(domande.eventi_personali).length, 4, 'un evento persona
 for (const s of STILI) assert.ok(domande.eventi_personali[s], `manca l'evento personale di ${s}`);
 
 /* ---------- 9. quiz di Peter (game/quiz.json) ---------- */
-const quiz = JSON.parse(fs.readFileSync(path.join(ROOT, 'game/quiz.json'), 'utf8'));
 const idsQuiz = new Set();
 let sommaMult = 0;
 for (const [liv, cfg] of Object.entries(quiz.livelli)) {
@@ -1252,6 +1253,331 @@ for (const [liv, cfg] of Object.entries(quiz.livelli)) {
 assert.equal(idsQuiz.size, 44, '44 domande di quiz in totale');
 assert.equal(Number(sommaMult.toFixed(2)), quiz.tetto_mult,
   'la somma dei moltiplicatori pieni deve fare esattamente il tetto dichiarato');
+
+/* ---------- 10. S8: il quiz di Peter ----------
+   Il quiz e' l'unico punto del gioco in cui il feedback dice se hai indovinato:
+   la regola d'oro di S5 vale per i pronostici, che sono opinioni sul futuro.
+   Qui le risposte sono verificabili. */
+
+// struttura: gli step di S8 puntano a scene e livelli che esistono davvero
+for (const [id, sc] of Object.entries(story.scenes)) {
+  for (const st of sc.steps || []) {
+    if (st.t === 'quizhub') {
+      assert.ok(story.scenes[st.goto], `scena ${id}: quizhub.goto "${st.goto}" non esiste`);
+      assert.ok(story.scenes[st.gotoMult], `scena ${id}: quizhub.gotoMult "${st.gotoMult}" non esiste`);
+      assert.ok(story.scenes[st.esci?.goto], `scena ${id}: quizhub.esci "${st.esci?.goto}" non esiste`);
+      for (const liv of st.ordine || Object.keys(quiz.livelli)) {
+        assert.ok(quiz.livelli[liv], `scena ${id}: livello "${liv}" non e' in quiz.json`);
+      }
+    }
+    if (st.t === 'quizlivello') {
+      // le battute di fine livello: i segnaposto che il motore sostituisce
+      assert.match(st.passato || '', /\{mult\}/, `scena ${id}: "passato" senza {mult}`);
+      assert.match(st.sbagliata || '', /\{r\}/, `scena ${id}: "sbagliata" senza la risposta giusta`);
+    }
+    if (st.t === 'quizmult') {
+      assert.ok(st.conferma?.text, `scena ${id}: quizmult senza modale di conferma`);
+    }
+  }
+}
+// il quiz si raggiunge solo a pronostici chiusi: la scena non deve essere
+// appesa a niente che il giocatore possa toccare prima del lock
+assert.equal(story.scenes.quiz_livello.next, 'quiz', 'finito un livello si torna alla griglia');
+
+// ogni livello dev'essere raggiungibile: se un livello di quiz.json non compare
+// nella catena base -> avanzato -> leggenda, per chi non e' showman e' morto
+{
+  const ordine = Object.keys(quiz.livelli);
+  assert.ok(ordine.length >= 1, 'almeno un livello di quiz');
+  assert.equal(ordine[0], 'base', 'il primo livello e\' quello sempre aperto');
+}
+
+const cellePerLivello = () => [...$('griglia').querySelectorAll('.gcell')];
+const azioniQuiz = () => [...$('choices').querySelectorAll('.ch')];
+
+// porta il motore dalla scena "quiz" fino alla griglia dei livelli
+function apriQuizHub(stile) {
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'quiz' });
+  VN.state.stile = stile;
+  VN.state.locked = true;
+  VN.step(); VN.step(); VN.step();          // le tre battute di presentazione
+  return cellePerLivello();
+}
+
+/* 10a. la scaletta dei livelli */
+{
+  const celle = apriQuizHub('ingegnere');
+  assert.equal(celle.length, 3, 'tre livelli nella griglia');
+  assert.equal(celle[0].classList.contains('fatta'), false, 'Base e\' sempre aperto');
+  assert.ok(celle[1].classList.contains('fatta'), 'Avanzato chiuso finche\' Base non passa');
+  assert.ok(celle[2].classList.contains('fatta'), 'Leggenda chiuso finche\' Avanzato non passa');
+  assert.match(celle[0].querySelector('.gstato').textContent, /13s/,
+    'il perk dell\'ingegnere allunga il timer a 13 secondi');
+
+  // le battute di presentazione si dicono una volta sola
+  assert.equal(VN.state.quiz_visto, true, 'la presentazione e\' segnata come vista');
+
+  // niente da assegnare finche' non si vince qualcosa: la voce non c'e' proprio
+  assert.equal(azioniQuiz().length, 1, 'a banca vuota resta solo l\'uscita');
+  assert.match(azioniQuiz()[0].textContent, /lobby/);
+}
+
+/* 10a-bis. i moltiplicatori si assegnano solo nelle 24 ore prima del keynote:
+   prima la voce si vede — cosi' si sa che esiste — ma non si tocca */
+{
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'quiz' });
+  VN.state.stile = 'showman';
+  VN.state.mult_bank = 0.3;                    // come dopo aver passato i tre livelli
+  VN.step(); VN.step(); VN.step();
+  const azioni = azioniQuiz();
+  const presto = azioni.find((b) => /keynote/.test(b.textContent));
+  const quando = Date.parse(story.meta.keynote);
+  const dentro = Date.now() >= quando - 24 * 3600e3;
+  if (!dentro) {
+    assert.ok(presto, 'fuori dalle 24 ore la voce c\'e\', ma spiega che e\' presto');
+    assert.ok(presto.classList.contains('spento'), 'e non si puo\' toccare');
+    assert.ok(presto.disabled, 'anche per la tastiera');
+    presto.onclick({ stopPropagation() {} });
+    assert.equal(VN.sceneId, 'quiz', 'toccarla non porta da nessuna parte');
+  }
+}
+
+/* 10a-ter. "se" salta uno step quando la condizione e' falsa: le battute di
+   presentazione non si ripetono a ogni ritorno alla griglia */
+{
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'quiz' });
+  VN.state.quiz_visto = true;
+  VN.state.stile = 'showman';
+  VN.step();
+  assert.ok($('griglia').classList.contains('on'),
+    'gia\' vista la presentazione, un solo tap porta alla griglia');
+}
+
+/* 10b. il perk dello showman: tutti e tre i livelli aperti da subito */
+{
+  const celle = apriQuizHub('showman');
+  assert.equal(celle.filter((c) => c.classList.contains('fatta')).length, 0,
+    'showman: nessun livello bloccato, ordine libero');
+  assert.match(celle[0].querySelector('.gstato').textContent, /10s/, 'timer normale per lo showman');
+}
+
+/* 10c. giocare un livello: tutte giuste -> passato, e il moltiplicatore in banca */
+// risponde alla domanda a schermo: trova la domanda vera nel pool dal testo, e
+// clicca il bottone giusto (o uno sbagliato) — i bottoni seguono l'ordine delle
+// opzioni, quindi l'indice della risposta corretta e' proprio "ok"
+const tutteQuiz = Object.values(quiz.pool).flat(2);
+function rispondiQuiz(giusto) {
+  const d = tutteQuiz.find((x) => x.q === $('txt').textContent);
+  assert.ok(d, `domanda a schermo non trovata nel pool: "${$('txt').textContent}"`);
+  const btns = [...$('choices').querySelectorAll('.ch')].filter((b) => !b.classList.contains('perk'));
+  const i = giusto ? d.ok : (d.ok + 1) % btns.length;
+  btns[i].onclick({ stopPropagation() {} });
+  VN.step();                                 // via la reazione di Peter
+  return d;
+}
+
+function giocaLivello(liv, stile, giuste) {
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'quiz' });
+  VN.state.stile = stile;
+  VN.state.locked = true;
+  VN.state.quiz_visto = true;
+  // si entra dalla griglia, come farebbe il giocatore
+  VN.step(); VN.step(); VN.step();
+  const celle = cellePerLivello();
+  const cella = celle.find((c) => c.dataset.livello === liv);
+  cella.onclick({ stopPropagation() {} });
+  assert.equal(VN.sceneId, 'quiz_livello', `si entra nel livello ${liv}`);
+  const viste = [];
+  for (let k = 0; k < quiz.livelli[liv].domande; k++) viste.push(rispondiQuiz(giuste.fn(k)));
+  return viste;
+}
+
+{
+  const viste = giocaLivello('base', 'ingegnere', { fn: () => true });
+  assert.equal(viste.length, 5, 'Base: cinque domande');
+  assert.equal(new Set(viste.map((d) => d.id)).size, 5, 'nessuna domanda ripetuta nel giro');
+  assert.match($('txt').textContent, /Passato: 5 su 5/, 'passato con il pieno');
+  assert.match($('txt').textContent, /\+0\.10/, 'il moltiplicatore compare come +0.10, non 0.1');
+  assert.equal(VN.state.quiz.base.passato, true, 'livello segnato come passato');
+  assert.equal(VN.state.mult_bank, 0.1, 'primo tentativo: moltiplicatore pieno in banca');
+
+  VN.step();                                  // torna alla griglia
+  assert.equal(VN.sceneId, 'quiz', 'finito il livello si torna alla griglia');
+  VN.step(); VN.step(); VN.step();
+  const celle = cellePerLivello();
+  assert.ok(celle[0].classList.contains('fatta'), 'Base ora e\' chiuso: passato');
+  assert.equal(celle[1].classList.contains('fatta'), false, 'e Avanzato si e\' aperto');
+  assert.match(celle[0].querySelector('.gstato').textContent, /\+0\.10/, 'la griglia mostra cosa hai vinto');
+}
+
+/* 10d. sbagliare: primo tentativo bruciato, il secondo pesca dall'altro pool */
+{
+  const primo = giocaLivello('base', 'ingegnere', { fn: () => false });
+  assert.match($('txt').textContent, /Ne servivano 3/, 'sotto soglia: si puo\' riprovare');
+  assert.equal(VN.state.quiz.base.tentativi, 1, 'un tentativo consumato');
+  const poolPrimo = VN.state.quiz.base.pool;
+
+  VN.step();
+  VN.step(); VN.step(); VN.step();
+  const cella = cellePerLivello().find((c) => c.dataset.livello === 'base');
+  assert.equal(cella.classList.contains('fatta'), false, 'con un tentativo residuo il livello resta aperto');
+  cella.onclick({ stopPropagation() {} });
+  const secondo = [];
+  for (let k = 0; k < 5; k++) secondo.push(rispondiQuiz(false));
+  assert.notEqual(VN.state.quiz.base.pool, poolPrimo, 'il secondo tentativo usa l\'altro pool');
+  const idsPrimo = new Set(primo.map((d) => d.id));
+  assert.equal(secondo.some((d) => idsPrimo.has(d.id)), false,
+    'nessuna domanda del primo tentativo torna nel secondo');
+  assert.match($('txt').textContent, /questo livello per te e' chiuso/,
+    'due tentativi falliti: livello chiuso per questa run');
+  assert.equal(VN.state.quiz.base.tentativi, 2);
+  assert.equal(VN.state.mult_bank, 0, 'niente in banca se non si passa');
+
+  VN.step();
+  VN.step(); VN.step(); VN.step();
+  assert.ok(cellePerLivello()[0].classList.contains('fatta'), 'Base non si riapre');
+}
+
+/* 10e. il perk dell'hawaiano: il primo fallimento di ogni livello non conta */
+{
+  giocaLivello('base', 'hawaiano', { fn: () => false });
+  assert.match($('txt').textContent, /questo giro non l'ho visto/, 'Peter chiude un occhio');
+  assert.equal(VN.state.quiz.base.tentativi, 0, 'il tentativo non e\' stato consumato');
+  assert.equal(VN.state.quiz.base.seconda, true, 'ma il perk e\' bruciato');
+}
+
+/* 10f. il perk del drip: il 50/50 lascia due risposte, una delle quali giusta */
+{
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'quiz' });
+  VN.state.stile = 'drip'; VN.state.locked = true; VN.state.quiz_visto = true;
+  VN.step(); VN.step(); VN.step();
+  cellePerLivello()[0].onclick({ stopPropagation() {} });
+
+  const perk = () => [...$('choices').querySelectorAll('.ch.perk')];
+  assert.equal(perk().length, 1, 'il drip ha il 50:50 sotto le risposte');
+  const d = tutteQuiz.find((x) => x.q === $('txt').textContent);
+  perk()[0].onclick({ stopPropagation() {} });
+  const restano = [...$('choices').querySelectorAll('.ch')].filter((b) => !b.classList.contains('perk'));
+  assert.equal(restano.length, 2, '50:50: restano due risposte');
+  assert.ok(restano.some((b) => b.textContent === d.opzioni[d.ok]), 'e una e\' quella giusta');
+  assert.equal(perk().length, 0, 'una volta sola per livello');
+
+  // dopo il 50/50 i bottoni non seguono piu' gli indici delle opzioni: si clicca
+  // quello con il testo giusto
+  restano.find((b) => b.textContent === d.opzioni[d.ok]).onclick({ stopPropagation() {} });
+  assert.match($('txt').textContent, /Esatto/, 'risposta giusta dopo il 50:50');
+  VN.step();
+  assert.equal($('choices').querySelectorAll('.ch.perk').length, 0,
+    'il 50:50 non torna alla domanda dopo');
+}
+
+/* 10g. il tempo che scade vale come una risposta sbagliata */
+{
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'quiz' });
+  VN.state.stile = 'showman'; VN.state.locked = true; VN.state.quiz_visto = true;
+  VN.step(); VN.step(); VN.step();
+  cellePerLivello()[0].onclick({ stopPropagation() {} });
+  assert.ok($('quizbar').classList.contains('on'), 'la barra del tempo e\' accesa');
+  assert.match($('qinfo').textContent, /Base · 1\/5/, 'l\'avanzamento del livello e\' scritto');
+  assert.equal(parseFloat($('qbar').style.width), 100, 'il timer parte pieno');
+
+  // con speed 0 il tick non gira (niente timer veri nei test): si chiama a mano
+  // lo stesso scadere che chiamerebbe l'intervallo
+  assert.equal(typeof VN.quizScadenza, 'function', 'la scadenza e\' innescata');
+  VN.quizScadenza();
+  assert.match($('txt').textContent, /Tempo scaduto/, 'scaduto: si passa avanti senza punto');
+  VN.step();
+  assert.match($('qinfo').textContent, /2\/5 · giuste 0\/3/, 'la domanda scaduta non fa punto');
+}
+
+/* 10h. i moltiplicatori [S8.FINALE]: si distribuisce tutto o non si conferma ---- */
+{
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'moltiplicatori' });
+  VN.state.stile = 'showman';
+  VN.state.locked = true;
+  VN.state.mult_bank = 0.3;
+  VN.step(); VN.step();                        // le due battute di Peter
+  assert.ok($('multwrap').classList.contains('on'), 'la schermata dei moltiplicatori e\' aperta');
+
+  const righe = () => [...$('multrighe').querySelectorAll('.mriga')];
+  assert.equal(righe().length, 3, 'una riga per macroargomento');
+  assert.equal(righe()[0].querySelector('.mval').textContent, '×1.00', 'si parte da ×1.00');
+  assert.ok($('multok').disabled, 'non si conferma con la banca ancora da spendere');
+
+  const piu = (i) => righe()[i].querySelector('.mpiu').onclick({ stopPropagation() {} });
+  const meno = (i) => righe()[i].querySelector('.mmeno').onclick({ stopPropagation() {} });
+  for (let k = 0; k < 6; k++) piu(0);          // 6 x 0.05 = 0.30, tutto su iPhone
+  assert.equal(righe()[0].querySelector('.mval').textContent, '×1.30', 'niente 1.2999999999');
+  assert.ok(!$('multok').disabled, 'banca finita: si puo\' confermare');
+
+  piu(1);
+  assert.equal(righe()[1].querySelector('.mval').textContent, '×1.00',
+    'non si spende piu\' di quello che si ha in banca');
+  meno(0);
+  assert.ok($('multok').disabled, 'tolto un pezzo, la conferma si richiude');
+  piu(0);
+
+  // conferma irreversibile: prima la modale, come il lock di S6
+  $('multok').onclick({ stopPropagation() {} });
+  assert.ok($('modal').classList.contains('on'), 'conferma prima di assegnare');
+  assert.equal(VN.state.moltiplicatori, null, 'la modale aperta non ha assegnato niente');
+  [...$('modalbtns').querySelectorAll('.ch')][1].onclick({ stopPropagation() {} });   // ripensaci
+  assert.equal(VN.state.moltiplicatori, null, '"fammi ripensare" non assegna');
+
+  $('multok').onclick({ stopPropagation() {} });
+  [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // confermo
+  assert.deepEqual({ ...VN.state.moltiplicatori }, { iphone: 0.3, watch: 0, altro: 0 },
+    'i moltiplicatori sono scritti nello stato');
+  assert.match($('txt').textContent, /hai puntato tutto sulla categoria/,
+    'e Peter ha da ridire, come da script');
+  VN.step();
+  VN.step();
+  assert.equal(VN.sceneId, 'countdown', 'finito il quiz si torna al countdown');
+}
+
+/* 10i. gia' assegnati: la schermata resta consultabile, ma non si tocca ---- */
+{
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'moltiplicatori' });
+  VN.state.mult_bank = 0.3;
+  VN.state.moltiplicatori = { iphone: 0.2, watch: 0.1, altro: 0 };
+  VN.step(); VN.step();
+  const righe = [...$('multrighe').querySelectorAll('.mriga')];
+  assert.equal(righe[0].querySelector('.mval').textContent, '×1.20', 'rilegge quello che c\'e\'');
+  assert.ok(righe[0].querySelector('.mpiu').disabled, 'i tasti sono spenti');
+  assert.ok(!$('multok').disabled, 'e il bottone serve solo a uscire');
+  $('multok').onclick({ stopPropagation() {} });
+  assert.equal($('modal').classList.contains('on'), false, 'nessuna modale: non c\'e\' niente da confermare');
+  assert.deepEqual({ ...VN.state.moltiplicatori }, { iphone: 0.2, watch: 0.1, altro: 0 }, 'e non cambia niente');
+}
+
+/* 10j. il quiz viaggia insieme alla schedina quando si spedisce ---- */
+{
+  VN.clearSave();
+  let spedito = null;
+  window.fetch = (url, opt) => { spedito = JSON.parse(opt.body); return Promise.resolve({ ok: true }); };
+  VN.boot(story, { speed: 0, banca, quiz, backend: { url: 'https://esempio', chiave: 'x' }, scene: 'moltiplicatori' });
+  VN.state.mult_bank = 0.15;
+  VN.state.quiz = { base: { passato: true, tentativi: 0, pool: 0, seconda: false, vinto: 0.1 } };
+  VN.step(); VN.step();
+  const righe = [...$('multrighe').querySelectorAll('.mriga')];
+  for (let k = 0; k < 3; k++) righe[2].querySelector('.mpiu').onclick({ stopPropagation() {} });
+  $('multok').onclick({ stopPropagation() {} });
+  [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });
+  assert.ok(spedito, 'assegnare i moltiplicatori fa partire un invio, come il lock');
+  assert.equal(spedito.quiz.banca, 0.15, 'il payload porta la banca del quiz');
+  assert.deepEqual(spedito.quiz.moltiplicatori, { iphone: 0, watch: 0, altro: 0.15 },
+    'e la distribuzione scelta');
+  assert.equal(spedito.quiz.livelli.base.passato, true, 'e come sono andati i livelli');
+  delete window.fetch;
+}
 
 if (todoAssets.size) console.log(`asset ancora da disegnare (${todoAssets.size}):`, [...todoAssets].join(', '));
 console.log(`banca domande: ${idsDomande.size} domande, ${nBattute} battute · quiz: ${idsQuiz.size} domande`);

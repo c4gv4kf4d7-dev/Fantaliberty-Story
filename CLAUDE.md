@@ -106,7 +106,7 @@ scene** al nome giusto.
 | `lucas` | Lucas | 2 pose collegate (`neutro`, `felice`, i nomi del prototipo). Il manifest ne descrive altre 3 già consegnate e **non ancora collegate**: `chr_lucas_idle`, `chr_lucas_indica_terminale` (più `chr_lucas_saluto`, `chr_lucas_pollice_su`, `chr_lucas_divertito`, mai disegnate) |
 | `francesca` | Francesca | 7 pose, tutte collegate |
 | `susan` | Susan | 12 pose collegate, comprese le 4 `commento_*` (ordine confermato dall'utente: 1 drip, 2 hawaiano, 3 showman, 4 ingegnere), usate in S3 |
-| `peter` (ex `veterano`) | Peter | 6 pose collegate. Lo stato *dorme finché `locked` è falso, si sveglia dopo* **è modellato nella lobby** (zona 4, due varianti con `when`). La scena `quiz` resta la vecchia placeholder |
+| `peter` (ex `veterano`) | Peter | 6 pose, tutte collegate. Lo stato *dorme finché `locked` è falso, si sveglia dopo* **è modellato nella lobby** (zona 4, due varianti con `when`); le altre quattro pose (`annuisce`, `scuote_testa`, `guarda_orologio`, `applauso_ironico`) sono il quiz di S8. Tutte a `height 44%` **e `bottom 34%`**: è seduto a un tavolino in primo piano, non è una figura intera, e con il box del dialogo alto cinque righe alla misura standard gli resta fuori solo un braccio |
 | `martha` | Martha | **Voce, non personaggio**: `voce: true` + `icona` a 2 frame, come chiede il manifest. Parla in S4 dalla regia — icona dell'auricolare accanto al nome e box di un altro colore, nessuno sprite in scena. I 3 file `@3x` del segnaposto non esistono più. `chr_martha_ritratto_regia` resta da collegare al finale (S7) |
 | ~~`premi`~~ | — | **Eliminato con S7.** Non esiste un NPC "Premi" nel manifest: la sezione premi è gestita da Francesca in zona 3 (`chr_francesca_orgogliosa`). Nessuno sprite è mai stato consegnato per `premi`. Prima di cancellarlo controlla che la scena `premi` in `story.json` non serva ancora come segnaposto di flusso |
 
@@ -127,9 +127,9 @@ Il lavoro di aderire allo script si divide in due strati ben distinti:
 e confrontati con quelli scritti, quindi un errore di trascrizione non passa.
 `npm run indice` rigenera `docs/indice-domande.md` dai dati veri.
 
-**Strato meccaniche — da costruire.** Il motore oggi sa fare scene lineari
-(`say`/`choice`/`input`/`show`/`bg`). Lo script chiede meccaniche che **non
-esistono**:
+**Strato meccaniche — fatto anche questo.** Il motore partiva sapendo fare solo
+scene lineari (`say`/`choice`/`input`/`show`/`bg`). Lo script ne chiedeva molte
+altre, costruite una alla volta insieme alla scena che le usa:
 
 | serve | per |
 |---|---|
@@ -139,12 +139,13 @@ esistono**:
 | ~~pescaggio casuale di 3 facoltative **al bivio**~~ — **fatto**: step `bivio` | `[S5.BIVIO]` |
 | ~~battuta risolta per (stile × opzione scelta)~~ — **fatto**: step `domande` | tutta `[S5]` |
 | ~~recap modificabile + lock irreversibile~~ — **fatto**: step `recap` | `[S6]` |
-| timer per domanda, livelli, due pool, perk per stile | `[S8]` |
+| ~~timer per domanda, livelli, due pool, perk per stile~~ — **fatto**: step `quizhub`/`quizlivello` | `[S8]` |
 | ~~countdown persistente~~ — **fatto**: step `countdown` | `[S7.05]` |
-| ~~punteggio, `run.locked`, POST al backend~~ — **fatto**. Restano i moltiplicatori del quiz | trasversale |
+| ~~punteggio, `run.locked`, POST al backend, moltiplicatori~~ — **fatto** | trasversale |
 
-Ordine consigliato: prima il modello `run` completo e il salvataggio, poi S3
-(stile, perché tutto S5 ne dipende), poi S5, poi S6/S7, infine S8.
+**Lo strato meccaniche è finito.** Non restano step da costruire: quello che
+manca è arte (i sei layer della platea) e le due cose da chiedere all'utente,
+qui sotto.
 
 ### Domande aperte sullo script (non decise da solo)
 
@@ -158,19 +159,14 @@ Ordine consigliato: prima il modello `run` completo e il salvataggio, poi S3
   8+) e le due battute di Lucas che citavano i vecchi valori ("Cinque, dieci
   anni…", "Più di dieci anni") sono state adattate di conseguenza.
 
-## La struttura delle scene è più grezza dello script v3.0
+## Come è stata costruita la struttura delle scene
 
-`story.json` oggi ha 10 scene con nomi "Atto 1-4" (`registrazione`,
-`ritardo_ceo`, `lobby`, `backstage`, `quiz`, `premi`, `finale`...). Lo script
-di produzione (quello con Susan/Francesca/Peter/Martha, i 4 stili giocabili,
-il sistema Newton/quiz a 3 livelli, il keynote con i 3 macroargomenti)
-descrive una struttura molto più fine, **S0 → S8**, con scene che qui non
-esistono ancora: la scelta dello stile (camerino, S3), il keynote vero
-(S5, il cuore del gioco — previsioni, moltiplicatori, eventi per stile), il
-teleprompter/recap (S6), il quiz a 3 livelli con timer e perk per stile
-(S8 rifatto).
+`story.json` partiva con 10 scene dai nomi "Atto 1-4" (`registrazione`,
+`ritardo_ceo`, `lobby`, `backstage`, `quiz`, `premi`, `finale`...), molto più
+grezze dello script di produzione. Oggi la struttura è quella dello script,
+**S0 → S8**, scena per scena.
 
-**Ora è in corso, una scena alla volta.** L'utente ha chiesto esplicitamente
+**È stato fatto una scena alla volta.** L'utente ha chiesto esplicitamente
 di procedere *scena per scena, dialoghi e meccaniche insieme*, non tutti i
 dialoghi prima e le meccaniche poi, e di **non tagliare niente** dallo script
 ("non togliere i micro eventi perché c'è assolutamente tempo visto che siamo
@@ -186,17 +182,24 @@ Ordine dei lavori e stato:
 | **S3 camerino** | **fatto**: carosello dei 4 stili e conferma irreversibile, commento di Susan per stile. Rifatto a livello visivo (vedi sotto) |
 | **S4 dietro le quinte** | **fatto**: il giocatore entra in scena (step `io`), il sipario del palco riusa lo step di S2, Martha entra come voce in cuffia |
 | **S5 keynote** | **fatto**: griglia a 3 macroargomenti, core in sequenza, bivio che pesca 3 facoltative, battuta per stile, micro-eventi ed evento personale, intermezzi, punteggio |
-| **S6 teleprompter** | **fatto**: recap modificabile, blocco irreversibile, invio a Supabase (manca solo la chiave anon) |
+| **S6 teleprompter** | **fatto**: recap modificabile, blocco irreversibile, invio a Supabase (chiave anon configurata e verificata dal vivo) |
 | **S7 finale** | **fatto**: la porta a tre fotogrammi, il countdown persistente, la card da salvare |
-| S8 quiz | da fare |
+| **S8 quiz** | **fatto**: griglia dei tre livelli, domande a tempo, i quattro perk, i due pool per tentativo, i moltiplicatori con distribuzione irreversibile |
 
-Il motore ora riceve **due** file: `story.json` (`VN.story`) e `domande.json`
-(`VN.banca`). Chi aggiunge un boot in un test deve passare `banca`, altrimenti
-gli step di S5 non fanno niente e passano in silenzio.
+Il motore ora riceve **tre** file: `story.json` (`VN.story`), `domande.json`
+(`VN.banca`) e `quiz.json` (`VN.quiz`). Chi aggiunge un boot in un test deve
+passare `banca` **e** `quiz`, altrimenti gli step di S5 e S8 non fanno niente e
+passano in silenzio.
 
 Il punteggio e le risposte vivono in `VN.state.punti` e `VN.state.picks`
-(`picks[categoria][core|extra][ID] = etichetta`). È da lì che S6 costruirà il
-recap e da lì che partirà l'invio a Supabase.
+(`picks[categoria][core|extra][ID] = {v, p}`). È da lì che S6 costruisce il
+recap e da lì che parte l'invio a Supabase. Il totale si **ricalcola** dalle
+risposte (`totale()`), non si accumula: in S6 le risposte si possono cambiare, e
+un contatore accumulato andrebbe fuori sincrono alla prima correzione.
+
+Il quiz di S8 tiene il suo stato a parte, in `VN.state.quiz[livello]` +
+`VN.state.mult_bank` + `VN.state.moltiplicatori`: non sono punti, sono
+moltiplicatori da spalmare sui pronostici già chiusi.
 
 I quattro stili vivono in **`story.stili`**, non dentro la scena: nome,
 descrizione, perk e le 11 pose di ciascuno. È la stessa tabella che serviranno

@@ -139,6 +139,9 @@ Tutto lo script vive in `game/story.json`. Ogni scena e' una lista di `steps`:
 | `intermezzo` | `{"t":"intermezzo","who":"martha"}` | la prossima scommessa di regia, in ordine |
 | `recap` | `{"t":"recap","da":"argomenti","lock":{…},"goto":"finale"}` | il teleprompter di S6: tutte le risposte, modificabili, e il blocco |
 | `countdown` | `{"t":"countdown","azioni":[{"label":"…","goto":"lobby"},{"label":"…","card":true}]}` | l'ultima schermata: quanto manca al keynote vero, e la card da salvare |
+| `quizhub` | `{"t":"quizhub","goto":"quiz_livello","gotoMult":"moltiplicatori","esci":{…}}` | i tre livelli del quiz di Peter, con lo stato di ognuno. Vedi sotto |
+| `quizlivello` | `{"t":"quizlivello","who":"peter","height":"44%"}` | un livello: N domande a tempo, perk dello stile, esito |
+| `quizmult` | `{"t":"quizmult","da":"argomenti","conferma":{…}}` | distribuzione dei moltiplicatori vinti, irreversibile |
 | `logo` | `{"t":"logo","img":"ui/logo_studio.png"}` | sigla che si accende come un neon |
 | `boot` | `{"t":"boot","ms":2200,"cursore":1600}` | barra LOADING, poi cursore sul nero |
 | `title` | `{"t":"title","lines":[…]}` | cartello nero a righe |
@@ -150,6 +153,12 @@ Tutto lo script vive in `game/story.json`. Ogni scena e' una lista di `steps`:
 | `wait` | `{"t":"wait","ms":600}` | pausa |
 | `set` | `{"t":"set","var":"__ok","value":"OK"}` | scrive una variabile |
 | `goto` / `end` | `{"t":"goto","scene":"benvenuto"}` | salta di scena / fine |
+
+Qualsiasi step accetta **`se`**: con la condizione falsa lo step viene saltato,
+senza fermare la scena. La forma e' quella delle zone dell'hub
+(`{"var":"quiz_visto","is":false}`, oppure `non` / `almeno`). Serve alle battute
+che si dicono una volta sola — Peter presenta il quiz al primo ingresso, non a
+ogni ritorno dalla griglia dei livelli.
 
 Interpolazione nei testi:
 
@@ -326,6 +335,62 @@ La card si compone su una `canvas` — figura dello stile, nome, store, punteggi
 sull'immagine: il tocco su un link di download li' apre solo una scheda. Il link
 resta per chi gioca da computer.
 
+### S8: il quiz di Peter
+
+Tre file di dati, non due: oltre a `story.json` e `domande.json` il motore
+riceve **`game/quiz.json`** (`VN.quiz`). Chi aggiunge un boot in un test deve
+passare anche `quiz`, altrimenti gli step di S8 non fanno niente e passano in
+silenzio — come gia' succede con `banca`.
+
+```
+quiz            [S8.01] Peter + [S8.HUB] la griglia dei tre livelli
+  -> quiz_livello   [S8.LOOP] un livello, poi "next" riporta alla griglia
+  -> moltiplicatori [S8.FINALE] la distribuzione, poi il countdown
+```
+
+`quiz.json` porta i tre livelli (`domande`, `soglia`, `mult1`, `mult2`), il
+timer (`timer_s`, `timer_s_ingegnere`), il tetto dei moltiplicatori
+(`tetto_mult`) e **due pool per livello**: chi fallisce trova domande diverse al
+secondo tentativo, cosi' sbagliare apposta per memorizzarle non serve.
+
+Lo stato del quiz vive in `VN.state.quiz[livello]`
+(`passato`, `tentativi`, `pool`, `seconda`, `vinto`) e quindi entra nel
+salvataggio: il quiz si gioca nei giorni fra il lock e il keynote, non in una
+sessione sola. Quello che si vince si accumula in `VN.state.mult_bank`, e in
+`[S8.FINALE]` diventa `VN.state.moltiplicatori`.
+
+I quattro perk di `story.stili` cadono tutti qui:
+
+| perk | stile | effetto |
+|---|---|---|
+| `tutto_sbloccato` | showman | i tre livelli aperti da subito, ordine libero |
+| `tempo` | ingegnere | `timer_s_ingegnere` al posto di `timer_s` |
+| `cinquanta` | drip | un 50:50 per livello, sotto le risposte |
+| `seconda_chance` | hawaiano | il primo fallimento di ogni livello non consuma il tentativo |
+
+**Il quiz e' l'eccezione dichiarata alla regola d'oro di S5.** Li' la reazione
+della platea non correla mai con la risposta, perche' i pronostici sono opinioni
+sul futuro. Qui le risposte sono verificabili, quindi Peter annuisce o scuote la
+testa — ed e' giusto cosi'.
+
+Un livello **non si salva a meta'**: il salvataggio scatta sulla griglia e sulla
+schermata dei moltiplicatori, non dentro il giro delle domande. Chiudere l'app a
+meta' livello lo annulla senza consumare il tentativo — che e' il
+comportamento giusto per una prova a tempo.
+
+Peter va mostrato a `height 44%` **e `bottom 34%`**: e' un primo piano di un uomo
+seduto a un tavolino, e alla misura standard finisce quasi tutto dietro al box
+del dialogo, che e' alto cinque righe fisse.
+
+Il timer parte **quando la domanda compare**, non quando finisce di scriversi:
+per questo il testo di una domanda non passa dal typewriter. Sotto i tre secondi
+la barra diventa rossa e Peter guarda l'orologio.
+
+`[S8.FINALE]` si apre solo nelle **24 ore prima di `meta.keynote`**: prima la
+voce si vede nella griglia — cosi' si sa che esiste — ma non si tocca. La
+conferma e' irreversibile come il lock di S6, e come quello fa partire un invio
+al server.
+
 ### Le pose che dipendono da una variabile
 
 `show` passa `body` e `head` dall'interpolazione (e `prop` il suo `id`), quindi
@@ -462,10 +527,14 @@ sulle inquadrature aperte.
 
 ## Stato dello script
 
-Atto 1 (arrivo → registrazione → benvenuto) e' completo e corrisponde al database
-"Full Script / Onboarding Scene" su Notion. Atti 2-4 sono **segnaposto**: struttura,
-personaggi e sezioni sono quelli decisi nella pagina "Cast Personaggi", i testi sono
-marcati `[BOZZA]` e vanno riscritti.
+Tutte le scene dello script master v4.0, da S0 a S8, sono scritte e giocabili:
+registrazione, lobby a zone, l'aggancio, il camerino con i quattro stili, il
+dietro le quinte, il keynote con i tre macroargomenti, il teleprompter con il
+blocco della schedina, il finale con il countdown e la card, e il quiz di Peter
+con i moltiplicatori.
+
+Restano da consegnare sei layer della platea (`platea/pla_*`, elencati in
+`meta.assetiInArrivo`): il gioco gira lo stesso, senza il layer di reazione.
 
 ## Aggiungere asset
 
