@@ -49,9 +49,32 @@ npm run build      # dist/nexus_game.html, singolo file offline
 
 Parametri utili in sviluppo:
 
+* `?dev` — apre il **menu di salto rapido** (vedi sotto)
 * `?fast=1` — niente typewriter, si scorre il flusso in fretta
 * `?scene=lobby` — parte direttamente da una scena (ignora il salvataggio)
 * `?reset=1` — cancella il salvataggio
+
+### Il menu di salto rapido (`?dev`)
+
+`https://fantaliberty.com/?dev` apre un elenco di tutte le scene: si tocca
+quella che si vuole provare e il gioco parte da li'. Serve a non rigiocare
+mezz'ora di storia ogni volta che si cambia una battuta di S6.
+
+In cima ci sono le impostazioni del giocatore finto con cui si entra: genere,
+anni in Apple, stile (quello che nel gioco si sceglie in S3) e se i pronostici
+sono gia' stati fatti. Servono perche' le scene da S3 in poi danno per scontato
+un giocatore registrato: saltandoci dentro a mani vuote, l'avatar non ha sprite
+e il recap di S6 e' una pagina bianca. Con "pronostici gia' fatti" le risposte
+vengono riempite dalla banca e il punteggio calcolato di conseguenza, cosi' S6 e
+S7 hanno qualcosa da mostrare.
+
+L'elenco delle scene **non e' scritto a mano**: si ricava seguendo i `next` a
+partire da `meta.start`, e chi resta fuori (le scene che si raggiungono solo con
+un `goto`) finisce in coda. Una scena nuova in `story.json` compare da sola.
+
+Al menu si arriva **solo** aggiungendo `?dev` all'indirizzo: dal gioco non c'e'
+nessun modo di aprirlo, quindi un giocatore non ci finisce dentro per sbaglio.
+Conviene salvarsi il link fra i preferiti.
 
 ## Pubblicare una modifica
 
