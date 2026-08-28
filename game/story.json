@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "FantaLiberty — Nexus",
-    "version": "0.13.0",
+    "version": "0.13.1",
     "start": "arrivo",
     "assetBase": "assets/",
     "genderVar": "genere",
@@ -1512,6 +1512,89 @@
         },
         {
           "t": "nero"
+        },
+        {
+          "t": "title",
+          "lines": [
+            {
+              "text": "FANTALIBERTY",
+              "pausa": 500
+            },
+            {
+              "text": "STORY",
+              "big": true,
+              "pausa": 1200
+            },
+            {
+              "text": "CREATO DA",
+              "small": true,
+              "pausa": 260
+            },
+            {
+              "text": "Lorenzo & Michael",
+              "pausa": 900
+            },
+            {
+              "text": "IDEA, DESIGN, SCRITTURA,",
+              "small": true,
+              "pausa": 180
+            },
+            {
+              "text": "CORREZIONI DELL'ULTIMO MINUTO",
+              "small": true,
+              "pausa": 260
+            },
+            {
+              "text": "Lorenzo & Michael",
+              "pausa": 900
+            },
+            {
+              "text": "TEST",
+              "small": true,
+              "pausa": 220
+            },
+            {
+              "text": "Qualcuno, probabilmente",
+              "pausa": 850
+            },
+            {
+              "text": "SUPPORTO PSICOLOGICO",
+              "small": true,
+              "pausa": 220
+            },
+            {
+              "text": "Assente",
+              "pausa": 850
+            },
+            {
+              "text": "BUDGET",
+              "small": true,
+              "pausa": 220
+            },
+            {
+              "text": "30 Newton",
+              "big": true,
+              "pausa": 1100
+            },
+            {
+              "text": "NESSUN DIPARTIMENTO È STATO DANNEGGIATO",
+              "small": true,
+              "pausa": 140
+            },
+            {
+              "text": "DURANTE LA PRODUZIONE DI QUESTO GIOCO.",
+              "small": true,
+              "pausa": 500
+            },
+            {
+              "text": "Probabilmente.",
+              "pausa": 1000
+            },
+            {
+              "text": "ORA TOCCA AD APPLE.",
+              "big": true
+            }
+          ]
         }
       ],
       "next": "countdown"
@@ -1632,7 +1715,7 @@
       "shots": [
         {
           "img": "bg/bg_sala_discesa_palco_layer1_sfondo.webp",
-          "da": 1.0,
+          "da": 1,
           "a": 1.5,
           "origine": "50% 40%"
         },
