@@ -24,6 +24,7 @@ tools/
   taglia_sheet.py       un foglio con piu' pose -> un file per posa
   rimuovi_sfondo.py     scontorna: sfondo che tocca i bordi dell'immagine
   togli_scacchiera.py   toglie le toppe di quadretti chiuse DENTRO uno sprite
+  togli_bianchi.py      toglie le toppe di bianco chiuse DENTRO uno sprite
   ammorbidisci_bordi.py sfuma i contorni a scaletta (alpha binaria)
   optimize_assets.py    resize + quantizzazione colore (Pillow)
   build_single_file.py  compila tutto in dist/nexus_game.html (asset inline base64)
@@ -561,6 +562,25 @@ una ventina di pixel, con due tinte piatte. Un primo tentativo si accontentava
 che chiaro e scuro si alternassero spesso, e voleva cancellare i capelli bianchi
 di Peter e l'arco del lucchetto — che alternano a ogni pixel. Prima di lanciarlo
 su file nuovi conviene guardare cosa toglierebbe con `--prova`.
+
+Quando le tavole arrivano su **fondo bianco** invece che a scacchiera, la toppa
+chiusa e' bianca e `togli_scacchiera.py` non la vede (non e' una griglia). E' il
+caso dei quattro stili: puntini bianchi fra le ciocche dei capelli, chiazze
+nell'occhiello fra braccio e busto. Per quelle c'e' `togli_bianchi.py`.
+
+```bash
+python3 tools/togli_bianchi.py --controlla                 # chi ha bianco chiuso dentro
+python3 tools/togli_bianchi.py assets/stili/*.webp --anteprima shots/
+python3 tools/togli_bianchi.py assets/stili/*.webp
+```
+
+Toglie solo il bianco **quasi puro e neutro** (ogni canale >= 235, i tre canali
+entro 10 l'uno dall'altro): il bianco dipinto — la canottiera dell'Hawaiano, la
+camicia dello Showman, le scarpe della Drip, i denti — e' sempre un po' sporco
+di colore e resta dov'e'. Come per gli altri strumenti di pulizia, `--anteprima`
+salva una copia con le zone candidate in magenta: **si guarda quella** prima di
+scrivere. Non lanciarlo alla cieca su tutto `assets/`: sul lucchetto della lobby
+e sul logo dello studio il bianco e' disegno, e li' mangerebbe il soggetto.
 
 **`optimize_assets.py` e' un'altra cosa**: ricomprime *sul posto* file gia' dentro
 `assets/` (resize + quantizzazione a 64 colori con alpha preservato), utile per

@@ -58,6 +58,14 @@ a ogni pixel. Il criterio giusto è il **lato del quadretto**: strisce tutte
 lunghe uguali, ~22 px, con due tinte piatte. Da 12 file si è passati a 2, quelli
 veri. Il modo per accorgersene è stato comporre le zone candidate in magenta e
 guardarle, non leggere i numeri.
+- `tools/togli_bianchi.py` — stesso caso, ma quando il fondo consegnato era
+  **bianco pieno** invece che a scacchiera: `togli_scacchiera.py` non lo vede,
+  perche' cerca una griglia. E' il difetto dei quattro stili (puntini fra le
+  ciocche dei capelli, chiazze nell'occhiello fra braccio e busto). Toglie solo
+  il bianco quasi puro e neutro, cosi' canottiera, camicia, scarpe e denti —
+  che sono avorio o ombreggiati — restano. **Non va lanciato su tutto
+  `assets/`**: sul lucchetto della zona 4 e sul logo dello studio il bianco e'
+  il disegno, e li' cancellerebbe il soggetto.
 - `tools/optimize_assets.py` — ricomprime *sul posto* file già dentro
   `assets/`, per la build single-file. Diverso scopo, non confonderlo con
   `prepara_asset.py`.
@@ -175,7 +183,7 @@ Ordine dei lavori e stato:
 | S0 registrazione | fatto (genere a 2, fasce anzianità, lista iPhone, badge) |
 | **S1 lobby** | **fatto**: hub a 4 zone con swipe, hotspot, zona 4 condizionata a `locked` |
 | **S2 l'aggancio** | **fatto**: scena `aggancio`, con il sipario della tenda e la carrellata di discesa |
-| **S3 camerino** | **fatto**: carosello dei 4 stili con perk e conferma irreversibile, commento di Susan per stile |
+| **S3 camerino** | **fatto**: carosello dei 4 stili e conferma irreversibile, commento di Susan per stile. Rifatto a livello visivo (vedi sotto) |
 | **S4 dietro le quinte** | **fatto**: il giocatore entra in scena (step `io`), il sipario del palco riusa lo step di S2, Martha entra come voce in cuffia |
 | **S5 keynote** | **fatto**: griglia a 3 macroargomenti, core in sequenza, bivio che pesca 3 facoltative, battuta per stile, micro-eventi ed evento personale, intermezzi, punteggio |
 | **S6 teleprompter** | **fatto**: recap modificabile, blocco irreversibile, invio a Supabase (manca solo la chiave anon) |
@@ -209,6 +217,34 @@ altro nome.
 Le correzioni precedenti erano invece mirate: ricollegare sprite reali a scene
 placeholder, sistemare riferimenti rotti. Non mescolare i due tipi di lavoro
 nella stessa PR.
+
+## Il camerino (S3): cosa regge la sezione
+
+L'utente l'ha bocciata alla prima versione ("non si capisce niente"). Le tre
+cose che l'hanno rimessa in piedi, da non annullare per sbaglio:
+
+1. **il fondale va fuori fuoco.** `#bg.sfoca` — blur e luce abbassata, messo
+   all'apertura del carosello e tolto alla chiusura. A fuoco pieno,
+   appendiabiti e lampadine dello specchio passavano davanti alla figura;
+2. **la figura non porta `image-rendering:pixelated`.** Gli stili sono disegni
+   da 1024 px rimpiccioliti a ~400: a pixel duri il ridimensionamento e' un
+   nearest-neighbour e il contorno si sgrana. Il resto del gioco resta
+   pixelato, `#carImg` no — e' l'eccezione, non una svista;
+3. **niente meccaniche sulla scheda.** Il perk del quiz e' stato tolto: si
+   spiega a S8. Il dato resta in `story.stili`, e il carosello lo rimostra solo
+   se lo step chiede `etichettaPerk` (S3 non lo chiede). Sotto la figura ci
+   stanno soltanto pallini, nome, una riga di descrizione e "Sono io".
+
+Attenzione al piano dei layer: `#carosello` copre tutto lo schermo ma sta a
+`z-index:1`, **sotto** `#boxwrap` (2). Alzandolo, il velo copre la scheda e il
+bottone "Sono io" non si preme piu' — succede in silenzio, il test in jsdom non
+se ne accorge.
+
+I quattro sprite avevano **residui di sfondo bianco chiusi dentro il disegno**
+(puntini fra le ciocche dei capelli, una chiazza fra braccio e busto): a schermo,
+sul fondale scuro, si leggevano come sporco. Ripuliti con `tools/togli_bianchi.py`
+su tutto `assets/stili/`, non solo sulle pose del camerino — lo stesso difetto si
+vedeva sul palco.
 
 ## Animazioni CSS: due classi sullo stesso nodo si combattono
 

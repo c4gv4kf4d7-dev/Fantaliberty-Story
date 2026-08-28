@@ -786,8 +786,7 @@
           "var": "stile",
           "da": "stili",
           "posa": "idle_camerino",
-          "_nota": "S3.02-S3.03. Le opzioni vengono da story.stili, non da qui: le stesse pose e gli stessi perk servono a S5 e S8. La conferma e' irreversibile — dopo, niente riscrive 'stile'.",
-          "etichettaPerk": "Al quiz:",
+          "_nota": "S3.02-S3.03. Le opzioni vengono da story.stili, non da qui: le stesse pose e gli stessi perk servono a S5 e S8. La conferma e' irreversibile — dopo, niente riscrive 'stile'. Niente 'etichettaPerk': il perk e' una meccanica del quiz e sulla scheda confondeva, si spiega a S8.",
           "conferma_label": "Sono io",
           "conferma": {
             "text": "Sei {g:sicuro|sicura}? Questo stile ti accompagna per tutta la partita. Non si cambia.",
