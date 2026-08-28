@@ -104,7 +104,10 @@
         "scettica": "chars/chr_francesca_scettica.webp"
       },
       "heads": {},
-      "_nota": "Sprite unico per posa (come lucas): niente head/neck, ogni posa e' un'immagine intera."
+      "_nota": "Sprite unico per posa (come lucas): niente head/neck, ogni posa e' un'immagine intera.",
+      "scala": 1.75,
+      "_notaScala": "Le pose di Francesca sono busti in ritaglio largo (1536x1024): dentro il riquadro #npc vengono limitate dalla larghezza e rese alte poco piu' della meta' di Lucas. La scala le riporta alla sua stessa presenza.",
+      "scalaHub": 1.15
     },
     "martha": {
       "name": "Martha",
@@ -130,7 +133,10 @@
         "guarda_orologio": "chars/chr_peter_guarda_orologio.webp"
       },
       "heads": {},
-      "_nota": "Sprite unico per posa. Nel manifest e' 'addormentato' (occhi_bassi) finche' run.locked e' false, si sveglia (alza_occhi) solo in S8: la scena 'quiz' qui sotto e' ancora la vecchia placeholder e non modella quello stato."
+      "_nota": "Sprite unico per posa. Nel manifest e' 'addormentato' (occhi_bassi) finche' run.locked e' false, si sveglia (alza_occhi) solo in S8: la scena 'quiz' qui sotto e' ancora la vecchia placeholder e non modella quello stato.",
+      "scala": 1.35,
+      "_notaScala": "Come Francesca: ritagli quasi quadrati, alla misura base restavano piccoli accanto a Lucas.",
+      "scalaHub": 1.15
     },
     "premi": {
       "name": "???",
@@ -639,10 +645,7 @@
         {
           "t": "show",
           "who": "susan",
-          "body": "panico_telefoni",
-          "height": "9%",
-          "bottom": "48%",
-          "right": "45%"
+          "body": "panico_telefoni"
         },
         {
           "t": "wait",
@@ -708,6 +711,11 @@
           ]
         },
         {
+          "t": "say",
+          "who": "susan",
+          "text": "Ottimo, hai detto si'."
+        },
+        {
           "t": "bg",
           "id": "backstage_corridoio",
           "dissolvenza": true
@@ -716,11 +724,6 @@
           "t": "show",
           "who": "susan",
           "body": "indica_camerino"
-        },
-        {
-          "t": "say",
-          "who": "susan",
-          "text": "Ottimo, hai detto si'."
         },
         {
           "t": "say",
@@ -1016,11 +1019,18 @@
     "lobby": {
       "title": "S1 — La lobby",
       "bg": "lobby_z1_tenda",
-      "dissolvenza": true,
       "pulviscolo": 8,
       "steps": [
         {
           "t": "hide"
+        },
+        {
+          "t": "luce",
+          "ms": 1000
+        },
+        {
+          "t": "wait",
+          "ms": 1000
         },
         {
           "t": "show",
@@ -1030,7 +1040,7 @@
         {
           "t": "say",
           "who": "francesca",
-          "text": "{NOME}! {g:Benvenuto|Benvenuta}. Fai con calma, guardati pure intorno e fai un giro."
+          "text": "Eccoti, {NOME}. Io sono Francesca, e da qui in poi la lobby e' tua: girala tutta, tocca quello che ti incuriosisce."
         },
         {
           "t": "say",
@@ -1134,10 +1144,8 @@
               "bg": "lobby_z4_quiz_bloccata",
               "who": "peter",
               "body": "occhi_bassi",
-              "height": "44%",
-              "bottom": "18%",
               "dice": "francesca",
-              "say": "Quello e' Peter. Dorme. Lascialo dormire, per adesso.",
+              "say": "Quello e' Peter. Non farci caso: prima del keynote riesce a dormire ovunque.",
               "hotspots": [
                 {
                   "label": "IL TAVOLINO",
@@ -1163,8 +1171,6 @@
               "bg": "lobby_z4_quiz_aperta",
               "who": "peter",
               "body": "alza_occhi",
-              "height": "44%",
-              "bottom": "18%",
               "say": "Adesso si': i pronostici sono chiusi, il tavolo e' aperto.",
               "hotspots": [
                 {
@@ -1352,14 +1358,15 @@
           "pop": true
         },
         {
-          "t": "say",
-          "who": "lucas",
-          "text": "Ecco il tuo badge, {NOME}. Tienilo al collo e non perderlo: qui dentro senza quello non vai da nessuna parte."
+          "t": "prop",
+          "show": false
         },
         {
           "t": "badge",
           "prop": "badge",
-          "nome": "{NOME}"
+          "nome": "{NOME}",
+          "who": "lucas",
+          "text": "Ecco il tuo badge, {NOME}. Tienilo al collo e non perderlo: qui dentro senza quello non vai da nessuna parte."
         },
         {
           "t": "say",
@@ -1377,6 +1384,10 @@
           "t": "say",
           "who": "lucas",
           "text": "{g:Benvenuto|Benvenuta} allo Steve Jobs Theater. Adesso pero' non restare qui {g:impalato|impalata}: ti aspettano dentro."
+        },
+        {
+          "t": "nero",
+          "ms": 1000
         }
       ],
       "next": "lobby",
