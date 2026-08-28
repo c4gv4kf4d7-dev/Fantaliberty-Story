@@ -29,7 +29,7 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '8',
+    engine: '9',
     story: null,
     banca: null,    // game/domande.json: domande, battute per stile, eventi, intermezzi
     backend: null,  // game/backend.json: dove spedire la schedina chiusa
@@ -399,6 +399,10 @@
     if (!(sc.steps || []).some(function (s) { return s.t === 'title' || s.t === 'boot' || s.t === 'logo'; })) {
       el.curtain.classList.remove('on', 'lights');
     }
+    // Il box del dialogo restava acceso con l'ultima battuta della scena
+    // precedente finche' non ne arrivava una nuova: si vedeva la vecchia frase
+    // sopra il fondale nuovo.
+    if (!silent) { el.boxwrap.classList.remove('in'); el.txt.textContent = ''; el.arrow.style.opacity = 0; }
     VN.scene = sc; VN.sceneId = id; VN.i = 0;
     if (sc.bg) setBg(sc.bg, sc.bgFx, sc.dissolvenza);
     atmosfera(sc);
@@ -440,12 +444,19 @@
         // restava null per sempre e il gioco si bloccava sulla riga (bug: tap
         // durante la scrittura -> game freeze). choice/input/list gia' se ne
         // proteggevano cosi'; a "say" mancava.
-        var avanzaSay = function () { pending = next; el.arrow.style.opacity = 1; };
+        // "attesa": la riga si scrive e va avanti da sola dopo N ms, senza il
+        // tap. Serve per i momenti in cui il gioco sta facendo qualcosa (il
+        // badge in stampa) e la battuta e' un'indicazione, non una replica.
+        var avanzaSay = st.attesa && VN.speed
+          ? function () { el.arrow.style.opacity = 0; setTimeout(next, st.attesa); }
+          : function () { pending = next; el.arrow.style.opacity = 1; };
+        el.boxwrap.classList.toggle('sistema', !!st.sistema);
         type(fmt(testoDi(st)), avanzaSay);
         revealUI = avanzaSay;
         return;
 
       case 'choice':
+        el.boxwrap.classList.remove('sistema');
         el.boxwrap.classList.add('in');
         setSpeaker(st.who);
         type(fmt(st.text), function () { showChoices(st); });
@@ -453,6 +464,7 @@
         return;
 
       case 'input':
+        el.boxwrap.classList.remove('sistema');
         el.boxwrap.classList.add('in');
         setSpeaker(st.who);
         type(fmt(st.text), function () { showInput(st); });
@@ -460,6 +472,7 @@
         return;
 
       case 'list':
+        el.boxwrap.classList.remove('sistema');
         el.boxwrap.classList.add('in');
         setSpeaker(st.who);
         type(fmt(st.text), function () { showList(st); });
@@ -467,6 +480,7 @@
         return;
 
       case 'badge':
+        el.boxwrap.classList.remove('sistema');
         // Il badge compare mentre Lucas dice "ecco il tuo badge": prima si
         // aspettava che finisse di scrivere e poi un altro tap. Adesso la
         // tessera entra subito, e il tap serve solo ad andare avanti.
@@ -556,6 +570,7 @@
         return next();
 
       case 'hide':
+        if (!current.who) return next();       // non c'e' nessuno: niente da far uscire
         el.npc.classList.remove('in', 'pop');
         el.npc.classList.add('out');
         current.who = null;
@@ -609,9 +624,9 @@
       case 'set':
         VN.state[st.var] = st.value;
         termSet(st.var);
-        // "BADGE IN STAMPA" lampeggia mentre la stampante lavora, poi si va
-        // avanti da soli: e' un'attesa, non una battuta da toccare.
-        if (st.lampeggia && VN.speed) return lampeggia(st.var, st.lampeggia, next);
+        // "BADGE IN STAMPA" lampeggia mentre la stampante lavora. Non blocca:
+        // il lampeggio deve andare *sotto* la riga d'attesa nel box, non prima.
+        if (st.lampeggia && VN.speed) lampeggia(st.var, st.lampeggia);
         return next();
 
       case 'goto':
@@ -694,6 +709,8 @@
     el.npc.style.right = st.right || '';
     inquadra(c, body, st);
 
+    el.npc.style.opacity = '';
+    el.npc.style.animation = '';
     el.npc.classList.remove('out', 'micro');
     if (st.pop) { el.npc.classList.remove('in'); void el.npc.offsetWidth; el.npc.classList.add('pop'); }
     else { el.npc.classList.remove('pop'); void el.npc.offsetWidth; el.npc.classList.add('in'); }
@@ -708,8 +725,14 @@
 
      VOLTO_H e VOLTO_X sono presi da Lucas nella posa "idle": il metro di
      paragone e' lui, come chiede lo script. */
-  var VOLTO_H = 0.104;      // altezza del viso, in frazione dell'altezza della scena
-  var VOLTO_X = 0.664;      // dove cade il centro del viso, in frazione della larghezza
+  // Misurati su Lucas nelle due pose con cui parla, "neutro" e "felice": danno
+  // gli stessi tre numeri a meno di mezzo punto percentuale, quindi sono un
+  // riferimento solido. (La prima versione aveva VOLTO_X calcolato a mano
+  // invece che misurato, ed era sbagliato: 0.664 invece di 0.734 — per questo
+  // Francesca risultava spostata a sinistra rispetto a Lucas.)
+  var VOLTO_H = 0.1246;     // altezza del viso, in frazione dell'altezza della scena
+  var VOLTO_X = 0.734;      // centro del viso, in frazione della larghezza
+  var VOLTO_Y = 0.620;      // centro del viso, in frazione dell'altezza
   var NPC_AR = 0.6;         // proporzione del riquadro #npc (3/5), come nel CSS
 
   function inquadra(c, posa, st) {
@@ -717,6 +740,7 @@
     if (!v || st.height || st.scala != null) return;   // la scena comanda: non si tocca
     var img = el.npcBody;
     var applica = function () {
+      el.npc.classList.add('fisso');       // niente transizione: il salto si vedrebbe
       var w = img.naturalWidth, h = img.naturalHeight;
       if (!w || !h) return;
       var sh = el.stage.clientHeight, sw = el.stage.clientWidth;
@@ -725,10 +749,17 @@
       var altezzaImg = (VOLTO_H * sh) / v.h;           // quanto deve venire alta l'immagine
       var boxW = a > NPC_AR ? altezzaImg * a : altezzaImg * NPC_AR;
       var boxH = a > NPC_AR ? boxW / NPC_AR : altezzaImg;
+      // Il riquadro cambia misura da una posa all'altra (il disegno include piu'
+      // o meno corpo): se restasse ancorato in basso, il viso salterebbe su e giu'
+      // a ogni battuta e la figura sembrerebbe rimpicciolire. Ancorando il VISO su
+      // tutti e due gli assi, quello che si muove e' il corpo attorno, che si nota
+      // molto meno. Il resto della figura puo' uscire dall'inquadratura: esce anche
+      // il fianco di Lucas.
       el.npc.style.height = boxH.toFixed(1) + 'px';
-      // il centro del viso deve cadere dove cade quello di Lucas; il resto della
-      // figura puo' uscire dall'inquadratura, come esce il fianco di Lucas
       el.npc.style.right = (sw - (VOLTO_X * sw + (1 - v.cx) * boxW)).toFixed(1) + 'px';
+      if (v.cy != null) {
+        el.npc.style.bottom = (sh - (VOLTO_Y * sh + (1 - v.cy) * altezzaImg)).toFixed(1) + 'px';
+      }
     };
     if (img.complete && img.naturalWidth) applica();
     else img.addEventListener('load', applica, { once: true });
@@ -1975,11 +2006,11 @@
     adattaTerminale();
   }
 
-  function lampeggia(varName, ms, done) {
+  function lampeggia(varName, ms) {
     var node = $('tval_' + varName);
-    if (!node) return done();
+    if (!node) return;
     node.classList.add('lampeggia');
-    setTimeout(function () { node.classList.remove('lampeggia'); done(); }, ms);
+    setTimeout(function () { node.classList.remove('lampeggia'); }, ms);
   }
 
   function termCursorOff() { var c = $('tcur'); if (c) c.style.display = 'none'; }
@@ -2061,7 +2092,39 @@
     el.nero.classList.add('sfuma');
     void el.nero.offsetWidth;
     el.nero.classList.toggle('on', !!giu);
-    setTimeout(done, d);
+    // A buio pieno si sgombra: box del dialogo, testo e personaggio via
+    // *senza* animazione. Senza questo, quando la luce tornava si vedeva per
+    // mezzo secondo il personaggio della scena precedente che sfumava e la sua
+    // ultima battuta ancora a schermo — Lucas che ricompariva nella lobby.
+    setTimeout(function () { if (giu) sgombra(); done(); }, d);
+  }
+
+  /* Azzera l'inquadratura senza animazioni: si usa quando il cambio e' coperto
+     (dissolvenza al nero, cambio di scena). Le animazioni qui sarebbero visibili
+     appena si riapre, ed e' esattamente quello che non deve succedere. */
+  function sgombra() {
+    // Il box ha una transizione di mezzo secondo sull'opacita': togliergli "in"
+    // e basta lo lascia sfumare *dopo*, cioe' mentre la luce torna. Va spento
+    // di netto, con la transizione disattivata per un giro.
+    el.boxwrap.style.transition = 'none';
+    el.boxwrap.classList.remove('in', 'sistema');
+    void el.boxwrap.offsetWidth;
+    el.boxwrap.style.transition = '';
+
+    el.txt.textContent = '';
+    el.arrow.style.opacity = 0;
+    el.name.classList.add('hidden');
+    hideUI();
+
+    // Stessa cosa per il personaggio, con in piu' che "out" e' un @keyframes
+    // che parte da opacity:1: aggiungerlo a uno gia' invisibile lo riaccende.
+    // Qui si azzera l'animazione, non se ne mette un'altra.
+    el.npc.classList.remove('in', 'pop', 'micro', 'out');
+    el.npc.style.animation = 'none';
+    el.npc.style.opacity = '0';
+    current.who = null;
+    if (el.badgewrap) el.badgewrap.classList.remove('in');
+    if (el.coriandoli) el.coriandoli.innerHTML = '';
   }
 
   var BG_FADE = 1400;          // deve combaciare con #bg2.mostra nel CSS

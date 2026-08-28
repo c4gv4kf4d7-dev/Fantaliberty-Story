@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "FantaLiberty — Nexus",
-    "version": "0.9.1",
+    "version": "0.9.2",
     "start": "arrivo",
     "assetBase": "assets/",
     "genderVar": "genere",
@@ -108,34 +108,41 @@
       "volti": {
         "idle": {
           "h": 0.252,
-          "cx": 0.518
+          "cx": 0.518,
+          "cy": 0.255
         },
         "benvenuto": {
           "h": 0.304,
-          "cx": 0.515
+          "cx": 0.515,
+          "cy": 0.266
         },
         "gesto_swipe": {
           "h": 0.271,
-          "cx": 0.446
+          "cx": 0.446,
+          "cy": 0.249
         },
         "indica_tenda": {
           "h": 0.262,
-          "cx": 0.376
+          "cx": 0.376,
+          "cy": 0.259
         },
         "orgogliosa": {
           "h": 0.267,
-          "cx": 0.418
+          "cx": 0.418,
+          "cy": 0.236
         },
         "ride": {
           "h": 0.562,
-          "cx": 0.576
+          "cx": 0.576,
+          "cy": 0.452
         },
         "scettica": {
           "h": 0.516,
-          "cx": 0.577
+          "cx": 0.577,
+          "cy": 0.443
         }
       },
-      "_notaVolti": "Misura del viso in ogni posa: altezza e centro orizzontale, in frazione dell'immagine. Il motore ci calcola sopra il riquadro, cosi' il viso viene sempre grande come quello di Lucas e nello stesso punto. Serve perche' le pose non sono tutte della stessa inquadratura: cinque sono mezzibusti, 'ride' e 'scettica' sono primi piani di sola testa. Ricavate con lo stesso rilevamento dell'incarnato usato per gli altri controlli: se arriva una posa nuova, misurarla allo stesso modo invece di stimarla a occhio."
+      "_notaVolti": "Misura del viso in ogni posa: altezza, centro orizzontale e verticale, in frazione dell'immagine. Il motore ci calcola sopra il riquadro (vedi inquadra()), cosi' il viso viene sempre grande come quello di Lucas e nello stesso punto dell'inquadratura. Serve perche' le pose non sono tutte dello stesso taglio: cinque sono mezzibusti, 'ride' e 'scettica' sono primi piani di sola testa. Ricavate con il riconoscimento dell'incarnato (vedi il commento nel motore): se arriva una posa nuova, misurarla allo stesso modo invece di stimarla a occhio."
     },
     "martha": {
       "name": "Martha",
@@ -642,6 +649,12 @@
           "var": "__ok",
           "value": "> BADGE IN STAMPA",
           "lampeggia": 2000
+        },
+        {
+          "t": "say",
+          "sistema": true,
+          "attesa": 2000,
+          "text": "# Attendi: il badge e' in stampa #"
         },
         {
           "t": "prop",
