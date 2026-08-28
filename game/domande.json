@@ -1,18 +1,15 @@
 {
   "_nota": "Banca domande dei pronostici [S5]. Fonte: docs/script-master.md. Gli id sono STABILI: non rinominarli tra revisioni, altrimenti si rompe la corrispondenza con le run gia' salvate in run.picks. Ogni opzione ha una battuta unica per ciascuno dei 4 stili: non sono template generici, sono scritte una per una.",
-
   "_formule": {
     "core": "punti = diff (1-5) + bonus tipo (consenso 0, plausibile 1, controcorrente 2)",
     "extra": "punti = val secco dell'opzione (1, 2 o 3), nessuna difficolta'",
     "intermezzi": "come extra: val secco"
   },
-
   "categorie": {
     "iphone": {
       "nome": "iPhone",
       "n_core": 6,
       "n_extra_da_pescare": 3,
-
       "core": [
         {
           "id": "IPHONE.C1",
@@ -288,7 +285,6 @@
           ]
         }
       ],
-
       "extra": [
         {
           "id": "IPHONE.E1",
@@ -488,12 +484,10 @@
         }
       ]
     },
-
     "watch": {
       "nome": "Watch",
       "n_core": 3,
       "n_extra_da_pescare": 3,
-
       "core": [
         {
           "id": "WATCH.C1",
@@ -628,7 +622,6 @@
           ]
         }
       ],
-
       "extra": [
         {
           "id": "WATCH.E1",
@@ -782,12 +775,10 @@
         }
       ]
     },
-
     "altro": {
       "nome": "Altro",
       "n_core": 3,
       "n_extra_da_pescare": 3,
-
       "core": [
         {
           "id": "ALTRO.C1",
@@ -899,7 +890,6 @@
           ]
         }
       ],
-
       "extra": [
         {
           "id": "ALTRO.E1",
@@ -1060,95 +1050,214 @@
       ]
     }
   },
-
   "_nota_intermezzi": "Le 5 domande di regia non hanno battute per stile: il personaggio risponde a Martha in cuffia, sottovoce, non le annuncia alla platea. R1 e R2 vanno prima del primo macroargomento, R3-R5 dopo ciascuno dei tre completati (in ordine di completamento, non fisso per categoria).",
   "intermezzi": [
     {
       "id": "R1",
       "q": "Prima che tu vada avanti. Scommessa tra noi due: chi entra per primo?",
       "opzioni": [
-        { "label": "Tim Cook", "val": 1 },
-        { "label": "John Ternus", "val": 2 },
-        { "label": "Qualcun altro", "val": 3 }
+        {
+          "label": "Tim Cook",
+          "val": 1
+        },
+        {
+          "label": "John Ternus",
+          "val": 2
+        },
+        {
+          "label": "Qualcun altro",
+          "val": 3
+        }
       ]
     },
     {
       "id": "R2",
       "q": "Domanda da regia: preparo la luce per Craig o no? Perché a me nessuno dice niente.",
       "opzioni": [
-        { "label": "Segmento suo", "val": 3 },
-        { "label": "Solo video", "val": 2 },
-        { "label": "Non compare", "val": 1 }
+        {
+          "label": "Segmento suo",
+          "val": 3
+        },
+        {
+          "label": "Solo video",
+          "val": 2
+        },
+        {
+          "label": "Non compare",
+          "val": 1
+        }
       ]
     },
     {
       "id": "R3",
       "q": "Ho la regia pronta sul primo piano. Serve o no?",
       "opzioni": [
-        { "label": "Sì, momento commozione", "val": 2 },
-        { "label": "No", "val": 1 }
+        {
+          "label": "Sì, momento commozione",
+          "val": 2
+        },
+        {
+          "label": "No",
+          "val": 1
+        }
       ]
     },
     {
       "id": "R4",
       "q": "Quanto dura stasera? Devo dirlo al catering.",
       "opzioni": [
-        { "label": "Sotto 75 min", "val": 2 },
-        { "label": "75-95 min", "val": 1 },
-        { "label": "Oltre 95 min", "val": 2 }
+        {
+          "label": "Sotto 75 min",
+          "val": 2
+        },
+        {
+          "label": "75-95 min",
+          "val": 1
+        },
+        {
+          "label": "Oltre 95 min",
+          "val": 2
+        }
       ]
     },
     {
       "id": "R5",
       "q": "Ultima. In scaletta c'è un nome che non conosco. Secondo te entra davvero o lo tagliano?",
       "opzioni": [
-        { "label": "Sì, ospite esterno", "val": 3 },
-        { "label": "No", "val": 1 }
+        {
+          "label": "Sì, ospite esterno",
+          "val": 3
+        },
+        {
+          "label": "No",
+          "val": 1
+        }
       ]
     }
   ],
-
   "intermezzi_riserva": [
     {
       "id": "RS1",
       "q": "Segmento sostenibilità?",
-      "opzioni": [{ "label": "Sì", "val": 2 }, { "label": "No", "val": 1 }]
+      "opzioni": [
+        {
+          "label": "Sì",
+          "val": 2
+        },
+        {
+          "label": "No",
+          "val": 1
+        }
+      ]
     },
     {
       "id": "RS2",
       "q": "Parte del keynote dal vivo, non pre-registrata?",
-      "opzioni": [{ "label": "Sì", "val": 3 }, { "label": "No", "val": 1 }]
+      "opzioni": [
+        {
+          "label": "Sì",
+          "val": 3
+        },
+        {
+          "label": "No",
+          "val": 1
+        }
+      ]
     },
     {
       "id": "RS3",
       "q": "Annunciano un secondo evento per l'autunno?",
-      "opzioni": [{ "label": "Sì", "val": 3 }, { "label": "No", "val": 1 }]
+      "opzioni": [
+        {
+          "label": "Sì",
+          "val": 3
+        },
+        {
+          "label": "No",
+          "val": 1
+        }
+      ]
     },
     {
       "id": "RS4",
       "q": "Quanti dirigenti diversi parlano?",
       "opzioni": [
-        { "label": "Meno di 5", "val": 2 },
-        { "label": "5-8", "val": 1 },
-        { "label": "Più di 8", "val": 2 }
+        {
+          "label": "Meno di 5",
+          "val": 2
+        },
+        {
+          "label": "5-8",
+          "val": 1
+        },
+        {
+          "label": "Più di 8",
+          "val": 2
+        }
       ]
     }
   ],
-
   "micro_eventi": [
-    { "id": "CLICKER", "testo": "Il clicker si inceppa.", "asset": "props/prop_clicker" },
-    { "id": "STARNUTO", "testo": "Qualcuno starnutisce nel silenzio.", "platea": "pla_risata" },
-    { "id": "SLIDE", "testo": "Slide sbagliata: una foto di compleanno d'ufficio, a schermo intero.", "asset": "props/prop_slide_compleanno" },
-    { "id": "NOTIFICA", "testo": "NON GUARDARE IL TELEFONO SEI IN DIRETTA", "banner": "susan" },
-    { "id": "MARIMBA", "testo": "Squilla la vecchia suoneria marimba, in platea.", "platea": "pla_silenzio_imbarazzato" }
+    {
+      "id": "CLICKER",
+      "testo": "Il clicker si inceppa.",
+      "asset": "props/prop_clicker_inceppato.webp"
+    },
+    {
+      "id": "STARNUTO",
+      "testo": "Qualcuno starnutisce nel silenzio.",
+      "platea": "pla_risata"
+    },
+    {
+      "id": "SLIDE",
+      "testo": "Slide sbagliata: una foto di compleanno d'ufficio, a schermo intero.",
+      "asset": "props/prop_slide_compleanno.webp"
+    },
+    {
+      "id": "NOTIFICA",
+      "testo": "NON GUARDARE IL TELEFONO SEI IN DIRETTA",
+      "banner": "susan"
+    },
+    {
+      "id": "MARIMBA",
+      "testo": "Squilla la vecchia suoneria marimba, in platea.",
+      "platea": "pla_silenzio_imbarazzato"
+    }
   ],
-
   "eventi_personali": {
-    "hawaiano": { "id": "STACCHETTO", "titolo": "Lo stacchetto", "testo": "Parte per sbaglio un pezzo di ukulele.", "asset": "stili/stile_hawaiano_evento_stacchetto" },
-    "showman": { "id": "ASSOLO", "titolo": "L'assolo", "testo": "La platea applaude prima che tu abbia detto qualcosa.", "asset": "stili/stile_showman_evento_assolo", "platea": "pla_coro_nome", "martha": "Non hai ancora detto niente. Lo sai, vero?" },
-    "drip": { "id": "RIDER", "titolo": "Il rider", "testo": "Entra un rider con lo zaino termico urlando il tuo nome. Tu neghi tutto davanti a mille persone. Il rider urla di nuovo.", "asset": "stili/stile_drip_evento_rider", "extra_asset": "chars/chr_zaino_rider" },
-    "ingegnere": { "id": "DOMANDA", "titolo": "La domanda dal fondo", "testo": "Qualcuno urla una domanda tecnica precisa. Tu rispondi davvero, e perdi il filo.", "asset": "stili/stile_ingegnere_evento_domanda" }
+    "hawaiano": {
+      "id": "STACCHETTO",
+      "titolo": "Lo stacchetto",
+      "testo": "Parte per sbaglio un pezzo di ukulele.",
+      "asset": "stili/stile_hawaiano_evento_stacchetto.webp"
+    },
+    "showman": {
+      "id": "ASSOLO",
+      "titolo": "L'assolo",
+      "testo": "La platea applaude prima che tu abbia detto qualcosa.",
+      "asset": "stili/stile_showman_evento_assolo.webp",
+      "platea": "pla_coro_nome",
+      "martha": "Non hai ancora detto niente. Lo sai, vero?"
+    },
+    "drip": {
+      "id": "RIDER",
+      "titolo": "Il rider",
+      "testo": "Entra un rider con lo zaino termico urlando il tuo nome. Tu neghi tutto davanti a mille persone. Il rider urla di nuovo.",
+      "asset": "stili/stile_drip_evento_rider.webp",
+      "extra_asset": "chars/chr_zaino_rider.webp"
+    },
+    "ingegnere": {
+      "id": "DOMANDA",
+      "titolo": "La domanda dal fondo",
+      "testo": "Qualcuno urla una domanda tecnica precisa. Tu rispondi davvero, e perdi il filo.",
+      "asset": "stili/stile_ingegnere_evento_domanda.webp"
+    }
   },
-
-  "reazioni_platea": ["pla_platea_idle", "pla_applauso_pieno", "pla_applauso_tiepido", "pla_risata", "pla_silenzio_imbarazzato"]
+  "reazioni_platea": [
+    "pla_platea_idle",
+    "pla_applauso_pieno",
+    "pla_applauso_tiepido",
+    "pla_risata",
+    "pla_silenzio_imbarazzato"
+  ]
 }

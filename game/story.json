@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "FantaLiberty — Nexus",
-    "version": "0.8.0",
+    "version": "0.9.0",
     "start": "arrivo",
     "assetBase": "assets/",
     "genderVar": "genere",
@@ -9,7 +9,15 @@
       "m",
       "f"
     ],
-    "note": "Formato: iPhone portrait 390x844. Il terzo inferiore e' area dialogo."
+    "note": "Formato: iPhone portrait 390x844. Il terzo inferiore e' area dialogo.",
+    "assetiInArrivo": [
+      "platea/pla_platea_idle.webp",
+      "platea/pla_applauso_pieno.webp",
+      "platea/pla_applauso_tiepido.webp",
+      "platea/pla_risata.webp",
+      "platea/pla_silenzio_imbarazzato.webp",
+      "platea/pla_coro_nome.webp"
+    ]
   },
   "assets": {
     "bg": {
@@ -26,13 +34,26 @@
       "sala_teatro": "bg/bg_sala_teatro.webp",
       "dietro_le_quinte": "bg/bg_dietro_le_quinte.webp",
       "palco_sipario_chiuso": "bg/bg_palco_sipario_chiuso.webp",
-      "palco_platea_piena": "bg/bg_palco_platea_piena.webp"
+      "palco_platea_piena": "bg/bg_palco_platea_piena.webp",
+      "palco_schermo_categorie": "bg/bg_palco_schermo_categorie.webp"
     },
     "props": {
       "mac_terminale": "props/prop_mac_terminale.webp",
-      "badge": "props/prop_badge.webp"
+      "badge": "props/prop_badge.webp",
+      "slide_iphone": "props/prop_schermo_slide_categoria_iphone.webp",
+      "slide_watch": "props/prop_schermo_slide_categoria_watch.webp",
+      "slide_altro": "props/prop_schermo_slide_categoria_altro.webp",
+      "clicker": "props/prop_clicker_inceppato.webp"
     },
-    "chars": {}
+    "chars": {},
+    "platea": {
+      "platea_idle": "platea/pla_platea_idle.webp",
+      "applauso_pieno": "platea/pla_applauso_pieno.webp",
+      "applauso_tiepido": "platea/pla_applauso_tiepido.webp",
+      "risata": "platea/pla_risata.webp",
+      "silenzio_imbarazzato": "platea/pla_silenzio_imbarazzato.webp",
+      "coro_nome": "platea/pla_coro_nome.webp"
+    }
   },
   "cast": {
     "lucas": {
@@ -140,7 +161,12 @@
     "locked": false,
     "__ok": "",
     "sfacciato": false,
-    "studiato": null
+    "studiato": null,
+    "picks": null,
+    "pescate": null,
+    "categoria": null,
+    "eventi_sacchetto": null,
+    "intermezzi": 0
   },
   "scenes": {
     "arrivo": {
@@ -858,7 +884,96 @@
           "text": "Quando sei {g:pronto|pronta} tu."
         }
       ],
+      "next": "keynote"
+    },
+    "keynote": {
+      "title": "S5 — Il keynote",
+      "bg": "palco_platea_piena",
+      "_nota": "[S5.INTERMEZZO.R1] e R2 prima del primo macroargomento: Martha scommette con te mentre la sala si scalda.",
+      "steps": [
+        {
+          "t": "io",
+          "posa": "idle_palco"
+        },
+        {
+          "t": "intermezzo",
+          "who": "martha"
+        },
+        {
+          "t": "intermezzo",
+          "who": "martha"
+        }
+      ],
+      "next": "argomenti"
+    },
+    "argomenti": {
+      "title": "S5 — I macroargomenti",
+      "bg": "palco_schermo_categorie",
+      "_nota": "[S5.HUB]: tre pannelli, ordine libero. Lo stato di ognuno si ricava dalle risposte gia' date. Quando sono tutti completi la griglia cede il turno e si passa al recap. Le 9 icone obj_icone_categorie del manifest non sono state consegnate: i pannelli sono disegnati in CSS sopra il fondale, che li ha gia' vuoti.",
+      "steps": [
+        {
+          "t": "io",
+          "posa": "idle_palco"
+        },
+        {
+          "t": "griglia",
+          "var": "categoria",
+          "da": "argomenti",
+          "goto": "argomento",
+          "who": "martha",
+          "text": "Tre blocchi. Scegli tu da dove partire, io ti seguo.",
+          "etichettaFatta": "fatto"
+        }
+      ],
       "next": "backstage"
+    },
+    "argomento": {
+      "title": "S5 — Pronostici",
+      "bg": "palco_platea_piena",
+      "_nota": "Un macroargomento: tutte le core in sequenza fissa, poi il bivio di Martha che pesca 3 facoltative dal pool, poi un intermezzo e si torna alla griglia.",
+      "steps": [
+        {
+          "t": "io",
+          "posa": "idle_palco"
+        },
+        {
+          "t": "prop",
+          "id": "slide_{categoria}",
+          "show": true,
+          "size": "52%",
+          "top": "23%",
+          "_nota": "La slide del macroargomento attivo, sullo schermo dietro. L'id dipende dalla categoria scelta nella griglia."
+        },
+        {
+          "t": "domande",
+          "set": "core",
+          "who": "martha"
+        },
+        {
+          "t": "bivio",
+          "who": "martha",
+          "text": "Siamo in tempo. Vuoi entrare nel dettaglio o passiamo al prossimo?",
+          "approfondisci": "Entriamo nel dettaglio",
+          "passa": "Passiamo al prossimo"
+        },
+        {
+          "t": "domande",
+          "set": "extra",
+          "who": "martha"
+        },
+        {
+          "t": "intermezzo",
+          "who": "martha"
+        },
+        {
+          "t": "prop",
+          "show": false
+        },
+        {
+          "t": "goto",
+          "scene": "argomenti"
+        }
+      ]
     },
     "lobby": {
       "title": "S1 — La lobby",
@@ -1348,5 +1463,36 @@
         "difficolta": "stili/stile_ingegnere_espressioni_difficolta.webp"
       }
     }
+  },
+  "reazioni": [
+    "applauso_pieno",
+    "applauso_tiepido",
+    "risata"
+  ],
+  "argomenti": {
+    "iphone": {
+      "nome": "iPhone",
+      "slide": "slide_iphone"
+    },
+    "watch": {
+      "nome": "Watch",
+      "slide": "slide_watch"
+    },
+    "altro": {
+      "nome": "Altro",
+      "slide": "slide_altro"
+    }
+  },
+  "regia": {
+    "probabilitaEvento": 0.3,
+    "introDomanda": [
+      "Tocca a te.",
+      "Vai.",
+      "Prossima.",
+      "Schermo pronto.",
+      "Questa la sentono tutti.",
+      "Quando vuoi.",
+      "Slide su."
+    ]
   }
 }

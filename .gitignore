@@ -12,3 +12,7 @@ assets/**/_originali/
 # cache di Python degli strumenti in tools/
 __pycache__/
 *.pyc
+
+# build compilata: si rigenera con `npm run build`, non va in Git
+# (l'ultima committata era ferma a mesi fa e oggi peserebbe 11 MB)
+dist/

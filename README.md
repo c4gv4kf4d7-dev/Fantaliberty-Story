@@ -105,9 +105,12 @@ Tutto lo script vive in `game/story.json`. Ogni scena e' una lista di `steps`:
 | `show` / `hide` | `{"t":"show","who":"susan","body":"in_piedi","head":"ansia"}` | entra/esce il personaggio (a destra) |
 | `io` | `{"t":"io","posa":"idle_palco"}` · `{"t":"io","hide":true}` | la figura del giocatore (a sinistra): lo sprite dello stile scelto in S3 |
 | `react` | `{"t":"react","level":"expr","head":"positiva"}` | reazione a 3 livelli (micro/expr/pose) |
-| `avatar` | `{"t":"avatar","text":"Te ne faccio vedere quattro."}` | carosello dei 4 avatar |
 | `hub` | `{"t":"hub","start":"tenda","zones":[…]}` | esplorazione a zone: swipe orizzontale, frecce, pallini. Vedi sotto |
 | `carosello` | `{"t":"carosello","var":"stile","da":"stili","posa":"idle_camerino","conferma":{…}}` | scelta a schede: figura, descrizione, perk, conferma. Vedi sotto |
+| `griglia` | `{"t":"griglia","var":"categoria","da":"argomenti","goto":"argomento"}` | i macroargomenti del keynote: pannelli con stato. Vedi sotto |
+| `domande` | `{"t":"domande","set":"core"}` · `{"t":"domande","set":"extra"}` | il giro dei pronostici della categoria corrente |
+| `bivio` | `{"t":"bivio","text":"…","approfondisci":"…","passa":"…"}` | pesca 3 facoltative dal pool, oppure passa oltre |
+| `intermezzo` | `{"t":"intermezzo","who":"martha"}` | la prossima scommessa di regia, in ordine |
 | `logo` | `{"t":"logo","img":"ui/logo_studio.png"}` | sigla che si accende come un neon |
 | `boot` | `{"t":"boot","ms":2200,"cursore":1600}` | barra LOADING, poi cursore sul nero |
 | `title` | `{"t":"title","lines":[…]}` | cartello nero a righe |
@@ -214,9 +217,44 @@ Serve a distinguere una voce in cuffia (Martha, dalla regia) da qualcuno che ti
 sta davvero davanti. `npm test` controlla che una voce non abbia pose e che le
 sue icone esistano.
 
+### S5, il keynote: griglia, domande, bivio, intermezzi
+
+Il cuore del gioco. Le domande, le battute per stile, gli eventi e gli
+intermezzi **non stanno in `story.json`**: stanno in `game/domande.json`, che il
+motore riceve come `VN.banca`. Sono contenuto grande (29 domande x 4 stili di
+battute) e che cambia per conto suo.
+
+Il giro e' questo:
+
+```
+keynote    intermezzo R1, R2                      -> argomenti
+argomenti  griglia dei 3 macroargomenti           -> argomento (quello scelto)
+argomento  slide, core in sequenza, bivio,
+           eventuali 3 facoltative, intermezzo    -> torna a argomenti
+```
+
+Quando tutte e tre le categorie hanno le loro core, la griglia **cede il turno**
+e la scena prosegue verso il recap. Lo stato di ogni pannello non e' una lista
+da tenere allineata: si ricava dalle risposte gia' date in `run.picks`, quindi
+sopravvive da sola al salvataggio.
+
+Tre regole dello script che il codice deve rispettare:
+
+* **le facoltative si pescano al bivio**, non a inizio partita — chi rigioca in
+  privato non deve poterle mappare;
+* **la reazione della platea e' sempre casuale**, mai legata a quale opzione e'
+  stata scelta: se lo fosse, il gioco suggerirebbe le risposte. Il quiz di Peter
+  in S8 e' l'eccezione dichiarata, li' le risposte sono oggettive;
+* **gli eventi non si ripetono**: si pescano da un sacchetto senza rimessa, con
+  dentro i cinque micro-eventi piu' quello personale dello stile scelto.
+
+`story.regia` regola il contorno: `probabilitaEvento` e le righe generiche con
+cui Martha apre una domanda (`introDomanda`, scelte a caso).
+
 ### Le pose che dipendono da una variabile
 
-`show` passa `body` e `head` dall'interpolazione, quindi una scena puo' scrivere
+`show` passa `body` e `head` dall'interpolazione (e `prop` il suo `id`), quindi
+una scena puo' scrivere
 `"body": "commento_{stile}"` e lasciare che sia la scelta a decidere lo sprite,
 invece di ripetere lo stesso step una volta per valore. `npm test` espande la
 posa su **tutti** i valori che quella variabile puo' prendere — li raccoglie da

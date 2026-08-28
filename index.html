@@ -14,7 +14,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"
       media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="./game/engine.css?v=29">
+<link rel="stylesheet" href="./game/engine.css?v=32">
 </head>
 <body>
 <div id="stage">
@@ -30,11 +30,23 @@
        (S1 -> S2) e il sipario del palco (S4) sono lo stesso effetto -->
   <div id="tende"><div id="tendaSx"></div><div id="tendaDx"></div></div>
 
+  <!-- reazione della platea: un layer sopra il fondale del palco, assegnato
+       sempre a caso e mai in base alla risposta data -->
+  <div id="platea"><img id="plateaImg" alt=""></div>
+
   <!-- NPC: corpo (posa) + testa (espressione), file separati -->
   <div id="npc"><img id="npcBody" alt=""><img id="npcHead" alt=""></div>
 
   <!-- la figura del giocatore: lo sprite dello stile scelto in S3, da S4 in poi -->
   <div id="avatar"></div>
+
+  <!-- un secondo personaggio, solo per la durata di un evento (il rider) -->
+  <div id="ospitewrap"><img id="ospite" alt=""></div>
+
+  <!-- l'oggetto di un micro-evento (il clicker che si inceppa). Slot suo, non
+       #propwrap: li' c'e' gia' la slide del macroargomento, e sovrascriverla la
+       farebbe sparire per il resto del blocco -->
+  <div id="evpropwrap"><img id="evprop" alt=""></div>
 
   <div id="propwrap">
     <img id="prop" alt="">
@@ -80,6 +92,8 @@
     <div id="box"><span id="txt"></span></div>
     <div id="arrow">▼</div>
     <div id="choices"></div>
+    <!-- i tre macroargomenti del keynote: pannelli con nome e stato -->
+    <div id="griglia"></div>
     <div id="inputform">
       <input id="ti" type="text" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Il tuo nome">
       <button id="tok">OK</button>
@@ -128,7 +142,7 @@
   </div>
 </div>
 
-<script src="./game/engine.js?v=29"></script>
+<script src="./game/engine.js?v=32"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -138,7 +152,7 @@
   };
   if (params.get('reset')) { try { localStorage.removeItem('fl_nexus_save_v1'); } catch (e) {} }
 
-  var ENGINE_ATTESO = '5';   // deve combaciare con VN.engine in game/engine.js
+  var ENGINE_ATTESO = '6';   // deve combaciare con VN.engine in game/engine.js
   var partito = false;
 
   function mostraErrore(msg) {
@@ -160,7 +174,7 @@
     location.replace(location.pathname + '?r=' + Date.now());    // URL nuovo: bypassa la cache
   };
 
-  function start(story) {
+  function start(story, banca) {
     // Motore e pagina devono essere della stessa versione: se il browser ne ha
     // mescolate due dalla cache si ricarica una volta sola con un indirizzo
     // nuovo, che la cache non puo' servire.
@@ -176,6 +190,7 @@
     try { sessionStorage.removeItem('fl_reload'); } catch (e) {}
 
     try {
+      opts.banca = banca;
       VN.boot(story, opts);
       partito = true;
     } catch (e) {
@@ -185,15 +200,21 @@
     }
   }
 
-  // STORY_INLINE viene definito dal build single-file (tools/build_single_file.py):
-  // in quel caso non serve nessuna richiesta HTTP e il gioco gira anche da file://
-  if (window.STORY_INLINE) return start(window.STORY_INLINE);
+  // STORY_INLINE / BANCA_INLINE vengono definiti dal build single-file
+  // (tools/build_single_file.py): in quel caso non serve nessuna richiesta HTTP
+  // e il gioco gira anche da file://
+  if (window.STORY_INLINE) return start(window.STORY_INLINE, window.BANCA_INLINE);
 
-  fetch('./game/story.json?v=29', { cache: 'no-cache' })
-    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-    .then(start)
+  // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
+  // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
+  var prendi = function (nome) {
+    return fetch('./game/' + nome + '?v=32', { cache: 'no-cache' })
+      .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
+  };
+  Promise.all([prendi('story.json'), prendi('domande.json')])
+    .then(function (x) { start(x[0], x[1]); })
     .catch(function (e) {
-      console.error('story.json non caricato:', e);
+      console.error('gioco non caricato:', e);
       mostraErrore('Non riesco a caricare il gioco.<br><small>' + e + '</small>');
     });
 })();

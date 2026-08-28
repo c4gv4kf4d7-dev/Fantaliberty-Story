@@ -19,6 +19,9 @@ try {
 }
 
 const story = JSON.parse(fs.readFileSync(path.join(ROOT, 'game/story.json'), 'utf8'));
+// La banca dei pronostici e' un file a parte, ma story.json ci fa riferimento
+// (le categorie della griglia, gli id delle domande): serve gia' qui.
+const banca = JSON.parse(fs.readFileSync(path.join(ROOT, 'game/domande.json'), 'utf8'));
 
 /* ---------- 1. validazione dello script ---------- */
 const todoAssets = new Set();
@@ -28,7 +31,7 @@ function partOf(who, kind, id) {
   const c = story.cast?.[who];
   return c && id ? c[kind]?.[id] : undefined;
 }
-const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'hub', 'carosello', 'show', 'hide', 'io', 'prop', 'bg', 'react', 'fx', 'carrellata', 'sipario', 'wait', 'set', 'goto', 'end']);
+const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'hub', 'carosello', 'griglia', 'domande', 'bivio', 'intermezzo', 'show', 'hide', 'io', 'prop', 'bg', 'react', 'fx', 'carrellata', 'sipario', 'wait', 'set', 'goto', 'end']);
 assert.ok(story.scenes[story.meta.start], 'meta.start punta a una scena esistente');
 
 // Tutti i valori che una variabile puo' assumere, raccolti da chi la scrive.
@@ -39,6 +42,7 @@ function valoriDi(nome) {
     for (const st of sc.steps || []) {
       if (st.var !== nome) continue;
       if (st.t === 'carosello') Object.keys(story[st.da || 'stili'] || {}).forEach((k) => fuori.add(k));
+      if (st.t === 'griglia') Object.keys(story[st.da || 'argomenti'] || {}).forEach((k) => fuori.add(k));
       for (const o of st.options || []) fuori.add(String(o.value));
       for (const g of st.gruppi || []) for (const o of g.opzioni || []) fuori.add(String(o.value));
     }
@@ -78,7 +82,12 @@ for (const [id, sc] of Object.entries(story.scenes)) {
     }
     if (st.t === 'react' && st.level === 'pose') assert.ok(st.body, `scena ${id}: react pose senza body`);
     if (st.t === 'react' && st.level === 'expr') assert.ok(st.head, `scena ${id}: react expr senza head`);
-    if (st.t === 'prop' && st.id) assert.ok(story.assets.props[st.id], `scena ${id}: prop "${st.id}" dichiarato`);
+    // come per le pose, l'id di un prop puo' dipendere da una variabile
+    if (st.t === 'prop' && st.id) {
+      for (const p of espandi(st.id)) {
+        assert.ok(story.assets.props[p], `scena ${id}: prop "${p}" dichiarato`);
+      }
+    }
     // Un id di fondale non dichiarato non da' nessun errore: setBg() mette una
     // src vuota e la scena resta con il fondale di prima. Successo con
     // backstage_corridoio, che esisteva su disco ma non in assets.bg.
@@ -115,6 +124,21 @@ for (const [id, sc] of Object.entries(story.scenes)) {
       }
     }
     if (st.t === 'hub') controllaHub(id, st);
+    if (st.t === 'griglia') {
+      const arg = story[st.da || 'argomenti'];
+      assert.ok(arg && Object.keys(arg).length, `scena ${id}: griglia su "${st.da}", che non esiste`);
+      assert.ok(story.scenes[st.goto], `scena ${id}: la griglia porta a "${st.goto}", che non esiste`);
+      for (const [k, a] of Object.entries(arg)) {
+        assert.ok(a.nome, `scena ${id}: macroargomento "${k}" senza nome`);
+        assert.ok(banca.categorie[k], `scena ${id}: "${k}" non e' una categoria della banca domande`);
+        if (a.slide) assert.ok(story.assets.props[a.slide], `scena ${id}: slide "${a.slide}" non dichiarata`);
+      }
+    }
+    if (st.t === 'domande') {
+      assert.ok(['core', 'extra'].includes(st.set || 'core'),
+        `scena ${id}: domande set "${st.set}" - solo "core" o "extra"`);
+    }
+    if (st.t === 'bivio') assert.ok(st.text, `scena ${id}: bivio senza domanda`);
     if (st.t === 'carosello') controllaCarosello(id, st);
     if (st.t === 'sipario') {
       for (const k of ['davanti', 'dietro']) {
@@ -245,7 +269,7 @@ const onDisk = (rel) => fs.existsSync(path.join(ROOT, base + rel));
 // vengono elencati come "da caricare" invece di far fallire il test, e il motore
 // disegna un ripiego al posto loro.
 const inArrivo = new Set(story.meta.assetiInArrivo || []);
-for (const kind of ['bg', 'props']) {
+for (const kind of ['bg', 'props', 'platea']) {
   for (const rel of Object.values(story.assets[kind] || {})) {
     if (inArrivo.has(rel)) { if (!onDisk(rel)) todoAssets.add(rel + ' (da convertire)'); continue; }
     assert.ok(onDisk(rel), `asset mancante: ${base + rel}`);
@@ -288,7 +312,7 @@ const $ = (id) => document.getElementById(id);
 const txt = () => $('txt').textContent;
 
 let ended = null;
-VN.boot(story, { speed: 0, onEnd: (s) => { ended = s; } });   // speed 0 = niente timer
+VN.boot(story, { speed: 0, banca, onEnd: (s) => { ended = s; } });   // speed 0 = niente timer
 
 // avvio: la barra di caricamento precede il cartello
 const primi = story.scenes[story.meta.start].steps.map((s) => s.t);
@@ -413,7 +437,7 @@ assert.equal(saved.state.nome, 'Franco');
 assert.equal(saved.scene, 'badge');
 
 // nuova sessione: riprende dal checkpoint invece di ricominciare
-VN.boot(story, { speed: 0 });
+VN.boot(story, { speed: 0, banca });
 // la card di ripresa e' gia' declinata: il genere sta nel salvataggio, non serve
 // aspettare restore() per leggerlo (prima usciva un asterisco a schermo)
 assert.match(txt(), /^Bentornata! Eri arrivata fino a "Atto 1 — Il badge"/, 'prompt di ripresa declinato');
@@ -426,7 +450,7 @@ assert.ok($('npcBody').getAttribute('src').includes('chr_lucas_felice'), 'scena 
 
 // ...oppure ricomincia da capo. Cancellare la partita e' irreversibile: lo script
 // chiede conferma prima, non basta il tocco sul bottone
-VN.boot(story, { speed: 0 });
+VN.boot(story, { speed: 0, banca });
 [...$('choices').querySelectorAll('.ch')][1].onclick({ stopPropagation() {} });   // Ricomincia
 assert.ok($('modal').classList.contains('on'), 'la conferma di reset e\' una modale');
 assert.ok(VN.hasSave(story), 'finche\' non conferma, il salvataggio resta');
@@ -441,7 +465,7 @@ assert.ok($('curtain').classList.contains('on'), 'ripartito dall\'intro');
 assert.match($('curtainTxt').textContent, /Cupertino/);
 
 /* ---------- 5. S2: l'aggancio ---------- */
-VN.boot(story, { speed: 0, scene: 'aggancio' });
+VN.boot(story, { speed: 0, banca, scene: 'aggancio' });
 assert.match(txt(), /Ehi TU/, 'Susan urla dal palco in fondo');
 assert.equal($('name').textContent, 'Susan', 'nome parlante preso dal cast');
 assert.ok($('npcBody').getAttribute('src').includes('chr_susan_panico_telefoni'), 'posa di Susan referenziata');
@@ -483,7 +507,7 @@ VN.step();
 assert.match(txt(), /ultima porta a destra/);
 
 // le altre due risposte non alzano il flag
-VN.boot(story, { speed: 0, scene: 'aggancio' });
+VN.boot(story, { speed: 0, banca, scene: 'aggancio' });
 for (let i = 0; i < 4; i++) VN.step();
 [...$('choices').querySelectorAll('.ch')][2].onclick({ stopPropagation() {} });   // annuire in silenzio
 assert.equal(VN.state.sfacciato, false);
@@ -505,14 +529,14 @@ assert.equal(VN.state.sfacciato, false);
   dom3.window.eval(fs.readFileSync(path.join(ROOT, 'game/engine.js'), 'utf8'));
   const { VN: VN3, document: doc3 } = dom3.window;
   const $3 = (id) => doc3.getElementById(id);
-  VN3.boot(story, { speed: 30, scene: 'aggancio' });
+  VN3.boot(story, { speed: 30, banca, scene: 'aggancio' });
   assert.ok($3('tende').classList.contains('on'), 'le due meta\' della tenda sono a schermo');
   assert.ok($3('tendaSx').style.backgroundImage.includes('lobby_z1_tenda'),
     'e portano il fondale che c\'era prima, non quello nuovo');
   assert.ok($3('bg').getAttribute('src').includes('sala_teatro'), 'dietro c\'e\' gia\' la sala');
   // cambiare scena mentre una transizione e' in corso non deve lasciare
   // mezzo fondale appeso sopra quella nuova
-  VN3.boot(story, { speed: 30, scene: 'lobby' });
+  VN3.boot(story, { speed: 30, banca, scene: 'lobby' });
   assert.equal($3('tende').classList.contains('on'), false, 'la transizione interrotta si chiude');
   assert.equal($3('prlx').children.length, 0);
 }
@@ -522,7 +546,7 @@ assert.equal(VN.state.sfacciato, false);
    del gioco, e l'unica che non si puo' rifare. */
 {
   VN.clearSave();
-  VN.boot(story, { speed: 0, scene: 'camerino' });
+  VN.boot(story, { speed: 0, banca, scene: 'camerino' });
   VN.state.genere = 'f';
   const dots = () => [...$('cdots').querySelectorAll('.cdot')];
 
@@ -579,7 +603,7 @@ assert.equal(VN.state.sfacciato, false);
   // Si entra da S3, non saltando direttamente qui: lo stile va scelto prima che
   // la scena parta, perche' e' lui a decidere lo sprite del giocatore.
   VN.clearSave();
-  VN.boot(story, { speed: 0, scene: 'camerino' });
+  VN.boot(story, { speed: 0, banca, scene: 'camerino' });
   VN.state.genere = 'f';
   VN.step();                                                   // -> carosello
   $('cnext').onclick({ stopPropagation() {} });                // Showman
@@ -623,9 +647,166 @@ assert.equal(VN.state.sfacciato, false);
   assert.match(txt(), /Quando sei pronta tu/, 'ultima riga, declinata');
 
   // e quando riprende a parlare qualcuno che c'e' davvero, la cuffia sparisce
-  VN.boot(story, { speed: 0, scene: 'camerino' });
+  VN.boot(story, { speed: 0, banca, scene: 'camerino' });
   assert.equal($('name').classList.contains('incuffia'), false);
   assert.equal($('boxwrap').classList.contains('incuffia'), false);
+}
+
+/* ---------- 5f. S5: il keynote ----------
+   Il pezzo piu' grosso del gioco. Qui si controlla il giro completo: griglia,
+   core in sequenza, bivio che pesca, intermezzi, punteggio, e la regola d'oro
+   dello script — la reazione della platea non deve mai dipendere dalla risposta. */
+{
+  const scegli = (i) => [...$('choices').querySelectorAll('.ch')][i].onclick({ stopPropagation() {} });
+  const celle = () => [...$('griglia').querySelectorAll('.gcell')];
+
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, scene: 'keynote' });
+  VN.state.genere = 'f'; VN.state.stile = 'drip'; VN.state.nome = 'Franca';
+
+  // [S5.INTERMEZZO.R1/R2]: due scommesse di regia prima di cominciare
+  assert.match(txt(), /chi entra per primo/, 'primo intermezzo');
+  assert.equal($('nametxt').textContent, 'Martha');
+  scegli(1);                                                   // John Ternus, val 2
+  assert.equal(VN.state.punti, 2, 'gli intermezzi valgono il "val" secco');
+  assert.match(txt(), /la luce per Craig/, 'secondo intermezzo');
+  scegli(0);                                                   // val 3
+  assert.equal(VN.state.punti, 5);
+  assert.equal(VN.state.intermezzi, 2, 'gli intermezzi si consumano in ordine');
+
+  // [S5.HUB]: tre macroargomenti, nessuno ancora fatto
+  assert.equal(VN.sceneId, 'argomenti');
+  assert.equal(celle().length, 3);
+  assert.deepEqual(celle().map((c) => c.querySelector('.gnome').textContent),
+    ['iPhone', 'Watch', 'Altro']);
+  assert.equal(celle()[1].querySelector('.gstato').textContent, '0/3', 'Watch: 3 core');
+  assert.equal(celle().filter((c) => c.classList.contains('fatta')).length, 0);
+
+  celle()[1].onclick({ stopPropagation() {} });                // Watch
+  assert.equal(VN.state.categoria, 'watch');
+  assert.equal(VN.sceneId, 'argomento');
+
+  // le core, in sequenza fissa
+  const core = banca.categorie.watch.core;
+  for (let k = 0; k < core.length; k++) {
+    assert.ok(txt().includes(core[k].q), `domanda core ${k + 1} nell'ordine della banca`);
+    assert.ok($('ioImg').getAttribute('src').includes('stile_drip'), 'in scena c\'e\' lo stile scelto');
+    const prima = VN.state.punti;
+    scegli(0);
+    // la battuta e' quella dello stile, non l'etichetta dell'opzione
+    assert.equal(txt(), core[k].opzioni[0].battute.drip, `battuta dello stile sulla domanda ${k + 1}`);
+    assert.equal($('nametxt').textContent, 'FRANCA', 'a parlare alla platea e\' il giocatore');
+    assert.equal(VN.state.punti, prima + core[k].opzioni[0].pt, 'punti della core presi dalla banca');
+    VN.step();                                                 // via la battuta
+    // gli eventi si intromettono a caso fra una domanda e l'altra: si tira
+    // avanti finche' non ricompaiono dei bottoni (la prossima domanda, o il bivio)
+    for (let g = 0; g < 8 && !$('choices').classList.contains('on'); g++) VN.step();
+  }
+  assert.equal(Object.keys(VN.state.picks.watch.core).length, 3, 'tutte e tre le core segnate');
+
+  // [S5.BIVIO]: le facoltative si pescano QUI, non a inizio partita
+  assert.match(txt(), /entrare nel dettaglio/, 'il bivio di Martha');
+  assert.equal(VN.state.pescate, null, 'prima del bivio non e\' stato pescato niente');
+  scegli(0);                                                   // approfondiamo
+  assert.equal(VN.state.pescate.length, 3, 'tre facoltative pescate dal pool');
+  const pool = banca.categorie.watch.extra.map((d) => d.id);
+  assert.ok(VN.state.pescate.every((x) => pool.includes(x)), 'e vengono dal pool giusto');
+  assert.equal(new Set(VN.state.pescate).size, 3, 'senza ripetizioni');
+}
+
+/* ---------- 5i. gli asset citati dalla banca esistono ----------
+   I percorsi negli eventi erano scritti senza estensione e uno puntava a un file
+   mai consegnato (il clicker, che esiste in due frame): a schermo non compariva
+   niente e nessuno se ne accorgeva, perche' l'evento continuava lo stesso. */
+for (const e of banca.micro_eventi) {
+  for (const k of ['asset', 'extra_asset']) {
+    if (e[k]) assert.ok(fs.existsSync(path.join(ROOT, base + e[k])),
+      `micro-evento ${e.id}: "${e[k]}" non esiste`);
+  }
+}
+for (const [stile, e] of Object.entries(banca.eventi_personali)) {
+  assert.ok(story.stili[stile], `evento personale per lo stile "${stile}", che non esiste`);
+  for (const k of ['asset', 'extra_asset']) {
+    if (e[k]) assert.ok(fs.existsSync(path.join(ROOT, base + e[k])),
+      `evento personale ${e.id}: "${e[k]}" non esiste`);
+  }
+  if (e.platea) assert.ok(story.assets.platea[e.platea.replace(/^pla_/, '')],
+    `evento personale ${e.id}: reazione "${e.platea}" non dichiarata`);
+}
+
+/* ---------- 5h. S5: il keynote si chiude da solo ----------
+   Fatti tutti e tre i macroargomenti la griglia deve cedere il turno e mandare
+   avanti la scena. Senza, il giocatore resterebbe a girare per sempre fra tre
+   pannelli tutti spenti. */
+{
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, scene: 'keynote' });
+  VN.state.genere = 'f'; VN.state.stile = 'ingegnere'; VN.state.nome = 'Franca';
+
+  const bottoni = () => [...$('choices').querySelectorAll('.ch')];
+  const celle = () => [...$('griglia').querySelectorAll('.gcell')];
+  // Un giocatore che tira dritto: sceglie sempre la prima opzione, tappa via
+  // tutto il resto. Il limite di giri e' una rete di sicurezza, non un'attesa:
+  // se il keynote non finisce, il test si ferma e lo dice.
+  let giri = 0;
+  while (VN.sceneId !== 'backstage' && giri++ < 900) {
+    if ($('griglia').classList.contains('on')) {
+      const libere = celle().filter((c) => !c.classList.contains('fatta'));
+      if (!libere.length) { VN.step(); continue; }
+      libere[0].onclick({ stopPropagation() {} });
+    } else if ($('choices').classList.contains('on')) {
+      bottoni()[0].onclick({ stopPropagation() {} });
+    } else {
+      VN.step();
+    }
+  }
+  assert.equal(VN.sceneId, 'backstage', `il keynote non si e' chiuso in ${giri} passi`);
+  for (const k of ['iphone', 'watch', 'altro']) {
+    assert.equal(Object.keys(VN.state.picks[k].core).length, banca.categorie[k].core.length,
+      `${k}: mancano delle core`);
+    assert.equal(Object.keys(VN.state.picks[k].extra).length, banca.categorie[k].n_extra_da_pescare,
+      `${k}: le facoltative pescate non sono state giocate tutte`);
+  }
+  assert.equal(VN.state.intermezzi, 5, 'cinque intermezzi: due all\'inizio e uno per macroargomento');
+  assert.ok(VN.state.punti > 0, 'il punteggio si accumula');
+  // il sacchetto degli eventi non si ripete: ogni evento al massimo una volta
+  assert.ok(VN.state.eventi_sacchetto, 'il sacchetto degli eventi e\' stato creato');
+  const tutti = banca.micro_eventi.length + 1;
+  assert.ok(VN.state.eventi_sacchetto.length < tutti, 'e qualche evento e\' uscito');
+}
+
+/* ---------- 5g. S5: la regola d'oro della platea ----------
+   La reazione della platea non deve MAI dipendere da quale opzione e' stata
+   scelta: se lo facesse, il gioco suggerirebbe le risposte e i pronostici non
+   varrebbero piu' niente. Si verifica che rispondendo sempre allo stesso modo
+   la reazione cambi comunque, e che le reazioni pescabili non comprendano
+   quelle riservate (il silenzio e il coro dello Showman). */
+{
+  assert.ok(story.reazioni?.length >= 2, 'ci sono piu' + ' reazioni fra cui pescare');
+  for (const r of story.reazioni) {
+    assert.ok(story.assets.platea[r], `reazione "${r}" non dichiarata fra gli asset platea`);
+  }
+  assert.ok(!story.reazioni.includes('coro_nome'),
+    'il coro col nome e\' solo dell\'evento dello Showman, non pescabile a caso');
+  assert.ok(!story.reazioni.includes('platea_idle'), 'l\'idle e\' lo stato di riposo, non una reazione');
+
+  const viste = new Set();
+  for (let giro = 0; giro < 24; giro++) {
+    // Si entra dalla griglia, come farebbe un giocatore: la scena "argomento"
+    // parte subito all'avvio, quindi impostare le variabili dopo un boot diretto
+    // arriverebbe troppo tardi e il giro delle domande verrebbe saltato.
+    VN.clearSave();
+    VN.boot(story, { speed: 0, banca, scene: 'argomenti' });
+    VN.state.stile = 'drip'; VN.state.nome = 'Franca';
+    [...$('griglia').querySelectorAll('.gcell')][0].onclick({ stopPropagation() {} });
+    $('plateaImg').removeAttribute('src');                     // niente residui dal giro prima
+    [...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });  // sempre la stessa
+    VN.step();
+    const src = $('plateaImg').getAttribute('src');
+    if (src) viste.add(src.split('/').pop());
+  }
+  assert.ok(viste.size >= 2,
+    `rispondendo sempre uguale la platea ha reagito sempre allo stesso modo (${[...viste]}): la reazione sta seguendo la risposta`);
 }
 
 /* ---------- 5b. S1: hub della lobby a quattro zone ----------
@@ -634,7 +815,7 @@ assert.equal(VN.state.sfacciato, false);
    la lobby era visitabile, e la meta' del contenuto di S1 non la vede nessuno. */
 {
   VN.clearSave();
-  VN.boot(story, { speed: 0, scene: 'lobby' });
+  VN.boot(story, { speed: 0, banca, scene: 'lobby' });
   const spots = () => [...$('hubspots').querySelectorAll('.hspot')];
   const dots = () => [...$('hdots').querySelectorAll('.hdot')];
 
@@ -711,7 +892,7 @@ assert.equal(VN.state.sfacciato, false);
 /* ---------- 5c. la zona 4 cambia faccia quando i pronostici sono chiusi ---------- */
 {
   VN.clearSave();
-  VN.boot(story, { speed: 0, scene: 'lobby' });
+  VN.boot(story, { speed: 0, banca, scene: 'lobby' });
   VN.state.locked = true;                       // come dopo il lock di S6
   VN.step(); VN.step(); VN.step();
   const dots = () => [...$('hdots').querySelectorAll('.hdot')];
@@ -729,7 +910,7 @@ assert.equal(VN.state.sfacciato, false);
 
 /* ---------- 6. variante maschile, percorso rapido ---------- */
 VN.clearSave();
-VN.boot(story, { speed: 0 });
+VN.boot(story, { speed: 0, banca });
 VN.step();                    // luci
 VN.step();                    // prima battuta di Lucas
 $('ti').value = 'Luca'; $('ti').oninput(); $('tok').onclick();
@@ -756,7 +937,7 @@ assert.match(txt(), /^Ecco il tuo badge, LUCA\./, 'percorso rapido fino al badge
   const { VN: VN2, document: doc2 } = dom2.window;
   const $2 = (id) => doc2.getElementById(id);
 
-  VN2.boot(story, { speed: 30, scene: 'quiz' });          // hide+show sono istantanei,
+  VN2.boot(story, { speed: 30, banca, scene: 'quiz' });          // hide+show sono istantanei,
   // il motore e' gia' fermo sullo step "say" successivo, a meta' della scrittura
   VN2.step();                                             // tap #1: skip, mostra la riga intera
   const dopoSkip = $2('txt').textContent;
@@ -771,7 +952,7 @@ assert.match(txt(), /^Ecco il tuo badge, LUCA\./, 'percorso rapido fino al badge
    Il valore in punti di ogni opzione core e' ridondante: e' anche calcolabile da
    difficolta' + tipo. Ricalcolarlo qui trasforma quella ridondanza in un
    controllo — un punteggio trascritto male dallo script master non passa. */
-const domande = JSON.parse(fs.readFileSync(path.join(ROOT, 'game/domande.json'), 'utf8'));
+const domande = banca;
 const STILI = ['hawaiano', 'showman', 'drip', 'ingegnere'];
 const BONUS = { consenso: 0, plausibile: 1, controcorrente: 2 };
 const idsDomande = new Set();
