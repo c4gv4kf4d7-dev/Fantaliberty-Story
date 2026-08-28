@@ -553,16 +553,35 @@ file unico.
 Il terminale del Mac e il nome sul badge lo fanno: rimisurano quando il font e'
 pronto, perche' la prima misura arriva quasi sempre prima.
 
-### Il box del dialogo ha un'altezza fissa
+### Il box del dialogo: due righe di base, cresce solo quando serve
 
-Cinque righe, sempre, in tutto il gioco. Prima il box si allargava mentre la
-frase si scriveva e il personaggio dietro sembrava spostarsi a ogni battuta.
-Adesso e' un pezzo fisso dell'interfaccia: cambia il testo dentro, non la
-cornice. Il testo e' centrato in verticale e l'altezza che occupera' viene
-riservata *prima* di cominciare a scrivere, altrimenti il blocco si sposta in su
-ogni volta che compare una riga nuova — cioe' lo stesso scatto da togliere.
+Cinque righe fisse coprivano il personaggio anche quando la battuta ne occupava
+una: 371 battute su 595 stanno in una o due righe, quindi per il 62% del gioco
+c'erano tre righe di scatolone vuoto davanti a Lucas. Adesso il box parte da due
+righe e cresce fino a cinque solo se la battuta le richiede.
 
-Cinque e' il massimo che serve davvero: misurate nel browser, **col font vero**,
+**Il salto mentre si scrive non torna** — era il difetto di partenza. `type()`
+misura la frase intera *prima* di cominciare e fissa subito l'altezza definitiva
+(`riservaAltezza()`): il box non si muove mai durante una battuta, cambia solo
+fra una battuta e l'altra, e per due volte su tre nemmeno quello.
+
+**Niente scorrimento del testo.** Era stato proposto di bloccare il box a due
+righe e far scorrere: con 425 battute su 595 che occupano tre righe o piu',
+vorrebbe dire far scorrere il 71% dei dialoghi, e una battuta che si legge solo
+scorrendo e' una battuta che qualcuno non legge.
+
+### Le scelte vanno su due colonne quando ci stanno
+
+Anche con due sole voci. Una colonna sola sprecava meta' larghezza e allungava
+il blocco verso l'alto, coprendo il personaggio: "Maschile / Femminile"
+occupavano due righe per due parole. Il limite e' la larghezza, non il numero di
+voci — mezza riga tiene ~16 caratteri col font vero. Le frasi lunghe (le risposte
+a Susan, i pronostici) restano una per riga, dove hanno spazio per andare a capo
+invece di essere spezzate in una colonnina.
+
+### Il tetto delle cinque righe
+
+Cinque e' il massimo che il box arriva a mostrare, ed e' il massimo che serve davvero: misurate nel browser, **col font vero**,
 tutte le 595 battute del gioco (dialoghi, opzioni, domande di pronostico e
 quiz), ne vengono 170 da una riga, 201 da due, 120 da tre, 82 da quattro e 22 da
 cinque. Cinque righe occupano il 18% dello schermo sull'iPhone piu' piccolo,

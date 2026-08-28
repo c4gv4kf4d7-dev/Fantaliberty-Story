@@ -31,7 +31,7 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '16',
+    engine: '18',
     story: null,
     banca: null,    // game/domande.json: domande, battute per stile, eventi, intermezzi
     quiz: null,     // game/quiz.json: i tre livelli del quiz di Peter [S8]
@@ -750,9 +750,15 @@
     // primi o minuscoli i secondi. Per lei il cast dichiara "volti", la misura
     // del viso in ogni posa, e ci pensa inquadra() a renderli tutti uguali.
     var scala = st.scala != null ? st.scala : ((c && c.scala) || 1);
-    el.npc.style.height = st.height || (scala === 1 ? '' : (NPC_H * scala).toFixed(1) + '%');
-    el.npc.style.bottom = st.bottom || '';
-    el.npc.style.right = st.right || '';
+    // Se la posa e' fra quelle inquadrate sul viso, NON si passa dalla misura di
+    // default: la si sostituisce direttamente con quella giusta, piu' sotto.
+    // Rimettere il default in mezzo faceva vedere per un fotogramma la figura
+    // piccola, a ogni cambio di battuta.
+    if (!inquadrata(c, body, st)) {
+      el.npc.style.height = st.height || (scala === 1 ? '' : (NPC_H * scala).toFixed(1) + '%');
+      el.npc.style.bottom = st.bottom || '';
+      el.npc.style.right = st.right || '';
+    }
     inquadra(c, body, st);
 
     el.npc.style.opacity = '';
@@ -781,17 +787,27 @@
   var VOLTO_Y = 0.620;      // centro del viso, in frazione dell'altezza
   var NPC_AR = 0.6;         // proporzione del riquadro #npc (3/5), come nel CSS
 
+  // La posa e' fra quelle con il viso misurato?
+  function inquadrata(c, posa, st) {
+    return !!(c && c.volti && c.volti[posa] && !st.height && st.scala == null);
+  }
+
   function inquadra(c, posa, st) {
     var v = c && c.volti && c.volti[posa];
     if (!v || st.height || st.scala != null) return;   // la scena comanda: non si tocca
     var img = el.npcBody;
     var applica = function () {
       el.npc.classList.add('fisso');       // niente transizione: il salto si vedrebbe
-      var w = img.naturalWidth, h = img.naturalHeight;
-      if (!w || !h) return;
+      // La proporzione arriva dal cast, non dall'immagine: aspettare che
+      // l'immagine sia caricata per sapere quanto e' larga voleva dire lasciare
+      // il riquadro alla misura di default per almeno un fotogramma — ed e'
+      // quello il lampo in cui la figura si vedeva piccola. naturalWidth resta
+      // come ripiego per una posa non ancora misurata.
+      var a = v.ar || (img.naturalWidth && img.naturalHeight
+        ? img.naturalWidth / img.naturalHeight : 0);
+      if (!a) return;
       var sh = el.stage.clientHeight, sw = el.stage.clientWidth;
       if (!sh || !sw) return;
-      var a = w / h;
       var altezzaImg = (VOLTO_H * sh) / v.h;           // quanto deve venire alta l'immagine
       var boxW = a > NPC_AR ? altezzaImg * a : altezzaImg * NPC_AR;
       var boxH = a > NPC_AR ? boxW / NPC_AR : altezzaImg;
@@ -807,6 +823,10 @@
         el.npc.style.bottom = (sh - (VOLTO_Y * sh + (1 - v.cy) * altezzaImg)).toFixed(1) + 'px';
       }
     };
+    // Con "ar" nel cast si puo' fare subito, nello stesso giro in cui cambia lo
+    // sprite: il browser non disegna niente in mezzo, quindi non c'e' nessun
+    // fotogramma con la misura sbagliata.
+    if (v.ar) return applica();
     if (img.complete && img.naturalWidth) applica();
     else img.addEventListener('load', applica, { once: true });
   }
@@ -2558,14 +2578,26 @@
     if (frames.length > 1 && VN.speed) vId = setInterval(batti, 520);
   }
 
+  // Caratteri che entrano in mezza riga: il box tiene ~36 caratteri col font
+  // vero, e un bottone a meta' larghezza ne tiene circa la meta' meno i suoi
+  // margini. Tenuto stretto: meglio una colonna sola che un'etichetta troncata.
+  var MEZZA_RIGA = 16;
+
   function showChoices(st) {
     el.choices.innerHTML = '';
-    // Da quattro voci in su si passa a due colonne, se le etichette sono corte:
-    // incolonnate tutte, l'ultima finiva fuori dallo schermo. Le frasi lunghe
-    // (le risposte a Susan) restano una per riga, dove hanno spazio per andare
-    // a capo.
-    var lunga = (st.options || []).some(function (o) { return fmt(o.label).length > 18; });
-    el.choices.classList.toggle('due', !!st.colonne || (!st.colonne && !lunga && (st.options || []).length >= 4));
+    /* Due colonne ogni volta che le etichette ci stanno, anche con due sole
+       voci: una colonna sola sprecava meta' larghezza e allungava il blocco
+       verso l'alto, coprendo il personaggio. "Maschile / Femminile" occupavano
+       due righe per due parole.
+       Il limite e' la larghezza, non il numero di voci: mezza riga tiene ~16
+       caratteri col font vero (36 per riga intera, meno il divisorio e i
+       margini del bottone). Le frasi lunghe — le risposte a Susan, i pronostici
+       — restano una per riga, dove hanno spazio per andare a capo invece di
+       essere spezzate a meta' in una colonnina. */
+    var opzioni = st.options || [];
+    var lunga = opzioni.some(function (o) { return fmt(o.label).length > MEZZA_RIGA; });
+    var due = st.colonne != null ? !!st.colonne : (!lunga && opzioni.length >= 2);
+    el.choices.classList.toggle('due', due);
     (st.options || []).forEach(function (o) {
       var b = global.document.createElement('button');
       // "spento": la voce si vede ma non si tocca. Serve a dire perche' una
