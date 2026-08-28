@@ -14,7 +14,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"
       media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="./game/engine.css?v=38">
+<link rel="stylesheet" href="./game/engine.css?v=44">
 </head>
 <body>
 <div id="stage">
@@ -71,6 +71,13 @@
   <div id="carosello"><img id="carImg" alt=""></div>
 
   <div id="boxwrap">
+    <!-- quiz di Peter (S8): a che punto sei del livello e quanto tempo resta.
+         Il timer parte quando la domanda compare, non quando finisci di
+         leggerla: per questo il testo non si scrive a macchina. -->
+    <div id="quizbar">
+      <div id="qinfo"></div>
+      <div id="qtimer"><div id="qbar"></div><span id="qsec"></span></div>
+    </div>
     <div id="hubnav">
       <button id="hprev" aria-label="Zona precedente">◀</button>
       <div id="hdots"></div>
@@ -92,14 +99,23 @@
     <div id="name" class="hidden"><img id="voce" alt=""><span id="nametxt"></span></div>
     <div id="box"><span id="txt"></span></div>
     <div id="arrow">▼</div>
-    <div id="choices"></div>
-    <!-- i tre macroargomenti del keynote: pannelli con nome e stato -->
+    <!-- i tre macroargomenti del keynote (S5), e i tre livelli del quiz (S8).
+         Sta PRIMA di #choices: nella griglia del quiz i due convivono, e i
+         livelli vanno letti prima delle azioni che ci stanno sotto. -->
     <div id="griglia"></div>
+    <div id="choices"></div>
     <!-- il recap di S6: tutte le risposte, ancora modificabili, e il bottone
          rosso che chiude la schedina -->
     <div id="recapwrap">
       <div id="recap"></div>
       <button id="blocca">BLOCCA LA SCALETTA</button>
+    </div>
+    <!-- [S8.FINALE]: quello che si e' vinto al quiz si spalma sui tre
+         macroargomenti. Nessun tetto per categoria, solo il totale. -->
+    <div id="multwrap">
+      <div id="multrighe"></div>
+      <div id="multresto"></div>
+      <button id="multok">CONFERMA</button>
     </div>
     <div id="inputform">
       <input id="ti" type="text" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Il tuo nome">
@@ -174,7 +190,7 @@
   </div>
 </div>
 
-<script src="./game/engine.js?v=38"></script>
+<script src="./game/engine.js?v=44"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -184,7 +200,7 @@
   };
   if (params.get('reset')) { try { localStorage.removeItem('fl_nexus_save_v1'); } catch (e) {} }
 
-  var ENGINE_ATTESO = '10';   // deve combaciare con VN.engine in game/engine.js
+  var ENGINE_ATTESO = '11';   // deve combaciare con VN.engine in game/engine.js
   var partito = false;
 
   function mostraErrore(msg) {
@@ -206,7 +222,7 @@
     location.replace(location.pathname + '?r=' + Date.now());    // URL nuovo: bypassa la cache
   };
 
-  function start(story, banca, backend) {
+  function start(story, banca, backend, quiz) {
     // Motore e pagina devono essere della stessa versione: se il browser ne ha
     // mescolate due dalla cache si ricarica una volta sola con un indirizzo
     // nuovo, che la cache non puo' servire.
@@ -224,6 +240,7 @@
     try {
       opts.banca = banca;
       opts.backend = backend;
+      opts.quiz = quiz;
       VN.boot(story, opts);
       partito = true;
     } catch (e) {
@@ -236,12 +253,12 @@
   // STORY_INLINE / BANCA_INLINE vengono definiti dal build single-file
   // (tools/build_single_file.py): in quel caso non serve nessuna richiesta HTTP
   // e il gioco gira anche da file://
-  if (window.STORY_INLINE) return start(window.STORY_INLINE, window.BANCA_INLINE, window.BACKEND_INLINE);
+  if (window.STORY_INLINE) return start(window.STORY_INLINE, window.BANCA_INLINE, window.BACKEND_INLINE, window.QUIZ_INLINE);
 
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=38', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=44', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e
@@ -249,9 +266,10 @@
   Promise.all([
     prendi('story.json'),
     prendi('domande.json'),
-    prendi('backend.json').catch(function () { return null; })
+    prendi('backend.json').catch(function () { return null; }),
+    prendi('quiz.json')
   ])
-    .then(function (x) { start(x[0], x[1], x[2]); })
+    .then(function (x) { start(x[0], x[1], x[2], x[3]); })
     .catch(function (e) {
       console.error('gioco non caricato:', e);
       mostraErrore('Non riesco a caricare il gioco.<br><small>' + e + '</small>');

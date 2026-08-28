@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "FantaLiberty — Nexus",
-    "version": "0.11.0",
+    "version": "0.12.0",
     "start": "arrivo",
     "assetBase": "assets/",
     "genderVar": "genere",
@@ -174,7 +174,7 @@
         "guarda_orologio": "chars/chr_peter_guarda_orologio.webp"
       },
       "heads": {},
-      "_nota": "Sprite unico per posa. Nel manifest e' 'addormentato' (occhi_bassi) finche' run.locked e' false, si sveglia (alza_occhi) solo in S8: la scena 'quiz' qui sotto e' ancora la vecchia placeholder e non modella quello stato.",
+      "_nota": "Sprite unico per posa. Dorme (occhi_bassi) finche' run.locked e' false, si sveglia (alza_occhi) quando i pronostici sono chiusi: la lobby modella i due stati con 'when' sulla zona 4. Le altre quattro pose sono il quiz di S8. Tutte vanno mostrate a height 44%: e' seduto a un tavolino in primo piano, non e' una figura intera.",
       "scala": 1.35,
       "_notaScala": "Come Francesca: ritagli quasi quadrati, alla misura base restavano piccoli accanto a Lucas.",
       "scalaHub": 1.15
@@ -197,7 +197,12 @@
     "pescate": null,
     "categoria": null,
     "eventi_sacchetto": null,
-    "intermezzi": 0
+    "intermezzi": 0,
+    "quiz_visto": false,
+    "livello": null,
+    "quiz": null,
+    "mult_bank": 0,
+    "moltiplicatori": null
   },
   "scenes": {
     "arrivo": {
@@ -1247,8 +1252,9 @@
       "next": "finale"
     },
     "quiz": {
-      "title": "Atto 4 — Quiz storico",
-      "bg": "lobby",
+      "title": "S8 — Il quiz di Peter",
+      "bg": "lobby_z4_quiz_aperta",
+      "_nota": "[S8.01] e [S8.HUB]. Le tre battute di presentazione hanno \"se\": si dicono solo la prima volta, non a ogni ritorno dalla griglia dei livelli.",
       "steps": [
         {
           "t": "hide"
@@ -1256,41 +1262,135 @@
         {
           "t": "show",
           "who": "peter",
-          "body": "alza_occhi"
+          "body": "alza_occhi",
+          "height": "44%"
         },
         {
           "t": "say",
           "who": "peter",
-          "text": "[BOZZA] Io c'ero nel 2007. Vediamo se te la cavi."
-        },
-        {
-          "t": "choice",
-          "who": "peter",
-          "var": "quiz1",
-          "text": "[BOZZA] In che anno e' stato presentato il primo iPhone?",
-          "options": [
-            {
-              "label": "2005",
-              "value": "no"
-            },
-            {
-              "label": "2007",
-              "value": "si",
-              "react": {
-                "level": "pose",
-                "body": "annuisce"
-              }
-            },
-            {
-              "label": "2009",
-              "value": "no"
-            }
-          ]
+          "se": {
+            "var": "quiz_visto",
+            "is": false
+          },
+          "text": "Hai fatto un keynote intero, ma conosci quelli passati? Vediamo."
         },
         {
           "t": "say",
           "who": "peter",
-          "text": "[BOZZA] (qui la valutazione della risposta e l'assegnazione dei punti)"
+          "se": {
+            "var": "quiz_visto",
+            "is": false
+          },
+          "text": "Tre livelli. Due tentativi a testa, e al secondo giro le domande non sono quelle del primo: non provare a impararle sbagliando apposta."
+        },
+        {
+          "t": "say",
+          "who": "peter",
+          "se": {
+            "var": "quiz_visto",
+            "is": false
+          },
+          "text": "E non ti do punti: quelli li hai gia' chiusi. Ti do moltiplicatori. Dove metterli lo decidi tu, il giorno del keynote."
+        },
+        {
+          "t": "set",
+          "var": "quiz_visto",
+          "value": true
+        },
+        {
+          "t": "quizhub",
+          "who": "peter",
+          "text": "Da dove vuoi cominciare?",
+          "goto": "quiz_livello",
+          "gotoMult": "moltiplicatori",
+          "etichettaChiuso": "prima l'altro",
+          "etichettaBruciato": "finito",
+          "assegna": "Assegna i moltiplicatori (+{banca})",
+          "assegnaPresto": "I moltiplicatori si assegnano il giorno del keynote",
+          "assegnati": "Rivedi i moltiplicatori",
+          "esci": {
+            "label": "Basta cosi', torno in lobby",
+            "goto": "lobby"
+          }
+        }
+      ]
+    },
+    "quiz_livello": {
+      "title": "S8 — Un livello del quiz",
+      "bg": "lobby_z4_quiz_aperta",
+      "_nota": "[S8.LOOP]. Il timer parte quando la domanda compare, quindi il testo non passa dal typewriter. Finito il livello si torna alla griglia: 'next' rientra nella scena quiz, dove le battute di presentazione sono gia' state dette.",
+      "steps": [
+        {
+          "t": "quizlivello",
+          "who": "peter",
+          "height": "44%",
+          "giuste": "giuste",
+          "cinquanta": "50:50 — Peter toglie due risposte",
+          "giusta": "Esatto.",
+          "sbagliata": "No. Era: {r}.",
+          "scaduta": "Tempo scaduto. Era: {r}.",
+          "passato": "Passato: {giuste} su {n}. Vale +{mult} di moltiplicatore.",
+          "ritenta": "{giuste} su {n}. Ne servivano {soglia}. Ti resta un tentativo, e domande diverse.",
+          "bruciato": "{giuste} su {n}. Basta cosi': questo livello per te e' chiuso.",
+          "assorbito": "{giuste} su {n}. Guarda, facciamo che questo giro non l'ho visto. Rifallo."
+        }
+      ],
+      "next": "quiz"
+    },
+    "moltiplicatori": {
+      "title": "S8 — I moltiplicatori",
+      "bg": "lobby_z4_quiz_aperta",
+      "_nota": "[S8.FINALE]. Ci si arriva solo dalla griglia, che apre la voce nelle 24 ore prima del keynote. Confermare e' irreversibile come il lock di S6, e come quello fa partire un invio al server.",
+      "steps": [
+        {
+          "t": "hide"
+        },
+        {
+          "t": "show",
+          "who": "peter",
+          "body": "alza_occhi",
+          "height": "44%"
+        },
+        {
+          "t": "say",
+          "who": "peter",
+          "text": "Hai fatto punti per giorni e ora devi decidere dove metterli."
+        },
+        {
+          "t": "say",
+          "who": "peter",
+          "text": "Il moltiplicatore vale su tutto quello che hai pronosticato in quel macroargomento. Puoi anche darlo tutto a uno solo: sono affari tuoi."
+        },
+        {
+          "t": "quizmult",
+          "who": "peter",
+          "height": "44%",
+          "text": "Distribuisci quello che hai vinto. Poi non si tocca piu'.",
+          "resto": "Ancora da distribuire:",
+          "restoFatto": "Assegnati. E non si tornano indietro.",
+          "bottone": "CONFERMA",
+          "gia": "Chiudi",
+          "conferma": {
+            "text": "Confermi questa distribuzione? Dopo non si cambia piu'.",
+            "si": "Si', confermo",
+            "no": "Fammi ripensare"
+          }
+        },
+        {
+          "t": "show",
+          "who": "peter",
+          "body": "applauso_ironico",
+          "height": "44%"
+        },
+        {
+          "t": "say",
+          "who": "peter",
+          "text": "Interessante: hai puntato tutto sulla categoria di cui eri meno {g:sicuro|sicura}."
+        },
+        {
+          "t": "say",
+          "who": "peter",
+          "text": "Adesso non resta che guardarlo, il keynote. Buona fortuna, {NOME}."
         }
       ],
       "next": "countdown"
