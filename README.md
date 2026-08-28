@@ -114,6 +114,7 @@ Tutto lo script vive in `game/story.json`. Ogni scena e' una lista di `steps`:
 | `bivio` | `{"t":"bivio","text":"…","approfondisci":"…","passa":"…"}` | pesca 3 facoltative dal pool, oppure passa oltre |
 | `intermezzo` | `{"t":"intermezzo","who":"martha"}` | la prossima scommessa di regia, in ordine |
 | `recap` | `{"t":"recap","da":"argomenti","lock":{…},"goto":"finale"}` | il teleprompter di S6: tutte le risposte, modificabili, e il blocco |
+| `countdown` | `{"t":"countdown","azioni":[{"label":"…","goto":"lobby"},{"label":"…","card":true}]}` | l'ultima schermata: quanto manca al keynote vero, e la card da salvare |
 | `logo` | `{"t":"logo","img":"ui/logo_studio.png"}` | sigla che si accende come un neon |
 | `boot` | `{"t":"boot","ms":2200,"cursore":1600}` | barra LOADING, poi cursore sul nero |
 | `title` | `{"t":"title","lines":[…]}` | cartello nero a righe |
@@ -285,6 +286,21 @@ un orologio del telefono spostato non deve poter cambiare l'ordine di arrivo.
 Il blocco e' locale e irreversibile, quindi se l'invio fallisce — rete assente,
 chiave non ancora configurata — la schedina **resta in coda** in `localStorage`
 e si riprova da sola al prossimo avvio, invece di perdersi.
+
+### S7: il countdown e la card
+
+`meta.keynote` e' la data e ora verso cui conta il countdown (ISO, con fuso).
+E' l'unica riga da cambiare se Apple sposta l'evento; senza una data valida
+`npm test` si ferma, perche' un countdown senza traguardo non conta niente.
+
+Chi riapre il gioco con la schedina gia' bloccata **non trova "riprendi"**:
+torna qui, perche' non c'e' piu' storia da rigiocare. Da qui si va in lobby, e
+la zona 4 e' ormai aperta.
+
+La card si compone su una `canvas` — figura dello stile, nome, store, punteggio
+— e si mostra come immagine. Su iPhone il salvataggio vero e' **tenere premuto**
+sull'immagine: il tocco su un link di download li' apre solo una scheda. Il link
+resta per chi gioca da computer.
 
 ### Le pose che dipendono da una variabile
 

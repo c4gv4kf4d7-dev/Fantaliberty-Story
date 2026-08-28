@@ -16,8 +16,9 @@
 
    Step supportati:
      logo | boot | title | say | choice | input | list | badge | hub | carosello |
-     griglia | domande | bivio | intermezzo | recap | show | hide | io | react |
-     prop | bg | fx | carrellata | sipario | wait | set | goto | end
+     griglia | domande | bivio | intermezzo | recap | countdown | show | hide |
+     io | react | prop | bg | fx | carrellata | sipario | nero | luce | wait |
+     set | goto | end
 */
 (function (global) {
   'use strict';
@@ -29,7 +30,7 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '9',
+    engine: '10',
     story: null,
     banca: null,    // game/domande.json: domande, battute per stile, eventi, intermezzi
     backend: null,  // game/backend.json: dove spedire la schedina chiusa
@@ -394,6 +395,7 @@
     chiudiCarosello();
     chiudiGriglia();
     chiudiRecap();
+    chiudiCountdown();
     chiudiTransizioni();
     if (el.modal) el.modal.classList.remove('on');
     if (!(sc.steps || []).some(function (s) { return s.t === 'title' || s.t === 'boot' || s.t === 'logo'; })) {
@@ -531,6 +533,10 @@
       // S6: il recap modificabile e il blocco della schedina
       case 'recap':
         return showRecap(st);
+
+      // S7: il countdown al keynote vero, ultima schermata del gioco
+      case 'countdown':
+        return showCountdown(st);
 
       // Transizioni: al ripristino non si rigiocano (il giocatore le ha gia'
       // viste), ma il fondale che lasciano dietro va rimesso a posto.
@@ -1629,6 +1635,139 @@
     if (d) invia(d);
   };
 
+  /* ================ S7: countdown e card ================ */
+
+  function quandoKeynote() {
+    var q = VN.story.meta && VN.story.meta.keynote;
+    var t = q ? Date.parse(q) : NaN;
+    return isNaN(t) ? null : t;
+  }
+
+  function mancano(ms) {
+    if (ms <= 0) return null;
+    var s = Math.floor(ms / 1000);
+    return {
+      g: Math.floor(s / 86400),
+      h: Math.floor(s / 3600) % 24,
+      m: Math.floor(s / 60) % 60,
+      s: s % 60
+    };
+  }
+
+  function due(n) { return (n < 10 ? '0' : '') + n; }
+
+  /* ---------------- il countdown [S7.05] ----------------
+     Schermata che si riapre ogni giorno fino al keynote vero: e' l'ultimo posto
+     dove il gioco lascia il giocatore, e quello che rivede riaprendo. */
+  var cId = null;
+  function showCountdown(st) {
+    var quando = quandoKeynote();
+
+    function aggiorna() {
+      var m = quando ? mancano(quando - Date.now()) : null;
+      if (!m) {
+        el.cdtempo.textContent = fmt(st.arrivato || 'E\' iniziato.');
+        if (cId) { clearInterval(cId); cId = null; }
+        return;
+      }
+      el.cdtempo.textContent = (m.g ? m.g + 'g ' : '') + due(m.h) + ':' + due(m.m) + ':' + due(m.s);
+    }
+
+    el.cdnome.textContent = fmt(st.titolo || '{NOME} — SCALETTA BLOCCATA');
+    el.cdlabel.textContent = fmt(st.label || 'Il keynote vero inizia tra');
+    el.cdpunti.textContent = fmt(st.punti || 'Punti in gioco:') + ' ' + totale();
+    aggiorna();
+    if (cId) clearInterval(cId);
+    if (VN.speed) cId = setInterval(aggiorna, 1000);
+
+    el.cdbtn.innerHTML = '';
+    (st.azioni || []).forEach(function (a) {
+      var b = global.document.createElement('button');
+      b.className = 'ch';
+      b.textContent = fmt(a.label);
+      b.onclick = function (ev) {
+        if (ev && ev.stopPropagation) ev.stopPropagation();
+        if (a.card) return mostraCard(st);
+        if (a.goto) { chiudiCountdown(); return goScene(a.goto); }
+      };
+      el.cdbtn.appendChild(b);
+    });
+
+    el.boxwrap.classList.remove('in');
+    el.countdown.classList.add('on');
+    pending = null;
+  }
+
+  function chiudiCountdown() {
+    if (cId) { clearInterval(cId); cId = null; }
+    if (el.countdown) el.countdown.classList.remove('on');
+    if (el.cardwrap) el.cardwrap.classList.remove('on');
+  }
+
+  /* ---------------- la card condivisibile ----------------
+     Composta qui, su una canvas, non scaricata da nessuna parte: il gioco e' un
+     sito statico e la card dipende da come e' andata la partita.
+
+     Su iPhone il salvataggio vero e' "tieni premuto sull'immagine": il tocco su
+     un link di download apre una scheda e basta. Quindi si mostra l'immagine, e
+     il link resta per chi gioca da computer. */
+  function mostraCard(st) {
+    var W = 1080, H = 1920;
+    var c = global.document.createElement('canvas');
+    c.width = W; c.height = H;
+    var x = c.getContext('2d');
+
+    var g = x.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#141a2e'); g.addColorStop(1, '#05060a');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+
+    var font = function (px, peso) {
+      x.font = (peso || '') + px + 'px "Press Start 2P", ui-monospace, monospace';
+    };
+    x.textAlign = 'center';
+
+    var scrivi = function () {
+      x.fillStyle = '#ffd98a'; font(44);
+      x.fillText('FANTALIBERTY', W / 2, 150);
+      x.fillStyle = '#fff'; font(58);
+      x.fillText(String(VN.state.nome || '').toUpperCase(), W / 2, 265);
+      x.fillStyle = '#9fb4d8'; font(26);
+      var sotto = [VN.state.store, VN.state.reparto].filter(Boolean).join(' · ');
+      if (sotto) x.fillText(sotto.toUpperCase(), W / 2, 320);
+
+      var s = (VN.story.stili || {})[VN.state.stile];
+      if (s) { x.fillStyle = '#ffd98a'; font(30); x.fillText((s.nome || '').toUpperCase(), W / 2, 1520); }
+
+      x.fillStyle = '#fff'; font(34);
+      x.fillText(fmt(st.cardTitolo || 'SCALETTA BLOCCATA'), W / 2, 1650);
+      x.fillStyle = '#ffd98a'; font(72);
+      x.fillText(String(totale()), W / 2, 1760);
+      x.fillStyle = '#9fb4d8'; font(22);
+      x.fillText(fmt(st.cardPunti || 'PUNTI IN GIOCO'), W / 2, 1815);
+
+      el.cardImg.src = c.toDataURL('image/png');
+      el.cardsalva.href = el.cardImg.src;
+      el.cardsalva.download = 'fantaliberty-' + String(VN.state.nome || 'card').toLowerCase() + '.png';
+      el.cardwrap.classList.add('on');
+      el.cardchiudi.onclick = function (ev) {
+        if (ev && ev.stopPropagation) ev.stopPropagation();
+        el.cardwrap.classList.remove('on');
+      };
+    };
+
+    // la figura dello stile scelto, se c'e': si disegna quando e' caricata
+    var posa = posaStile('saluto_finale');
+    if (!posa) return scrivi();
+    var im = new global.Image();
+    im.onload = function () {
+      var h = 1050, w = im.width * (h / im.height);
+      x.drawImage(im, (W - w) / 2, 400, w, h);
+      scrivi();
+    };
+    im.onerror = scrivi;
+    im.src = withBase(posa);
+  }
+
   /* ---------------- hub a zone ----------------
      La lobby dello script: quattro zone che si scorrono di lato, senza ordine
      imposto, ognuna con il suo fondale, il suo personaggio e le sue aree
@@ -2266,6 +2405,10 @@
       ospitewrap: $('ospitewrap'), ospite: $('ospite'), griglia: $('griglia'),
       evpropwrap: $('evpropwrap'), evprop: $('evprop'),
       recap: $('recap'), blocca: $('blocca'),
+      countdown: $('countdown'), cdnome: $('cdnome'), cdlabel: $('cdlabel'),
+      cdtempo: $('cdtempo'), cdpunti: $('cdpunti'), cdbtn: $('cdbtn'),
+      cardwrap: $('cardwrap'), cardImg: $('cardImg'), cardsalva: $('cardsalva'),
+      cardchiudi: $('cardchiudi'),
       carosello: $('carosello'), carImg: $('carImg'), carta: $('carta'),
       cprev: $('cprev'), cnext: $('cnext'), cdots: $('cdots'),
       carnome: $('carnome'), cardesc: $('cardesc'), carperk: $('carperk'), carok: $('carok')
@@ -2280,6 +2423,7 @@
     chiudiCarosello();
     chiudiGriglia();
     chiudiRecap();
+    chiudiCountdown();
     chiudiTransizioni();
     if (el.modal) el.modal.classList.remove('on');
     bgCorrente = null;
@@ -2291,6 +2435,7 @@
            e.target.closest('#hubspots') || e.target.closest('#modal') ||
            e.target.closest('#carta') || e.target.closest('#carosello') ||
            e.target.closest('#griglia') || e.target.closest('#recapwrap') ||
+           e.target.closest('#countdown') || e.target.closest('#cardwrap') ||
            e.target.closest('#propwrap'))) return;
       VN.step();
     };
@@ -2304,6 +2449,7 @@
           (el.listform && el.listform.classList.contains('on')) ||
           (el.griglia && el.griglia.classList.contains('on')) ||
           (el.recap && el.recap.classList.contains('on')) ||
+          (el.countdown && el.countdown.classList.contains('on')) ||
           (el.modal && el.modal.classList.contains('on'))) return;
       VN.step();
     };
@@ -2314,6 +2460,14 @@
 
     if (opts.resume !== false && VN.hasSave(story)) {
       var save = VN.readSave();
+      // [S0B] Partita gia' chiusa: non si riprende niente, si torna al
+      // countdown. La schedina e' bloccata, non c'e' piu' storia da rigiocare —
+      // e da li' si arriva comunque alla lobby e al quiz.
+      if (save.state && save.state.locked && story.scenes[story.meta.dopoLock || 'countdown']) {
+        VN.state = save.state;
+        VN.progressed = true;
+        return goScene(story.meta.dopoLock || 'countdown');
+      }
       el.boxwrap.classList.add('in');
       setSpeaker(null);
       var sc = story.scenes[save.scene];
