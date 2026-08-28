@@ -569,3 +569,27 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
     box-shadow:0 0 0 2px rgba(255,255,255,.08), 0 24px 70px rgba(0,0,0,.75);
   }
 }
+
+/* ---------- pannello di sviluppo ----------
+   Si apre solo con ?dev nell'indirizzo: serve a saltare a una scena senza
+   rigiocare tutto ogni volta. Non c'e' nessun modo di arrivarci dal gioco,
+   quindi un giocatore non ci finisce dentro per sbaglio. */
+#dev{position:absolute;inset:0;z-index:8;background:#0a0c14;color:#e7ebf7;
+ display:none;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;
+ padding:calc(16px + env(safe-area-inset-top,0px)) 14px calc(20px + env(safe-area-inset-bottom,0px))}
+#dev.on{display:flex}
+#dev h1{font-size:13px;line-height:1.5;margin:0 0 2px}
+#dev .sub{font-size:9px;line-height:1.6;color:#8d96b5;margin-bottom:14px}
+#dev h2{font-size:9px;color:#8d96b5;margin:16px 0 7px;letter-spacing:.06em}
+#dev .riga{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
+#dev button{font-family:inherit;color:#e7ebf7;background:#1b2036;border:2px solid #333b5c;
+ border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#dev .riga button{font-size:9px;padding:8px 10px;flex:1 1 auto}
+#dev .riga button.sel{background:#2f6df0;border-color:#7ba3ff}
+#dev .scena{display:block;width:100%;text-align:left;font-size:10px;line-height:1.5;
+ padding:11px 12px;margin-bottom:6px}
+#dev .scena:active{background:#2a3050}
+#dev .scena b{display:block;font-size:11px;margin-bottom:3px}
+#dev .scena span{color:#8d96b5;font-size:8px}
+#dev .via{background:#2f6df0;border-color:#7ba3ff;font-size:11px;padding:12px;
+ width:100%;margin-bottom:6px}

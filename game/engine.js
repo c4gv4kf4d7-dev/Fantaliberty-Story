@@ -30,7 +30,7 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '10',
+    engine: '11',
     story: null,
     banca: null,    // game/domande.json: domande, battute per stile, eventi, intermezzi
     backend: null,  // game/backend.json: dove spedire la schedina chiusa
@@ -2368,11 +2368,168 @@
     Object.keys(story.vars || {}).forEach(function (k) { VN.state[k] = story.vars[k]; });
   }
 
+  /* ---------------- pannello di sviluppo ----------------
+     Un menu che elenca le scene e ci salta dentro. Si apre solo aggiungendo
+     ?dev all'indirizzo: dal gioco non ci si arriva, quindi un giocatore non ci
+     finisce per sbaglio.
+
+     L'elenco NON e' scritto a mano: si ricava seguendo i "next" da meta.start,
+     e chi resta fuori (le scene raggiunte solo per salto) viene aggiunto in
+     coda. Cosi' aggiungere una scena a story.json la fa comparire da sola,
+     senza doversi ricordare di aggiornare anche questa lista. */
+  function ordineScene(story) {
+    var visti = {}, ordine = [], id = (story.meta && story.meta.start);
+    while (id && story.scenes[id] && !visti[id]) { visti[id] = 1; ordine.push(id); id = story.scenes[id].next; }
+    Object.keys(story.scenes).forEach(function (k) { if (!visti[k]) ordine.push(k); });
+    return ordine;
+  }
+
+  // Chi si vede in una scena: serve solo a far riconoscere la scena a colpo
+  // d'occhio nell'elenco ("ah, questa e' quella con Susan").
+  function chiCiSta(story, sc) {
+    var nomi = [], visto = {};
+    (function scava(n) {
+      if (!n || typeof n !== 'object') return;
+      if (Array.isArray(n)) return n.forEach(scava);
+      var w = n.who || n.dice;
+      if (typeof w === 'string' && !visto[w]) {
+        visto[w] = 1;
+        var c = story.cast && story.cast[w];
+        nomi.push((c && c.name) || w);
+      }
+      Object.keys(n).forEach(function (k) { scava(n[k]); });
+    })(sc.steps);
+    return nomi;
+  }
+
+  // Un giocatore verosimile gia' registrato: senza questo, saltare a meta'
+  // storia parte con nome vuoto, genere nullo e nessuno stile — e le scene da
+  // S3 in poi non hanno niente da mostrare.
+  function statoFinto(story, scelte) {
+    var st = {};
+    Object.keys(story.vars || {}).forEach(function (k) { st[k] = story.vars[k]; });
+    st.nome = 'Tester';
+    st.genere = scelte.genere;
+    st.anni = scelte.anni;
+    st.store = 'liberty';
+    st.reparto = 'operation';
+    st.device = '17 Pro';
+    st.stile = scelte.stile;
+    st.__ok = '';
+    if (scelte.pronostici) {
+      // pronostici gia' fatti: servono a S6 e S7, che senza risposte mostrano
+      // un recap vuoto e uno zero secco
+      var cat = (VN.banca && VN.banca.categorie) || {};
+      st.picks = {};
+      Object.keys(cat).forEach(function (k) {
+        st.picks[k] = { core: {}, extra: {} };
+        (cat[k].core || []).forEach(function (d) {
+          var op = (d.opzioni || [])[0] || {};
+          st.picks[k].core[d.id] = { v: op.label || '?', p: op.pt || 0 };
+        });
+      });
+      st.locked = !!scelte.locked;
+      var somma = 0;
+      Object.keys(st.picks).forEach(function (k) {
+        Object.keys(st.picks[k].core).forEach(function (i) { somma += st.picks[k].core[i].p || 0; });
+      });
+      st.punti = somma;
+    }
+    return st;
+  }
+
+  function pannelloSviluppo(story, opts) {
+    var box = $('dev');
+    if (!box) return goScene((story.meta && story.meta.start));
+    var doc = global.document;
+    var scelte = { genere: 'f', anni: 2, stile: 'showman', pronostici: false, locked: false };
+
+    var disegna = function () {
+      box.innerHTML = '';
+      var h = doc.createElement('h1');
+      h.textContent = 'Salto rapido';
+      var sub = doc.createElement('div');
+      sub.className = 'sub';
+      sub.textContent = 'Solo per lo sviluppo. Scegli come deve essere il giocatore, '
+        + 'poi tocca la scena da cui vuoi partire. La partita salvata viene cancellata.';
+      box.appendChild(h); box.appendChild(sub);
+
+      var gruppo = function (titolo, valori, campo) {
+        var t = doc.createElement('h2'); t.textContent = titolo; box.appendChild(t);
+        var r = doc.createElement('div'); r.className = 'riga';
+        valori.forEach(function (v) {
+          var b = doc.createElement('button');
+          b.textContent = v.label;
+          if (scelte[campo] === v.value) b.className = 'sel';
+          b.onclick = function () { scelte[campo] = v.value; disegna(); };
+          r.appendChild(b);
+        });
+        box.appendChild(r);
+      };
+
+      gruppo('GENERE', [{ label: 'Maschile', value: 'm' }, { label: 'Femminile', value: 'f' }], 'genere');
+      gruppo('ANNI IN APPLE', [{ label: '0-2', value: 0 }, { label: '3-7', value: 1 },
+        { label: '8-12', value: 2 }, { label: '12+', value: 3 }], 'anni');
+      gruppo('STILE (scelto in S3)', Object.keys(story.stili || {}).map(function (k) {
+        return { label: (story.stili[k].nome || k), value: k };
+      }), 'stile');
+      gruppo('PRONOSTICI', [{ label: 'Non ancora fatti', value: false },
+        { label: 'Gia\' fatti', value: true }], 'pronostici');
+      if (scelte.pronostici) {
+        gruppo('SCHEDINA', [{ label: 'Aperta', value: false },
+          { label: 'Chiusa (locked)', value: true }], 'locked');
+      }
+
+      var t2 = doc.createElement('h2'); t2.textContent = 'DA DOVE PARTIRE'; box.appendChild(t2);
+
+      var via = doc.createElement('button');
+      via.className = 'via';
+      via.textContent = 'Dall\'inizio, come un giocatore vero';
+      via.onclick = function () {
+        box.classList.remove('on');
+        VN.clearSave();
+        VN.boot(story, unisci(opts, { dev: false, scene: null, stato: null }));
+      };
+      box.appendChild(via);
+
+      ordineScene(story).forEach(function (id) {
+        var sc = story.scenes[id];
+        var b = doc.createElement('button');
+        b.className = 'scena';
+        var nome = doc.createElement('b');
+        nome.textContent = sc.title || id;
+        var chi = chiCiSta(story, sc);
+        var note = doc.createElement('span');
+        note.textContent = id + (chi.length ? '  ·  ' + chi.join(', ') : '');
+        b.appendChild(nome); b.appendChild(note);
+        b.onclick = function () {
+          box.classList.remove('on');
+          VN.clearSave();
+          VN.boot(story, unisci(opts, { dev: false, scene: id, stato: statoFinto(story, scelte) }));
+        };
+        box.appendChild(b);
+      });
+    };
+
+    disegna();
+    box.classList.add('on');
+  }
+
+  function unisci(a, b) {
+    var o = {};
+    Object.keys(a || {}).forEach(function (k) { o[k] = a[k]; });
+    Object.keys(b || {}).forEach(function (k) { o[k] = b[k]; });
+    return o;
+  }
+
   VN.boot = function (story, opts) {
     opts = opts || {};
     VN.story = story;
     current = { who: null, body: null, head: null };
     azzeraVars(story);
+    // stato preconfezionato: lo passa il pannello di sviluppo per far partire
+    // una scena di meta' storia con un giocatore gia' registrato
+    if (opts.stato) Object.keys(opts.stato).forEach(function (k) { VN.state[k] = opts.stato[k]; });
     if (opts.speed != null) VN.speed = opts.speed;
     VN.onEnd = opts.onEnd || null;
     // la banca dei pronostici (game/domande.json): sta fuori da story.json
@@ -2456,6 +2613,7 @@
 
     var start = opts.scene || (story.meta && story.meta.start) || Object.keys(story.scenes)[0];
 
+    if (opts.dev) return pannelloSviluppo(story, opts);          // ?dev, menu di salto rapido
     if (opts.scene) { VN.clearSave(); return goScene(start); }   // ?scene=lobby, per lo sviluppo
 
     if (opts.resume !== false && VN.hasSave(story)) {
