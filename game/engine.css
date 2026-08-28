@@ -291,6 +291,48 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 /* zona ancora chiusa a chiave: il pallino resta spento */
 .hdot.chiuso{background:transparent;border-style:dashed}
 
+/* ---------- platea e ospiti di scena ----------
+   La reazione della platea e' un layer sopra il fondale del palco. Sta sotto ai
+   personaggi: e' lo sfondo che reagisce, non chi e' in scena. */
+#platea{position:absolute;inset:0;display:none;pointer-events:none}
+#platea.on{display:block;animation:reagisce 1.8s ease forwards}
+#plateaImg{width:100%;height:100%;object-fit:cover;object-position:center top;
+ image-rendering:pixelated}
+@keyframes reagisce{0%{opacity:0}18%{opacity:1}72%{opacity:1}100%{opacity:0}}
+
+/* l'oggetto di un micro-evento: in alto, piccolo. Non e' il soggetto della
+   scena, e' la cosa che e' appena andata storta. Slot separato da #propwrap,
+   che durante il keynote tiene la slide del macroargomento attivo. */
+#evpropwrap{position:absolute;left:50%;top:6%;width:36%;max-width:240px;
+ transform:translateX(-50%);display:none;z-index:2;pointer-events:none}
+#evpropwrap.on{display:block;animation:pop .5s ease}
+#evprop{width:100%;display:block;image-rendering:pixelated;
+ filter:drop-shadow(0 14px 26px rgba(0,0,0,.6))}
+
+/* ospite di scena: entra solo per un evento e se ne va (il rider della Drip) */
+#ospitewrap{position:absolute;left:14%;bottom:14%;height:44%;aspect-ratio:3/5;
+ display:none;z-index:2;filter:drop-shadow(0 10px 20px rgba(0,0,0,.55))}
+#ospitewrap.on{display:block;animation:enter .7s cubic-bezier(.2,.9,.3,1) forwards}
+#ospite{width:100%;height:100%;object-fit:contain;object-position:bottom center;
+ image-rendering:pixelated}
+
+/* ---------- griglia dei macroargomenti (S5) ----------
+   Tre pannelli affiancati: nome sopra, avanzamento sotto. Quelli finiti restano
+   visibili ma spenti, cosi' si vede a colpo d'occhio quanto manca. */
+#griglia{margin-top:10px;display:none;gap:7px}
+#griglia.on{display:flex}
+.gcell{flex:1;min-width:0;background:#2a3050;border:3px solid #fff;border-radius:8px;
+ padding:11px 7px;color:#fff;font-family:inherit;cursor:pointer;
+ display:flex;flex-direction:column;align-items:center;gap:6px;
+ box-shadow:0 3px 0 rgba(0,0,0,.5)}
+.gcell:hover,.gcell:focus{background:#3d466e;outline:none}
+.gcell:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.5)}
+.gnome{font-size:clamp(7px,2.1vw,11px);text-align:center}
+.gstato{font-size:clamp(6px,1.7vw,9px);opacity:.7}
+.gcell.fatta{background:#1b1f33;border-color:rgba(255,255,255,.3);color:#fff8;
+ cursor:default;box-shadow:none}
+.gcell.fatta:hover{background:#1b1f33}
+
 /* ---------- carosello di scelta (gli stili di S3) ----------
    La figura sta in mezzo alla scena, la scheda che la descrive sotto, al posto
    del box del dialogo: la scelta dello stile e' l'unica cosa a schermo, e ci

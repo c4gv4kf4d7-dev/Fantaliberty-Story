@@ -16,8 +16,8 @@
 
    Step supportati:
      logo | boot | title | say | choice | input | list | badge | hub | carosello |
-     show | hide | io | react | prop | bg | fx | carrellata | sipario | wait |
-     set | goto | end
+     griglia | domande | bivio | intermezzo | show | hide | io | react | prop |
+     bg | fx | carrellata | sipario | wait | set | goto | end
 */
 (function (global) {
   'use strict';
@@ -29,8 +29,9 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '5',
+    engine: '6',
     story: null,
+    banca: null,    // game/domande.json: domande, battute per stile, eventi, intermezzi
     state: {},      // variabili di gioco (nome, genere, stile, ...)
     scene: null,
     sceneId: null,
@@ -103,6 +104,9 @@
   function chiudiTransizioni() {
     if (el.prlx) { el.prlx.classList.remove('on'); el.prlx.innerHTML = ''; }
     if (el.tende) el.tende.classList.remove('on', 'apri');
+    if (el.platea) el.platea.classList.remove('on');
+    if (el.ospitewrap) el.ospitewrap.classList.remove('on');
+    if (el.evpropwrap) el.evpropwrap.classList.remove('on');
   }
 
   // Il testo si scrive su requestAnimationFrame invece che con setInterval:
@@ -387,6 +391,7 @@
     if (!sc) throw new Error('scena inesistente: ' + id);
     chiudiHub();
     chiudiCarosello();
+    chiudiGriglia();
     chiudiTransizioni();
     if (el.modal) el.modal.classList.remove('on');
     if (!(sc.steps || []).some(function (s) { return s.t === 'title' || s.t === 'boot' || s.t === 'logo'; })) {
@@ -417,7 +422,8 @@
 
   function exec(st) {
     if (!silent && (st.t === 'say' || st.t === 'choice' || st.t === 'input' ||
-                    st.t === 'carosello' || st.t === 'hub')) VN.saveNow();
+                    st.t === 'carosello' || st.t === 'hub' || st.t === 'griglia' ||
+                    st.t === 'domande' || st.t === 'bivio' || st.t === 'intermezzo')) VN.saveNow();
 
     switch (st.t) {
 
@@ -475,6 +481,20 @@
       case 'carosello':
         return showCarosello(st);
 
+      // S5: la griglia dei macroargomenti, il giro delle domande, il bivio
+      // delle facoltative, gli intermezzi di regia
+      case 'griglia':
+        return showGriglia(st);
+
+      case 'domande':
+        return showDomande(st);
+
+      case 'bivio':
+        return showBivio(st);
+
+      case 'intermezzo':
+        return showIntermezzo(st);
+
       // Transizioni: al ripristino non si rigiocano (il giocatore le ha gia'
       // viste), ma il fondale che lasciano dietro va rimesso a posto.
       case 'carrellata':
@@ -527,7 +547,9 @@
         return next();
 
       case 'prop':
-        if (st.id) el.prop.src = assetUrl('props', st.id);
+        // l'id passa da fmt(): cosi' una scena puo' scrivere "slide_{categoria}"
+        // e far scegliere l'oggetto alla variabile
+        if (st.id) el.prop.src = assetUrl('props', fmt(st.id));
         el.propwrap.style.width = st.size || '';        // la scena puo' ridimensionare il prop
         el.propwrap.style.top = st.top || '';
         el.propwrap.classList.remove(st.show ? 'out' : 'in');
@@ -938,6 +960,330 @@
     el.carosello.classList.remove('on');
     el.carta.classList.remove('on');
     el.boxwrap.classList.remove('carta');
+  }
+
+  /* ================ S5: il keynote ================
+     Tre macroargomenti in ordine libero; dentro ognuno le domande core in
+     sequenza fissa, poi il bivio di Martha che puo' pescare tre facoltative dal
+     pool. Le domande, le battute per stile, gli eventi e gli intermezzi stanno
+     in game/domande.json (VN.banca), non in story.json: sono contenuto che
+     cambia per conto suo, e messi insieme pesano quanto tutto il resto. */
+
+  function catCorrente() {
+    var b = VN.banca && VN.banca.categorie;
+    return (b && b[VN.state.categoria]) || null;
+  }
+
+  // Le risposte date, per categoria e tipo. Ci si appoggia il recap di S6 e
+  // l'invio al server, e ci si legge quali macroargomenti sono finiti.
+  function segna(categoria, tipo, id, valore, punti) {
+    var p = VN.state.picks || (VN.state.picks = {});
+    var c = p[categoria] || (p[categoria] = {});
+    var t = c[tipo] || (c[tipo] = {});
+    t[id] = valore;
+    VN.state.punti = (VN.state.punti || 0) + (punti || 0);
+  }
+
+  // Un macroargomento e' finito quando ha tutte le sue core: si ricava dalle
+  // risposte, senza una lista di "fatti" da tenere allineata a parte — cosi'
+  // sopravvive da sola al salvataggio e alla ripresa.
+  function categoriaFinita(k) {
+    var c = (VN.banca && VN.banca.categorie && VN.banca.categorie[k]) || null;
+    if (!c) return false;
+    var date = ((VN.state.picks || {})[k] || {}).core || {};
+    return Object.keys(date).length >= c.core.length;
+  }
+
+  function mescola(a) {
+    var v = a.slice();
+    for (var i = v.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = v[i]; v[i] = v[j]; v[j] = t;
+    }
+    return v;
+  }
+
+  function aCaso(a) { return a && a.length ? a[Math.floor(Math.random() * a.length)] : null; }
+
+  /* ---------------- griglia dei macroargomenti [S5.HUB] ----------------
+     Tre pannelli, nessun ordine imposto. Lo stato di ognuno si legge dalle
+     risposte gia' date: attivo finche' mancano delle core, completato dopo.
+     Quando sono completati tutti e tre lo step cede il turno e la scena
+     prosegue verso il recap. */
+  function showGriglia(st) {
+    var argomenti = VN.story[st.da || 'argomenti'] || {};
+    var chiavi = Object.keys(argomenti);
+    if (!chiavi.length) return next();
+    if (chiavi.every(categoriaFinita)) { chiudiGriglia(); return next(); }
+
+    var uscito = false;
+    el.griglia.innerHTML = '';
+    chiavi.forEach(function (k) {
+      var a = argomenti[k];
+      var c = (VN.banca && VN.banca.categorie && VN.banca.categorie[k]) || {};
+      var fatta = categoriaFinita(k);
+      var b = global.document.createElement('button');
+      b.className = 'gcell' + (fatta ? ' fatta' : '');
+      b.dataset.arg = k;
+      var quante = (c.core || []).length;
+      var date = Object.keys(((VN.state.picks || {})[k] || {}).core || {}).length;
+      b.innerHTML = '<span class="gnome"></span><span class="gstato"></span>';
+      b.querySelector('.gnome').textContent = fmt(a.nome || k);
+      b.querySelector('.gstato').textContent = fatta
+        ? (st.etichettaFatta || 'fatto')
+        : date + '/' + quante;
+      b.onclick = function (ev) {
+        if (ev && ev.stopPropagation) ev.stopPropagation();
+        if (uscito || fatta) return;
+        uscito = true;
+        VN.progressed = true;
+        VN.state[st.var || 'categoria'] = k;
+        VN.state.pescate = null;                 // le facoltative si pescano al bivio
+        chiudiGriglia();
+        hideUI();
+        goScene(st.goto);
+      };
+      el.griglia.appendChild(b);
+    });
+
+    el.boxwrap.classList.add('in');
+    setSpeaker(st.who);
+    el.griglia.classList.add('on');
+    pending = null;
+    if (st.text) typeKeep(fmt(st.text));
+  }
+
+  function chiudiGriglia() {
+    if (el.griglia) { el.griglia.classList.remove('on'); el.griglia.innerHTML = ''; }
+  }
+
+  /* ---------------- il giro di una domanda [S5.DOMANDA] ----------------
+     Martha introduce, il giocatore sceglie, il personaggio annuncia alla platea
+     con la battuta del suo stile, e ogni tanto succede qualcosa.
+
+     Regola d'oro dello script: la reazione della platea e' SEMPRE casuale, mai
+     legata a quale opzione e' stata scelta. Se lo fosse, il gioco suggerirebbe
+     le risposte e i pronostici non varrebbero piu' niente. */
+  function showDomande(st) {
+    var cat = catCorrente();
+    if (!cat) return next();
+    var lista = st.set === 'extra'
+      ? (VN.state.pescate || []).map(function (id) {
+          return (cat.extra || []).filter(function (d) { return d.id === id; })[0];
+        }).filter(Boolean)
+      : (cat.core || []);
+    if (!lista.length) return next();
+
+    var i = 0;
+    var tipo = st.set === 'extra' ? 'extra' : 'core';
+
+    function intro() {
+      if (i >= lista.length) { hideUI(); return next(); }
+      var d = lista[i];
+      el.boxwrap.classList.add('in');
+      mostraIo({ posa: 'idle_palco' });
+      setSpeaker(st.who || 'martha');
+      var apri = function () { opzioni(d); };
+      type(fmt(aCaso(VN.story.regia && VN.story.regia.introDomanda) || 'Tocca a te.') + ' ' + fmt(d.q), apri);
+      revealUI = apri;
+    }
+
+    function opzioni(d) {
+      el.choices.innerHTML = '';
+      (d.opzioni || []).forEach(function (o) {
+        var b = global.document.createElement('button');
+        b.className = 'ch';
+        b.textContent = fmt(o.label);
+        b.onclick = function (ev) {
+          if (ev && ev.stopPropagation) ev.stopPropagation();
+          hideUI();
+          VN.progressed = true;
+          // core: punti gia' calcolati nella banca. extra e intermezzi: val secco
+          segna(VN.state.categoria, tipo, d.id, o.label, o.pt != null ? o.pt : (o.val || 0));
+          VN.saveNow();
+          annuncia(d, o);
+        };
+        el.choices.appendChild(b);
+      });
+      el.choices.classList.add('on');
+    }
+
+    function annuncia(d, o) {
+      // la posa alterna a caso fra le due, cosi' venti domande di fila non
+      // sembrano venti volte la stessa inquadratura
+      mostraIo({ posa: Math.random() < 0.5 ? 'annuncio' : 'indica_schermo' });
+      setSpeaker(null);
+      el.name.classList.remove('hidden');
+      el.nametxt.textContent = fmt('{NOME}');
+      var poi = function () { pending = function () { dopoRisposta(); }; el.arrow.style.opacity = 1; };
+      var battuta = (o.battute && o.battute[VN.state.stile]) || o.label;
+      type(fmt(battuta), poi);
+      revealUI = poi;
+    }
+
+    function dopoRisposta() {
+      platea(aCaso(VN.story.reazioni || (VN.banca && VN.banca.reazioni_platea)));
+      var ev = pescaEvento();
+      i++;
+      if (ev) return mostraEvento(ev, intro);
+      intro();
+    }
+
+    intro();
+  }
+
+  /* ---------------- eventi: micro generali e personale dello stile ----------------
+     Si pescano da un sacchetto senza rimessa: cosi' non si ripetono nella stessa
+     partita e il loro numero e' limitato dal sacchetto, non dalla fortuna.
+     L'evento personale dello stile sta nel sacchetto insieme agli altri. */
+  function sacchettoEventi() {
+    if (VN.state.eventi_sacchetto) return VN.state.eventi_sacchetto;
+    var b = VN.banca || {};
+    var v = mescola((b.micro_eventi || []).map(function (e) { return e.id; }));
+    var mio = (b.eventi_personali || {})[VN.state.stile];
+    if (mio) v.splice(Math.floor(Math.random() * (v.length + 1)), 0, mio.id);
+    VN.state.eventi_sacchetto = v;
+    return v;
+  }
+
+  function trovaEvento(id) {
+    var b = VN.banca || {};
+    var e = (b.micro_eventi || []).filter(function (x) { return x.id === id; })[0];
+    if (e) return e;
+    var mio = (b.eventi_personali || {})[VN.state.stile];
+    return mio && mio.id === id ? mio : null;
+  }
+
+  function pescaEvento() {
+    var v = sacchettoEventi();
+    if (!v.length) return null;
+    var p = VN.story.regia && VN.story.regia.probabilitaEvento;
+    if (Math.random() >= (p == null ? 0.3 : p)) return null;
+    return trovaEvento(v.shift());
+  }
+
+  function mostraEvento(e, done) {
+    // l'evento personale dello stile ha una posa dedicata, i micro-eventi no
+    if (e.asset && e.asset.indexOf('stili/') === 0) mostraIo({ posa: 'evento' });
+    else mostraIo({ posa: 'imbarazzo' });
+    // un oggetto (il clicker che si inceppa, la slide sbagliata) va nello slot
+    // dei prop; un secondo personaggio (il rider) nello slot degli ospiti
+    if (e.asset && e.asset.indexOf('props/') === 0) mostraPropEvento(e.asset);
+    if (e.extra_asset) mostraOspite(e.extra_asset);
+    platea(e.platea);
+
+    el.boxwrap.classList.add('in');
+    setSpeaker(null);
+    el.name.classList.add('hidden');
+    var poi = function () {
+      pending = function () {
+        nascondiOspite();
+        el.evpropwrap.classList.remove('on');
+        if (e.martha) return battutaMartha(e.martha, done);
+        done();
+      };
+      el.arrow.style.opacity = 1;
+    };
+    type(fmt(e.testo), poi);
+    revealUI = poi;
+  }
+
+  function battutaMartha(testo, done) {
+    setSpeaker('martha');
+    var poi = function () { pending = done; el.arrow.style.opacity = 1; };
+    type(fmt(testo), poi);
+    revealUI = poi;
+  }
+
+  // un secondo personaggio in scena solo per la durata di un evento (il rider)
+  function mostraOspite(rel) {
+    el.ospite.src = withBase(rel);
+    el.ospite.onerror = function () { el.ospitewrap.classList.remove('on'); };
+    el.ospitewrap.classList.add('on');
+  }
+  function nascondiOspite() { if (el.ospitewrap) el.ospitewrap.classList.remove('on'); }
+
+  // l'oggetto di un micro-evento. Slot suo: #propwrap durante il keynote tiene
+  // la slide del macroargomento attivo, e sovrascriverla la farebbe sparire per
+  // tutto il resto del blocco.
+  function mostraPropEvento(rel) {
+    el.evprop.src = withBase(rel);
+    el.evprop.onerror = function () { el.evpropwrap.classList.remove('on'); };
+    el.evpropwrap.classList.remove('on'); void el.evpropwrap.offsetWidth;
+    el.evpropwrap.classList.add('on');
+  }
+
+  // reazione della platea: un layer sopra il fondale. Finche' i file non sono
+  // stati consegnati non si vede niente, e va bene cosi' — l'importante e' che
+  // l'assegnazione resti casuale, perche' e' quella a non dover suggerire nulla.
+  function platea(id) {
+    if (!el.platea) return;
+    var src = id ? assetUrl('platea', id) : '';
+    if (!src) { el.platea.classList.remove('on'); return; }
+    el.plateaImg.onerror = function () { el.platea.classList.remove('on'); };
+    el.plateaImg.src = src;
+    el.platea.classList.remove('on'); void el.platea.offsetWidth;
+    el.platea.classList.add('on');
+  }
+
+  /* ---------------- il bivio dopo le core [S5.BIVIO] ----------------
+     Le tre facoltative si pescano QUI, non a inizio partita: chi rigioca non
+     puo' mapparle in anticipo. */
+  function showBivio(st) {
+    var cat = catCorrente();
+    if (!cat) return next();
+    el.boxwrap.classList.add('in');
+    setSpeaker(st.who || 'martha');
+    var apri = function () {
+      showChoices({
+        options: [
+          { label: st.approfondisci || 'Approfondiamo', value: 1, _do: function () {
+              var pool = (cat.extra || []).map(function (d) { return d.id; });
+              VN.state.pescate = mescola(pool).slice(0, cat.n_extra_da_pescare || 3);
+              VN.progressed = true;
+              hideUI();
+              next();
+            } },
+          { label: st.passa || 'Passiamo al prossimo', value: 0, _do: function () {
+              VN.state.pescate = [];
+              VN.progressed = true;
+              hideUI();
+              next();
+            } }
+        ]
+      });
+    };
+    type(fmt(st.text), apri);
+    revealUI = apri;
+  }
+
+  /* ---------------- intermezzi di regia ----------------
+     Cinque fissi in ordine, poi quelli di riserva. Valgono punti come le
+     facoltative: il "val" secco dell'opzione. */
+  function showIntermezzo(st) {
+    var b = VN.banca || {};
+    var n = VN.state.intermezzi || 0;
+    var fissi = b.intermezzi || [];
+    var q = fissi[n] || (b.intermezzi_riserva || [])[n - fissi.length];
+    if (!q) return next();
+    VN.state.intermezzi = n + 1;
+
+    el.boxwrap.classList.add('in');
+    setSpeaker(st.who || 'martha');
+    var apri = function () {
+      showChoices({
+        options: (q.opzioni || []).map(function (o) {
+          return { label: o.label, value: o.val, _do: function () {
+            segna('intermezzi', 'r', q.id, o.label, o.val || 0);
+            VN.progressed = true;
+            hideUI();
+            next();
+          } };
+        })
+      });
+    };
+    type(fmt(q.q), apri);
+    revealUI = apri;
   }
 
   /* ---------------- hub a zone ----------------
@@ -1436,6 +1782,9 @@
     azzeraVars(story);
     if (opts.speed != null) VN.speed = opts.speed;
     VN.onEnd = opts.onEnd || null;
+    // la banca dei pronostici (game/domande.json): sta fuori da story.json
+    // perche' e' contenuto grande e che cambia per conto suo
+    if (opts.banca) VN.banca = opts.banca;
 
     el = {
       stage: $('stage'), bg: $('bg'), bg2: $('bg2'), sky: $('sky'), npc: $('npc'), npcBody: $('npcBody'), npcHead: $('npcHead'),
@@ -1452,6 +1801,9 @@
       hprev: $('hprev'), hnext: $('hnext'), hdots: $('hdots'),
       modal: $('modal'), modaltxt: $('modaltxt'), modalbtns: $('modalbtns'),
       prlx: $('prlx'), tende: $('tende'), tendaSx: $('tendaSx'), tendaDx: $('tendaDx'),
+      platea: $('platea'), plateaImg: $('plateaImg'),
+      ospitewrap: $('ospitewrap'), ospite: $('ospite'), griglia: $('griglia'),
+      evpropwrap: $('evpropwrap'), evprop: $('evprop'),
       carosello: $('carosello'), carImg: $('carImg'), carta: $('carta'),
       cprev: $('cprev'), cnext: $('cnext'), cdots: $('cdots'),
       carnome: $('carnome'), cardesc: $('cardesc'), carperk: $('carperk'), carok: $('carok')
@@ -1462,6 +1814,7 @@
     hubTasti = null;
     chiudiHub();
     chiudiCarosello();
+    chiudiGriglia();
     chiudiTransizioni();
     if (el.modal) el.modal.classList.remove('on');
     bgCorrente = null;
@@ -1472,6 +1825,7 @@
            e.target.closest('#listform') || e.target.closest('#hubnav') ||
            e.target.closest('#hubspots') || e.target.closest('#modal') ||
            e.target.closest('#carta') || e.target.closest('#carosello') ||
+           e.target.closest('#griglia') ||
            e.target.closest('#propwrap'))) return;
       VN.step();
     };
@@ -1483,6 +1837,7 @@
       if (e.key !== ' ' && e.key !== 'Enter') return;
       if (el.inputform.classList.contains('on') || el.choices.classList.contains('on') ||
           (el.listform && el.listform.classList.contains('on')) ||
+          (el.griglia && el.griglia.classList.contains('on')) ||
           (el.modal && el.modal.classList.contains('on'))) return;
       VN.step();
     };

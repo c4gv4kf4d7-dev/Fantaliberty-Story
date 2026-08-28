@@ -127,9 +127,9 @@ esistono**:
 |---|---|
 | ~~hub a 4 zone con swipe + dot~~ — **fatto**: step `hub`, vedi README | `[S1.HUB]` lobby |
 | ~~carosello stile con descrizione, perk e conferma irreversibile~~ — **fatto**: step `carosello` | `[S3.02]` |
-| griglia 3 macroargomenti con stati (attiva/completata/disabilitata) | `[S5.HUB]` |
-| pescaggio casuale di 3 facoltative **al bivio**, non a inizio partita | `[S5.BIVIO]` |
-| battuta risolta per (stile × opzione scelta) dalla banca domande | tutta `[S5]` |
+| ~~griglia 3 macroargomenti con stati~~ — **fatto**: step `griglia` | `[S5.HUB]` |
+| ~~pescaggio casuale di 3 facoltative **al bivio**~~ — **fatto**: step `bivio` | `[S5.BIVIO]` |
+| ~~battuta risolta per (stile × opzione scelta)~~ — **fatto**: step `domande` | tutta `[S5]` |
 | recap modificabile + lock irreversibile | `[S6]` |
 | timer per domanda, livelli, due pool, perk per stile | `[S8]` |
 | countdown persistente | `[S7.05]` |
@@ -177,7 +177,16 @@ Ordine dei lavori e stato:
 | **S2 l'aggancio** | **fatto**: scena `aggancio`, con il sipario della tenda e la carrellata di discesa |
 | **S3 camerino** | **fatto**: carosello dei 4 stili con perk e conferma irreversibile, commento di Susan per stile |
 | **S4 dietro le quinte** | **fatto**: il giocatore entra in scena (step `io`), il sipario del palco riusa lo step di S2, Martha entra come voce in cuffia |
-| S5 → S8 | da fare |
+| **S5 keynote** | **fatto**: griglia a 3 macroargomenti, core in sequenza, bivio che pesca 3 facoltative, battuta per stile, micro-eventi ed evento personale, intermezzi, punteggio |
+| S6 → S8 | da fare |
+
+Il motore ora riceve **due** file: `story.json` (`VN.story`) e `domande.json`
+(`VN.banca`). Chi aggiunge un boot in un test deve passare `banca`, altrimenti
+gli step di S5 non fanno niente e passano in silenzio.
+
+Il punteggio e le risposte vivono in `VN.state.punti` e `VN.state.picks`
+(`picks[categoria][core|extra][ID] = etichetta`). È da lì che S6 costruirà il
+recap e da lì che partirà l'invio a Supabase.
 
 I quattro stili vivono in **`story.stili`**, non dentro la scena: nome,
 descrizione, perk e le 11 pose di ciascuno. È la stessa tabella che serviranno
