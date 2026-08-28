@@ -145,7 +145,7 @@ Tutto lo script vive in `game/story.json`. Ogni scena e' una lista di `steps`:
 | `logo` | `{"t":"logo","img":"ui/logo_studio.png"}` | sigla che si accende come un neon |
 | `boot` | `{"t":"boot","ms":2200,"cursore":1600}` | barra LOADING, poi cursore sul nero |
 | `title` | `{"t":"title","lines":[…]}` | cartello nero a righe che si accumulano |
-| `title` a blocchi | `{"t":"title","blocchi":[{"righe":[…],"tieni":1500}]}` | i titoli di coda: ogni blocco compare, resta, sfuma, e arriva il prossimo. Va da solo, un tocco lo salta |
+| `title` a blocchi | `{"t":"title","blocchi":[{"righe":[…],"tieni":1500}]}` | i titoli di coda: ogni blocco compare, resta, sfuma, e arriva il prossimo. Va da solo; il tocco **accelera**, non salta |
 | `prop` | `{"t":"prop","id":"mac_terminal","show":true}` | mostra/nasconde l'oggetto di scena |
 | `bg` | `{"t":"bg","id":"sjt_stage","fx":"zoom"}` | cambia sfondo / effetto |
 | `fx` | `{"t":"fx","name":"flash"}` | `flash`, `blur`, `unblur` |

@@ -300,21 +300,43 @@
   function titoliDiCoda(st, done) {
     var blocchi = st.blocchi || [];
     var sfuma = st.dissolvenza != null ? st.dissolvenza : 600;
-    var i = 0, saltato = false;
+    var i = 0, chiuso = false, veloce = false;
 
-    function stop() {
-      if (codaId) { clearTimeout(codaId); codaId = null; }
-      stopTyping();
-      typing = false;
+    // Quanto resta a schermo un blocco, e quanto dura la dissolvenza, una volta
+    // che il giocatore ha toccato: abbastanza per leggere, non abbastanza per
+    // annoiarsi.
+    var TIENI_VELOCE = st.tieniVeloce != null ? st.tieniVeloce : 900;
+    var SFUMA_VELOCE = 200;
+
+    function stop() { if (codaId) { clearTimeout(codaId); codaId = null; } }
+
+    /* Il tocco NON salta i titoli: li accelera. Da qui in avanti ogni blocco
+       compare gia' scritto e resta meno, ma compare — si legge tutto fino alla
+       fine. E' la differenza fra "accelera" e "vai via", e la prima versione
+       faceva la seconda: un tocco per sbaglio e i titoli sparivano. */
+    function avanti() {
+      if (chiuso) return;
+      veloce = true;
+      stop();
+      el.curtainTxt.classList.add('sfumato');
+      codaId = setTimeout(prossimo, SFUMA_VELOCE);
     }
 
-    // Fine della sequenza: sia quando finisce da sola sia quando un tocco la
-    // salta, il gioco prosegue subito. Non c'e' un tap finale da fare: i titoli
-    // di coda sono una cosa da guardare, e quando sono finiti sono finiti.
+    // Dopo l'ultimo blocco la sequenza si ferma e aspetta: il countdown arriva
+    // con un tocco, non da solo. Cosi' l'ultima riga si puo' guardare quanto si
+    // vuole.
+    function attendiUltimo() {
+      revealUI = null;
+      pending = chiudi;
+      el.curtainArrow.style.opacity = 1;
+    }
+
     function chiudi() {
-      if (saltato) return;
-      saltato = true;
+      if (chiuso) return;
+      chiuso = true;
       stop();
+      stopTyping();
+      typing = false;
       el.curtainTxt.classList.remove('sfumato');
       el.curtainTxt.innerHTML = '';
       revealUI = null;
@@ -324,25 +346,34 @@
     }
 
     function prossimo() {
-      if (saltato) return;
-      if (i >= blocchi.length) return chiudi();
+      if (chiuso) return;
+      if (i >= blocchi.length) return attendiUltimo();
       var b = blocchi[i++];
       el.curtainTxt.classList.remove('sfumato');
       el.curtainTxt.innerHTML = '';
-      typeLines(righeTitolo(b.righe), function () {
-        if (saltato) return;
-        // durante la pausa fra un blocco e l'altro il typewriter e' fermo:
-        // senza "pending" un tocco qui non farebbe niente e la sequenza
-        // sembrerebbe bloccata
-        revealUI = chiudi;
-        pending = chiudi;
+
+      // finito di scrivere: si tiene a schermo, poi si sfuma e si passa oltre
+      var dopo = function () {
+        if (chiuso) return;
+        revealUI = null;
+        el.curtainArrow.style.opacity = 0;
+        pending = avanti;                 // un tocco qui va al blocco dopo
         codaId = setTimeout(function () {
-          if (saltato) return;
+          if (chiuso) return;
+          pending = null;
           el.curtainTxt.classList.add('sfumato');
-          codaId = setTimeout(prossimo, sfuma);
-        }, b.tieni != null ? b.tieni : 1200);
-      }, true);
-      revealUI = chiudi;
+          codaId = setTimeout(prossimo, veloce ? SFUMA_VELOCE : sfuma);
+        }, veloce ? TIENI_VELOCE : (b.tieni != null ? b.tieni : 1200));
+      };
+
+      typeLines(righeTitolo(b.righe), dopo, true);
+
+      /* typeLines lascia in revealUI la sua "scrivi tutto adesso": la si tiene,
+         perche' e' esattamente quello che deve fare un tocco mentre scrive.
+         Ci si aggiunge solo il passaggio in modalita' veloce. */
+      var completa = revealUI;
+      revealUI = function () { veloce = true; if (completa) completa(); };
+      if (veloce && !chiuso) { var r = revealUI; revealUI = null; r(); }
     }
 
     if (!VN.speed) return chiudi();         // test/skip: niente sequenza a tempo

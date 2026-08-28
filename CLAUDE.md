@@ -379,6 +379,16 @@ Tre cose da non rompere:
   `pending`, cioè "cosa fare al prossimo tocco". Riusarla per una sequenza
   automatica (i titoli di coda) la lasciava ferma al primo blocco: serve il flag
   `subito`.
+- **Un tocco su una sequenza automatica deve accelerarla, non cancellarla.** Nei
+  titoli di coda la prima versione trattava il tap come "vai via": bastava
+  sfiorare lo schermo e i titoli sparivano. L'utente l'ha bocciata subito. Ora un
+  tocco mette la sequenza in modalità veloce — i blocchi successivi compaiono
+  già scritti e restano meno, ma **compaiono tutti** — e alla fine serve un
+  ultimo tocco per andare al countdown, così l'ultima riga si guarda quanto si
+  vuole. Verificato nel browser con tre scenari (nessun tocco, un tocco a metà,
+  tocchi continui): in tutti e tre i blocchi completati restano cinque. In jsdom
+  la sequenza a tempo non gira, quindi il test presidia il contratto sul codice
+  e non il comportamento.
 - **Le sostituzioni di stringhe lunghe su questo file falliscono in silenzio.**
   Gli apostrofi curvi e gli accenti non combaciano quasi mai al primo colpo, e
   `str.replace` non protesta: un'intera sezione di appunti è andata persa così,

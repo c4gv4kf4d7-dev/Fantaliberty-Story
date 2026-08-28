@@ -1527,6 +1527,22 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   let giri = 0;
   while (VN.sceneId !== 'countdown' && giri++ < 60) VN.step();
   assert.equal(VN.sceneId, 'countdown', 'dai titoli si arriva al countdown');
+
+  /* Il tocco durante i titoli ACCELERA, non salta: ogni blocco compare comunque,
+     solo piu' in fretta, e alla fine serve un ultimo tocco per il countdown. La
+     sequenza e' a tempo e in jsdom non gira (a speed 0 cede subito il turno),
+     quindi qui si presidia il contratto sul codice; il comportamento vero e'
+     verificato nel browser, con tre scenari: nessun tocco, un tocco a meta',
+     tocchi continui. In tutti e tre i blocchi completati restano cinque. */
+  const src = fs.readFileSync(path.join(ROOT, 'game/engine.js'), 'utf8');
+  const coda = src.slice(src.indexOf('function titoliDiCoda'),
+                         src.indexOf('function typeLines'));
+  assert.match(coda, /veloce = true/, 'il tocco mette la sequenza in modalita\' veloce');
+  assert.match(coda, /TIENI_VELOCE/, 'e i blocchi restano comunque a schermo, solo meno');
+  assert.doesNotMatch(coda.slice(coda.indexOf('function avanti'), coda.indexOf('function attendiUltimo')),
+    /done\(\)/, 'il tocco NON chiude la sequenza: passa al blocco dopo');
+  assert.match(coda, /pending = chiudi;[\s\S]{0,80}curtainArrow\.style\.opacity = 1/,
+    'finito l\'ultimo blocco si aspetta un tocco, con la freccia');
 }
 
 /* ---------- 5q-bis. un cartello a schermo pieno scopre il velo nero ----------

@@ -533,6 +533,9 @@ Indice degli id in `docs/indice-domande.md`.
     SUPPORTO PSICOLOGICO / Assente
     BUDGET / 30 Newton
 
+  Il tocco ACCELERA, non salta: i blocchi restano tutti e cinque, solo piu'
+  veloci. Finito l'ultimo, la sequenza aspetta un ultimo tocco per il countdown.
+
   Tono asciutto: i primi crediti seri, poi due assurdi, chiusa sui 30 Newton.
   Non aggiungere altri ruoli o battute senza chiedere.
 
