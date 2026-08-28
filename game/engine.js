@@ -1019,8 +1019,11 @@
       }
       el.carnome.textContent = fmt(o.nome);
       el.cardesc.textContent = fmt(o.desc);
-      el.carperk.textContent = o.perk ? (st.etichettaPerk || 'Al quiz:') + ' ' + fmt(o.perk) : '';
-      el.carperk.style.display = o.perk ? '' : 'none';
+      // Il perk e' una meccanica del quiz: in S3 non c'entra e confondeva la
+      // scheda. Compare solo se lo step chiede esplicitamente un'etichetta.
+      var vuoiPerk = !!(st.etichettaPerk && o.perk);
+      el.carperk.textContent = vuoiPerk ? st.etichettaPerk + ' ' + fmt(o.perk) : '';
+      el.carperk.style.display = vuoiPerk ? 'block' : 'none';
       el.cdots.innerHTML = '';
       opts.forEach(function (oo, k) {
         var d = global.document.createElement('span');
@@ -1077,6 +1080,9 @@
     el.npc.classList.add('out');
     current.who = null;
     el.boxwrap.classList.add('in', 'carta');
+    // il camerino passa fuori fuoco: appendiabiti e lampadine dello specchio
+    // rubavano l'occhio alla figura, che qui e' l'unica cosa da guardare
+    el.bg.classList.add('sfoca');
     el.carosello.classList.add('on');
     el.carta.classList.add('on');
     pending = null;
@@ -1087,6 +1093,7 @@
     if (!el.carosello) return;
     el.carosello.classList.remove('on');
     el.carta.classList.remove('on');
+    if (el.bg) el.bg.classList.remove('sfoca');   // il camerino torna a fuoco
     el.boxwrap.classList.remove('carta');
   }
 

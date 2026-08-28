@@ -17,6 +17,10 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #bg2{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;
  image-rendering:pixelated;opacity:0;transform:translateZ(0)}
 #bg2.mostra{animation:bgfade 1.4s ease forwards}
+/* fuori fuoco: l'fx 'blur' della regia, e la versione forte che S3 mette sul
+   camerino mentre si sceglie lo stile (li' il fondale e' solo un'atmosfera) */
+#bg.blur{filter:blur(5px)}
+#bg.sfoca{filter:blur(7px) brightness(.6) saturate(.9)}
 @keyframes bgfade{from{opacity:0}to{opacity:1}}
 
 #bg.zoom,#bg2.zoom{animation:zoom 6s ease-out forwards}
@@ -401,45 +405,90 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #blocca:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.5)}
 
 /* ---------- carosello di scelta (gli stili di S3) ----------
-   La figura sta in mezzo alla scena, la scheda che la descrive sotto, al posto
-   del box del dialogo: la scelta dello stile e' l'unica cosa a schermo, e ci
-   deve stare tutta senza scorrere. */
-/* I piedi vanno sul pavimento in primo piano, non a meta' altezza: fermandosi
-   dove comincia la scheda la figura restava in piedi sulla poltrona del
-   camerino. Meglio farle coprire un po' la scheda che farla levitare. */
-#carosello{position:absolute;left:46%;top:3%;bottom:25%;width:58%;
- transform:translateX(-50%);display:none;z-index:2;pointer-events:none}
-#carosello.on{display:block}
-#carImg{width:100%;height:100%;object-fit:contain;object-position:bottom center;
- image-rendering:pixelated;filter:drop-shadow(0 12px 24px rgba(0,0,0,.55))}
-#carImg.entraSx{animation:carSx .3s ease}
-#carImg.entraDx{animation:carDx .3s ease}
-@keyframes carSx{from{opacity:.2;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
-@keyframes carDx{from{opacity:.2;transform:translateX(-24px)}to{opacity:1;transform:translateX(0)}}
+   Qui si sceglie chi sarai per tutta la partita: la figura e' il soggetto,
+   tutto il resto le fa spazio. Tre regole tengono in piedi la sezione:
 
-#carta{display:none;flex-direction:column;gap:9px}
+   1. il camerino va SFOCATO e scurito. Alla messa a fuoco piena, appendiabiti
+      e lampadine dello specchio passavano davanti alla figura e non si capiva
+      piu' cosa si stesse guardando;
+   2. la figura non porta ne' bordi ne' 'image-rendering:pixelated'. E' un
+      disegno ad alta risoluzione gia' scontornato: forzato a pixel duri il
+      bordo si sgranava e sembrava pieno di puntini;
+   3. sotto la scheda ci sta solo chi e' il personaggio. Il perk del quiz e'
+      una meccanica: si spiega al quiz, non mentre ci si veste. Resta in
+      story.stili per S8, e ricompare qui solo se lo step chiede
+      'etichettaPerk'. */
+/* z-index 1: sotto #boxwrap (2), altrimenti il velo a tutto schermo copriva la
+   scheda e il bottone "Sono io" non si poteva piu' premere. */
+#carosello{position:absolute;inset:0;z-index:1;display:none}
+#carosello.on{display:block}
+
+/* il velo: scurisce i bordi dell'inquadratura e lascia chiara la fascia
+   centrale, dove sta la figura. Il blur vero e' sul fondale (#bg) qui sotto. */
+#carvelo{position:absolute;inset:0;pointer-events:none;
+ background:radial-gradient(ellipse 62% 46% at 50% 40%,
+   rgba(12,16,30,0) 0%, rgba(8,10,20,.42) 60%, rgba(5,6,13,.86) 100%)}
+/* l'alone sotto i piedi: appoggia la figura invece di lasciarla levitare */
+#carluce{position:absolute;left:50%;top:71%;width:56%;height:8%;
+ transform:translate(-50%,-50%);pointer-events:none;
+ background:radial-gradient(ellipse at center,
+   rgba(255,228,176,.28) 0%, rgba(255,220,160,.10) 45%, rgba(255,220,160,0) 72%)}
+
+#carImg{position:absolute;left:50%;top:6%;height:66%;width:88%;
+ transform:translateX(-50%);object-fit:contain;object-position:bottom center;
+ image-rendering:auto;pointer-events:none;
+ filter:drop-shadow(0 18px 26px rgba(0,0,0,.55))}
+#carImg.entraSx{animation:carSx .34s ease}
+#carImg.entraDx{animation:carDx .34s ease}
+@keyframes carSx{from{opacity:0;transform:translateX(calc(-50% + 34px))}
+ to{opacity:1;transform:translateX(-50%)}}
+@keyframes carDx{from{opacity:0;transform:translateX(calc(-50% - 34px))}
+ to{opacity:1;transform:translateX(-50%)}}
+
+/* le frecce stanno ai lati della figura, all'altezza delle spalle: si scorre
+   li', non in fondo alla scheda. Tonde, per non confonderle coi bottoni di
+   scelta, che sono rettangolari in tutto il gioco. */
+.carfreccia{position:absolute;top:36%;width:3.2em;height:3.2em;border-radius:50%;
+ background:rgba(26,31,52,.82);border:3px solid rgba(255,255,255,.9);color:#fff;
+ font-family:inherit;font-size:clamp(9px,2.6vw,13px);line-height:1;cursor:pointer;
+ display:flex;align-items:center;justify-content:center;
+ box-shadow:0 3px 0 rgba(0,0,0,.5);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+#cprev{left:4%}
+#cnext{right:4%}
+.carfreccia:hover,.carfreccia:focus{background:#3d466e;outline:none}
+.carfreccia:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.5)}
+
+/* la scheda prende il posto del box del dialogo, in fondo, e resta stretta e
+   centrata: nome, una riga di descrizione, il bottone. Niente altro. */
+#carta{display:none;flex-direction:column;align-items:center;gap:10px;
+ width:100%;max-width:23em;margin:0 auto;position:relative;z-index:4}
 #carta.on{display:flex}
 /* mentre si sceglie lo stile il box del dialogo non serve: la scheda lo sostituisce */
 #boxwrap.carta #box,#boxwrap.carta #name,#boxwrap.carta #arrow{display:none}
-#carnav{display:flex;align-items:center;justify-content:space-between;gap:10px}
-#cprev,#cnext{background:#2a3050;border:3px solid #fff;border-radius:8px;color:#fff;
- font-family:inherit;font-size:clamp(10px,3vw,15px);padding:8px 16px;cursor:pointer;
- box-shadow:0 3px 0 rgba(0,0,0,.5)}
-#cprev:active,#cnext:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.5)}
-#cdots{display:flex;gap:7px}
-.cdot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.22);
- border:2px solid rgba(255,255,255,.35)}
-.cdot.seen{background:rgba(255,255,255,.5)}
-.cdot.sel{background:#fff;border-color:#fff;transform:scale(1.25)}
-#carnome{background:#1b1f33;border:3px solid #fff;border-radius:10px;padding:9px 13px;
- color:#fff;font-size:clamp(9px,2.8vw,14px);text-align:center;
+#boxwrap.carta{max-height:38%}
+
+#cdots{display:flex;gap:8px;justify-content:center}
+.cdot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.2);
+ border:2px solid rgba(255,255,255,.32);transition:transform .2s ease,background .2s ease}
+.cdot.seen{background:rgba(255,255,255,.45)}
+.cdot.sel{background:#fff;border-color:#fff;transform:scale(1.3)}
+
+#carnome{background:#1b1f33;border:3px solid #fff;border-radius:10px;padding:10px 18px;
+ color:#fff;font-size:clamp(9px,3vw,15px);text-align:center;letter-spacing:.04em;
  box-shadow:0 4px 0 rgba(0,0,0,.5)}
-#cardesc{color:#fff;font-size:clamp(7px,2.2vw,11px);line-height:1.8;text-align:center;
- text-shadow:0 2px 6px rgba(0,0,0,.9)}
-/* il perk e' l'informazione che decide la scelta: si stacca dalla descrizione */
-#carperk{background:rgba(20,26,44,.85);border:2px solid rgba(255,255,255,.35);
+#cardesc{color:#e8ecff;font-size:clamp(7px,2.15vw,11px);line-height:1.9;text-align:center;
+ text-shadow:0 2px 8px rgba(0,0,0,.95);max-width:20em}
+/* il perk resta possibile (S8 lo usera'), ma in S3 lo step non lo chiede */
+#carperk{display:none;background:rgba(20,26,44,.85);border:2px solid rgba(255,255,255,.32);
  border-radius:8px;padding:8px 11px;color:#cfe0ff;font-size:clamp(6px,1.9vw,10px);
  line-height:1.7;text-align:center}
+/* "Sono io": piccolo e centrato. E' una conferma, non una voce di menu — non
+   deve pesare quanto il nome dello stile. */
+#carok{background:#2a3050;border:3px solid #fff;border-radius:8px;color:#fff;
+ font-family:inherit;font-size:clamp(8px,2.35vw,12px);padding:11px 26px;cursor:pointer;
+ text-align:center;letter-spacing:.05em;box-shadow:0 3px 0 rgba(0,0,0,.5);margin-top:2px}
+#carok:hover,#carok:focus{background:#3d466e;outline:none}
+#carok:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.5)}
 
 /* ---------- countdown e card (S7) ---------- */
 #countdown{position:absolute;inset:0;z-index:6;display:none;place-items:center;

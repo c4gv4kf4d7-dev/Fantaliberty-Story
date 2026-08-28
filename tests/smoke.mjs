@@ -582,18 +582,19 @@ assert.equal(VN.state.sfacciato, false);
   assert.equal(dots().length, 4, 'quattro stili');
   assert.equal($('carnome').textContent, 'Hawaiano', 'si parte dal primo dello script');
   assert.match($('cardesc').textContent, /Non sa che ore sono/);
-  // il perk e' l'informazione che decide la scelta: deve stare sulla scheda,
-  // non aspettare il quiz
-  assert.match($('carperk').textContent, /un tentativo fallito non si conta/);
+  // Il perk e' una meccanica del quiz: sulla scheda del camerino non ci va, e
+  // lo step di S3 infatti non chiede 'etichettaPerk'. Il dato resta in
+  // story.stili per S8 — qui si controlla solo che non finisca a schermo.
+  assert.equal($('carperk').textContent, '', 'niente perk mentre ci si veste');
+  assert.equal($('carperk').style.display, 'none');
+  assert.ok($('bg').classList.contains('sfoca'), 'il camerino va fuori fuoco dietro la figura');
   assert.ok($('carImg').getAttribute('src').includes('stile_hawaiano_idle_camerino'));
 
   $('cnext').onclick({ stopPropagation() {} });
   assert.equal($('carnome').textContent, 'Showman');
-  assert.match($('carperk').textContent, /ordine libero/);
   $('cprev').onclick({ stopPropagation() {} });
   $('cprev').onclick({ stopPropagation() {} });
   assert.equal($('carnome').textContent, 'Ingegnere', 'il carosello gira');
-  assert.match($('carperk').textContent, /\+3 secondi/);
   assert.ok($('carImg').getAttribute('src').includes('stile_ingegnere_idle_camerino'));
 
   // confermare e' irreversibile: prima la modale, e "Fammi ripensare" non sceglie
@@ -611,6 +612,7 @@ assert.equal(VN.state.sfacciato, false);
   assert.equal(VN.state.stile, 'ingegnere', 'lo stile e\' scelto');
   assert.equal($('carosello').classList.contains('on'), false, 'il carosello si chiude');
   assert.equal($('boxwrap').classList.contains('carta'), false, 'e il box del dialogo torna');
+  assert.equal($('bg').classList.contains('sfoca'), false, 'e il camerino torna a fuoco');
 
   // [S3.04] Susan commenta con la testa dello stile scelto: lo sprite lo decide
   // la variabile, non uno step per valore

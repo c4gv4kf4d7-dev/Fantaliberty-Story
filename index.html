@@ -67,8 +67,16 @@
     <div id="hubspots"></div>
   </div>
 
-  <!-- carosello di scelta: la figura in mezzo alla scena, la scheda sotto -->
-  <div id="carosello"><img id="carImg" alt=""></div>
+  <!-- S3, la scelta dello stile. Il fondale del camerino va sfocato e scurito:
+       l'unica cosa a fuoco e' la figura. Il velo e l'alone sotto i piedi la
+       staccano dallo sfondo senza bisogno di un contorno disegnato. -->
+  <div id="carosello">
+    <div id="carvelo"></div>
+    <div id="carluce"></div>
+    <img id="carImg" alt="">
+    <button id="cprev" class="carfreccia" aria-label="Stile precedente">&#9664;</button>
+    <button id="cnext" class="carfreccia" aria-label="Stile successivo">&#9654;</button>
+  </div>
 
   <div id="boxwrap">
     <div id="hubnav">
@@ -76,16 +84,14 @@
       <div id="hdots"></div>
       <button id="hnext" aria-label="Zona successiva">▶</button>
     </div>
+    <!-- la scheda: chi e', in una riga. Nessuna meccanica di gioco qui —
+         i perk si spiegano al quiz, non mentre ci si veste. -->
     <div id="carta">
-      <div id="carnav">
-        <button id="cprev" aria-label="Precedente">◀</button>
-        <div id="cdots"></div>
-        <button id="cnext" aria-label="Successivo">▶</button>
-      </div>
+      <div id="cdots"></div>
       <div id="carnome"></div>
       <div id="cardesc"></div>
       <div id="carperk"></div>
-      <button id="carok" class="ch">Scelgo questo</button>
+      <button id="carok">Scelgo questo</button>
     </div>
     <!-- chi parla. Per una voce in cuffia (Martha, dalla regia) accanto al nome
          compare l'icona dell'auricolare invece di uno sprite in scena -->
