@@ -303,8 +303,87 @@ Regola: prima di collegare uno sprite nuovo, guardare **cosa inquadra** —
 figura intera, mezzo busto, testa — e dare al `show` la misura giusta. Il test
 non può accorgersene, si vede solo negli screenshot.
 
+## Il quiz di Peter è l'eccezione dichiarata alla regola d'oro
+
+In S5 la reazione della platea non correla **mai** con la risposta: se lo
+facesse, il gioco suggerirebbe i pronostici e non varrebbero più niente. In S8
+succede il contrario, ed è giusto: le domande sul passato di Apple hanno una
+risposta verificabile, quindi Peter annuisce o scuote la testa. Chi tocca S8 non
+deve "sistemare" quel feedback per uniformità con S5.
+
+Altre due cose di S8 che sembrano dettagli e non lo sono:
+
+- **il testo di una domanda non passa dal typewriter.** Il timer parte al
+  render, quindi scrivere a macchina sarebbe una penalità invisibile;
+- **la griglia dei livelli convive con i bottoni delle azioni.** In S5 la
+  `griglia` era sola nel box; qui c'è anche `#choices`, e per questo `#griglia`
+  sta **prima** nell'HTML e `#boxwrap` prende la classe `quizhub` che stringe il
+  box.
+
+## Susan è anche la regia, e non è un personaggio "voce"
+
+Martha è stata eliminata su richiesta dell'utente e il suo ruolo è passato a
+Susan, con le battute **riscritte** sulla sua caratterizzazione (responsabile
+dell'evento, sotto pressione, ironica come valvola di sfogo, scarica il problema
+sul giocatore) — non con un search/replace, che la richiesta vietava.
+
+**Susan non può avere `voce: true` nel cast.** La farebbe sparire da S2, S3 e S7,
+dove è in scena davvero. La cuffia è una proprietà del **singolo step**
+(`"incuffia": true`). Il test lo presidia nelle due direzioni: gli step della
+regia devono chiederla, quelli di S2/S3 no.
+
+Le sue battute durante il keynote stanno in **pool per situazione** dentro
+`story.regia` (apertura, introDomanda, scarica, improvvisazione, caos, critica).
+I pool situazionali escono solo sui micro-eventi, così non parla dopo ogni
+singola scelta.
+
+## Il regolamento (zona 3) contiene anche la parte legale
+
+Privacy, indipendenza da Apple, marchi e contatti **non** hanno una voce di menu
+propria: stanno dentro il regolamento, sotto un separatore. E nessuna sezione si
+chiama "note legali" — quel titolo la richiesta lo vietava esplicitamente.
+
+Tre cose da non rompere:
+
+1. **Non è una scena.** L'hotspot ha `apre`, non `goto`: il pannello si mostra
+   sopra la lobby e alla chiusura il giocatore è dov'era, con l'hub aperto.
+2. **Leggere non deve toccare la partita.** Il test fotografa `VN.state` prima
+   di aprire e lo confronta dopo aver chiuso.
+3. **Quello che c'è scritto deve essere vero.** L'elenco dei dati raccolti è
+   esattamente il payload che parte per Supabase, e i 30 giorni di conservazione
+   sono una promessa che qualcuno deve mantenere a mano: la procedura SQL è in
+   fondo a `docs/backend.sql`. Se cambia il payload, cambia anche il testo.
+
 ## Errori già fatti (per non ripeterli)
 
+- **Cinque bug di layout e di layer che i test non prendono, tutti visti solo a
+  schermo.** Sono lo stesso genere di inciampo e vale la pena conoscerli:
+  - `#stage` aveva `overflow:hidden`, che ritaglia ma **lascia un contenitore
+    scorribile**: il personaggio sborda a destra, e quando il fuoco finiva su un
+    bottone il browser lo portava in vista scorrendo tutta la scena di qualche
+    decina di pixel. Ora è `overflow:clip`;
+  - un overlay centrato con `display:grid` + `place-items:center` dimensiona la
+    riga sul contenuto, quindi il suo `max-height:100%` si misura su se stesso e
+    non limita niente. In **flex** l'altezza del genitore è definita e funziona;
+  - in una colonna flex i figli si **stringono** prima che il contenitore
+    scorra: le sezioni chiuse del regolamento diventavano pillole vuote. Serve
+    `flex:none`;
+  - `goScene` cercava un `title` fra **tutti** gli step per decidere se tenere
+    su il sipario nero: il finale ha i titoli di coda in fondo, quindi tutta la
+    sequenza della porta si giocava dietro al nero. Ora conta solo se la scena
+    **comincia** su un cartello;
+  - `#nero` sta **sopra** `#curtain`: un cartello a schermo pieno che arriva
+    dopo una dissolvenza al nero resta coperto, con il testo presente nel DOM e
+    lo schermo nero. Ora il cartello toglie il velo entrando.
+- **`typeLines` non è una callback di completamento.** Assegna `done` a
+  `pending`, cioè "cosa fare al prossimo tocco". Riusarla per una sequenza
+  automatica (i titoli di coda) la lasciava ferma al primo blocco: serve il flag
+  `subito`.
+- **Le sostituzioni di stringhe lunghe su questo file falliscono in silenzio.**
+  Gli apostrofi curvi e gli accenti non combaciano quasi mai al primo colpo, e
+  `str.replace` non protesta: un'intera sezione di appunti è andata persa così,
+  e nessuno se n'è accorto fino al giro dopo. Dopo ogni modifica a CLAUDE.md,
+  ricontrollare con un `grep` che il testo nuovo ci sia davvero.
 - **Un'estensione sbagliata rompe `npm test` in silenzio finché qualcuno non
   lancia il test.** Quando una conversione PNG→WebP sostituisce un asset,
   controllare che `story.json` punti alla nuova estensione. Successo con

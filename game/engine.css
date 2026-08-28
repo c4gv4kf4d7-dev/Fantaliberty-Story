@@ -20,8 +20,15 @@
 html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:none;
  font-family:'Press Start 2P',ui-monospace,monospace;-webkit-text-size-adjust:100%}
 
-#stage{position:relative;width:100vw;height:100vh;height:100svh;overflow:hidden;cursor:pointer;
- -webkit-tap-highlight-color:transparent}
+/* "clip" e non solo "hidden": con hidden il riquadro resta comunque scorribile
+   dal browser, e quando il fuoco finisce su un bottone il browser lo porta in
+   vista scorrendo TUTTA la scena di lato (il personaggio sborda a destra, quindi
+   c'e' spazio dove scorrere). Il risultato e' l'inquadratura storta di qualche
+   decina di pixel, che non si spiega guardando il CSS. Con clip non esiste
+   proprio un contenitore scorribile. I browser che non conoscono clip tengono
+   hidden, che e' la riga prima. */
+#stage{position:relative;width:100vw;height:100vh;height:100svh;overflow:hidden;overflow:clip;
+ cursor:pointer;-webkit-tap-highlight-color:transparent}
 
 /* ---------- fondale ---------- */
 /* il fondale sta su un layer suo: cosi' il testo che si scrive non lo fa ridisegnare */
@@ -652,16 +659,48 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  text-shadow:0 0 16px rgba(255,217,138,.4)}
 #regcorpo{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
  padding:12px 2px 4px;display:flex;flex-direction:column;gap:14px}
-.regsez{background:#2a3050;border:2px solid rgba(255,255,255,.4);border-radius:9px;
- padding:11px 12px}
-.regh{display:flex;align-items:baseline;gap:9px;margin-bottom:7px}
-/* il numero e' l'ancora visiva della sezione: si legge prima del titolo */
-.regn{color:#ffd98a;font-size:clamp(11px,3.2vw,16px);letter-spacing:.04em}
-.regnome{color:#fff;font-size:clamp(7px,2.1vw,11px);letter-spacing:.08em}
+/* Ogni voce e' una riga richiudibile: titolo + "+", e sotto il testo. Tutte
+   chiuse all'apertura, cosi' l'elenco sta in una schermata sola e si capisce
+   subito cosa c'e' dentro. */
+/* flex:none e' obbligatorio: #regcorpo e' una colonna flex, e con una sezione
+   aperta il contenuto supera l'altezza disponibile. Senza questo le sezioni
+   chiuse si schiacciano fino a sparire — restano pillole vuote — invece di far
+   scorrere la lista. */
+.regsez{flex:none;background:#2a3050;border:2px solid rgba(255,255,255,.4);border-radius:9px;
+ overflow:hidden}
+.regtesta{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;
+ background:none;border:0;padding:12px 12px;cursor:pointer;text-align:left;font-family:inherit}
+.regtesta:hover,.regtesta:focus{background:rgba(255,255,255,.06);outline:none}
+.regnome{color:#fff;font-size:clamp(7px,2.1vw,11px);letter-spacing:.08em;line-height:1.5}
+/* il segno e' l'unico indizio che la riga si apre: sta in oro come i titoli */
+.regsegno{color:#ffd98a;font-size:clamp(10px,2.9vw,14px);line-height:1;flex:none}
+/* Apertura fluida senza misurare l'altezza in JS: la griglia passa da 0fr a
+   1fr. Dove non e' supportato la sezione si apre di scatto — funziona lo
+   stesso, e' solo meno morbido. */
+.regsotto{display:grid;grid-template-rows:0fr;transition:grid-template-rows .32s ease}
+.regsez.aperta .regsotto{grid-template-rows:1fr}
+.regdentro{overflow:hidden;min-height:0}
+.regsez.aperta .regdentro{padding:0 12px 12px}
+.regsotto-tit{color:#ffd98a;font-size:clamp(6.5px,1.9vw,10px);letter-spacing:.06em;
+ margin:10px 0 6px}
+.regdentro > .regsotto-tit:first-child{margin-top:0}
 .regriga{margin:0 0 6px;color:#cfdaef;font-size:clamp(6.5px,1.95vw,10px);line-height:1.85}
 .regriga:last-child{margin-bottom:0}
-/* la regola non scritta: nessun numero, cornice tratteggiata, sta a se' */
-.regsez.chiusa{background:rgba(0,0,0,.25);border-style:dashed;border-color:rgba(255,217,138,.45)}
+.reglista{margin:0 0 6px;padding-left:1.1em;color:#cfdaef;
+ font-size:clamp(6.5px,1.95vw,10px);line-height:1.85}
+.reglista li{margin-bottom:3px}
+.reglista li::marker{color:#ffd98a}
+.regmail{display:inline-block;margin-top:4px;color:#ffd98a;text-decoration:none;
+ font-size:clamp(6.5px,1.95vw,10px);border-bottom:1px solid rgba(255,217,138,.5);
+ padding-bottom:2px;word-break:break-all}
+/* il separatore fra le regole e le informazioni sul progetto: distinto ma
+   discreto, due filetti e l'etichetta in mezzo */
+.reggruppo{flex:none;display:flex;align-items:center;gap:9px;margin:6px 0 2px;
+ color:#9fb4d8;font-size:clamp(5.5px,1.6vw,8px);letter-spacing:.12em}
+.reggruppo i{flex:1;height:1px;background:rgba(159,180,216,.35)}
+/* la regola non scritta: non si apre, cornice tratteggiata, sta a se' */
+.regsez.chiusa{background:rgba(0,0,0,.25);border-style:dashed;border-color:rgba(255,217,138,.45);
+ padding:11px 12px}
 .regsez.chiusa .regnome{color:#ffd98a;display:block;margin-bottom:7px}
 #regok{flex:none;margin-top:12px;background:#2a3050;border:3px solid #fff;border-radius:8px;
  color:#fff;font-family:inherit;font-size:clamp(8px,2.3vw,12px);padding:12px 13px;
@@ -751,6 +790,9 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 /* cursore che lampeggia mentre si scrive e durante le pause */
 .tcur{display:inline-block;width:.62em;height:1.05em;background:#fff;vertical-align:-.16em;
  margin-left:.16em;animation:bl .62s steps(1) infinite}
+/* i blocchi dei titoli di coda sfumano uno nell'altro invece di accumularsi */
+#curtainTxt{transition:opacity .6s ease}
+#curtainTxt.sfumato{opacity:0}
 #curtainArrow{color:#fff;font-size:12px;opacity:0;margin-top:1.4em;animation:bob 1s infinite}
 
 /* Dissolvenza al nero fra due scene. Sta sopra tutto tranne il messaggio

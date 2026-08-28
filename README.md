@@ -144,7 +144,8 @@ Tutto lo script vive in `game/story.json`. Ogni scena e' una lista di `steps`:
 | `quizmult` | `{"t":"quizmult","da":"argomenti","conferma":{…}}` | distribuzione dei moltiplicatori vinti, irreversibile |
 | `logo` | `{"t":"logo","img":"ui/logo_studio.png"}` | sigla che si accende come un neon |
 | `boot` | `{"t":"boot","ms":2200,"cursore":1600}` | barra LOADING, poi cursore sul nero |
-| `title` | `{"t":"title","lines":[…]}` | cartello nero a righe |
+| `title` | `{"t":"title","lines":[…]}` | cartello nero a righe che si accumulano |
+| `title` a blocchi | `{"t":"title","blocchi":[{"righe":[…],"tieni":1500}]}` | i titoli di coda: ogni blocco compare, resta, sfuma, e arriva il prossimo. Va da solo, un tocco lo salta |
 | `prop` | `{"t":"prop","id":"mac_terminal","show":true}` | mostra/nasconde l'oggetto di scena |
 | `bg` | `{"t":"bg","id":"sjt_stage","fx":"zoom"}` | cambia sfondo / effetto |
 | `fx` | `{"t":"fx","name":"flash"}` | `flash`, `blur`, `unblur` |
@@ -220,16 +221,41 @@ com'era.
   "apre": "regolamento" }
 ```
 
-`apre` nomina un blocco di `story.json` — oggi solo `regolamento`:
+`apre` nomina un blocco di `story.json` — oggi solo `regolamento`. Dentro ci
+sono due gruppi: le regole del gioco e le informazioni sul progetto (privacy,
+indipendenza da Apple, contatti). Stanno nella stessa schermata e non in una
+voce di menu a parte, cosi' chi cerca come si gioca trova anche il resto.
 
 ```json
 "regolamento": {
   "titolo": "REGOLAMENTO",
-  "sezioni": [ { "n": "01", "titolo": "OBIETTIVO", "righe": ["Prevedi il keynote."] } ],
+  "sezioni":      [ { "id": "come_si_gioca", "titolo": "COME SI GIOCA", "righe": [...] } ],
+  "gruppo":       "INFORMAZIONI SUL PROGETTO",
+  "informazioni": [ { "id": "privacy", "titolo": "PRIVACY E DATI", "righe": [...] } ],
   "chiusa": { "titolo": "REGOLA NON SCRITTA", "testo": "Se sei {g:sicuro|sicura}..." },
   "bottone": "HO CAPITO"
 }
 ```
+
+Ogni voce e' una **riga richiudibile**: titolo e `+`, e sotto il testo. Si parte
+tutte chiuse, cosi' l'elenco sta in una schermata sola. Lo stato aperto/chiuso
+vive nel DOM e basta — non entra in `VN.state`, perche' leggere il regolamento
+non deve toccare la partita.
+
+Una `riga` e' una stringa (paragrafo) oppure:
+
+| forma | cosa diventa |
+|---|---|
+| `{"h": "Quali dati raccogliamo"}` | sottotitolo in oro |
+| `{"lista": ["...", "..."]}` | elenco puntato |
+| `{"mail": "hello@fantaliberty.com"}` | indirizzo, come link `mailto:` |
+
+**La parte legale deve dire il vero.** Quello che c'e' scritto in PRIVACY E DATI
+e' anche quello che il gioco fa: i campi elencati sono esattamente quelli del
+payload (vedi `docs/backend.sql`), Supabase e la memoria locale del browser sono
+i due posti dove finiscono i dati, e i 30 giorni sono una cosa da fare a mano —
+la procedura sta in fondo a `backend.sql`. Se cambia il payload, va cambiato
+anche il testo. `npm test` controlla che le parole chiave ci siano ancora.
 
 Il testo sta nei dati e non nel motore perche' e' contenuto: cambiarlo non deve
 voler dire toccare il codice. Passa da `fmt()` come tutto il resto, quindi

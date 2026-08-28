@@ -224,6 +224,16 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
         il fondale va fuori fuoco e la lobby resta sotto)
       → [HO CAPITO] chiude e riporta a [S1.ZONA3]
 
+    Il pannello ha due gruppi di voci richiudibili:
+      REGOLE      COME SI GIOCA · PUNTEGGI
+      ──── INFORMAZIONI SUL PROGETTO ────
+                  PARTECIPAZIONE · IL PROGETTO · PRIVACY E DATI · SICUREZZA ·
+                  INDIPENDENZA · MARCHI E CONTENUTI · CONTATTI
+      e in fondo, fissa, la REGOLA NON SCRITTA.
+
+    Privacy, indipendenza e contatti NON hanno una voce di menu propria: stanno
+    qui. Nessuna sezione si chiama "note legali".
+
     La schermata NON tocca niente della partita: né punti, né picks, né
     run.locked, né lo stile, né le domande già consumate. È solo da leggere.
     Testo delle cinque sezioni + la regola non scritta in `story.regolamento`
@@ -511,6 +521,20 @@ Indice degli id in `docs/indice-domande.md`.
   "Bella prova. Ci vediamo tra poco per quella vera."
 
 [S7.04] Nero
+
+[S7.04b] TITOLI DI CODA
+  Stile del cartello d'apertura: nero, testo centrato, scritto a macchina.
+  Cinque blocchi che compaiono, restano e sfumano uno nell'altro — non si
+  accumulano. Vanno da soli (~15s in tutto), un tocco li salta.
+
+    FANTALIBERTY / STORY
+    CREATO DA / Lorenzo / Michael          (stesso peso visivo)
+    TEST / Qualcuno, probabilmente
+    SUPPORTO PSICOLOGICO / Assente
+    BUDGET / 30 Newton
+
+  Tono asciutto: i primi crediti seri, poi due assurdi, chiusa sui 30 Newton.
+  Non aggiungere altri ruoli o battute senza chiedere.
 
 [S7.05] COUNTDOWN — schermata persistente, riaperta ogni giorno
   Asset: bg_countdown_nero

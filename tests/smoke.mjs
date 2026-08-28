@@ -105,7 +105,15 @@ for (const [id, sc] of Object.entries(story.scenes)) {
       assert.ok(st.prop || st.img, `scena ${id}: badge senza immagine`);
       if (st.prop) assert.ok(story.assets.props[st.prop], `scena ${id}: prop "${st.prop}" dichiarato`);
     }
-    if (st.t === 'title') assert.ok(st.lines?.length, `scena ${id}: title senza righe`);
+    if (st.t === 'title') {
+      // un cartello ha "lines", i titoli di coda "blocchi": uno dei due, non zero
+      assert.ok(st.lines?.length || st.blocchi?.length, `scena ${id}: title senza righe`);
+      for (const b of st.blocchi || []) {
+        assert.ok(b.righe?.length, `scena ${id}: blocco dei titoli di coda vuoto`);
+        for (const r of b.righe) assert.ok((typeof r === 'string' ? r : r.text)?.length,
+          `scena ${id}: riga dei titoli di coda vuota`);
+      }
+    }
     // battuta che cambia con una variabile: o copre tutti i valori, o ha "*".
     // Senza, per un percorso il box resterebbe vuoto.
     if (st.by && typeof st.text === 'object' && !st.text['*']) {
@@ -1353,15 +1361,33 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.equal(z3.hotspots[0].apre, 'regolamento');
   assert.equal(z3.hotspots[0].goto, undefined, 'non porta a una scena separata: resta nella lobby');
 
-  // il testo: le cinque sezioni e la regola non scritta
+  // il testo: due gruppi, le regole del gioco e le informazioni sul progetto
   const r = story.regolamento;
-  assert.equal(r.sezioni.length, 5, 'cinque sezioni');
-  assert.deepEqual(r.sezioni.map((x) => x.n), ['01', '02', '03', '04', '05']);
-  assert.deepEqual(r.sezioni.map((x) => x.titolo),
-    ['OBIETTIVO', 'PREVISIONI', 'LE SCELTE', 'MICRO-EVENTI', 'IL FINALE']);
+  assert.deepEqual(r.sezioni.map((x) => x.titolo), ['COME SI GIOCA', 'PUNTEGGI'],
+    'le due voci delle regole');
+  assert.deepEqual(r.informazioni.map((x) => x.titolo),
+    ['PARTECIPAZIONE', 'IL PROGETTO', 'PRIVACY E DATI', 'SICUREZZA', 'INDIPENDENZA',
+     'MARCHI E CONTENUTI', 'CONTATTI'], 'le sette voci sul progetto');
+  assert.match(r.gruppo, /INFORMAZIONI SUL PROGETTO/);
   assert.ok(r.chiusa?.testo, 'la regola non scritta c\'e\'');
   assert.match(r.chiusa.titolo, /REGOLA NON SCRITTA/);
-  for (const sez of r.sezioni) assert.ok(sez.righe.length, `sezione ${sez.n} vuota`);
+  // "NOTE LEGALI" e' proprio il titolo che la specifica non vuole
+  assert.doesNotMatch(JSON.stringify(r), /NOTE LEGALI/i, 'niente "NOTE LEGALI"');
+  for (const sez of [...r.sezioni, ...r.informazioni]) {
+    assert.ok(sez.id, `sezione "${sez.titolo}" senza id`);
+    assert.ok(sez.righe.length, `sezione ${sez.titolo} vuota`);
+  }
+
+  // la parte legale deve dire il vero: quello che c'e' scritto qui e' anche
+  // quello che il gioco fa davvero
+  const privacy = JSON.stringify(r.informazioni.find((x) => x.id === 'privacy'));
+  assert.match(privacy, /Supabase/, 'la privacy dice dove finiscono i dati');
+  assert.match(privacy, /Unione Europea/);
+  assert.match(privacy, /memoria locale del browser/, 'e che il gioco usa il salvataggio locale');
+  assert.match(privacy, /30\s*giorni/, 'e per quanto tempo li tiene');
+  assert.match(privacy, /hello@fantaliberty\.com/, 'e a chi scrivere');
+  assert.match(JSON.stringify(r.informazioni.find((x) => x.id === 'indipendenza')),
+    /non e' affiliato, sponsorizzato o approvato da Apple/, 'e che non c\'entra con Apple');
 
   // apertura vera dalla lobby
   VN.clearSave();
@@ -1384,14 +1410,41 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.ok($('hub').classList.contains('on'), 'e la lobby resta aperta sotto');
 
   const sezioni = [...$('regcorpo').querySelectorAll('.regsez')];
-  assert.equal(sezioni.length, 6, 'cinque sezioni piu\' la regola non scritta');
-  assert.deepEqual([...$('regcorpo').querySelectorAll('.regn')].map((n) => n.textContent),
-    ['01', '02', '03', '04', '05'], 'i numeri sono a schermo');
+  assert.equal(sezioni.length, 10, 'due voci di regole, sette sul progetto, piu\' la regola non scritta');
   assert.match($('regtit').textContent, /REGOLAMENTO/);
-  assert.match($('regcorpo').textContent, /CONTROCORRENTE/, 'le tre scelte sono spiegate');
-  assert.match($('regcorpo').textContent, /\+3, 0 oppure -3/, 'e i micro-eventi anche');
-  assert.match($('regcorpo').textContent, /Peter/, 'e il quiz finale');
-  assert.ok(sezioni[5].classList.contains('chiusa'), 'la regola non scritta e\' staccata dalle altre');
+  assert.match($('regcorpo').textContent, /INFORMAZIONI SUL PROGETTO/, 'il separatore fra i due gruppi');
+
+  // tutte chiuse all'apertura: l'elenco delle voci deve stare in una schermata
+  const teste = [...$('regcorpo').querySelectorAll('.regtesta')];
+  assert.equal(teste.length, 9, 'nove voci richiudibili');
+  assert.equal(teste.filter((t) => t.querySelector('.regsegno').textContent === '+').length, 9,
+    'si parte tutte chiuse');
+  assert.equal(sezioni.filter((x) => x.classList.contains('aperta')).length, 0);
+  assert.equal(teste[0].getAttribute('aria-expanded'), 'false');
+
+  // aprirne una: il segno diventa meno, il testo e' li'
+  teste[0].onclick({ stopPropagation() {} });
+  assert.ok(sezioni[0].classList.contains('aperta'), 'la voce si apre');
+  assert.equal(teste[0].querySelector('.regsegno').textContent, '\u2212', 'il + diventa meno');
+  assert.equal(teste[0].getAttribute('aria-expanded'), 'true');
+  assert.match(sezioni[0].textContent, /CONTROCORRENTE/, 'le tre scelte sono spiegate qui dentro');
+  teste[0].onclick({ stopPropagation() {} });
+  assert.equal(sezioni[0].classList.contains('aperta'), false, 'e si richiude');
+  assert.equal(teste[0].querySelector('.regsegno').textContent, '+');
+
+  // i contenuti: quelli di prima non si sono persi, quelli nuovi ci sono
+  assert.match($('regcorpo').textContent, /\+3, 0 oppure -3/, 'i micro-eventi');
+  assert.match($('regcorpo').textContent, /Peter/, 'il quiz finale');
+  assert.match($('regcorpo').textContent, /volontaria e gratuita/, 'la partecipazione');
+  assert.match($('regcorpo').textContent, /Apple Inc/, 'i marchi');
+  // l'indirizzo e' un link vero, non testo che non si puo' toccare
+  const mail = [...$('regcorpo').querySelectorAll('.regmail')];
+  assert.ok(mail.length >= 2, 'l\'indirizzo compare in privacy e in contatti');
+  assert.equal(mail[0].getAttribute('href'), 'mailto:hello@fantaliberty.com');
+  // l'elenco dei dati raccolti e' una lista vera
+  assert.ok($('regcorpo').querySelectorAll('.reglista li').length >= 12,
+    'l\'elenco dei dati raccolti e\' puntato');
+  assert.ok($('regcorpo').querySelector('.regsez.chiusa'), 'la regola non scritta e\' staccata');
   // il testo va declinato come tutto il resto: qui il genere e' femminile
   assert.match($('regcorpo').textContent, /sicura al 100%/, 'anche il regolamento e\' declinato');
 
@@ -1420,6 +1473,80 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   const bgs = fs.readdirSync(path.join(ROOT, base, 'bg'));
   const orfani = bgs.filter((f) => /z3_premi/.test(f));
   if (orfani.length) console.log(`fondale della vecchia teca, non piu' usato: ${orfani.join(', ')}`);
+}
+
+
+/* ---------- 5q. i titoli di coda ----------
+   Vengono dopo il pollice in su del CEO e prima del countdown, e vanno da soli:
+   e' una sequenza da guardare, non da tappare riga per riga. Un tocco solo la
+   salta tutta. */
+{
+  const passi = story.scenes.finale.steps;
+  const iTitoli = passi.findIndex((st) => st.t === 'title');
+  const iPollice = passi.findIndex((st) => st.t === 'bg' && st.id === 'finale_porta_pollice');
+  assert.ok(iPollice >= 0, 'la porta col pollice in su c\'e\' ancora');
+  assert.ok(iTitoli > iPollice, 'i titoli vengono DOPO la comparsa del CEO');
+  assert.equal(story.scenes.finale.next, 'countdown', 'e prima del countdown');
+
+  const blocchi = passi[iTitoli].blocchi;
+  assert.equal(blocchi.length, 5, 'cinque blocchi, come da specifica');
+  const testo = (b) => b.righe.map((r) => (typeof r === 'string' ? r : r.text));
+  assert.deepEqual(testo(blocchi[0]), ['FANTALIBERTY', 'STORY']);
+  assert.deepEqual(testo(blocchi[1]), ['CREATO DA', 'Lorenzo', 'Michael']);
+  // "I due nomi devono avere lo stesso peso visivo": stessa classe, niente big/small
+  const nomi = blocchi[1].righe.slice(1);
+  assert.ok(nomi.every((r) => !r.big && !r.small), 'Lorenzo e Michael hanno lo stesso peso');
+  assert.deepEqual(testo(blocchi[2]), ['TEST', 'Qualcuno, probabilmente']);
+  assert.deepEqual(testo(blocchi[3]), ['SUPPORTO PSICOLOGICO', 'Assente']);
+  assert.deepEqual(testo(blocchi[4]), ['BUDGET', '30 Newton']);
+
+  // durata complessiva: la specifica chiede fra i 10 e i 20 secondi
+  const sfuma = passi[iTitoli].dissolvenza ?? 600;
+  let ms = 0;
+  for (const b of blocchi) {
+    for (const r of b.righe) {
+      ms += (typeof r === 'string' ? r : r.text).length * 36;   // typewriter
+      ms += (typeof r === 'string' ? 420 : r.pausa ?? 420);
+    }
+    ms += (b.tieni ?? 1200) + sfuma;
+  }
+  assert.ok(ms > 10000 && ms < 20000, `i titoli durano ${Math.round(ms / 1000)}s, fuori da 10-20`);
+
+  // a velocita' zero la sequenza a tempo non parte e cede subito il turno:
+  // senza, il test di percorso resterebbe appeso per quindici secondi
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'finale' });
+
+  /* Il sipario nero si tiene solo per le scene che COMINCIANO su un cartello.
+     Cercando un "title" in un punto qualsiasi, il finale — che ha i titoli di
+     coda in fondo — restava al buio per tutta la sequenza della porta. */
+  assert.equal($('curtain').classList.contains('on'), false,
+    'il finale si apre in scena, non sul nero: i titoli stanno in fondo');
+  assert.ok(story.scenes.arrivo.steps.some((st) => ['title', 'boot', 'logo'].includes(st.t)));
+
+  let giri = 0;
+  while (VN.sceneId !== 'countdown' && giri++ < 60) VN.step();
+  assert.equal(VN.sceneId, 'countdown', 'dai titoli si arriva al countdown');
+}
+
+/* ---------- 5q-bis. un cartello a schermo pieno scopre il velo nero ----------
+   #nero sta SOPRA #curtain: i titoli di coda arrivano subito dopo una
+   dissolvenza al nero, e senza toglierla il testo c'era nel DOM ma lo schermo
+   restava nero. Non lo prende nessuno screenshot automatico e non lo prende il
+   test di percorso: qui si controlla l'invariante. */
+{
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'finale' });
+  $('nero').classList.add('on', 'sfuma');       // come dopo lo step "nero"
+  let giri = 0;
+  while (giri++ < 60) {
+    const passo = (VN.scene?.steps || [])[VN.i];
+    if (!passo) break;
+    if (passo.t === 'title') { VN.step(); break; }
+    VN.step();
+  }
+  assert.equal($('nero').classList.contains('on'), false,
+    'il cartello dei titoli toglie il velo nero, altrimenti lo coprirebbe');
 }
 
 /* ---------- 6. variante maschile, percorso rapido ---------- */
