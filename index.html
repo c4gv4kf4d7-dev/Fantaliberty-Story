@@ -14,7 +14,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"
       media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="./game/engine.css?v=35">
+<link rel="stylesheet" href="./game/engine.css?v=37">
 </head>
 <body>
 <div id="stage">
@@ -138,6 +138,29 @@
     </div>
   </div>
 
+  <!-- il countdown al keynote vero: e' l'ultima schermata, e quella che il
+       giocatore rivede ogni volta che riapre dopo aver bloccato la scaletta -->
+  <div id="countdown">
+    <div id="cdinner">
+      <div id="cdnome"></div>
+      <div id="cdlabel"></div>
+      <div id="cdtempo"></div>
+      <div id="cdpunti"></div>
+      <div id="cdbtn"></div>
+    </div>
+  </div>
+
+  <!-- la card da salvare: composta su una canvas e mostrata come immagine, cosi'
+       su iPhone si tiene premuto per salvarla (il link di download li' apre solo
+       una scheda) -->
+  <div id="cardwrap">
+    <img id="cardImg" alt="">
+    <div id="cardazioni">
+      <a id="cardsalva" class="ch">Salva l'immagine</a>
+      <button id="cardchiudi" class="ch">Chiudi</button>
+    </div>
+  </div>
+
   <!-- dissolvenza al nero: copre il cambio di scena (Lucas -> Francesca) senza
        toccare #curtain, che serve all'intro e viene spento a ogni cambio scena -->
   <div id="nero"></div>
@@ -150,7 +173,7 @@
   </div>
 </div>
 
-<script src="./game/engine.js?v=35"></script>
+<script src="./game/engine.js?v=37"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -160,7 +183,7 @@
   };
   if (params.get('reset')) { try { localStorage.removeItem('fl_nexus_save_v1'); } catch (e) {} }
 
-  var ENGINE_ATTESO = '8';   // deve combaciare con VN.engine in game/engine.js
+  var ENGINE_ATTESO = '9';   // deve combaciare con VN.engine in game/engine.js
   var partito = false;
 
   function mostraErrore(msg) {
@@ -217,7 +240,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=35', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=37', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e

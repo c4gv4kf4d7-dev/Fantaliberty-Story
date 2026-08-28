@@ -100,7 +100,7 @@ scene** al nome giusto.
 | `susan` | Susan | 12 pose collegate, comprese le 4 `commento_*` (ordine confermato dall'utente: 1 drip, 2 hawaiano, 3 showman, 4 ingegnere), usate in S3 |
 | `peter` (ex `veterano`) | Peter | 6 pose collegate. Lo stato *dorme finché `locked` è falso, si sveglia dopo* **è modellato nella lobby** (zona 4, due varianti con `when`). La scena `quiz` resta la vecchia placeholder |
 | `martha` | Martha | **Voce, non personaggio**: `voce: true` + `icona` a 2 frame, come chiede il manifest. Parla in S4 dalla regia — icona dell'auricolare accanto al nome e box di un altro colore, nessuno sprite in scena. I 3 file `@3x` del segnaposto non esistono più. `chr_martha_ritratto_regia` resta da collegare al finale (S7) |
-| `premi` | — | **Probabilmente da eliminare.** Non esiste un NPC "Premi" nel manifest: la sezione premi è gestita da Francesca in zona 3 (`chr_francesca_orgogliosa`). Nessuno sprite è mai stato consegnato per `premi`. Prima di cancellarlo controlla che la scena `premi` in `story.json` non serva ancora come segnaposto di flusso |
+| ~~`premi`~~ | — | **Eliminato con S7.** Non esiste un NPC "Premi" nel manifest: la sezione premi è gestita da Francesca in zona 3 (`chr_francesca_orgogliosa`). Nessuno sprite è mai stato consegnato per `premi`. Prima di cancellarlo controlla che la scena `premi` in `story.json` non serva ancora come segnaposto di flusso |
 
 ## Lo script master v4.0 e i due strati del lavoro
 
@@ -132,7 +132,7 @@ esistono**:
 | ~~battuta risolta per (stile × opzione scelta)~~ — **fatto**: step `domande` | tutta `[S5]` |
 | ~~recap modificabile + lock irreversibile~~ — **fatto**: step `recap` | `[S6]` |
 | timer per domanda, livelli, due pool, perk per stile | `[S8]` |
-| countdown persistente | `[S7.05]` |
+| ~~countdown persistente~~ — **fatto**: step `countdown` | `[S7.05]` |
 | ~~punteggio, `run.locked`, POST al backend~~ — **fatto**. Restano i moltiplicatori del quiz | trasversale |
 
 Ordine consigliato: prima il modello `run` completo e il salvataggio, poi S3
@@ -179,7 +179,8 @@ Ordine dei lavori e stato:
 | **S4 dietro le quinte** | **fatto**: il giocatore entra in scena (step `io`), il sipario del palco riusa lo step di S2, Martha entra come voce in cuffia |
 | **S5 keynote** | **fatto**: griglia a 3 macroargomenti, core in sequenza, bivio che pesca 3 facoltative, battuta per stile, micro-eventi ed evento personale, intermezzi, punteggio |
 | **S6 teleprompter** | **fatto**: recap modificabile, blocco irreversibile, invio a Supabase (manca solo la chiave anon) |
-| S7 → S8 | da fare |
+| **S7 finale** | **fatto**: la porta a tre fotogrammi, il countdown persistente, la card da salvare |
+| S8 quiz | da fare |
 
 Il motore ora riceve **due** file: `story.json` (`VN.story`) e `domande.json`
 (`VN.banca`). Chi aggiunge un boot in un test deve passare `banca`, altrimenti

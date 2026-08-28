@@ -412,6 +412,30 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  border-radius:8px;padding:8px 11px;color:#cfe0ff;font-size:clamp(6px,1.9vw,10px);
  line-height:1.7;text-align:center}
 
+/* ---------- countdown e card (S7) ---------- */
+#countdown{position:absolute;inset:0;z-index:6;display:none;place-items:center;
+ background:rgba(4,5,10,.55);padding:10vw}
+#countdown.on{display:grid}
+#cdinner{text-align:center;display:flex;flex-direction:column;gap:16px;
+ align-items:center;width:100%;max-width:22em}
+#cdnome{color:#fff;font-size:clamp(9px,2.6vw,14px);line-height:1.8}
+#cdlabel{color:#9fb4d8;font-size:clamp(7px,2vw,10px)}
+/* il tempo che manca: e' il soggetto della schermata, tutto il resto gli gira
+   intorno. Cifre a larghezza fissa, altrimenti balla a ogni secondo. */
+#cdtempo{color:#ffd98a;font-size:clamp(15px,5.4vw,30px);letter-spacing:.06em;
+ font-variant-numeric:tabular-nums;text-shadow:0 0 18px rgba(255,217,138,.35)}
+#cdpunti{color:#fff;font-size:clamp(7px,2.1vw,11px);opacity:.85}
+#cdbtn{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:6px}
+
+#cardwrap{position:absolute;inset:0;z-index:7;display:none;
+ background:rgba(4,5,10,.9);padding:6vw;place-items:center}
+#cardwrap.on{display:grid}
+#cardImg{max-width:100%;max-height:74%;object-fit:contain;border-radius:10px;
+ box-shadow:0 12px 40px rgba(0,0,0,.7)}
+#cardazioni{display:flex;flex-direction:column;gap:8px;width:100%;max-width:22em;
+ margin-top:14px}
+#cardazioni .ch{text-align:center;text-decoration:none;display:block}
+
 /* ---------- modale di conferma ----------
    Per i passi senza ritorno. Copre la scena: finche' e' aperta non si tocca
    altro, cosi' non si entra in sala per sbaglio con uno swipe storto. */

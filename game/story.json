@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "FantaLiberty — Nexus",
-    "version": "0.10.0",
+    "version": "0.11.0",
     "start": "arrivo",
     "assetBase": "assets/",
     "genderVar": "genere",
@@ -17,7 +17,9 @@
       "platea/pla_risata.webp",
       "platea/pla_silenzio_imbarazzato.webp",
       "platea/pla_coro_nome.webp"
-    ]
+    ],
+    "keynote": "2026-09-09T19:00:00+02:00",
+    "_nota_keynote": "Data e ora del keynote vero, ora locale italiana. Il countdown di S7 conta fin qui. DA CONFERMARE con l'utente: se Apple annuncia un'altra data, si cambia solo questa riga."
   },
   "assets": {
     "bg": {
@@ -36,7 +38,11 @@
       "palco_sipario_chiuso": "bg/bg_palco_sipario_chiuso.webp",
       "palco_platea_piena": "bg/bg_palco_platea_piena.webp",
       "palco_schermo_categorie": "bg/bg_palco_schermo_categorie.webp",
-      "palco_luci_calate": "bg/bg_palco_luci_calate.webp"
+      "palco_luci_calate": "bg/bg_palco_luci_calate.webp",
+      "finale_porta_illuminata": "bg/bg_finale_porta_illuminata.webp",
+      "finale_porta_vicino": "bg/bg_finale_porta_vicino.webp",
+      "countdown_nero": "bg/bg_countdown_nero.webp",
+      "finale_porta_pollice": "bg/bg_finale_porta_pollice.webp"
     },
     "props": {
       "mac_terminale": "props/prop_mac_terminale.webp",
@@ -137,24 +143,6 @@
       "scala": 1.35,
       "_notaScala": "Come Francesca: ritagli quasi quadrati, alla misura base restavano piccoli accanto a Lucas.",
       "scalaHub": 1.15
-    },
-    "premi": {
-      "name": "???",
-      "defaultBody": "in_piedi",
-      "defaultHead": "neutro",
-      "neck": {
-        "x": "50%",
-        "y": "3%",
-        "w": "32%"
-      },
-      "bodies": {
-        "in_piedi": "chars/chr_premi_corpo_in_piedi@3x.webp",
-        "tada": "chars/chr_premi_corpo_tada@3x.webp"
-      },
-      "heads": {
-        "neutro": "chars/chr_premi_testa_neutro@3x.webp",
-        "positivo": "chars/chr_premi_testa_positivo@3x.webp"
-      }
     }
   },
   "vars": {
@@ -1263,54 +1251,115 @@
           "text": "[BOZZA] (qui la valutazione della risposta e l'assegnazione dei punti)"
         }
       ],
-      "next": "premi"
-    },
-    "premi": {
-      "title": "Atto 4 — Premi",
-      "bg": "lobby",
-      "steps": [
-        {
-          "t": "hide"
-        },
-        {
-          "t": "show",
-          "who": "premi",
-          "body": "tada",
-          "head": "positivo",
-          "pop": true
-        },
-        {
-          "t": "fx",
-          "name": "flash"
-        },
-        {
-          "t": "say",
-          "who": "premi",
-          "text": "[BOZZA] Ta-daaa! Questi te li sei {g:guadagnato|guadagnata}, {NOME}."
-        }
-      ],
-      "next": "finale"
+      "next": "countdown"
     },
     "finale": {
-      "title": "Finale",
-      "bg": "lobby",
+      "title": "S7 — Il finale",
+      "bg": "palco_platea_piena",
+      "_nota": "[S7.01]-[S7.04]. La porta ha tre fotogrammi, tutti fondali: lontana, la sagoma (bg_finale_porta_vicino, che il manifest chiama chr_ceo_sagoma) e il pollice in su, composto da chr_ceo_pollice_su sulla stessa inquadratura. Sono frame alternativi della stessa immagine, non due personaggi.",
       "steps": [
         {
           "t": "hide"
         },
         {
+          "t": "io",
+          "posa": "saluto_finale"
+        },
+        {
           "t": "show",
-          "who": "lucas",
-          "body": "felice",
+          "who": "susan",
+          "body": "sollievo",
           "pop": true
         },
         {
           "t": "say",
-          "who": "lucas",
-          "text": "[BOZZA] E' andata alla grande, {NOME}! Il tuo risultato e' salvato: ci vediamo in classifica."
+          "who": "susan",
+          "text": "Ha funzionato. Ha funzionato."
         },
         {
-          "t": "end"
+          "t": "show",
+          "who": "susan",
+          "body": "sguardo_in_alto"
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "text": "...eccolo, e' arrivato."
+        },
+        {
+          "t": "hide"
+        },
+        {
+          "t": "io",
+          "hide": true
+        },
+        {
+          "t": "bg",
+          "id": "finale_porta_illuminata",
+          "dissolvenza": true,
+          "fx": "zoom"
+        },
+        {
+          "t": "wait",
+          "ms": 2200
+        },
+        {
+          "t": "bg",
+          "id": "finale_porta_vicino",
+          "dissolvenza": true
+        },
+        {
+          "t": "wait",
+          "ms": 2000
+        },
+        {
+          "t": "bg",
+          "id": "finale_porta_pollice"
+        },
+        {
+          "t": "wait",
+          "ms": 900
+        },
+        {
+          "t": "say",
+          "who": "martha",
+          "text": "Regia a host: bella prova. Ci vediamo tra poco per quella vera."
+        },
+        {
+          "t": "hide"
+        },
+        {
+          "t": "nero"
+        }
+      ],
+      "next": "countdown"
+    },
+    "countdown": {
+      "title": "S7 — Countdown",
+      "bg": "countdown_nero",
+      "_nota": "[S7.05]. E' l'ultima schermata del gioco e quella che si rivede a ogni riapertura, finche' non arriva il keynote vero.",
+      "steps": [
+        {
+          "t": "luce"
+        },
+        {
+          "t": "countdown",
+          "titolo": "{NOME} — SCALETTA BLOCCATA",
+          "label": "Il keynote vero inizia tra",
+          "punti": "Punti in gioco:",
+          "arrivato": "E' iniziato. Buona visione.",
+          "cardTitolo": "SCALETTA BLOCCATA",
+          "cardPunti": "PUNTI IN GIOCO",
+          "azioni": [
+            {
+              "label": "Torna in lobby",
+              "goto": "lobby"
+            },
+            {
+              "label": "La tua card",
+              "card": true
+            }
+          ]
         }
       ]
     },

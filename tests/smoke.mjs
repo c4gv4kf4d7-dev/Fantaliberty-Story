@@ -31,7 +31,7 @@ function partOf(who, kind, id) {
   const c = story.cast?.[who];
   return c && id ? c[kind]?.[id] : undefined;
 }
-const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'hub', 'carosello', 'griglia', 'domande', 'bivio', 'intermezzo', 'recap', 'show', 'hide', 'io', 'prop', 'bg', 'react', 'fx', 'carrellata', 'sipario', 'nero', 'luce', 'wait', 'set', 'goto', 'end']);
+const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'hub', 'carosello', 'griglia', 'domande', 'bivio', 'intermezzo', 'recap', 'countdown', 'show', 'hide', 'io', 'prop', 'bg', 'react', 'fx', 'carrellata', 'sipario', 'nero', 'luce', 'wait', 'set', 'goto', 'end']);
 assert.ok(story.scenes[story.meta.start], 'meta.start punta a una scena esistente');
 
 // Tutti i valori che una variabile puo' assumere, raccolti da chi la scrive.
@@ -139,6 +139,16 @@ for (const [id, sc] of Object.entries(story.scenes)) {
         `scena ${id}: domande set "${st.set}" - solo "core" o "extra"`);
     }
     if (st.t === 'bivio') assert.ok(st.text, `scena ${id}: bivio senza domanda`);
+    if (st.t === 'countdown') {
+      assert.ok(st.azioni?.length, `scena ${id}: countdown senza vie d'uscita`);
+      for (const a of st.azioni) {
+        assert.ok(a.goto || a.card, `scena ${id}: azione "${a.label}" non fa niente`);
+        if (a.goto) assert.ok(story.scenes[a.goto], `scena ${id}: countdown verso "${a.goto}", che non esiste`);
+      }
+      // senza una data il countdown non conta niente
+      assert.ok(story.meta.keynote && !isNaN(Date.parse(story.meta.keynote)),
+        'meta.keynote deve essere una data valida: e\' quella verso cui conta il countdown');
+    }
     if (st.t === 'recap') {
       assert.ok(story[st.da || 'argomenti'], `scena ${id}: recap su "${st.da}", che non esiste`);
       assert.ok(st.lock?.text, `scena ${id}: il blocco e' irreversibile, serve una conferma`);
@@ -867,6 +877,57 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   }
   assert.ok(viste.size >= 2,
     `rispondendo sempre uguale la platea ha reagito sempre allo stesso modo (${[...viste]}): la reazione sta seguendo la risposta`);
+}
+
+/* ---------- 5j. S7: finale, countdown, card ---------- */
+{
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, scene: 'finale' });
+  VN.state.genere = 'f'; VN.state.stile = 'drip'; VN.state.nome = 'Franca';
+  VN.state.store = 'liberty'; VN.state.locked = true;
+  VN.state.picks = { iphone: { core: { 'IPHONE.C1': { v: 'x', p: 6 } } } };
+
+  // la sagoma alla porta e' un fondale, non uno sprite: e' bg_finale_porta_vicino
+  const passi = story.scenes.finale.steps.map((x) => x.t);
+  assert.ok(passi.includes('nero'), 'il finale chiude sul nero');
+  const sfondi = story.scenes.finale.steps.filter((x) => x.t === 'bg').map((x) => x.id);
+  assert.deepEqual(sfondi, ['finale_porta_illuminata', 'finale_porta_vicino', 'finale_porta_pollice'],
+    'la porta in fondo, la sagoma da vicino, il pollice in su');
+  // I tre fotogrammi sono fondali, non sprite: sovrapporre chr_ceo_pollice_su
+  // alla sagoma gia' disegnata dentro bg_finale_porta_vicino metteva due
+  // persone nella stessa porta.
+  assert.ok(!story.cast.ceo, 'il CEO non e\' un personaggio in scena: e\' nei fondali');
+
+  VN.boot(story, { speed: 0, banca, scene: 'countdown' });
+  VN.state.nome = 'Franca'; VN.state.stile = 'drip';
+  VN.state.picks = { iphone: { core: { 'IPHONE.C1': { v: 'x', p: 6 } } } };
+  VN.i = 0; VN.step();
+  assert.ok($('countdown').classList.contains('on'), 'il countdown si apre');
+  assert.match($('cdtempo').textContent, /^\d+g \d\d:\d\d:\d\d$/,
+    `il tempo che manca non e' formattato: "${$('cdtempo').textContent}"`);
+  const azioni = [...$('cdbtn').querySelectorAll('.ch')];
+  assert.equal(azioni.length, 2, 'torna in lobby, e la card');
+  azioni[0].onclick({ stopPropagation() {} });
+  assert.equal(VN.sceneId, 'lobby', 'da qui si torna in lobby');
+  assert.equal($('countdown').classList.contains('on'), false, 'e il countdown si chiude');
+}
+
+/* ---------- 5k. S0B: chi riapre con la schedina chiusa ----------
+   Non c'e' niente da riprendere: la partita e' chiusa, quindi si torna al
+   countdown invece di offrire "riprendi da dove eri". */
+{
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, scene: 'countdown' });
+  VN.state.nome = 'Franca'; VN.state.locked = true; VN.state.stile = 'drip';
+  VN.progressed = true;
+  VN.saveNow();
+  assert.ok(VN.hasSave(story));
+
+  VN.boot(story, { speed: 0, banca });
+  assert.equal(VN.sceneId, 'countdown', 'chi ha gia\' bloccato torna al countdown');
+  assert.equal($('choices').classList.contains('on'), false,
+    'e non gli viene chiesto se vuole riprendere: non c\'e\' niente da riprendere');
+  VN.clearSave();
 }
 
 /* ---------- 5b. S1: hub della lobby a quattro zone ----------
