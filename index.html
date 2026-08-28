@@ -14,7 +14,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"
       media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="./game/engine.css?v=34">
+<link rel="stylesheet" href="./game/engine.css?v=35">
 </head>
 <body>
 <div id="stage">
@@ -150,7 +150,7 @@
   </div>
 </div>
 
-<script src="./game/engine.js?v=34"></script>
+<script src="./game/engine.js?v=35"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -217,7 +217,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=34', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=35', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e
