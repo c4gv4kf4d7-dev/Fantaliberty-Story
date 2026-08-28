@@ -36,6 +36,8 @@ def data_uri(rel):
 def main():
     story = json.loads(read("game", "story.json"))
     banca = json.loads(read("game", "domande.json"))
+    backend = json.loads(read("game", "backend.json")) if os.path.exists(
+        os.path.join(ROOT, "game", "backend.json")) else None
     base = story.get("meta", {}).get("assetBase", "")
     inArrivo = set(story.get("meta", {}).get("assetiInArrivo", []))
     for kind, items in story.get("assets", {}).items():
@@ -84,9 +86,10 @@ def main():
         lambda m: "<script>\n%s\n</script>" % read("game", "engine.js"), html)
     if n != 1:
         sys.exit("non trovo lo script engine.js in index.html")
-    inline = "<script>window.STORY_INLINE=%s;window.BANCA_INLINE=%s;</script>" % (
+    inline = "<script>window.STORY_INLINE=%s;window.BANCA_INLINE=%s;window.BACKEND_INLINE=%s;</script>" % (
         json.dumps(story, ensure_ascii=False, separators=(",", ":")),
         json.dumps(banca, ensure_ascii=False, separators=(",", ":")),
+        json.dumps(backend, ensure_ascii=False, separators=(",", ":")),
     )
     html = html.replace("<script>\n(function () {", inline + "\n<script>\n(function () {", 1)
     # niente font remoti nella build offline: fallback su monospace di sistema

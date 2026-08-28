@@ -130,10 +130,10 @@ esistono**:
 | ~~griglia 3 macroargomenti con stati~~ — **fatto**: step `griglia` | `[S5.HUB]` |
 | ~~pescaggio casuale di 3 facoltative **al bivio**~~ — **fatto**: step `bivio` | `[S5.BIVIO]` |
 | ~~battuta risolta per (stile × opzione scelta)~~ — **fatto**: step `domande` | tutta `[S5]` |
-| recap modificabile + lock irreversibile | `[S6]` |
+| ~~recap modificabile + lock irreversibile~~ — **fatto**: step `recap` | `[S6]` |
 | timer per domanda, livelli, due pool, perk per stile | `[S8]` |
 | countdown persistente | `[S7.05]` |
-| punteggio, moltiplicatori, `run.locked`, POST al backend | trasversale |
+| ~~punteggio, `run.locked`, POST al backend~~ — **fatto**. Restano i moltiplicatori del quiz | trasversale |
 
 Ordine consigliato: prima il modello `run` completo e il salvataggio, poi S3
 (stile, perché tutto S5 ne dipende), poi S5, poi S6/S7, infine S8.
@@ -178,7 +178,8 @@ Ordine dei lavori e stato:
 | **S3 camerino** | **fatto**: carosello dei 4 stili con perk e conferma irreversibile, commento di Susan per stile |
 | **S4 dietro le quinte** | **fatto**: il giocatore entra in scena (step `io`), il sipario del palco riusa lo step di S2, Martha entra come voce in cuffia |
 | **S5 keynote** | **fatto**: griglia a 3 macroargomenti, core in sequenza, bivio che pesca 3 facoltative, battuta per stile, micro-eventi ed evento personale, intermezzi, punteggio |
-| S6 → S8 | da fare |
+| **S6 teleprompter** | **fatto**: recap modificabile, blocco irreversibile, invio a Supabase (manca solo la chiave anon) |
+| S7 → S8 | da fare |
 
 Il motore ora riceve **due** file: `story.json` (`VN.story`) e `domande.json`
 (`VN.banca`). Chi aggiunge un boot in un test deve passare `banca`, altrimenti

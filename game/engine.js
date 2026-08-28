@@ -16,8 +16,8 @@
 
    Step supportati:
      logo | boot | title | say | choice | input | list | badge | hub | carosello |
-     griglia | domande | bivio | intermezzo | show | hide | io | react | prop |
-     bg | fx | carrellata | sipario | wait | set | goto | end
+     griglia | domande | bivio | intermezzo | recap | show | hide | io | react |
+     prop | bg | fx | carrellata | sipario | wait | set | goto | end
 */
 (function (global) {
   'use strict';
@@ -29,9 +29,10 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '6',
+    engine: '7',
     story: null,
     banca: null,    // game/domande.json: domande, battute per stile, eventi, intermezzi
+    backend: null,  // game/backend.json: dove spedire la schedina chiusa
     state: {},      // variabili di gioco (nome, genere, stile, ...)
     scene: null,
     sceneId: null,
@@ -392,6 +393,7 @@
     chiudiHub();
     chiudiCarosello();
     chiudiGriglia();
+    chiudiRecap();
     chiudiTransizioni();
     if (el.modal) el.modal.classList.remove('on');
     if (!(sc.steps || []).some(function (s) { return s.t === 'title' || s.t === 'boot' || s.t === 'logo'; })) {
@@ -423,7 +425,8 @@
   function exec(st) {
     if (!silent && (st.t === 'say' || st.t === 'choice' || st.t === 'input' ||
                     st.t === 'carosello' || st.t === 'hub' || st.t === 'griglia' ||
-                    st.t === 'domande' || st.t === 'bivio' || st.t === 'intermezzo')) VN.saveNow();
+                    st.t === 'domande' || st.t === 'bivio' || st.t === 'intermezzo' ||
+                    st.t === 'recap')) VN.saveNow();
 
     switch (st.t) {
 
@@ -494,6 +497,10 @@
 
       case 'intermezzo':
         return showIntermezzo(st);
+
+      // S6: il recap modificabile e il blocco della schedina
+      case 'recap':
+        return showRecap(st);
 
       // Transizioni: al ripristino non si rigiocano (il giocatore le ha gia'
       // viste), ma il fondale che lasciano dietro va rimesso a posto.
@@ -980,8 +987,24 @@
     var p = VN.state.picks || (VN.state.picks = {});
     var c = p[categoria] || (p[categoria] = {});
     var t = c[tipo] || (c[tipo] = {});
-    t[id] = valore;
-    VN.state.punti = (VN.state.punti || 0) + (punti || 0);
+    t[id] = { v: valore, p: punti || 0 };
+    VN.state.punti = totale();
+  }
+
+  // Il totale si ricalcola dalle risposte invece di essere accumulato: in S6 le
+  // risposte si possono cambiare, e un contatore accumulato andrebbe fuori
+  // sincrono alla prima correzione.
+  function totale() {
+    var somma = 0;
+    var p = VN.state.picks || {};
+    Object.keys(p).forEach(function (cat) {
+      Object.keys(p[cat]).forEach(function (tipo) {
+        Object.keys(p[cat][tipo]).forEach(function (id) {
+          somma += p[cat][tipo][id].p || 0;
+        });
+      });
+    });
+    return somma;
   }
 
   // Un macroargomento e' finito quando ha tutte le sue core: si ricava dalle
@@ -1055,6 +1078,13 @@
 
   function chiudiGriglia() {
     if (el.griglia) { el.griglia.classList.remove('on'); el.griglia.innerHTML = ''; }
+  }
+
+  function chiudiRecap() {
+    if (!el.recap) return;
+    el.recap.classList.remove('on');
+    el.recap.innerHTML = '';
+    el.boxwrap.classList.remove('recap');
   }
 
   /* ---------------- il giro di una domanda [S5.DOMANDA] ----------------
@@ -1285,6 +1315,204 @@
     type(fmt(q.q), apri);
     revealUI = apri;
   }
+
+  /* ================ S6: teleprompter e blocco ================ */
+
+  // Tutte le domande della banca, indicizzate per id: al recap servono il testo
+  // della domanda e le opzioni, che nelle risposte non ci sono.
+  function domandaPerId(id) {
+    var b = (VN.banca && VN.banca.categorie) || {};
+    for (var cat in b) {
+      var trovata = (b[cat].core || []).concat(b[cat].extra || [])
+        .filter(function (d) { return d.id === id; })[0];
+      if (trovata) return { d: trovata, cat: cat, tipo: (b[cat].core || []).indexOf(trovata) >= 0 ? 'core' : 'extra' };
+    }
+    return null;
+  }
+
+  /* ---------------- il recap [S6.02] ----------------
+     Tutte le risposte, per macroargomento, ognuna ancora modificabile. Le
+     facoltative che il giocatore ha saltato compaiono come righe vuote: si
+     possono completare adesso, e se il pescaggio non era stato fatto si fa ora.
+     Sotto, il bottone rosso che chiude la schedina. */
+  function showRecap(st) {
+    var uscito = false;
+
+    function righe() {
+      el.recap.innerHTML = '';
+      var argomenti = VN.story[st.da || 'argomenti'] || {};
+      Object.keys(argomenti).forEach(function (cat) {
+        var c = (VN.banca && VN.banca.categorie && VN.banca.categorie[cat]) || {};
+        var date = (VN.state.picks || {})[cat] || {};
+
+        var h = global.document.createElement('div');
+        h.className = 'rtit';
+        h.textContent = fmt(argomenti[cat].nome || cat);
+        el.recap.appendChild(h);
+
+        (c.core || []).forEach(function (d) { riga(cat, 'core', d, (date.core || {})[d.id]); });
+
+        // le facoltative: quelle giocate, poi i posti ancora liberi
+        var giocate = Object.keys(date.extra || {});
+        giocate.forEach(function (id) {
+          var q = (c.extra || []).filter(function (d) { return d.id === id; })[0];
+          if (q) riga(cat, 'extra', q, date.extra[id]);
+        });
+        var mancano = (c.n_extra_da_pescare || 0) - giocate.length;
+        for (var k = 0; k < mancano; k++) vuota(cat);
+      });
+    }
+
+    function riga(cat, tipo, d, risposta) {
+      var b = global.document.createElement('button');
+      b.className = 'rriga';
+      b.innerHTML = '<span class="rq"></span><span class="rv"></span>';
+      b.querySelector('.rq').textContent = fmt(d.q);
+      b.querySelector('.rv').textContent = risposta ? fmt(risposta.v) : '—';
+      b.onclick = function (ev) {
+        if (ev && ev.stopPropagation) ev.stopPropagation();
+        if (uscito) return;
+        chiedi(cat, tipo, d);
+      };
+      el.recap.appendChild(b);
+    }
+
+    // Un posto ancora libero fra le facoltative: al tocco si pesca (se non era
+    // gia' stato fatto) e si risponde adesso.
+    function vuota(cat) {
+      var b = global.document.createElement('button');
+      b.className = 'rriga vuota';
+      b.innerHTML = '<span class="rq"></span><span class="rv">+</span>';
+      b.querySelector('.rq').textContent = fmt(st.daFare || 'Domanda facoltativa non giocata');
+      b.onclick = function (ev) {
+        if (ev && ev.stopPropagation) ev.stopPropagation();
+        if (uscito) return;
+        var c = (VN.banca && VN.banca.categorie && VN.banca.categorie[cat]) || {};
+        var gia = Object.keys(((VN.state.picks || {})[cat] || {}).extra || {});
+        var libere = (c.extra || []).filter(function (d) { return gia.indexOf(d.id) < 0; });
+        if (!libere.length) return;
+        chiedi(cat, 'extra', mescola(libere)[0]);
+      };
+      el.recap.appendChild(b);
+    }
+
+    // Rispondere di nuovo a una domanda: le stesse opzioni di prima, e il
+    // punteggio si ricalcola da solo perche' e' derivato dalle risposte.
+    function chiedi(cat, tipo, d) {
+      el.recap.classList.remove('on');
+      el.boxwrap.classList.remove('recap');
+      setSpeaker(st.who);
+      var apri = function () {
+        el.choices.innerHTML = '';
+        (d.opzioni || []).forEach(function (o) {
+          var b = global.document.createElement('button');
+          b.className = 'ch';
+          b.textContent = fmt(o.label);
+          b.onclick = function (ev) {
+            if (ev && ev.stopPropagation) ev.stopPropagation();
+            hideUI();
+            segna(cat, tipo, d.id, o.label, o.pt != null ? o.pt : (o.val || 0));
+            VN.progressed = true;
+            VN.saveNow();
+            apriRecap();
+          };
+          el.choices.appendChild(b);
+        });
+        el.choices.classList.add('on');
+      };
+      type(fmt(d.q), apri);
+      revealUI = apri;
+    }
+
+    function apriRecap() {
+      hideUI();
+      righe();
+      setSpeaker(st.who);
+      el.txt.textContent = fmt(st.text || '');
+      el.arrow.style.opacity = 0;
+      el.boxwrap.classList.add('in', 'recap');
+      el.recap.classList.add('on');
+      el.blocca.textContent = fmt(st.bottone || 'BLOCCA LA SCALETTA');
+      pending = null;
+    }
+
+    /* ---------------- il blocco [S6.03] ---------------- */
+    el.blocca.onclick = function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      if (uscito) return;
+      mostraModale(st.lock || { text: 'Sicuro? Dopo questo, la schedina e\' chiusa.' }, function () {
+        uscito = true;
+        VN.state.locked = true;
+        VN.state.punti = totale();
+        VN.progressed = true;
+        invia();                              // il POST non blocca il gioco
+        el.recap.classList.remove('on');
+        el.boxwrap.classList.remove('recap');
+        hideUI();
+        VN.saveNow();
+        if (st.goto) return goScene(st.goto);
+        next();
+      }, null);
+    };
+
+    apriRecap();
+  }
+
+  /* ---------------- invio al server ----------------
+     La schedina chiusa vale solo se arriva. Il blocco pero' e' locale e
+     irreversibile: se l'invio fallisce (rete, chiave mancante) la partita resta
+     in coda e si riprova al prossimo avvio, invece di perdersi.
+
+     Il timestamp non lo mette il client: la colonna ha default now() sul
+     server, come chiede lo script. */
+  function payload() {
+    var s = VN.state;
+    return {
+      nome: s.nome, genere: s.genere, store: s.store, reparto: s.reparto,
+      anni: s.anni, device: s.device, stile: s.stile,
+      punti: totale(), picks: s.picks || {},
+      flags: { sfacciato: !!s.sfacciato, studiato: s.studiato },
+      versione: (VN.story.meta && VN.story.meta.version) || ''
+    };
+  }
+
+  var CODA = 'fl_nexus_da_inviare';
+
+  function invia(dati) {
+    var cfg = VN.backend || {};
+    var corpo = dati || payload();
+    if (!cfg.url || !cfg.chiave) return accoda(corpo);      // non configurato: in coda
+    if (typeof global.fetch !== 'function') return accoda(corpo);
+    global.fetch(cfg.url.replace(/\/+$/, '') + '/rest/v1/' + (cfg.tabella || 'runs'), {
+      method: 'POST',
+      headers: {
+        'apikey': cfg.chiave,
+        'Authorization': 'Bearer ' + cfg.chiave,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(corpo)
+    }).then(function (r) {
+      if (r.ok) return svuotaCoda();
+      accoda(corpo);
+    }).catch(function () { accoda(corpo); });
+  }
+
+  function accoda(corpo) {
+    var s = store();
+    if (s) { try { s.setItem(CODA, JSON.stringify(corpo)); } catch (e) {} }
+  }
+  function svuotaCoda() {
+    var s = store();
+    if (s) { try { s.removeItem(CODA); } catch (e) {} }
+  }
+  VN.riprovaInvio = function () {
+    var s = store();
+    if (!s) return;
+    var d = null;
+    try { d = JSON.parse(s.getItem(CODA) || 'null'); } catch (e) {}
+    if (d) invia(d);
+  };
 
   /* ---------------- hub a zone ----------------
      La lobby dello script: quattro zone che si scorrono di lato, senza ordine
@@ -1785,6 +2013,10 @@
     // la banca dei pronostici (game/domande.json): sta fuori da story.json
     // perche' e' contenuto grande e che cambia per conto suo
     if (opts.banca) VN.banca = opts.banca;
+    // indirizzo e chiave del backend (game/backend.json). Senza, la partita si
+    // chiude lo stesso e resta in coda per il prossimo avvio.
+    if (opts.backend) VN.backend = opts.backend;
+    VN.riprovaInvio();
 
     el = {
       stage: $('stage'), bg: $('bg'), bg2: $('bg2'), sky: $('sky'), npc: $('npc'), npcBody: $('npcBody'), npcHead: $('npcHead'),
@@ -1804,6 +2036,7 @@
       platea: $('platea'), plateaImg: $('plateaImg'),
       ospitewrap: $('ospitewrap'), ospite: $('ospite'), griglia: $('griglia'),
       evpropwrap: $('evpropwrap'), evprop: $('evprop'),
+      recap: $('recap'), blocca: $('blocca'),
       carosello: $('carosello'), carImg: $('carImg'), carta: $('carta'),
       cprev: $('cprev'), cnext: $('cnext'), cdots: $('cdots'),
       carnome: $('carnome'), cardesc: $('cardesc'), carperk: $('carperk'), carok: $('carok')
@@ -1815,6 +2048,7 @@
     chiudiHub();
     chiudiCarosello();
     chiudiGriglia();
+    chiudiRecap();
     chiudiTransizioni();
     if (el.modal) el.modal.classList.remove('on');
     bgCorrente = null;
@@ -1825,7 +2059,7 @@
            e.target.closest('#listform') || e.target.closest('#hubnav') ||
            e.target.closest('#hubspots') || e.target.closest('#modal') ||
            e.target.closest('#carta') || e.target.closest('#carosello') ||
-           e.target.closest('#griglia') ||
+           e.target.closest('#griglia') || e.target.closest('#recapwrap') ||
            e.target.closest('#propwrap'))) return;
       VN.step();
     };
@@ -1838,6 +2072,7 @@
       if (el.inputform.classList.contains('on') || el.choices.classList.contains('on') ||
           (el.listform && el.listform.classList.contains('on')) ||
           (el.griglia && el.griglia.classList.contains('on')) ||
+          (el.recap && el.recap.classList.contains('on')) ||
           (el.modal && el.modal.classList.contains('on'))) return;
       VN.step();
     };

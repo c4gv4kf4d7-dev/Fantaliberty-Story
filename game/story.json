@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "FantaLiberty — Nexus",
-    "version": "0.9.0",
+    "version": "0.10.0",
     "start": "arrivo",
     "assetBase": "assets/",
     "genderVar": "genere",
@@ -35,7 +35,8 @@
       "dietro_le_quinte": "bg/bg_dietro_le_quinte.webp",
       "palco_sipario_chiuso": "bg/bg_palco_sipario_chiuso.webp",
       "palco_platea_piena": "bg/bg_palco_platea_piena.webp",
-      "palco_schermo_categorie": "bg/bg_palco_schermo_categorie.webp"
+      "palco_schermo_categorie": "bg/bg_palco_schermo_categorie.webp",
+      "palco_luci_calate": "bg/bg_palco_luci_calate.webp"
     },
     "props": {
       "mac_terminale": "props/prop_mac_terminale.webp",
@@ -43,7 +44,8 @@
       "slide_iphone": "props/prop_schermo_slide_categoria_iphone.webp",
       "slide_watch": "props/prop_schermo_slide_categoria_watch.webp",
       "slide_altro": "props/prop_schermo_slide_categoria_altro.webp",
-      "clicker": "props/prop_clicker_inceppato.webp"
+      "clicker": "props/prop_clicker_inceppato.webp",
+      "gobbo": "props/prop_gobbo_teleprompter.webp"
     },
     "chars": {},
     "platea": {
@@ -925,7 +927,7 @@
           "etichettaFatta": "fatto"
         }
       ],
-      "next": "backstage"
+      "next": "teleprompter"
     },
     "argomento": {
       "title": "S5 — Pronostici",
@@ -972,6 +974,42 @@
         {
           "t": "goto",
           "scene": "argomenti"
+        }
+      ]
+    },
+    "teleprompter": {
+      "title": "S6 — Il teleprompter",
+      "bg": "palco_luci_calate",
+      "dissolvenza": true,
+      "_nota": "[S6.01]-[S6.03]. Il recap e' UI vera, non un'immagine: obj_gobbo_teleprompter fa da cornice. Il blocco e' irreversibile e fa partire l'invio.",
+      "steps": [
+        {
+          "t": "io",
+          "posa": "idle_palco"
+        },
+        {
+          "t": "say",
+          "who": "martha",
+          "text": "Ultimo giro. Da adesso non si torna indietro. Prenditi il tempo che vuoi, nessuno ha fretta."
+        },
+        {
+          "t": "say",
+          "who": "martha",
+          "text": "Susan ha fretta. Ma nessun altro."
+        },
+        {
+          "t": "recap",
+          "who": "martha",
+          "da": "argomenti",
+          "text": "Rileggi tutto. Tocca una riga per cambiarla.",
+          "daFare": "Facoltativa non giocata",
+          "bottone": "BLOCCA LA SCALETTA",
+          "lock": {
+            "text": "Sicuro? Dopo questo, la schedina e' chiusa.",
+            "si": "Si', blocco tutto",
+            "no": "Fammi rileggere"
+          },
+          "goto": "finale"
         }
       ]
     },
