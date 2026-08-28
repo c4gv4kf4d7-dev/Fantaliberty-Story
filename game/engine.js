@@ -1320,6 +1320,17 @@
     return trovaEvento(v.shift());
   }
 
+  function esitiMicroEvento(e) {
+    var valori = e.valori || [3, 0, -3];
+    return mescola(valori.slice());
+  }
+
+  function conseguenzaMicroEvento(punti) {
+    if (punti > 0) return 'La platea segue il ritmo. Martha lascia correre e il keynote riparte.';
+    if (punti < 0) return 'Per un secondo resta solo il ronzio delle luci. Poi Martha riapre la linea.';
+    return 'La regia assorbe il colpo. Nessuno capisce se fosse previsto, e va bene cosi\'.';
+  }
+
   function mostraEvento(e, done) {
     // l'evento personale dello stile ha una posa dedicata, i micro-eventi no
     if (e.asset && e.asset.indexOf('stili/') === 0) mostraIo({ posa: 'evento' });
@@ -1334,6 +1345,8 @@
     setSpeaker(null);
     el.name.classList.add('hidden');
     var poi = function () {
+      var opzioni = e.opzioni || [];
+      if (opzioni.length) return scelteEvento(e, opzioni, done);
       pending = function () {
         nascondiOspite();
         el.evpropwrap.classList.remove('on');
@@ -1344,6 +1357,31 @@
     };
     type(fmt(e.testo), poi);
     revealUI = poi;
+  }
+
+  function scelteEvento(e, opzioni, done) {
+    var esiti = esitiMicroEvento(e);
+    showChoices({
+      options: opzioni.map(function (o, idx) {
+        var punti = esiti[idx % esiti.length] || 0;
+        return { label: o.label, value: idx, _do: function () {
+          segna('micro_eventi', 'r', e.id, o.label, punti);
+          VN.progressed = true;
+          VN.saveNow();
+          setSpeaker(null);
+          el.name.classList.add('hidden');
+          type(fmt(o.esito || conseguenzaMicroEvento(punti)), function () {
+            pending = function () {
+              nascondiOspite();
+              el.evpropwrap.classList.remove('on');
+              if (e.martha) return battutaMartha(e.martha, done);
+              done();
+            };
+            el.arrow.style.opacity = 1;
+          });
+        } };
+      })
+    });
   }
 
   function battutaMartha(testo, done) {
@@ -1881,8 +1919,16 @@
         if (uscito) return;
         if (h.set) { VN.state[h.set.var] = h.set.value; termSet(h.set.var); }
         if (h.say) {                      // commento e basta: si resta nell'hub
-          setSpeaker(h.who || zones[cur].who);
-          typeKeep(fmt(h.say));
+          var righe = [{ who: h.who || zones[cur].who, text: h.say }].concat(h.after || []);
+          var k = 0;
+          var parla = function () {
+            var r = righe[k++];
+            setSpeaker(r.who || h.who || zones[cur].who);
+            typeKeep(fmt(r.text || ''));
+            pending = k < righe.length ? parla : null;
+            el.arrow.style.opacity = k < righe.length ? 1 : 0;
+          };
+          parla();
           return;
         }
         uscito = true;

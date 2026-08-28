@@ -1174,7 +1174,7 @@
               "who": "peter",
               "body": "occhi_bassi",
               "dice": "francesca",
-              "say": "Quello e' Peter. Non farci caso: prima del keynote riesce a dormire ovunque.",
+              "say": "E quello è Peter. Gestisce il quiz finale.\nNon svegliarlo: è l'unico momento della giornata in cui non può farti una domanda.",
               "hotspots": [
                 {
                   "label": "IL TAVOLINO",
@@ -1187,7 +1187,13 @@
                     "level": "pose",
                     "body": "alza_occhi"
                   },
-                  "say": "Prima segui il keynote. Poi le domande difficili."
+                  "say": "Ti ho sentito.",
+                  "after": [
+                    {
+                      "who": "francesca",
+                      "text": "Perfetto. È ancora vivo."
+                    }
+                  ]
                 }
               ]
             },
@@ -1200,7 +1206,7 @@
               "bg": "lobby_z4_quiz_aperta",
               "who": "peter",
               "body": "alza_occhi",
-              "say": "Adesso si': i pronostici sono chiusi, il tavolo e' aperto.",
+              "say": "Il keynote è andato. Adesso arriva la parte difficile.\nLe domande le faccio io.",
               "hotspots": [
                 {
                   "label": "IL QUIZ",
@@ -1260,7 +1266,7 @@
         {
           "t": "say",
           "who": "peter",
-          "text": "[BOZZA] Io c'ero nel 2007. Vediamo se te la cavi."
+          "text": "Il keynote è andato. Adesso arriva la parte difficile.\nLe domande le faccio io."
         },
         {
           "t": "choice",

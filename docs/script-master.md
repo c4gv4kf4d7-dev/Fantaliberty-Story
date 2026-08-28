@@ -352,8 +352,11 @@ Tutti e 3 i macroargomenti completati → [S6.01]
      (da game/domande.json, campo `battute[run.style]`)
   5. SE random() < probabilità: micro-evento generale, oppure l'evento
      personale dello stile se non ancora mostrato in questa run
-  6. Reazione platea A CASO — mai legata al contenuto della risposta
-  7. → prossima domanda, o [S5.BIVIO] se era l'ultima core
+  6. Il micro-evento, se estratto, presenta tre reazioni rapide: il valore
+     interno è una permutazione runtime di +3 / 0 / -3 e non viene mai mostrato
+     al giocatore
+  7. Reazione platea A CASO — mai legata al contenuto della risposta
+  8. → prossima domanda, o [S5.BIVIO] se era l'ultima core
 ```
 
 > **Regola d'oro.** Durante il keynote la reazione della platea non deve MAI
@@ -369,6 +372,12 @@ Elenco e testi in `game/domande.json` (`micro_eventi`, `eventi_personali`,
 per stile mostrato al massimo una volta a run, cinque intermezzi fissi (R1-R2
 prima del primo macroargomento, R3-R5 dopo ciascuno dei tre completati, in ordine
 di completamento) più quattro di riserva.
+
+I micro-eventi non sono più passivi: ogni voce contiene tre `opzioni`. I valori
+editoriali indicano il tono previsto della battuta, ma il motore mescola a ogni
+attivazione i tre esiti numerici `+3`, `0`, `-3`. L'interfaccia non deve mostrare
+mai numeri, badge, popup, "bonus" o "malus": l'esito deve restare leggibile solo
+come conseguenza narrativa.
 
 ## Le domande
 
@@ -477,6 +486,8 @@ Punteggio domanda core = difficoltà (1-5) + bonus opzione
   consenso +0 · plausibile +1 · controcorrente +2
 
 Punteggio facoltativa/intermezzo = valore secco dell'opzione (1, 2 o 3)
+
+Punteggio micro-evento = permutazione runtime opaca di +3 / 0 / -3
 
 Moltiplicatore pool = opzione scelta da <10% dei giocatori  ×1.5
                                         10-30%             ×1.25
