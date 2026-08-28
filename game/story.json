@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "FantaLiberty — Nexus",
-    "version": "0.10.0",
+    "version": "0.9.1",
     "start": "arrivo",
     "assetBase": "assets/",
     "genderVar": "genere",
@@ -105,9 +105,37 @@
       },
       "heads": {},
       "_nota": "Sprite unico per posa (come lucas): niente head/neck, ogni posa e' un'immagine intera.",
-      "scala": 1.75,
-      "_notaScala": "Le pose di Francesca sono busti in ritaglio largo (1536x1024): dentro il riquadro #npc vengono limitate dalla larghezza e rese alte poco piu' della meta' di Lucas. La scala le riporta alla sua stessa presenza.",
-      "scalaHub": 1.15
+      "volti": {
+        "idle": {
+          "h": 0.252,
+          "cx": 0.518
+        },
+        "benvenuto": {
+          "h": 0.304,
+          "cx": 0.515
+        },
+        "gesto_swipe": {
+          "h": 0.271,
+          "cx": 0.446
+        },
+        "indica_tenda": {
+          "h": 0.262,
+          "cx": 0.376
+        },
+        "orgogliosa": {
+          "h": 0.267,
+          "cx": 0.418
+        },
+        "ride": {
+          "h": 0.562,
+          "cx": 0.576
+        },
+        "scettica": {
+          "h": 0.516,
+          "cx": 0.577
+        }
+      },
+      "_notaVolti": "Misura del viso in ogni posa: altezza e centro orizzontale, in frazione dell'immagine. Il motore ci calcola sopra il riquadro, cosi' il viso viene sempre grande come quello di Lucas e nello stesso punto. Serve perche' le pose non sono tutte della stessa inquadratura: cinque sono mezzibusti, 'ride' e 'scettica' sono primi piani di sola testa. Ricavate con lo stesso rilevamento dell'incarnato usato per gli altri controlli: se arriva una posa nuova, misurarla allo stesso modo invece di stimarla a occhio."
     },
     "martha": {
       "name": "Martha",
@@ -612,15 +640,16 @@
         {
           "t": "set",
           "var": "__ok",
-          "value": "> BADGE IN STAMPA"
-        },
-        {
-          "t": "wait",
-          "ms": 900
+          "value": "> BADGE IN STAMPA",
+          "lampeggia": 2000
         },
         {
           "t": "prop",
           "show": false
+        },
+        {
+          "t": "wait",
+          "ms": 1000
         }
       ],
       "next": "badge",
@@ -1358,15 +1387,12 @@
           "pop": true
         },
         {
-          "t": "prop",
-          "show": false
-        },
-        {
           "t": "badge",
           "prop": "badge",
           "nome": "{NOME}",
           "who": "lucas",
-          "text": "Ecco il tuo badge, {NOME}. Tienilo al collo e non perderlo: qui dentro senza quello non vai da nessuna parte."
+          "text": "Ecco il tuo badge, {NOME}. Tienilo al collo e non perderlo: qui dentro senza quello non vai da nessuna parte.",
+          "coriandoli": true
         },
         {
           "t": "say",

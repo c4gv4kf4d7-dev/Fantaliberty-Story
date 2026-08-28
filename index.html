@@ -14,7 +14,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"
       media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="./game/engine.css?v=34">
+<link rel="stylesheet" href="./game/engine.css?v=29">
 </head>
 <body>
 <div id="stage">
@@ -59,6 +59,7 @@
     <img id="badgeImg" alt="">
     <div id="badgeName"></div>
   </div>
+  <div id="coriandoli"></div>
 
   <!-- hub della lobby: quattro zone che si scorrono di lato. Le aree toccabili
        vengono disegnate dal motore dentro #hubspots, sopra il fondale. -->
@@ -150,7 +151,7 @@
   </div>
 </div>
 
-<script src="./game/engine.js?v=34"></script>
+<script src="./game/engine.js?v=29"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -217,7 +218,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=34', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=29', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e
