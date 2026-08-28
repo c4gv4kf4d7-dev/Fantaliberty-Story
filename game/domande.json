@@ -3,7 +3,8 @@
   "_formule": {
     "core": "punti = diff (1-5) + bonus tipo (consenso 0, plausibile 1, controcorrente 2)",
     "extra": "punti = val secco dell'opzione (1, 2 o 3), nessuna difficolta'",
-    "intermezzi": "come extra: val secco"
+    "intermezzi": "come extra: val secco",
+    "micro_eventi": "micro-challenge opache: a ogni attivazione le tre opzioni ricevono una permutazione casuale di +3, 0 e -3; il valore non viene mostrato"
   },
   "categorie": {
     "iphone": {
@@ -1200,57 +1201,186 @@
   "micro_eventi": [
     {
       "id": "CLICKER",
-      "testo": "Il clicker si inceppa.",
-      "asset": "props/prop_clicker_inceppato.webp"
+      "testo": "Il clicker non risponde.\nPremi di nuovo. Niente.\nMartha parla nella cuffia:\n«Non funziona.»",
+      "asset": "props/prop_clicker_inceppato.webp",
+      "opzioni": [
+        {
+          "label": "«Aspettiamo la regia.»",
+          "editoriale": 0
+        },
+        {
+          "label": "«Andiamo avanti comunque.»",
+          "editoriale": 3
+        },
+        {
+          "label": "«Facciamo finta che fosse previsto.»",
+          "editoriale": -3
+        }
+      ]
     },
     {
-      "id": "STARNUTO",
-      "testo": "Qualcuno starnutisce nel silenzio.",
-      "platea": "pla_risata"
+      "id": "TIM",
+      "testo": "Dalla platea qualcuno urla:\n«CI MANCHI, TIM!»\n\nCala il silenzio.\nLa regia non sa se mandare avanti la slide.",
+      "platea": "pla_silenzio_imbarazzato",
+      "opzioni": [
+        {
+          "label": "«Anche a noi.»",
+          "editoriale": 3
+        },
+        {
+          "label": "«È in pausa pranzo.»",
+          "editoriale": 0
+        },
+        {
+          "label": "«Tranquilli, tornerà.»",
+          "editoriale": -3
+        }
+      ]
     },
     {
       "id": "SLIDE",
-      "testo": "Slide sbagliata: una foto di compleanno d'ufficio, a schermo intero.",
-      "asset": "props/prop_slide_compleanno.webp"
+      "testo": "Sullo schermo compare una foto di compleanno completamente fuori posto.",
+      "asset": "props/prop_slide_compleanno.webp",
+      "opzioni": [
+        {
+          "label": "«Questa non era prevista.»",
+          "editoriale": -3
+        },
+        {
+          "label": "«Auguri!»",
+          "editoriale": 3
+        },
+        {
+          "label": "«Passiamo oltre.»",
+          "editoriale": 0
+        }
+      ]
     },
     {
       "id": "NOTIFICA",
-      "testo": "NON GUARDARE IL TELEFONO SEI IN DIRETTA",
-      "banner": "susan"
+      "testo": "Il tuo iPhone vibra sul leggio.\nUna notifica compare sullo schermo.\n«Martha: NON GUARDARE IL TELEFONO.»",
+      "banner": "susan",
+      "opzioni": [
+        {
+          "label": "«Rispondi al messaggio e chiudi.»",
+          "editoriale": -3
+        },
+        {
+          "label": "«Lo rimetti in tasca.»",
+          "editoriale": 3
+        },
+        {
+          "label": "«Menti: è solo la babysitter.»",
+          "editoriale": 0
+        }
+      ]
     },
     {
       "id": "MARIMBA",
-      "testo": "Squilla la vecchia suoneria marimba, in platea.",
-      "platea": "pla_silenzio_imbarazzato"
+      "testo": "Dalla platea parte improvvisamente una suoneria.\nMarimba. A tutto volume.\nSilenzio in sala.",
+      "platea": "pla_silenzio_imbarazzato",
+      "opzioni": [
+        {
+          "label": "«Ah, nostalgia. Un uomo di cultura.»",
+          "editoriale": 3
+        },
+        {
+          "label": "«Lasciatelo squillare. Voglio sapere come va a finire.»",
+          "editoriale": 0
+        },
+        {
+          "label": "«Tranquilli, è il mio.»",
+          "editoriale": -3
+        }
+      ]
     }
   ],
   "eventi_personali": {
     "hawaiano": {
-      "id": "STACCHETTO",
-      "titolo": "Lo stacchetto",
-      "testo": "Parte per sbaglio un pezzo di ukulele.",
-      "asset": "stili/stile_hawaiano_evento_stacchetto.webp"
+      "id": "UKULELE",
+      "stile": "hawaiano",
+      "titolo": "L'ukulele",
+      "testo": "«Un ukulele??? Non era previsto…»",
+      "asset": "stili/stile_hawaiano_evento_stacchetto.webp",
+      "opzioni": [
+        {
+          "label": "«Finalmente una colonna sonora decente.»",
+          "editoriale": -3
+        },
+        {
+          "label": "«Continuate pure, è rilassante.»",
+          "editoriale": 0
+        },
+        {
+          "label": "«Ragazzi! Non ora, più tardi in spiaggia.»",
+          "editoriale": 3
+        }
+      ]
     },
     "showman": {
-      "id": "ASSOLO",
-      "titolo": "L'assolo",
-      "testo": "La platea applaude prima che tu abbia detto qualcosa.",
+      "id": "APPLAUSO",
+      "stile": "showman",
+      "titolo": "L'applauso",
+      "testo": "«BRAVO!»\nParte un applauso.\nTu non hai ancora detto niente.\nMartha ti guarda dalla regia, confusa.",
       "asset": "stili/stile_showman_evento_assolo.webp",
       "platea": "pla_coro_nome",
-      "martha": "Non hai ancora detto niente. Lo sai, vero?"
+      "opzioni": [
+        {
+          "label": "«Fai un inchino. “Grazie, grazie.”»",
+          "editoriale": 3
+        },
+        {
+          "label": "«Aspettate almeno che dica qualcosa.»",
+          "editoriale": -3
+        },
+        {
+          "label": "«Vedo che siete già convinti.»",
+          "editoriale": 0
+        }
+      ]
     },
     "drip": {
       "id": "RIDER",
+      "stile": "drip",
       "titolo": "Il rider",
-      "testo": "Entra un rider con lo zaino termico urlando il tuo nome. Tu neghi tutto davanti a mille persone. Il rider urla di nuovo.",
+      "testo": "Un rider entra dal lato del palco con uno zaino termico.\nRIDER: «LORENZO! CONSEGNA!»\nSilenzio totale.",
       "asset": "stili/stile_drip_evento_rider.webp",
-      "extra_asset": "chars/chr_zaino_rider.webp"
+      "extra_asset": "chars/chr_zaino_rider.webp",
+      "opzioni": [
+        {
+          "label": "«Non conosco questa persona.»",
+          "editoriale": -3
+        },
+        {
+          "label": "«Lascia pure a Martha.»",
+          "editoriale": 0
+        },
+        {
+          "label": "«Sì, sono io. Grazie.»",
+          "editoriale": 3
+        }
+      ]
     },
     "ingegnere": {
-      "id": "DOMANDA",
-      "titolo": "La domanda dal fondo",
-      "testo": "Qualcuno urla una domanda tecnica precisa. Tu rispondi davvero, e perdi il filo.",
-      "asset": "stili/stile_ingegnere_evento_domanda.webp"
+      "id": "DOMANDA_TECNICA",
+      "stile": "ingegnere",
+      "titolo": "La domanda tecnica",
+      "testo": "Dal fondo della sala qualcuno urla:\n«Ma tecnicamente come funziona?»\n\nMartha dalla regia:\n«Non rispondere.»",
+      "asset": "stili/stile_ingegnere_evento_domanda.webp",
+      "opzioni": [
+        {
+          "label": "«Dipende dall’architettura. Se vuoi te lo spiego dopo il keynote, così non perdiamo mezz’ora.»",
+          "editoriale": 0
+        },
+        {
+          "label": "«Potrei spiegartelo, ma temo sia un po’ troppo complesso per una mente così semplice.»",
+          "editoriale": -3
+        },
+        {
+          "label": "«È una questione di microfrequenze vettoriali che sincronizzano il buffer termico con la latenza fotonica del processore.»",
+          "editoriale": 3
+        }
+      ]
     }
   },
   "reazioni_platea": [

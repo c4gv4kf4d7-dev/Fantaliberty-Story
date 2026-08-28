@@ -783,7 +783,10 @@ assert.equal(VN.state.sfacciato, false);
     VN.step();                                                 // via la battuta
     // gli eventi si intromettono a caso fra una domanda e l'altra: si tira
     // avanti finche' non ricompaiono dei bottoni (la prossima domanda, o il bivio)
-    for (let g = 0; g < 8 && !$('choices').classList.contains('on'); g++) VN.step();
+    for (let g = 0; g < 12 && !txt().includes(core[k + 1]?.q || 'entrare nel dettaglio'); g++) {
+      if ($('choices').classList.contains('on')) scegli(0);    // eventuale micro-challenge
+      else VN.step();
+    }
   }
   assert.equal(Object.keys(VN.state.picks.watch.core).length, 3, 'tutte e tre le core segnate');
 
@@ -815,6 +818,34 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   }
   if (e.platea) assert.ok(story.assets.platea[e.platea.replace(/^pla_/, '')],
     `evento personale ${e.id}: reazione "${e.platea}" non dichiarata`);
+}
+
+/* ---------- 5j. micro-eventi interattivi ----------
+   Ogni micro-evento e' una micro-challenge a tre risposte: il dato editoriale
+   resta in banca per revisione testi, ma il motore assegna a runtime una
+   permutazione opaca di +3, 0 e -3. */
+{
+  assert.equal(banca.micro_eventi.length, 5, 'cinque micro-eventi generali');
+  const visti = new Set();
+  for (const e of banca.micro_eventi) {
+    assert.equal(e.opzioni.length, 3, `${e.id}: servono esattamente 3 opzioni`);
+    assert.deepEqual([...new Set(e.opzioni.map((o) => o.editoriale))].sort((a, b) => a - b), [-3, 0, 3],
+      `${e.id}: il mapping editoriale deve contenere -3, 0 e +3 una volta`);
+    assert.ok(!/[+-]3|\\b0\\b/.test(e.testo), `${e.id}: il testo evento non deve mostrare valori numerici`);
+    e.opzioni.forEach((o) => {
+      assert.ok(!/[+-]3|\\b0\\b|bonus|malus/i.test(o.label), `${e.id}: opzione con punteggio visibile`);
+      visti.add(o.label);
+    });
+  }
+  for (const [stile, e] of Object.entries(banca.eventi_personali)) {
+    assert.equal(e.stile, stile, `${e.id}: l'evento personale dichiara lo stile corretto`);
+    assert.equal(e.opzioni.length, 3, `${e.id}: servono esattamente 3 opzioni`);
+    assert.deepEqual([...new Set(e.opzioni.map((o) => o.editoriale))].sort((a, b) => a - b), [-3, 0, 3],
+      `${e.id}: il mapping editoriale deve contenere -3, 0 e +3 una volta`);
+  }
+  const engineSrc = fs.readFileSync(path.join(ROOT, 'game/engine.js'), 'utf8');
+  assert.match(engineSrc, /mescola\(valori\.slice\(\)\)/, 'il mapping A/B/C dei micro-eventi viene mescolato a runtime');
+  assert.doesNotMatch(engineSrc, /Momentum|Chaos/i, 'non introdurre Momentum/Chaos');
 }
 
 /* ---------- 5h. S5: il keynote si chiude da solo ----------
@@ -1050,7 +1081,10 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   spots()[0].onclick({ stopPropagation() {} });
   assert.ok($('npcBody').getAttribute('src').includes('chr_peter_alza_occhi'), 'al tocco si sveglia di scatto');
   assert.equal($('name').textContent, 'Peter', 'ma al tocco parla Peter');
-  assert.match(txt(), /Prima segui il keynote/);
+  assert.match(txt(), /Ti ho sentito/);
+  VN.step();
+  assert.equal($('name').textContent, 'Francesca', 'Francesca chiude la presentazione di Peter');
+  assert.match(txt(), /ancora vivo/);
   assert.equal(VN.sceneId, 'lobby', 'la zona 4 chiusa non porta al quiz');
 
   // giro completo: si torna alla tenda, e adesso ENTRA e' attivo
@@ -1126,7 +1160,7 @@ assert.match(txt(), /^Ecco il tuo badge, LUCA\./, 'percorso rapido fino al badge
   // il motore e' gia' fermo sullo step "say" successivo, a meta' della scrittura
   VN2.step();                                             // tap #1: skip, mostra la riga intera
   const dopoSkip = $2('txt').textContent;
-  assert.match(dopoSkip, /2007/, 'skip mostra subito la riga intera');
+  assert.match(dopoSkip, /Le domande le faccio io/, 'skip mostra subito la riga intera');
 
   VN2.step();                                             // tap #2: deve avanzare allo step dopo
   assert.notEqual($2('txt').textContent, dopoSkip,
