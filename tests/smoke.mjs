@@ -31,7 +31,7 @@ function partOf(who, kind, id) {
   const c = story.cast?.[who];
   return c && id ? c[kind]?.[id] : undefined;
 }
-const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'hub', 'carosello', 'griglia', 'domande', 'bivio', 'intermezzo', 'show', 'hide', 'io', 'prop', 'bg', 'react', 'fx', 'carrellata', 'sipario', 'wait', 'set', 'goto', 'end']);
+const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'hub', 'carosello', 'griglia', 'domande', 'bivio', 'intermezzo', 'show', 'hide', 'io', 'prop', 'bg', 'react', 'fx', 'carrellata', 'sipario', 'nero', 'luce', 'wait', 'set', 'goto', 'end']);
 assert.ok(story.scenes[story.meta.start], 'meta.start punta a una scena esistente');
 
 // Tutti i valori che una variabile puo' assumere, raccolti da chi la scrive.
@@ -417,9 +417,9 @@ assert.equal($('tval___ok').textContent, '> BADGE IN STAMPA');
 assert.match(txt(), /^Ecco il tuo badge, FRANCO\./, 'Lucas consegna il badge');
 assert.ok($('npcBody').getAttribute('src').includes('chr_lucas_felice'), 'posa felice dopo il flash');
 
-// Lucas consegna il badge: oggetto a schermo, con sopra il nome del giocatore
-VN.step();                                              // tap sulla battuta
-assert.ok($('badgewrap').classList.contains('in'), 'il badge compare');
+// Lucas consegna il badge: la tessera e' gia' a schermo mentre lo dice, senza
+// un tap in mezzo, col nome del giocatore stampato sopra
+assert.ok($('badgewrap').classList.contains('in'), 'il badge compare con la battuta');
 assert.equal($('badgeName').textContent, 'FRANCO', 'sul badge c\'e\' il nome, e basta');
 VN.step();                                              // tap: via il badge
 assert.equal($('badgewrap').classList.contains('in'), false, 'il badge sparisce al tap');
@@ -470,9 +470,10 @@ assert.match(txt(), /Ehi TU/, 'Susan urla dal palco in fondo');
 assert.equal($('name').textContent, 'Susan', 'nome parlante preso dal cast');
 assert.ok($('npcBody').getAttribute('src').includes('chr_susan_panico_telefoni'), 'posa di Susan referenziata');
 assert.equal(typeof $('npcBody').onerror, 'function', 'file mancante: il personaggio viene nascosto, niente immagine rotta');
-// da lassu' Susan e' lontana: lo sprite va rimpicciolito e alzato, altrimenti
-// e' grande come nel primo piano e la distanza non si legge
-assert.equal($('npc').style.height, '9%', 'Susan piccola, in fondo alla sala');
+// Susan sta sempre alla misura standard degli NPC, quella di Lucas: la
+// versione minuscola in fondo alla sala si leggeva come un difetto grafico,
+// non come distanza
+assert.equal($('npc').style.height, '', 'Susan alla misura standard');
 
 VN.step();                                          // discesa (saltata a speed 0) + primo piano
 assert.ok($('npcBody').getAttribute('src').includes('chr_susan_mani_capelli'), 'ravvicinata dopo la discesa');
@@ -492,7 +493,10 @@ toni[1].onclick({ stopPropagation() {} });          // la sfacciata
 assert.equal(VN.state.sfacciato, true, 'la risposta sfacciata si ricorda: sblocca Susan carponi in S5');
 assert.equal(VN.state.punti, puntiPrima, 'il tono non da\' punti');
 
-// [S2.04] due tap in corridoio
+// [S2.04] il corridoio arriva sulla battuta del camerino, non due battute prima
+assert.match(txt(), /Ottimo, hai detto/, 'prima il si\', ancora in sala');
+assert.ok($('bg').getAttribute('src').includes('sala_teatro'), 'e ancora il fondale della sala');
+VN.step();
 assert.ok($('bg').getAttribute('src').includes('backstage_corridoio'), 'si passa al corridoio');
 assert.ok($('npcBody').getAttribute('src').includes('chr_susan_indica_camerino'));
 // La reazione "micro" della battuta sfacciata lasciava addosso la sua classe:
@@ -502,9 +506,7 @@ assert.ok($('npcBody').getAttribute('src').includes('chr_susan_indica_camerino')
 assert.equal($('npc').classList.contains('micro'), false,
   'bug: la classe della reazione micro restava addosso e rendeva invisibile il personaggio dopo');
 assert.ok($('npc').classList.contains('in'), 'e il personaggio entra con la sua animazione');
-assert.match(txt(), /hai detto si'/);
-VN.step();
-assert.match(txt(), /ultima porta a destra/);
+assert.match(txt(), /ultima porta a destra/, 'fondale e battuta del camerino arrivano insieme');
 
 // le altre due risposte non alzano il flag
 VN.boot(story, { speed: 0, banca, scene: 'aggancio' });
@@ -920,7 +922,6 @@ scegli(0);   // store: Piazza Liberty
 scegli(0);   // dipartimento: Operation
 scegli(0);   // anzianita': 0-2 anni
 $('tsel').value = '17'; $('tsel').onchange(); $('tselok').onclick({ stopPropagation() {} });
-VN.step();   // via il badge stampato
 assert.match(txt(), /^Ecco il tuo badge, LUCA\./, 'percorso rapido fino al badge');
 
 /* ---------- 7. bug: tap durante la scrittura non deve bloccare il gioco ----------

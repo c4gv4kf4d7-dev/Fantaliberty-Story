@@ -149,11 +149,15 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 /* Il nome va nella barra grigia che il template lascia vuota apposta: misurata
    sull'immagine, sta fra il 43% e il 49% dell'altezza e fra il 23% e il 78%
    della larghezza. Il riquadro grande sotto e' lo spazio per la foto. */
-#badgeName{position:absolute;left:23%;right:22%;top:43%;height:6.5%;
+/* Il template nuovo e' una tessera nera con la mela al centro: il nome va
+   subito sotto la mela, in bianco. Misure prese sull'immagine (1024x1536):
+   la tessera occupa il 40-94% dell'altezza, la mela sta al 62%. */
+#badgeName{position:absolute;left:14%;right:14%;top:74%;height:8%;
  display:flex;align-items:center;justify-content:center;
- color:#1b1b22;font-size:clamp(6px,1.7vw,11px);line-height:1;
+ color:#fff;font-size:clamp(7px,2.1vw,13px);line-height:1;
+ text-shadow:0 2px 0 rgba(0,0,0,.65);
  white-space:nowrap;overflow:hidden}
-#badgewrap.senzaimg #badgeName{position:static;height:auto;color:#1b1b22;
+#badgewrap.senzaimg #badgeName{position:static;height:auto;color:#1b1b22;text-shadow:none;
  font-size:clamp(7px,2vw,13px)}
 .fv{font-weight:bold}
 .cur{display:inline-block;width:.55em;background:#0f3b34;animation:bl .6s steps(1) infinite}
@@ -202,7 +206,7 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #listform{margin-top:10px;display:none;gap:7px}
 #listform.on{display:flex}
 #tsel{flex:1;min-width:0;background:#0d1020;border:3px solid #fff;border-radius:8px;color:#fff;
- font-family:inherit;font-size:16px;padding:10px 11px;outline:none;   /* 16px: iOS non zooma */
+ font-family:inherit;font-size:clamp(8px,2.35vw,12px);padding:10px 11px;outline:none;
  -webkit-appearance:none;appearance:none;
  background-image:linear-gradient(45deg,transparent 50%,#fff 50%),linear-gradient(135deg,#fff 50%,transparent 50%);
  background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;
@@ -254,27 +258,31 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
    rettangoli scivolano e la lobby sembra ferma. Il personaggio no: ha gia' la
    sua animazione d'ingresso (#npc.in), e una seconda la sovrascriverebbe
    lasciandolo invisibile a fine corsa. */
-#hub.vaiSx,#bg.vaiSx{animation:zonaSx .34s ease}
-#hub.vaiDx,#bg.vaiDx{animation:zonaDx .34s ease}
-@keyframes zonaSx{from{opacity:.35;transform:translateX(26px)}to{opacity:1;transform:translateX(0)}}
-@keyframes zonaDx{from{opacity:.35;transform:translateX(-26px)}to{opacity:1;transform:translateX(0)}}
+#hub.vaiSx,#bg.vaiSx{animation:zonaSx .72s cubic-bezier(.25,.8,.3,1)}
+#hub.vaiDx,#bg.vaiDx{animation:zonaDx .72s cubic-bezier(.25,.8,.3,1)}
+@keyframes zonaSx{0%{opacity:0;transform:translateX(38px)}35%{opacity:.25}100%{opacity:1;transform:translateX(0)}}
+@keyframes zonaDx{0%{opacity:0;transform:translateX(-38px)}35%{opacity:.25}100%{opacity:1;transform:translateX(0)}}
 
-/* Area toccabile: un rettangolo che pulsa piano. Lo script promette "tutto
-   quello che brilla si tocca", quindi deve vedersi che e' toccabile senza
-   coprire il disegno. */
-.hspot{position:absolute;border:3px solid rgba(255,255,255,.72);border-radius:10px;
- background:rgba(255,255,255,.08);color:#fff;font-family:inherit;
- font-size:clamp(7px,2vw,11px);line-height:1.4;padding:6px;cursor:pointer;
- display:flex;align-items:flex-end;justify-content:center;text-align:center;
- animation:brilla 2.2s ease-in-out infinite;-webkit-tap-highlight-color:transparent}
-@keyframes brilla{
-  0%,100%{box-shadow:0 0 0 rgba(255,255,255,0);border-color:rgba(255,255,255,.5)}
-  50%{box-shadow:0 0 16px rgba(255,255,255,.45);border-color:rgba(255,255,255,.95)}
-}
-.hspot:active{transform:scale(.97)}
-/* area ancora bloccata: si vede, si tocca, ma dice di no */
-.hspot.chiuso{border-style:dashed;border-color:rgba(255,255,255,.3);color:#fff9;
- background:rgba(0,0,0,.18);animation:none}
+/* Area toccabile: il rettangolo col nome scritto sopra copriva il disegno e
+   ripeteva a parole quello che si vede gia' ("LE TARGHE" sopra le targhe). Al
+   suo posto resta un'area invisibile con, al centro, un segnale che pulsa: un
+   punto luminoso e un cerchio che si allarga, come un riflesso sull'oggetto.
+   Il nome della zona resta nell'aria-label, per chi naviga con VoiceOver. */
+.hspot{position:absolute;border:0;background:transparent;padding:0;cursor:pointer;
+ -webkit-tap-highlight-color:transparent;overflow:visible}
+.hspot i{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;
+ border-radius:50%;background:#fff;box-shadow:0 0 12px 3px rgba(255,255,255,.75);
+ animation:puntino 2.2s ease-in-out infinite}
+.hspot i::before,.hspot i::after{content:"";position:absolute;inset:-3px;border-radius:50%;
+ border:2px solid rgba(255,255,255,.9);animation:onda 2.2s ease-out infinite}
+.hspot i::after{animation-delay:1.1s}
+@keyframes puntino{0%,100%{opacity:.55;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+@keyframes onda{0%{opacity:.8;transform:scale(.6)}100%{opacity:0;transform:scale(3.4)}}
+.hspot:active i{transform:scale(1.35)}
+/* area ancora bloccata: il segnale c'e' ma e' spento, cosi' si vede che c'e'
+   qualcosa e che per adesso non si apre */
+.hspot.chiuso i{background:rgba(255,255,255,.35);box-shadow:none;animation:none}
+.hspot.chiuso i::before,.hspot.chiuso i::after{animation:none;opacity:0}
 
 #hubnav{display:none;align-items:center;justify-content:space-between;gap:10px;
  margin-bottom:10px}
@@ -449,7 +457,12 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  margin-left:.16em;animation:bl .62s steps(1) infinite}
 #curtainArrow{color:#fff;font-size:12px;opacity:0;margin-top:1.4em;animation:bob 1s infinite}
 
-#hint{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:14px;color:#fff9;font-size:9px}
+/* Dissolvenza al nero fra due scene. Sta sopra tutto tranne il messaggio
+   d'errore: durante il buio il motore cambia fondale e personaggio, cosi' il
+   cambio non si vede mai "a vista". */
+#nero{position:absolute;inset:0;background:#000;z-index:6;opacity:0;pointer-events:none}
+#nero.on{opacity:1;pointer-events:auto}
+#nero.sfuma{transition:opacity var(--nero,1s) linear}
 #flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
 #flash.go{animation:fl .55s ease-out}
 @keyframes fl{0%{opacity:.85}100%{opacity:0}}
