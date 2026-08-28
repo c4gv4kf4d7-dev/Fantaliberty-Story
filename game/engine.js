@@ -609,6 +609,9 @@
       case 'set':
         VN.state[st.var] = st.value;
         termSet(st.var);
+        // "BADGE IN STAMPA" lampeggia mentre la stampante lavora, poi si va
+        // avanti da soli: e' un'attesa, non una battuta da toccare.
+        if (st.lampeggia && VN.speed) return lampeggia(st.var, st.lampeggia, next);
         return next();
 
       case 'goto':
@@ -678,17 +681,57 @@
     // Misura. Il riquadro #npc ha proporzione fissa (3/5) e l'immagine ci sta
     // dentro con object-fit:contain, quindi uno sprite largo (Francesca a
     // braccia aperte, 1536x1024) viene limitato dalla larghezza e finisce alto
-    // meta' di uno stretto (Lucas, 1162x1353) a parita' di riquadro. Il
-    // "scala" del cast compensa il ritaglio del disegno, cosi' tutti i
-    // personaggi hanno la stessa presenza in scena di Lucas.
+    // meta' di uno stretto (Lucas, 1162x1353) a parita' di riquadro.
+    //
+    // "scala" corregge il ritaglio a occhio, un valore per personaggio. Non
+    // basta quando le pose sono di tipo diverso: Francesca ha cinque mezzibusti
+    // e due primi piani di sola testa, e con una scala sola o erano giganti i
+    // primi o minuscoli i secondi. Per lei il cast dichiara "volti", la misura
+    // del viso in ogni posa, e ci pensa inquadra() a renderli tutti uguali.
     var scala = st.scala != null ? st.scala : ((c && c.scala) || 1);
     el.npc.style.height = st.height || (scala === 1 ? '' : (NPC_H * scala).toFixed(1) + '%');
     el.npc.style.bottom = st.bottom || '';
     el.npc.style.right = st.right || '';
+    inquadra(c, body, st);
 
     el.npc.classList.remove('out', 'micro');
     if (st.pop) { el.npc.classList.remove('in'); void el.npc.offsetWidth; el.npc.classList.add('pop'); }
     else { el.npc.classList.remove('pop'); void el.npc.offsetWidth; el.npc.classList.add('in'); }
+  }
+
+  /* Inquadratura sul volto.
+     Il viso e' la cosa che l'occhio confronta fra un personaggio e l'altro:
+     due pose "alte uguali" sembrano diverse se una e' un mezzobusto e l'altra
+     un primo piano. Qui il riquadro viene calcolato al contrario — dalla
+     misura che il viso deve avere a schermo — cosi' ogni posa mostra la faccia
+     grande come quella di Lucas e nello stesso punto.
+
+     VOLTO_H e VOLTO_X sono presi da Lucas nella posa "idle": il metro di
+     paragone e' lui, come chiede lo script. */
+  var VOLTO_H = 0.104;      // altezza del viso, in frazione dell'altezza della scena
+  var VOLTO_X = 0.664;      // dove cade il centro del viso, in frazione della larghezza
+  var NPC_AR = 0.6;         // proporzione del riquadro #npc (3/5), come nel CSS
+
+  function inquadra(c, posa, st) {
+    var v = c && c.volti && c.volti[posa];
+    if (!v || st.height || st.scala != null) return;   // la scena comanda: non si tocca
+    var img = el.npcBody;
+    var applica = function () {
+      var w = img.naturalWidth, h = img.naturalHeight;
+      if (!w || !h) return;
+      var sh = el.stage.clientHeight, sw = el.stage.clientWidth;
+      if (!sh || !sw) return;
+      var a = w / h;
+      var altezzaImg = (VOLTO_H * sh) / v.h;           // quanto deve venire alta l'immagine
+      var boxW = a > NPC_AR ? altezzaImg * a : altezzaImg * NPC_AR;
+      var boxH = a > NPC_AR ? boxW / NPC_AR : altezzaImg;
+      el.npc.style.height = boxH.toFixed(1) + 'px';
+      // il centro del viso deve cadere dove cade quello di Lucas; il resto della
+      // figura puo' uscire dall'inquadratura, come esce il fianco di Lucas
+      el.npc.style.right = (sw - (VOLTO_X * sw + (1 - v.cx) * boxW)).toFixed(1) + 'px';
+    };
+    if (img.complete && img.naturalWidth) applica();
+    else img.addEventListener('load', applica, { once: true });
   }
 
   function setHead(head) {
@@ -1738,6 +1781,12 @@
 
   function showChoices(st) {
     el.choices.innerHTML = '';
+    // Da quattro voci in su si passa a due colonne, se le etichette sono corte:
+    // incolonnate tutte, l'ultima finiva fuori dallo schermo. Le frasi lunghe
+    // (le risposte a Susan) restano una per riga, dove hanno spazio per andare
+    // a capo.
+    var lunga = (st.options || []).some(function (o) { return fmt(o.label).length > 18; });
+    el.choices.classList.toggle('due', !!st.colonne || (!st.colonne && !lunga && (st.options || []).length >= 4));
     (st.options || []).forEach(function (o) {
       var b = global.document.createElement('button');
       b.className = 'ch';
@@ -1923,6 +1972,14 @@
     if (row.map) v = row.map[v] != null ? row.map[v] : v;
     v = v == null ? '' : String(v);
     node.textContent = row.upper === false ? v : v.toUpperCase();
+    adattaTerminale();
+  }
+
+  function lampeggia(varName, ms, done) {
+    var node = $('tval_' + varName);
+    if (!node) return done();
+    node.classList.add('lampeggia');
+    setTimeout(function () { node.classList.remove('lampeggia'); done(); }, ms);
   }
 
   function termCursorOff() { var c = $('tcur'); if (c) c.style.display = 'none'; }
@@ -1946,6 +2003,30 @@
     }
 
     el.badgewrap.classList.add('in');
+    if (st.coriandoli) coriandoli(st.coriandoli === true ? 34 : st.coriandoli);
+  }
+
+  /* Coriandoli. Partono da dietro alla tessera e si aprono a ventaglio: ognuno
+     ha direzione, distanza, giro e durata suoi, cosi' non si vede la ripetizione.
+     Sono nodi usa e getta, tolti a fine corsa. */
+  var CORCOLORI = ['#f2c14e', '#e8604c', '#4bb3e8', '#6fce7c', '#fff', '#c07be0'];
+  function coriandoli(quanti) {
+    if (!el.coriandoli || !VN.speed) return;
+    el.coriandoli.innerHTML = '';
+    for (var i = 0; i < quanti; i++) {
+      var d = global.document.createElement('span');
+      d.className = 'cor';
+      var ang = caso(-Math.PI, 0);                 // verso l'alto, a ventaglio
+      var dist = caso(70, 190);
+      d.style.background = CORCOLORI[i % CORCOLORI.length];
+      d.style.setProperty('--x', (Math.cos(ang) * dist).toFixed(0) + 'px');
+      d.style.setProperty('--y', (Math.sin(ang) * dist * 0.7 + caso(90, 190)).toFixed(0) + 'px');
+      d.style.setProperty('--giro', caso(-540, 540).toFixed(0) + 'deg');
+      d.style.setProperty('--d', caso(1.1, 1.9).toFixed(2) + 's');
+      d.style.setProperty('--rit', caso(0, 0.35).toFixed(2) + 's');
+      el.coriandoli.appendChild(d);
+    }
+    setTimeout(function () { if (el.coriandoli) el.coriandoli.innerHTML = ''; }, 2600);
   }
 
   function chiudiBadge() {
@@ -2112,6 +2193,7 @@
       choices: $('choices'), inputform: $('inputform'), ti: $('ti'), tok: $('tok'),
       listform: $('listform'), tsel: $('tsel'), tselok: $('tselok'),
       badgewrap: $('badgewrap'), badgeImg: $('badgeImg'), badgeName: $('badgeName'),
+      coriandoli: $('coriandoli'),
       flash: $('flash'),
       hub: $('hub'), hubspots: $('hubspots'), hubnav: $('hubnav'),
       hprev: $('hprev'), hnext: $('hnext'), hdots: $('hdots'),
@@ -2128,6 +2210,7 @@
     el.avatar.innerHTML = '';
     el.avatar.classList.remove('on', 'entra');
     if ($('badgewrap')) $('badgewrap').classList.remove('in');
+    if ($('coriandoli')) $('coriandoli').innerHTML = '';
     if (el.nero) el.nero.classList.remove('on', 'sfuma');   // ripartenza pulita: mai il nero addosso
     hubTasti = null;
     chiudiHub();
