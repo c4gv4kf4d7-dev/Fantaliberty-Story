@@ -24,6 +24,7 @@ tools/
   taglia_sheet.py       un foglio con piu' pose -> un file per posa
   rimuovi_sfondo.py     scontorna: sfondo che tocca i bordi dell'immagine
   togli_scacchiera.py   toglie le toppe di quadretti chiuse DENTRO uno sprite
+  togli_bianchi.py      toglie le toppe di bianco chiuse DENTRO uno sprite
   ammorbidisci_bordi.py sfuma i contorni a scaletta (alpha binaria)
   optimize_assets.py    resize + quantizzazione colore (Pillow)
   build_single_file.py  compila tutto in dist/nexus_game.html (asset inline base64)
@@ -49,9 +50,32 @@ npm run build      # dist/nexus_game.html, singolo file offline
 
 Parametri utili in sviluppo:
 
+* `?dev` — apre il **menu di salto rapido** (vedi sotto)
 * `?fast=1` — niente typewriter, si scorre il flusso in fretta
 * `?scene=lobby` — parte direttamente da una scena (ignora il salvataggio)
 * `?reset=1` — cancella il salvataggio
+
+### Il menu di salto rapido (`?dev`)
+
+`https://fantaliberty.com/?dev` apre un elenco di tutte le scene: si tocca
+quella che si vuole provare e il gioco parte da li'. Serve a non rigiocare
+mezz'ora di storia ogni volta che si cambia una battuta di S6.
+
+In cima ci sono le impostazioni del giocatore finto con cui si entra: genere,
+anni in Apple, stile (quello che nel gioco si sceglie in S3) e se i pronostici
+sono gia' stati fatti. Servono perche' le scene da S3 in poi danno per scontato
+un giocatore registrato: saltandoci dentro a mani vuote, l'avatar non ha sprite
+e il recap di S6 e' una pagina bianca. Con "pronostici gia' fatti" le risposte
+vengono riempite dalla banca e il punteggio calcolato di conseguenza, cosi' S6 e
+S7 hanno qualcosa da mostrare.
+
+L'elenco delle scene **non e' scritto a mano**: si ricava seguendo i `next` a
+partire da `meta.start`, e chi resta fuori (le scene che si raggiungono solo con
+un `goto`) finisce in coda. Una scena nuova in `story.json` compare da sola.
+
+Al menu si arriva **solo** aggiungendo `?dev` all'indirizzo: dal gioco non c'e'
+nessun modo di aprirlo, quindi un giocatore non ci finisce dentro per sbaglio.
+Conviene salvarsi il link fra i preferiti.
 
 ## Pubblicare una modifica
 
@@ -354,6 +378,10 @@ schermata dei moltiplicatori, non dentro il giro delle domande. Chiudere l'app a
 meta' livello lo annulla senza consumare il tentativo — che e' il
 comportamento giusto per una prova a tempo.
 
+Peter va mostrato a `height 44%` **e `bottom 34%`**: e' un primo piano di un uomo
+seduto a un tavolino, e alla misura standard finisce quasi tutto dietro al box
+del dialogo, che e' alto cinque righe fisse.
+
 Il timer parte **quando la domanda compare**, non quando finisce di scriversi:
 per questo il testo di una domanda non passa dal typewriter. Sotto i tre secondi
 la barra diventa rossa e Peter guarda l'orologio.
@@ -421,6 +449,46 @@ caricati: `npm test` li segnala come "da convertire" invece di fallire, e il
 motore disegna un ripiego al posto loro.
 
 ## Formato e layout
+
+### Il font sta nel repo, non su Google Fonts
+
+`assets/font/press-start-2p.woff2` (SIL OFL, licenza in `assets/font/OFL.txt`).
+
+Non e' una preferenza: la richiesta a Google Fonts puo' fallire, e quando
+fallisce il browser ripiega su un monospace di sistema **largo circa la meta'**
+(0.6em per carattere contro 1em). La stessa frase passa da cinque righe a tre e
+tutte le misure dell'interfaccia diventano bugie. E' successo davvero: il box
+del dialogo era stato tarato su un ambiente dove Google Fonts non rispondeva, e
+sui telefoni veri il testo spariva sotto il bordo. Con il file nel repo il
+ripiego non esiste piu' — e il gioco funziona anche offline e nella build in
+file unico.
+
+**Chi misura qualcosa che dipende dal testo deve aspettare `document.fonts.ready`.**
+Il terminale del Mac e il nome sul badge lo fanno: rimisurano quando il font e'
+pronto, perche' la prima misura arriva quasi sempre prima.
+
+### Il box del dialogo ha un'altezza fissa
+
+Cinque righe, sempre, in tutto il gioco. Prima il box si allargava mentre la
+frase si scriveva e il personaggio dietro sembrava spostarsi a ogni battuta.
+Adesso e' un pezzo fisso dell'interfaccia: cambia il testo dentro, non la
+cornice. Il testo e' centrato in verticale e l'altezza che occupera' viene
+riservata *prima* di cominciare a scrivere, altrimenti il blocco si sposta in su
+ogni volta che compare una riga nuova — cioe' lo stesso scatto da togliere.
+
+Cinque e' il massimo che serve davvero: misurate nel browser, **col font vero**,
+tutte le 595 battute del gioco (dialoghi, opzioni, domande di pronostico e
+quiz), ne vengono 170 da una riga, 201 da due, 120 da tre, 82 da quattro e 22 da
+cinque. Cinque righe occupano il 18% dello schermo sull'iPhone piu' piccolo,
+quindi non serve rimpicciolire il testo per farcele stare.
+
+**Una battuta piu' lunga di cinque righe non manda a capo il box: sparisce sotto
+`overflow:hidden`.** E' un difetto che non si vede finche' qualcuno non gioca
+proprio quella scena, quindi `npm test` lo rifiuta e dice quale battuta
+accorciare. Il conto e' a caratteri (34 per riga, misurati 36 e tenuti stretti
+per margine) e non a pixel: il corpo del testo e' in `vw` e il box e' una
+percentuale della larghezza, quindi i caratteri per riga restano gli stessi su
+qualunque telefono — verificato identici su iPhone SE, 13 e 14 Pro Max.
 
 Il gioco e' pensato per **iPhone in verticale** (390x844 pt): il fondale occupa
 tutto lo schermo, il terzo inferiore e' area dialogo. Su schermi larghi (Safari sul
@@ -583,6 +651,25 @@ una ventina di pixel, con due tinte piatte. Un primo tentativo si accontentava
 che chiaro e scuro si alternassero spesso, e voleva cancellare i capelli bianchi
 di Peter e l'arco del lucchetto — che alternano a ogni pixel. Prima di lanciarlo
 su file nuovi conviene guardare cosa toglierebbe con `--prova`.
+
+Quando le tavole arrivano su **fondo bianco** invece che a scacchiera, la toppa
+chiusa e' bianca e `togli_scacchiera.py` non la vede (non e' una griglia). E' il
+caso dei quattro stili: puntini bianchi fra le ciocche dei capelli, chiazze
+nell'occhiello fra braccio e busto. Per quelle c'e' `togli_bianchi.py`.
+
+```bash
+python3 tools/togli_bianchi.py --controlla                 # chi ha bianco chiuso dentro
+python3 tools/togli_bianchi.py assets/stili/*.webp --anteprima shots/
+python3 tools/togli_bianchi.py assets/stili/*.webp
+```
+
+Toglie solo il bianco **quasi puro e neutro** (ogni canale >= 235, i tre canali
+entro 10 l'uno dall'altro): il bianco dipinto — la canottiera dell'Hawaiano, la
+camicia dello Showman, le scarpe della Drip, i denti — e' sempre un po' sporco
+di colore e resta dov'e'. Come per gli altri strumenti di pulizia, `--anteprima`
+salva una copia con le zone candidate in magenta: **si guarda quella** prima di
+scrivere. Non lanciarlo alla cieca su tutto `assets/`: sul lucchetto della lobby
+e sul logo dello studio il bianco e' disegno, e li' mangerebbe il soggetto.
 
 **`optimize_assets.py` e' un'altra cosa**: ricomprime *sul posto* file gia' dentro
 `assets/` (resize + quantizzazione a 64 colori con alpha preservato), utile per

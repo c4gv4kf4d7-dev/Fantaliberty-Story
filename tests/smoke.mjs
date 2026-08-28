@@ -250,6 +250,80 @@ function controllaCarosello(id, st) {
   assert.ok(st.conferma?.text, `scena ${id}: carosello irreversibile senza modale di conferma`);
 }
 
+/* ---------- 1c. le battute devono stare nel box ----------
+   Il box del dialogo ha un'altezza FISSA di tre righe (vedi #box in engine.css):
+   il testo che sfora non manda a capo il box, sparisce sotto overflow:hidden.
+   E' l'errore che non si vede finche' qualcuno non gioca quella scena.
+
+   Le righe si contano a caratteri, non a pixel: il corpo del testo e' in vw e
+   il box e' una percentuale della larghezza, quindi i caratteri per riga
+   restano gli stessi su qualunque telefono — misurati 36 identici su iPhone SE,
+   13 e 14 Pro Max.
+
+   36 e non 60: Press Start 2P e' largo 1em per carattere. La prima versione di
+   questo test diceva 60 perche' era stata calibrata dove Google Fonts non
+   rispondeva e il browser ripiegava su un monospace di sistema, largo 0.6em.
+   Con quel numero il test passava e sui telefoni veri il testo spariva sotto il
+   bordo del box. Adesso il font sta nel repo, quindi il ripiego non c'e' piu'.
+
+   Qui si tiene 34, un po' stretto, perche' il conto e' una stima e il margine
+   deve stare dalla parte giusta. */
+const PER_RIGA = 34;
+const RIGHE_MAX = 5;
+
+// il testo piu' lungo che quella battuta puo' produrre a schermo: nome lungo,
+// variante di genere piu' lunga, etichetta di una risposta al posto del segnaposto
+function testoPeggiore(t) {
+  return String(t)
+    .replace(/\{NOME\}/g, 'MASSIMILIANO')
+    .replace(/\{nome\}/g, 'Massimiliano')
+    .replace(/\{g:([^}]*)\}/g, (_, v) => v.split('|').sort((a, b) => b.length - a.length)[0])
+    .replace(/\{label:[^}]*\}/g, 'Nessun aumento, resta a 1.239 euro')
+    .replace(/\{[^}]*\}/g, 'XXXXXXXX');
+}
+
+function quanteRighe(t) {
+  let n = 1, len = 0;
+  for (const parola of testoPeggiore(t).split(/\s+/)) {
+    if (len && len + 1 + parola.length > PER_RIGA) { n++; len = parola.length; }
+    else len += (len ? 1 : 0) + parola.length;
+  }
+  return n;
+}
+
+// Gli appunti di lavorazione marcati [BOZZA] non sono battute: non vanno
+// accorciati, vanno riscritti quando si fa quella scena. Non li si controlla,
+// ma li si elenca a fine test, cosi' restano sotto gli occhi.
+const bozze = [];
+function controllaLunghezza(dove, t) {
+  if (String(t).startsWith('[BOZZA]')) { bozze.push(dove); return; }
+  const n = quanteRighe(t);
+  assert.ok(n <= RIGHE_MAX,
+    `${dove}: la battuta occupa ${n} righe, il box ne tiene ${RIGHE_MAX} — ` +
+    `accorciala. "${String(t).slice(0, 70)}..."`);
+}
+
+for (const [id, sc] of Object.entries(story.scenes)) {
+  for (const st of sc.steps) {
+    const testi = typeof st.text === 'string' ? [st.text]
+      : (st.text && typeof st.text === 'object' ? Object.values(st.text) : []);
+    for (const t of testi) controllaLunghezza(`scena ${id}`, t);
+  }
+}
+for (const [cat, c] of Object.entries(banca.categorie || {})) {
+  for (const d of [...(c.core || []), ...(c.extra || [])]) {
+    for (const op of d.opzioni || []) {
+      for (const [stile, battuta] of Object.entries(op.battute || {})) {
+        controllaLunghezza(`${d.id} / ${stile}`, battuta);
+      }
+    }
+  }
+}
+
+if (bozze.length) {
+  console.log(`appunti [BOZZA] ancora nello script (${bozze.length}): ${[...new Set(bozze)].join(', ')}`);
+}
+
 /* ---------- 1b. niente asterischi di declinazione nei dialoghi ---------- */
 // Dopo che il giocatore ha detto come rivolgersi a lui, ogni frase deve essere
 // declinata: "impalat*" a schermo e' un difetto visibile.
@@ -584,18 +658,19 @@ assert.equal(VN.state.sfacciato, false);
   assert.equal(dots().length, 4, 'quattro stili');
   assert.equal($('carnome').textContent, 'Hawaiano', 'si parte dal primo dello script');
   assert.match($('cardesc').textContent, /Non sa che ore sono/);
-  // il perk e' l'informazione che decide la scelta: deve stare sulla scheda,
-  // non aspettare il quiz
-  assert.match($('carperk').textContent, /un tentativo fallito non si conta/);
+  // Il perk e' una meccanica del quiz: sulla scheda del camerino non ci va, e
+  // lo step di S3 infatti non chiede 'etichettaPerk'. Il dato resta in
+  // story.stili per S8 — qui si controlla solo che non finisca a schermo.
+  assert.equal($('carperk').textContent, '', 'niente perk mentre ci si veste');
+  assert.equal($('carperk').style.display, 'none');
+  assert.ok($('bg').classList.contains('sfoca'), 'il camerino va fuori fuoco dietro la figura');
   assert.ok($('carImg').getAttribute('src').includes('stile_hawaiano_idle_camerino'));
 
   $('cnext').onclick({ stopPropagation() {} });
   assert.equal($('carnome').textContent, 'Showman');
-  assert.match($('carperk').textContent, /ordine libero/);
   $('cprev').onclick({ stopPropagation() {} });
   $('cprev').onclick({ stopPropagation() {} });
   assert.equal($('carnome').textContent, 'Ingegnere', 'il carosello gira');
-  assert.match($('carperk').textContent, /\+3 secondi/);
   assert.ok($('carImg').getAttribute('src').includes('stile_ingegnere_idle_camerino'));
 
   // confermare e' irreversibile: prima la modale, e "Fammi ripensare" non sceglie
@@ -613,6 +688,7 @@ assert.equal(VN.state.sfacciato, false);
   assert.equal(VN.state.stile, 'ingegnere', 'lo stile e\' scelto');
   assert.equal($('carosello').classList.contains('on'), false, 'il carosello si chiude');
   assert.equal($('boxwrap').classList.contains('carta'), false, 'e il box del dialogo torna');
+  assert.equal($('bg').classList.contains('sfoca'), false, 'e il camerino torna a fuoco');
 
   // [S3.04] Susan commenta con la testa dello stile scelto: lo sprite lo decide
   // la variabile, non uno step per valore
@@ -727,7 +803,10 @@ assert.equal(VN.state.sfacciato, false);
     VN.step();                                                 // via la battuta
     // gli eventi si intromettono a caso fra una domanda e l'altra: si tira
     // avanti finche' non ricompaiono dei bottoni (la prossima domanda, o il bivio)
-    for (let g = 0; g < 8 && !$('choices').classList.contains('on'); g++) VN.step();
+    for (let g = 0; g < 12 && !txt().includes(core[k + 1]?.q || 'entrare nel dettaglio'); g++) {
+      if ($('choices').classList.contains('on')) scegli(0);    // eventuale micro-challenge
+      else VN.step();
+    }
   }
   assert.equal(Object.keys(VN.state.picks.watch.core).length, 3, 'tutte e tre le core segnate');
 
@@ -759,6 +838,34 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   }
   if (e.platea) assert.ok(story.assets.platea[e.platea.replace(/^pla_/, '')],
     `evento personale ${e.id}: reazione "${e.platea}" non dichiarata`);
+}
+
+/* ---------- 5j. micro-eventi interattivi ----------
+   Ogni micro-evento e' una micro-challenge a tre risposte: il dato editoriale
+   resta in banca per revisione testi, ma il motore assegna a runtime una
+   permutazione opaca di +3, 0 e -3. */
+{
+  assert.equal(banca.micro_eventi.length, 5, 'cinque micro-eventi generali');
+  const visti = new Set();
+  for (const e of banca.micro_eventi) {
+    assert.equal(e.opzioni.length, 3, `${e.id}: servono esattamente 3 opzioni`);
+    assert.deepEqual([...new Set(e.opzioni.map((o) => o.editoriale))].sort((a, b) => a - b), [-3, 0, 3],
+      `${e.id}: il mapping editoriale deve contenere -3, 0 e +3 una volta`);
+    assert.ok(!/[+-]3|\\b0\\b/.test(e.testo), `${e.id}: il testo evento non deve mostrare valori numerici`);
+    e.opzioni.forEach((o) => {
+      assert.ok(!/[+-]3|\\b0\\b|bonus|malus/i.test(o.label), `${e.id}: opzione con punteggio visibile`);
+      visti.add(o.label);
+    });
+  }
+  for (const [stile, e] of Object.entries(banca.eventi_personali)) {
+    assert.equal(e.stile, stile, `${e.id}: l'evento personale dichiara lo stile corretto`);
+    assert.equal(e.opzioni.length, 3, `${e.id}: servono esattamente 3 opzioni`);
+    assert.deepEqual([...new Set(e.opzioni.map((o) => o.editoriale))].sort((a, b) => a - b), [-3, 0, 3],
+      `${e.id}: il mapping editoriale deve contenere -3, 0 e +3 una volta`);
+  }
+  const engineSrc = fs.readFileSync(path.join(ROOT, 'game/engine.js'), 'utf8');
+  assert.match(engineSrc, /mescola\(valori\.slice\(\)\)/, 'il mapping A/B/C dei micro-eventi viene mescolato a runtime');
+  assert.doesNotMatch(engineSrc, /Momentum|Chaos/i, 'non introdurre Momentum/Chaos');
 }
 
 /* ---------- 5h. S5: il keynote si chiude da solo ----------
@@ -994,7 +1101,10 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   spots()[0].onclick({ stopPropagation() {} });
   assert.ok($('npcBody').getAttribute('src').includes('chr_peter_alza_occhi'), 'al tocco si sveglia di scatto');
   assert.equal($('name').textContent, 'Peter', 'ma al tocco parla Peter');
-  assert.match(txt(), /Prima segui il keynote/);
+  assert.match(txt(), /Ti ho sentito/);
+  VN.step();
+  assert.equal($('name').textContent, 'Francesca', 'Francesca chiude la presentazione di Peter');
+  assert.match(txt(), /ancora vivo/);
   assert.equal(VN.sceneId, 'lobby', 'la zona 4 chiusa non porta al quiz');
 
   // giro completo: si torna alla tenda, e adesso ENTRA e' attivo

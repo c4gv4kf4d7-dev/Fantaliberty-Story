@@ -791,8 +791,7 @@
           "var": "stile",
           "da": "stili",
           "posa": "idle_camerino",
-          "_nota": "S3.02-S3.03. Le opzioni vengono da story.stili, non da qui: le stesse pose e gli stessi perk servono a S5 e S8. La conferma e' irreversibile — dopo, niente riscrive 'stile'.",
-          "etichettaPerk": "Al quiz:",
+          "_nota": "S3.02-S3.03. Le opzioni vengono da story.stili, non da qui: le stesse pose e gli stessi perk servono a S5 e S8. La conferma e' irreversibile — dopo, niente riscrive 'stile'. Niente 'etichettaPerk': il perk e' una meccanica del quiz e sulla scheda confondeva, si spiega a S8.",
           "conferma_label": "Sono io",
           "conferma": {
             "text": "Sei {g:sicuro|sicura}? Questo stile ti accompagna per tutta la partita. Non si cambia.",
@@ -1180,7 +1179,7 @@
               "who": "peter",
               "body": "occhi_bassi",
               "dice": "francesca",
-              "say": "Quello e' Peter. Non farci caso: prima del keynote riesce a dormire ovunque.",
+              "say": "E quello è Peter. Gestisce il quiz finale.\nNon svegliarlo: è l'unico momento della giornata in cui non può farti una domanda.",
               "hotspots": [
                 {
                   "label": "IL TAVOLINO",
@@ -1193,7 +1192,13 @@
                     "level": "pose",
                     "body": "alza_occhi"
                   },
-                  "say": "Prima segui il keynote. Poi le domande difficili."
+                  "say": "Ti ho sentito.",
+                  "after": [
+                    {
+                      "who": "francesca",
+                      "text": "Perfetto. È ancora vivo."
+                    }
+                  ]
                 }
               ]
             },
@@ -1206,7 +1211,7 @@
               "bg": "lobby_z4_quiz_aperta",
               "who": "peter",
               "body": "alza_occhi",
-              "say": "Adesso si': i pronostici sono chiusi, il tavolo e' aperto.",
+              "say": "Il keynote è andato. Adesso arriva la parte difficile.\nLe domande le faccio io.",
               "hotspots": [
                 {
                   "label": "IL QUIZ",
@@ -1263,7 +1268,8 @@
           "t": "show",
           "who": "peter",
           "body": "alza_occhi",
-          "height": "44%"
+          "height": "44%",
+          "bottom": "34%"
         },
         {
           "t": "say",
@@ -1332,7 +1338,8 @@
           "passato": "Passato: {giuste} su {n}. Vale +{mult} di moltiplicatore.",
           "ritenta": "{giuste} su {n}. Ne servivano {soglia}. Ti resta un tentativo, e domande diverse.",
           "bruciato": "{giuste} su {n}. Basta cosi': questo livello per te e' chiuso.",
-          "assorbito": "{giuste} su {n}. Guarda, facciamo che questo giro non l'ho visto. Rifallo."
+          "assorbito": "{giuste} su {n}. Guarda, facciamo che questo giro non l'ho visto. Rifallo.",
+          "bottom": "34%"
         }
       ],
       "next": "quiz"
@@ -1349,7 +1356,8 @@
           "t": "show",
           "who": "peter",
           "body": "alza_occhi",
-          "height": "44%"
+          "height": "44%",
+          "bottom": "34%"
         },
         {
           "t": "say",
@@ -1380,7 +1388,8 @@
           "t": "show",
           "who": "peter",
           "body": "applauso_ironico",
-          "height": "44%"
+          "height": "44%",
+          "bottom": "34%"
         },
         {
           "t": "say",

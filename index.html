@@ -9,12 +9,7 @@
      il browser continua a chiedere la versione vecchia degli asset -->
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <meta name="description" content="FantaLiberty: visual novel interattiva. Steve Jobs Theater, WWDC 26.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<!-- il font non deve bloccare l'avvio: si carica in parallelo e si applica appena pronto -->
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"
-      media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="./game/engine.css?v=44">
+<link rel="stylesheet" href="./game/engine.css?v=49">
 </head>
 <body>
 <div id="stage">
@@ -67,8 +62,16 @@
     <div id="hubspots"></div>
   </div>
 
-  <!-- carosello di scelta: la figura in mezzo alla scena, la scheda sotto -->
-  <div id="carosello"><img id="carImg" alt=""></div>
+  <!-- S3, la scelta dello stile. Il fondale del camerino va sfocato e scurito:
+       l'unica cosa a fuoco e' la figura. Il velo e l'alone sotto i piedi la
+       staccano dallo sfondo senza bisogno di un contorno disegnato. -->
+  <div id="carosello">
+    <div id="carvelo"></div>
+    <div id="carluce"></div>
+    <img id="carImg" alt="">
+    <button id="cprev" class="carfreccia" aria-label="Stile precedente">&#9664;</button>
+    <button id="cnext" class="carfreccia" aria-label="Stile successivo">&#9654;</button>
+  </div>
 
   <div id="boxwrap">
     <!-- quiz di Peter (S8): a che punto sei del livello e quanto tempo resta.
@@ -83,16 +86,14 @@
       <div id="hdots"></div>
       <button id="hnext" aria-label="Zona successiva">▶</button>
     </div>
+    <!-- la scheda: chi e', in una riga. Nessuna meccanica di gioco qui —
+         i perk si spiegano al quiz, non mentre ci si veste. -->
     <div id="carta">
-      <div id="carnav">
-        <button id="cprev" aria-label="Precedente">◀</button>
-        <div id="cdots"></div>
-        <button id="cnext" aria-label="Successivo">▶</button>
-      </div>
+      <div id="cdots"></div>
       <div id="carnome"></div>
       <div id="cardesc"></div>
       <div id="carperk"></div>
-      <button id="carok" class="ch">Scelgo questo</button>
+      <button id="carok">Scelgo questo</button>
     </div>
     <!-- chi parla. Per una voce in cuffia (Martha, dalla regia) accanto al nome
          compare l'icona dell'auricolare invece di uno sprite in scena -->
@@ -181,6 +182,9 @@
   <!-- dissolvenza al nero: copre il cambio di scena (Lucas -> Francesca) senza
        toccare #curtain, che serve all'intro e viene spento a ogni cambio scena -->
   <div id="nero"></div>
+
+  <!-- pannello di sviluppo: si apre solo con ?dev nell'indirizzo -->
+  <div id="dev"></div>
   <div id="flash"></div>
   <div id="loaderr">
     <div>
@@ -190,17 +194,18 @@
   </div>
 </div>
 
-<script src="./game/engine.js?v=44"></script>
+<script src="./game/engine.js?v=49"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
   var opts = {
     speed: params.get('fast') ? 0 : 36,     // ?fast=1  -> niente typewriter
-    scene: params.get('scene') || null      // ?scene=lobby -> salta a una scena (debug)
+    scene: params.get('scene') || null,     // ?scene=lobby -> salta a una scena (debug)
+    dev: params.has('dev')                  // ?dev -> menu di salto rapido, vedi README
   };
   if (params.get('reset')) { try { localStorage.removeItem('fl_nexus_save_v1'); } catch (e) {} }
 
-  var ENGINE_ATTESO = '11';   // deve combaciare con VN.engine in game/engine.js
+  var ENGINE_ATTESO = '15';   // deve combaciare con VN.engine in game/engine.js
   var partito = false;
 
   function mostraErrore(msg) {
@@ -258,7 +263,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=44', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=49', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e
