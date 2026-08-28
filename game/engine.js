@@ -30,7 +30,7 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '9',
+    engine: '10',
     story: null,
     banca: null,    // game/domande.json: domande, battute per stile, eventi, intermezzi
     backend: null,  // game/backend.json: dove spedire la schedina chiusa
@@ -401,6 +401,10 @@
     if (!(sc.steps || []).some(function (s) { return s.t === 'title' || s.t === 'boot' || s.t === 'logo'; })) {
       el.curtain.classList.remove('on', 'lights');
     }
+    // Il box del dialogo restava acceso con l'ultima battuta della scena
+    // precedente finche' non ne arrivava una nuova: si vedeva la vecchia frase
+    // sopra il fondale nuovo.
+    if (!silent) { el.boxwrap.classList.remove('in'); el.txt.textContent = ''; el.arrow.style.opacity = 0; }
     VN.scene = sc; VN.sceneId = id; VN.i = 0;
     if (sc.bg) setBg(sc.bg, sc.bgFx, sc.dissolvenza);
     atmosfera(sc);
@@ -442,12 +446,19 @@
         // restava null per sempre e il gioco si bloccava sulla riga (bug: tap
         // durante la scrittura -> game freeze). choice/input/list gia' se ne
         // proteggevano cosi'; a "say" mancava.
-        var avanzaSay = function () { pending = next; el.arrow.style.opacity = 1; };
+        // "attesa": la riga si scrive e va avanti da sola dopo N ms, senza il
+        // tap. Serve per i momenti in cui il gioco sta facendo qualcosa (il
+        // badge in stampa) e la battuta e' un'indicazione, non una replica.
+        var avanzaSay = st.attesa && VN.speed
+          ? function () { el.arrow.style.opacity = 0; setTimeout(next, st.attesa); }
+          : function () { pending = next; el.arrow.style.opacity = 1; };
+        el.boxwrap.classList.toggle('sistema', !!st.sistema);
         type(fmt(testoDi(st)), avanzaSay);
         revealUI = avanzaSay;
         return;
 
       case 'choice':
+        el.boxwrap.classList.remove('sistema');
         el.boxwrap.classList.add('in');
         setSpeaker(st.who);
         type(fmt(st.text), function () { showChoices(st); });
@@ -455,6 +466,7 @@
         return;
 
       case 'input':
+        el.boxwrap.classList.remove('sistema');
         el.boxwrap.classList.add('in');
         setSpeaker(st.who);
         type(fmt(st.text), function () { showInput(st); });
@@ -462,6 +474,7 @@
         return;
 
       case 'list':
+        el.boxwrap.classList.remove('sistema');
         el.boxwrap.classList.add('in');
         setSpeaker(st.who);
         type(fmt(st.text), function () { showList(st); });
@@ -469,6 +482,7 @@
         return;
 
       case 'badge':
+        el.boxwrap.classList.remove('sistema');
         // Il badge compare mentre Lucas dice "ecco il tuo badge": prima si
         // aspettava che finisse di scrivere e poi un altro tap. Adesso la
         // tessera entra subito, e il tap serve solo ad andare avanti.
@@ -562,6 +576,7 @@
         return next();
 
       case 'hide':
+        if (!current.who) return next();       // non c'e' nessuno: niente da far uscire
         el.npc.classList.remove('in', 'pop');
         el.npc.classList.add('out');
         current.who = null;
@@ -615,6 +630,9 @@
       case 'set':
         VN.state[st.var] = st.value;
         termSet(st.var);
+        // "BADGE IN STAMPA" lampeggia mentre la stampante lavora. Non blocca:
+        // il lampeggio deve andare *sotto* la riga d'attesa nel box, non prima.
+        if (st.lampeggia && VN.speed) lampeggia(st.var, st.lampeggia);
         return next();
 
       case 'goto':
@@ -684,17 +702,73 @@
     // Misura. Il riquadro #npc ha proporzione fissa (3/5) e l'immagine ci sta
     // dentro con object-fit:contain, quindi uno sprite largo (Francesca a
     // braccia aperte, 1536x1024) viene limitato dalla larghezza e finisce alto
-    // meta' di uno stretto (Lucas, 1162x1353) a parita' di riquadro. Il
-    // "scala" del cast compensa il ritaglio del disegno, cosi' tutti i
-    // personaggi hanno la stessa presenza in scena di Lucas.
+    // meta' di uno stretto (Lucas, 1162x1353) a parita' di riquadro.
+    //
+    // "scala" corregge il ritaglio a occhio, un valore per personaggio. Non
+    // basta quando le pose sono di tipo diverso: Francesca ha cinque mezzibusti
+    // e due primi piani di sola testa, e con una scala sola o erano giganti i
+    // primi o minuscoli i secondi. Per lei il cast dichiara "volti", la misura
+    // del viso in ogni posa, e ci pensa inquadra() a renderli tutti uguali.
     var scala = st.scala != null ? st.scala : ((c && c.scala) || 1);
     el.npc.style.height = st.height || (scala === 1 ? '' : (NPC_H * scala).toFixed(1) + '%');
     el.npc.style.bottom = st.bottom || '';
     el.npc.style.right = st.right || '';
+    inquadra(c, body, st);
 
+    el.npc.style.opacity = '';
+    el.npc.style.animation = '';
     el.npc.classList.remove('out', 'micro');
     if (st.pop) { el.npc.classList.remove('in'); void el.npc.offsetWidth; el.npc.classList.add('pop'); }
     else { el.npc.classList.remove('pop'); void el.npc.offsetWidth; el.npc.classList.add('in'); }
+  }
+
+  /* Inquadratura sul volto.
+     Il viso e' la cosa che l'occhio confronta fra un personaggio e l'altro:
+     due pose "alte uguali" sembrano diverse se una e' un mezzobusto e l'altra
+     un primo piano. Qui il riquadro viene calcolato al contrario — dalla
+     misura che il viso deve avere a schermo — cosi' ogni posa mostra la faccia
+     grande come quella di Lucas e nello stesso punto.
+
+     VOLTO_H e VOLTO_X sono presi da Lucas nella posa "idle": il metro di
+     paragone e' lui, come chiede lo script. */
+  // Misurati su Lucas nelle due pose con cui parla, "neutro" e "felice": danno
+  // gli stessi tre numeri a meno di mezzo punto percentuale, quindi sono un
+  // riferimento solido. (La prima versione aveva VOLTO_X calcolato a mano
+  // invece che misurato, ed era sbagliato: 0.664 invece di 0.734 — per questo
+  // Francesca risultava spostata a sinistra rispetto a Lucas.)
+  var VOLTO_H = 0.1246;     // altezza del viso, in frazione dell'altezza della scena
+  var VOLTO_X = 0.734;      // centro del viso, in frazione della larghezza
+  var VOLTO_Y = 0.620;      // centro del viso, in frazione dell'altezza
+  var NPC_AR = 0.6;         // proporzione del riquadro #npc (3/5), come nel CSS
+
+  function inquadra(c, posa, st) {
+    var v = c && c.volti && c.volti[posa];
+    if (!v || st.height || st.scala != null) return;   // la scena comanda: non si tocca
+    var img = el.npcBody;
+    var applica = function () {
+      el.npc.classList.add('fisso');       // niente transizione: il salto si vedrebbe
+      var w = img.naturalWidth, h = img.naturalHeight;
+      if (!w || !h) return;
+      var sh = el.stage.clientHeight, sw = el.stage.clientWidth;
+      if (!sh || !sw) return;
+      var a = w / h;
+      var altezzaImg = (VOLTO_H * sh) / v.h;           // quanto deve venire alta l'immagine
+      var boxW = a > NPC_AR ? altezzaImg * a : altezzaImg * NPC_AR;
+      var boxH = a > NPC_AR ? boxW / NPC_AR : altezzaImg;
+      // Il riquadro cambia misura da una posa all'altra (il disegno include piu'
+      // o meno corpo): se restasse ancorato in basso, il viso salterebbe su e giu'
+      // a ogni battuta e la figura sembrerebbe rimpicciolire. Ancorando il VISO su
+      // tutti e due gli assi, quello che si muove e' il corpo attorno, che si nota
+      // molto meno. Il resto della figura puo' uscire dall'inquadratura: esce anche
+      // il fianco di Lucas.
+      el.npc.style.height = boxH.toFixed(1) + 'px';
+      el.npc.style.right = (sw - (VOLTO_X * sw + (1 - v.cx) * boxW)).toFixed(1) + 'px';
+      if (v.cy != null) {
+        el.npc.style.bottom = (sh - (VOLTO_Y * sh + (1 - v.cy) * altezzaImg)).toFixed(1) + 'px';
+      }
+    };
+    if (img.complete && img.naturalWidth) applica();
+    else img.addEventListener('load', applica, { once: true });
   }
 
   function setHead(head) {
@@ -1877,6 +1951,12 @@
 
   function showChoices(st) {
     el.choices.innerHTML = '';
+    // Da quattro voci in su si passa a due colonne, se le etichette sono corte:
+    // incolonnate tutte, l'ultima finiva fuori dallo schermo. Le frasi lunghe
+    // (le risposte a Susan) restano una per riga, dove hanno spazio per andare
+    // a capo.
+    var lunga = (st.options || []).some(function (o) { return fmt(o.label).length > 18; });
+    el.choices.classList.toggle('due', !!st.colonne || (!st.colonne && !lunga && (st.options || []).length >= 4));
     (st.options || []).forEach(function (o) {
       var b = global.document.createElement('button');
       b.className = 'ch';
@@ -2062,6 +2142,14 @@
     if (row.map) v = row.map[v] != null ? row.map[v] : v;
     v = v == null ? '' : String(v);
     node.textContent = row.upper === false ? v : v.toUpperCase();
+    adattaTerminale();
+  }
+
+  function lampeggia(varName, ms) {
+    var node = $('tval_' + varName);
+    if (!node) return;
+    node.classList.add('lampeggia');
+    setTimeout(function () { node.classList.remove('lampeggia'); }, ms);
   }
 
   function termCursorOff() { var c = $('tcur'); if (c) c.style.display = 'none'; }
@@ -2085,6 +2173,30 @@
     }
 
     el.badgewrap.classList.add('in');
+    if (st.coriandoli) coriandoli(st.coriandoli === true ? 34 : st.coriandoli);
+  }
+
+  /* Coriandoli. Partono da dietro alla tessera e si aprono a ventaglio: ognuno
+     ha direzione, distanza, giro e durata suoi, cosi' non si vede la ripetizione.
+     Sono nodi usa e getta, tolti a fine corsa. */
+  var CORCOLORI = ['#f2c14e', '#e8604c', '#4bb3e8', '#6fce7c', '#fff', '#c07be0'];
+  function coriandoli(quanti) {
+    if (!el.coriandoli || !VN.speed) return;
+    el.coriandoli.innerHTML = '';
+    for (var i = 0; i < quanti; i++) {
+      var d = global.document.createElement('span');
+      d.className = 'cor';
+      var ang = caso(-Math.PI, 0);                 // verso l'alto, a ventaglio
+      var dist = caso(70, 190);
+      d.style.background = CORCOLORI[i % CORCOLORI.length];
+      d.style.setProperty('--x', (Math.cos(ang) * dist).toFixed(0) + 'px');
+      d.style.setProperty('--y', (Math.sin(ang) * dist * 0.7 + caso(90, 190)).toFixed(0) + 'px');
+      d.style.setProperty('--giro', caso(-540, 540).toFixed(0) + 'deg');
+      d.style.setProperty('--d', caso(1.1, 1.9).toFixed(2) + 's');
+      d.style.setProperty('--rit', caso(0, 0.35).toFixed(2) + 's');
+      el.coriandoli.appendChild(d);
+    }
+    setTimeout(function () { if (el.coriandoli) el.coriandoli.innerHTML = ''; }, 2600);
   }
 
   function chiudiBadge() {
@@ -2119,7 +2231,39 @@
     el.nero.classList.add('sfuma');
     void el.nero.offsetWidth;
     el.nero.classList.toggle('on', !!giu);
-    setTimeout(done, d);
+    // A buio pieno si sgombra: box del dialogo, testo e personaggio via
+    // *senza* animazione. Senza questo, quando la luce tornava si vedeva per
+    // mezzo secondo il personaggio della scena precedente che sfumava e la sua
+    // ultima battuta ancora a schermo — Lucas che ricompariva nella lobby.
+    setTimeout(function () { if (giu) sgombra(); done(); }, d);
+  }
+
+  /* Azzera l'inquadratura senza animazioni: si usa quando il cambio e' coperto
+     (dissolvenza al nero, cambio di scena). Le animazioni qui sarebbero visibili
+     appena si riapre, ed e' esattamente quello che non deve succedere. */
+  function sgombra() {
+    // Il box ha una transizione di mezzo secondo sull'opacita': togliergli "in"
+    // e basta lo lascia sfumare *dopo*, cioe' mentre la luce torna. Va spento
+    // di netto, con la transizione disattivata per un giro.
+    el.boxwrap.style.transition = 'none';
+    el.boxwrap.classList.remove('in', 'sistema');
+    void el.boxwrap.offsetWidth;
+    el.boxwrap.style.transition = '';
+
+    el.txt.textContent = '';
+    el.arrow.style.opacity = 0;
+    el.name.classList.add('hidden');
+    hideUI();
+
+    // Stessa cosa per il personaggio, con in piu' che "out" e' un @keyframes
+    // che parte da opacity:1: aggiungerlo a uno gia' invisibile lo riaccende.
+    // Qui si azzera l'animazione, non se ne mette un'altra.
+    el.npc.classList.remove('in', 'pop', 'micro', 'out');
+    el.npc.style.animation = 'none';
+    el.npc.style.opacity = '0';
+    current.who = null;
+    if (el.badgewrap) el.badgewrap.classList.remove('in');
+    if (el.coriandoli) el.coriandoli.innerHTML = '';
   }
 
   var BG_FADE = 1400;          // deve combaciare con #bg2.mostra nel CSS
@@ -2251,6 +2395,7 @@
       choices: $('choices'), inputform: $('inputform'), ti: $('ti'), tok: $('tok'),
       listform: $('listform'), tsel: $('tsel'), tselok: $('tselok'),
       badgewrap: $('badgewrap'), badgeImg: $('badgeImg'), badgeName: $('badgeName'),
+      coriandoli: $('coriandoli'),
       flash: $('flash'),
       hub: $('hub'), hubspots: $('hubspots'), hubnav: $('hubnav'),
       hprev: $('hprev'), hnext: $('hnext'), hdots: $('hdots'),
@@ -2271,6 +2416,7 @@
     el.avatar.innerHTML = '';
     el.avatar.classList.remove('on', 'entra');
     if ($('badgewrap')) $('badgewrap').classList.remove('in');
+    if ($('coriandoli')) $('coriandoli').innerHTML = '';
     if (el.nero) el.nero.classList.remove('on', 'sfuma');   // ripartenza pulita: mai il nero addosso
     hubTasti = null;
     chiudiHub();

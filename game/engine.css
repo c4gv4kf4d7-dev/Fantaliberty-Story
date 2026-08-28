@@ -81,6 +81,10 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #npc{position:absolute;right:-2%;bottom:16%;height:56%;aspect-ratio:3/5;opacity:0;z-index:1;
  filter:drop-shadow(0 10px 20px rgba(0,0,0,.55));transform:translateX(60px);
  transition:height .5s ease, bottom .5s ease}
+/* Personaggi inquadrati sul viso (vedi inquadra() nel motore): il riquadro cambia
+   misura a ogni posa e vederlo scorrere sembra un rimpicciolimento. Qui il
+   cambio e' istantaneo, sotto l'animazione d'ingresso. */
+#npc.fisso{transition:none}
 #npcBody{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
  object-position:bottom center;image-rendering:pixelated}
 #npcHead{position:absolute;left:50%;top:4%;width:34%;transform:translateX(-50%);
@@ -117,7 +121,7 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #propwrap.out{opacity:0;transform:translate(-50%,-40px) scale(.8)}
 #prop{width:100%;display:block;image-rendering:pixelated;filter:drop-shadow(0 16px 30px rgba(0,0,0,.65))}
 #screen{position:absolute;left:28.6%;top:12.6%;width:43%;height:27%;
- padding:.35em .7em;color:#0f3b34;font-size:clamp(6px,1.7vw,12px);line-height:1.25;overflow:hidden}
+ padding:.35em .7em;color:#0f3b34;font-size:clamp(5px,1.35vw,9px);line-height:1.25;overflow:hidden}
 /* padding in em, non in %: le percentuali si calcolano sulla LARGHEZZA del
    contenitore (il prop intero, ~250px), non su questo schermetto alto 74px —
    erano 15px di margine verticale, un quinto dello spazio utile. */
@@ -135,6 +139,17 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  opacity:0;transform:translate(-50%,26px) scale(.9);pointer-events:none;
  transition:opacity .5s ease, transform .6s cubic-bezier(.2,.9,.3,1)}
 #badgewrap.in{opacity:1;transform:translate(-50%,0) scale(1)}
+/* Coriandoli: partono dietro alla tessera e si aprono a ventaglio. Ogni pezzo
+   ha traiettoria, giro e durata suoi, passati come variabili dal motore. */
+#coriandoli{position:absolute;left:50%;top:40%;width:0;height:0;z-index:4;pointer-events:none}
+.cor{position:absolute;width:7px;height:11px;opacity:0;
+ animation:coriandolo var(--d,1.6s) cubic-bezier(.15,.7,.4,1) forwards;
+ animation-delay:var(--rit,0s)}
+@keyframes coriandolo{
+  0%{opacity:1;transform:translate(0,0) rotate(0) scale(.6)}
+  70%{opacity:1}
+  100%{opacity:0;transform:translate(var(--x),var(--y)) rotate(var(--giro)) scale(1)}
+}
 #badgeImg{width:100%;display:block;image-rendering:pixelated;
  filter:drop-shadow(0 14px 26px rgba(0,0,0,.6))}
 /* nessuna immagine: cornice disegnata, con la mela come glifo */
@@ -160,6 +175,9 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #badgewrap.senzaimg #badgeName{position:static;height:auto;color:#1b1b22;text-shadow:none;
  font-size:clamp(7px,2vw,13px)}
 .fv{font-weight:bold}
+/* "BADGE IN STAMPA": lampeggia mentre la stampante lavora, come un LED */
+.fv.lampeggia{animation:stampa .5s steps(1) infinite}
+@keyframes stampa{50%{opacity:.15}}
 .cur{display:inline-block;width:.55em;background:#0f3b34;animation:bl .6s steps(1) infinite}
 @keyframes bl{50%{opacity:0}}
 
@@ -168,6 +186,12 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  opacity:0;transform:translateY(18px);transition:opacity .5s ease, transform .5s ease;
  max-height:46%;display:flex;flex-direction:column}
 #boxwrap.in{opacity:1;transform:translateY(0)}
+/* Riga di sistema: non la dice nessuno, e' il gioco che avvisa ("il badge e'
+   in stampa"). Cornice tratteggiata e testo centrato, perche' si distingua da
+   una battuta di un personaggio. */
+#boxwrap.sistema #box{border-style:dashed;background:rgba(10,12,22,.82);
+ text-align:center;color:#cfd6ee}
+#boxwrap.sistema #name{display:none}
 #name{align-self:flex-start;background:#1b1f33;border:3px solid #fff;border-radius:10px;
  padding:7px 14px;color:#fff;font-size:clamp(8px,2.15vw,12px);margin-left:12px;position:relative;z-index:2;
  box-shadow:0 4px 0 rgba(0,0,0,.5);display:flex;align-items:center;gap:7px}
@@ -188,6 +212,11 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 /* ---------- scelte / input ---------- */
 #choices{margin-top:10px;display:none;flex-direction:column;gap:7px;overflow-y:auto}
 #choices.on{display:flex}
+/* Liste lunghe (i cinque dipartimenti) su due colonne: incolonnate tutte,
+   l'ultima voce finiva sotto il bordo dello schermo e non si vedeva. */
+#choices.due{display:none;grid-template-columns:1fr 1fr;gap:7px}
+#choices.due.on{display:grid}
+#choices.due .ch{font-size:clamp(7px,2vw,11px);padding:10px 9px;text-align:center}
 .ch{background:#2a3050;border:3px solid #fff;border-radius:8px;padding:11px 13px;color:#fff;
  font-family:inherit;font-size:clamp(8px,2.35vw,12px);cursor:pointer;text-align:left;
  box-shadow:0 3px 0 rgba(0,0,0,.5)}

@@ -111,9 +111,44 @@
       },
       "heads": {},
       "_nota": "Sprite unico per posa (come lucas): niente head/neck, ogni posa e' un'immagine intera.",
-      "scala": 1.75,
-      "_notaScala": "Le pose di Francesca sono busti in ritaglio largo (1536x1024): dentro il riquadro #npc vengono limitate dalla larghezza e rese alte poco piu' della meta' di Lucas. La scala le riporta alla sua stessa presenza.",
-      "scalaHub": 1.15
+      "volti": {
+        "idle": {
+          "h": 0.252,
+          "cx": 0.518,
+          "cy": 0.255
+        },
+        "benvenuto": {
+          "h": 0.304,
+          "cx": 0.515,
+          "cy": 0.266
+        },
+        "gesto_swipe": {
+          "h": 0.271,
+          "cx": 0.446,
+          "cy": 0.249
+        },
+        "indica_tenda": {
+          "h": 0.262,
+          "cx": 0.376,
+          "cy": 0.259
+        },
+        "orgogliosa": {
+          "h": 0.267,
+          "cx": 0.418,
+          "cy": 0.236
+        },
+        "ride": {
+          "h": 0.562,
+          "cx": 0.576,
+          "cy": 0.452
+        },
+        "scettica": {
+          "h": 0.516,
+          "cx": 0.577,
+          "cy": 0.443
+        }
+      },
+      "_notaVolti": "Misura del viso in ogni posa: altezza, centro orizzontale e verticale, in frazione dell'immagine. Il motore ci calcola sopra il riquadro (vedi inquadra()), cosi' il viso viene sempre grande come quello di Lucas e nello stesso punto dell'inquadratura. Serve perche' le pose non sono tutte dello stesso taglio: cinque sono mezzibusti, 'ride' e 'scettica' sono primi piani di sola testa. Ricavate con il riconoscimento dell'incarnato (vedi il commento nel motore): se arriva una posa nuova, misurarla allo stesso modo invece di stimarla a occhio."
     },
     "martha": {
       "name": "Martha",
@@ -600,15 +635,22 @@
         {
           "t": "set",
           "var": "__ok",
-          "value": "> BADGE IN STAMPA"
+          "value": "> BADGE IN STAMPA",
+          "lampeggia": 2000
         },
         {
-          "t": "wait",
-          "ms": 900
+          "t": "say",
+          "sistema": true,
+          "attesa": 2000,
+          "text": "# Attendi: il badge e' in stampa #"
         },
         {
           "t": "prop",
           "show": false
+        },
+        {
+          "t": "wait",
+          "ms": 1000
         }
       ],
       "next": "badge",
@@ -1407,15 +1449,12 @@
           "pop": true
         },
         {
-          "t": "prop",
-          "show": false
-        },
-        {
           "t": "badge",
           "prop": "badge",
           "nome": "{NOME}",
           "who": "lucas",
-          "text": "Ecco il tuo badge, {NOME}. Tienilo al collo e non perderlo: qui dentro senza quello non vai da nessuna parte."
+          "text": "Ecco il tuo badge, {NOME}. Tienilo al collo e non perderlo: qui dentro senza quello non vai da nessuna parte.",
+          "coriandoli": true
         },
         {
           "t": "say",

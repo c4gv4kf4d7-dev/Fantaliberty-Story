@@ -428,8 +428,14 @@ const term = [...$('screen').querySelectorAll('.frow')].map((d) => d.textContent
 assert.match(term[0], /NOME: FRANCO/, 'il terminale mostra i campi compilati');
 assert.equal($('tval___ok').textContent, '> BADGE IN STAMPA');
 
+// riga di sistema mentre la stampante lavora: non la dice nessuno
+assert.match(txt(), /badge e' in stampa/, 'avviso di stampa nel box');
+assert.ok($('boxwrap').classList.contains('sistema'), 'riga di sistema, senza parlante');
+VN.step();
+
 // scena benvenuto: variante di genere femminile + sprite happy
 assert.match(txt(), /^Ecco il tuo badge, FRANCO\./, 'Lucas consegna il badge');
+assert.equal($('boxwrap').classList.contains('sistema'), false, 'e qui torna a parlare Lucas');
 assert.ok($('npcBody').getAttribute('src').includes('chr_lucas_felice'), 'posa felice dopo il flash');
 
 // Lucas consegna il badge: la tessera e' gia' a schermo mentre lo dice, senza
@@ -1041,6 +1047,7 @@ scegli(0);   // store: Piazza Liberty
 scegli(0);   // dipartimento: Operation
 scegli(0);   // anzianita': 0-2 anni
 $('tsel').value = '17'; $('tsel').onchange(); $('tselok').onclick({ stopPropagation() {} });
+VN.step();   // via l'avviso di stampa
 assert.match(txt(), /^Ecco il tuo badge, LUCA\./, 'percorso rapido fino al badge');
 
 /* ---------- 7. bug: tap durante la scrittura non deve bloccare il gioco ----------
