@@ -305,8 +305,8 @@
     // Quanto resta a schermo un blocco, e quanto dura la dissolvenza, una volta
     // che il giocatore ha toccato: abbastanza per leggere, non abbastanza per
     // annoiarsi.
-    var TIENI_VELOCE = st.tieniVeloce != null ? st.tieniVeloce : 900;
-    var SFUMA_VELOCE = 200;
+    var TIENI_VELOCE = st.tieniVeloce != null ? st.tieniVeloce : 380;
+    var SFUMA_VELOCE = 150;
 
     function stop() { if (codaId) { clearTimeout(codaId); codaId = null; } }
 
@@ -361,6 +361,9 @@
         codaId = setTimeout(function () {
           if (chiuso) return;
           pending = null;
+          // l'ultimo blocco non sfuma: resta a schermo con la freccia, cosi'
+          // si guarda quanto si vuole invece di sparire nel nero
+          if (i >= blocchi.length) return attendiUltimo();
           el.curtainTxt.classList.add('sfumato');
           codaId = setTimeout(prossimo, veloce ? SFUMA_VELOCE : sfuma);
         }, veloce ? TIENI_VELOCE : (b.tieni != null ? b.tieni : 1200));

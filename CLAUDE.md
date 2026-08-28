@@ -384,9 +384,11 @@ Tre cose da non rompere:
   sfiorare lo schermo e i titoli sparivano. L'utente l'ha bocciata subito. Ora un
   tocco mette la sequenza in modalità veloce — i blocchi successivi compaiono
   già scritti e restano meno, ma **compaiono tutti** — e alla fine serve un
-  ultimo tocco per andare al countdown, così l'ultima riga si guarda quanto si
-  vuole. Verificato nel browser con tre scenari (nessun tocco, un tocco a metà,
-  tocchi continui): in tutti e tre i blocchi completati restano cinque. In jsdom
+  ultimo tocco per andare al countdown. L'ultimo blocco **non sfuma**: resta a
+  schermo con la freccia sotto, altrimenti si aspetterebbe su uno schermo vuoto.
+  Tempi tarati sulle richieste dell'utente: **~12s** senza toccare, **~6s** con
+  un tocco a metà, **~4s** toccando di continuo. Verificato nel browser con
+  quei tre scenari: in tutti e tre i blocchi completati restano cinque. In jsdom
   la sequenza a tempo non gira, quindi il test presidia il contratto sul codice
   e non il comportamento.
 - **Le sostituzioni di stringhe lunghe su questo file falliscono in silenzio.**

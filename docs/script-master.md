@@ -525,7 +525,7 @@ Indice degli id in `docs/indice-domande.md`.
 [S7.04b] TITOLI DI CODA
   Stile del cartello d'apertura: nero, testo centrato, scritto a macchina.
   Cinque blocchi che compaiono, restano e sfumano uno nell'altro — non si
-  accumulano. Vanno da soli (~15s in tutto), un tocco li salta.
+  accumulano. Vanno da soli, ~12 secondi in tutto.
 
     FANTALIBERTY / STORY
     CREATO DA / Lorenzo / Michael          (stesso peso visivo)
@@ -534,7 +534,9 @@ Indice degli id in `docs/indice-domande.md`.
     BUDGET / 30 Newton
 
   Il tocco ACCELERA, non salta: i blocchi restano tutti e cinque, solo piu'
-  veloci. Finito l'ultimo, la sequenza aspetta un ultimo tocco per il countdown.
+  veloci (~6s con un tocco a meta', ~4s toccando di continuo). L'ultimo blocco
+  NON sfuma: resta a schermo con la freccia, e un ultimo tocco porta al
+  countdown.
 
   Tono asciutto: i primi crediti seri, poi due assurdi, chiusa sui 30 Newton.
   Non aggiungere altri ruoli o battute senza chiedere.

@@ -1500,17 +1500,21 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.deepEqual(testo(blocchi[3]), ['SUPPORTO PSICOLOGICO', 'Assente']);
   assert.deepEqual(testo(blocchi[4]), ['BUDGET', '30 Newton']);
 
-  // durata complessiva: la specifica chiede fra i 10 e i 20 secondi
+  /* Durata complessiva senza tocchi. L'ultimo blocco NON sfuma — resta a schermo
+     con la freccia, da guardare — quindi le dissolvenze sono una in meno dei
+     blocchi. */
   const sfuma = passi[iTitoli].dissolvenza ?? 600;
   let ms = 0;
-  for (const b of blocchi) {
+  blocchi.forEach((b, k) => {
     for (const r of b.righe) {
       ms += (typeof r === 'string' ? r : r.text).length * 36;   // typewriter
       ms += (typeof r === 'string' ? 420 : r.pausa ?? 420);
     }
-    ms += (b.tieni ?? 1200) + sfuma;
-  }
-  assert.ok(ms > 10000 && ms < 20000, `i titoli durano ${Math.round(ms / 1000)}s, fuori da 10-20`);
+    ms += b.tieni ?? 1200;
+    if (k < blocchi.length - 1) ms += sfuma;
+  });
+  assert.ok(ms > 10000 && ms < 14000,
+    `i titoli durano ${(ms / 1000).toFixed(1)}s, fuori dai 12 chiesti`);
 
   // a velocita' zero la sequenza a tempo non parte e cede subito il turno:
   // senza, il test di percorso resterebbe appeso per quindici secondi
@@ -1543,6 +1547,10 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
     /done\(\)/, 'il tocco NON chiude la sequenza: passa al blocco dopo');
   assert.match(coda, /pending = chiudi;[\s\S]{0,80}curtainArrow\.style\.opacity = 1/,
     'finito l\'ultimo blocco si aspetta un tocco, con la freccia');
+  // e l'ultimo blocco non sfuma prima della freccia, altrimenti si aspetterebbe
+  // su uno schermo vuoto
+  assert.match(coda, /if \(i >= blocchi\.length\) return attendiUltimo\(\);\s*\n\s*el\.curtainTxt\.classList\.add\('sfumato'\)/,
+    'l\'ultimo blocco resta a schermo invece di sfumare nel nero');
 }
 
 /* ---------- 5q-bis. un cartello a schermo pieno scopre il velo nero ----------
