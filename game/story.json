@@ -119,40 +119,47 @@
         "idle": {
           "h": 0.252,
           "cx": 0.518,
-          "cy": 0.255
+          "cy": 0.255,
+          "ar": 1.1432
         },
         "benvenuto": {
           "h": 0.304,
           "cx": 0.515,
-          "cy": 0.266
+          "cy": 0.266,
+          "ar": 1.5
         },
         "gesto_swipe": {
-          "h": 0.271,
+          "h": 0.27,
           "cx": 0.446,
-          "cy": 0.249
+          "cy": 0.249,
+          "ar": 1.2496
         },
         "indica_tenda": {
           "h": 0.262,
           "cx": 0.376,
-          "cy": 0.259
+          "cy": 0.259,
+          "ar": 1.5
         },
         "orgogliosa": {
           "h": 0.267,
           "cx": 0.418,
-          "cy": 0.236
+          "cy": 0.236,
+          "ar": 1.5
         },
         "ride": {
           "h": 0.562,
           "cx": 0.576,
-          "cy": 0.452
+          "cy": 0.452,
+          "ar": 1.1524
         },
         "scettica": {
           "h": 0.516,
           "cx": 0.577,
-          "cy": 0.443
+          "cy": 0.443,
+          "ar": 1.0942
         }
       },
-      "_notaVolti": "Misura del viso in ogni posa: altezza, centro orizzontale e verticale, in frazione dell'immagine. Il motore ci calcola sopra il riquadro (vedi inquadra()), cosi' il viso viene sempre grande come quello di Lucas e nello stesso punto dell'inquadratura. Serve perche' le pose non sono tutte dello stesso taglio: cinque sono mezzibusti, 'ride' e 'scettica' sono primi piani di sola testa. Ricavate con il riconoscimento dell'incarnato (vedi il commento nel motore): se arriva una posa nuova, misurarla allo stesso modo invece di stimarla a occhio."
+      "_notaVolti": "Misura del viso in ogni posa: altezza, centro orizzontale e verticale, e proporzione dell'immagine (ar = larghezza/altezza), tutto in frazione dell'immagine. Il motore ci calcola sopra il riquadro (vedi inquadra()), cosi' il viso viene sempre grande come quello di Lucas e nello stesso punto dell'inquadratura. Serve perche' le pose non sono tutte dello stesso taglio: cinque sono mezzibusti, 'ride' e 'scettica' sono primi piani di sola testa. 'ar' e' quella che permette di calcolare il riquadro SUBITO, senza aspettare che l'immagine sia caricata: aspettarla faceva vedere per un fotogramma la figura alla misura di default, piccola. Ricavate col riconoscimento dell'incarnato (vedi il commento nel motore): se arriva una posa nuova, misurarla allo stesso modo invece di stimarla a occhio."
     },
     "peter": {
       "name": "Peter",

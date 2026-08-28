@@ -31,7 +31,7 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '16',
+    engine: '17',
     story: null,
     banca: null,    // game/domande.json: domande, battute per stile, eventi, intermezzi
     quiz: null,     // game/quiz.json: i tre livelli del quiz di Peter [S8]
@@ -749,9 +749,15 @@
     // primi o minuscoli i secondi. Per lei il cast dichiara "volti", la misura
     // del viso in ogni posa, e ci pensa inquadra() a renderli tutti uguali.
     var scala = st.scala != null ? st.scala : ((c && c.scala) || 1);
-    el.npc.style.height = st.height || (scala === 1 ? '' : (NPC_H * scala).toFixed(1) + '%');
-    el.npc.style.bottom = st.bottom || '';
-    el.npc.style.right = st.right || '';
+    // Se la posa e' fra quelle inquadrate sul viso, NON si passa dalla misura di
+    // default: la si sostituisce direttamente con quella giusta, piu' sotto.
+    // Rimettere il default in mezzo faceva vedere per un fotogramma la figura
+    // piccola, a ogni cambio di battuta.
+    if (!inquadrata(c, body, st)) {
+      el.npc.style.height = st.height || (scala === 1 ? '' : (NPC_H * scala).toFixed(1) + '%');
+      el.npc.style.bottom = st.bottom || '';
+      el.npc.style.right = st.right || '';
+    }
     inquadra(c, body, st);
 
     el.npc.style.opacity = '';
@@ -780,17 +786,27 @@
   var VOLTO_Y = 0.620;      // centro del viso, in frazione dell'altezza
   var NPC_AR = 0.6;         // proporzione del riquadro #npc (3/5), come nel CSS
 
+  // La posa e' fra quelle con il viso misurato?
+  function inquadrata(c, posa, st) {
+    return !!(c && c.volti && c.volti[posa] && !st.height && st.scala == null);
+  }
+
   function inquadra(c, posa, st) {
     var v = c && c.volti && c.volti[posa];
     if (!v || st.height || st.scala != null) return;   // la scena comanda: non si tocca
     var img = el.npcBody;
     var applica = function () {
       el.npc.classList.add('fisso');       // niente transizione: il salto si vedrebbe
-      var w = img.naturalWidth, h = img.naturalHeight;
-      if (!w || !h) return;
+      // La proporzione arriva dal cast, non dall'immagine: aspettare che
+      // l'immagine sia caricata per sapere quanto e' larga voleva dire lasciare
+      // il riquadro alla misura di default per almeno un fotogramma — ed e'
+      // quello il lampo in cui la figura si vedeva piccola. naturalWidth resta
+      // come ripiego per una posa non ancora misurata.
+      var a = v.ar || (img.naturalWidth && img.naturalHeight
+        ? img.naturalWidth / img.naturalHeight : 0);
+      if (!a) return;
       var sh = el.stage.clientHeight, sw = el.stage.clientWidth;
       if (!sh || !sw) return;
-      var a = w / h;
       var altezzaImg = (VOLTO_H * sh) / v.h;           // quanto deve venire alta l'immagine
       var boxW = a > NPC_AR ? altezzaImg * a : altezzaImg * NPC_AR;
       var boxH = a > NPC_AR ? boxW / NPC_AR : altezzaImg;
@@ -806,6 +822,10 @@
         el.npc.style.bottom = (sh - (VOLTO_Y * sh + (1 - v.cy) * altezzaImg)).toFixed(1) + 'px';
       }
     };
+    // Con "ar" nel cast si puo' fare subito, nello stesso giro in cui cambia lo
+    // sprite: il browser non disegna niente in mezzo, quindi non c'e' nessun
+    // fotogramma con la misura sbagliata.
+    if (v.ar) return applica();
     if (img.complete && img.naturalWidth) applica();
     else img.addEventListener('load', applica, { once: true });
   }
