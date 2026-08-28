@@ -563,7 +563,7 @@ assert.match($('curtainTxt').textContent, /Cupertino/);
 
 /* ---------- 5. S2: l'aggancio ---------- */
 VN.boot(story, { speed: 0, banca, quiz, scene: 'aggancio' });
-assert.match(txt(), /Ehi TU/, 'Susan urla dal palco in fondo');
+assert.match(txt(), /Ehi, tu/, 'Susan chiama dal palco in fondo');
 assert.equal($('name').textContent, 'Susan', 'nome parlante preso dal cast');
 assert.ok($('npcBody').getAttribute('src').includes('chr_susan_panico_telefoni'), 'posa di Susan referenziata');
 assert.equal(typeof $('npcBody').onerror, 'function', 'file mancante: il personaggio viene nascosto, niente immagine rotta');
@@ -579,7 +579,11 @@ assert.match(txt(), /bloccato in tangenziale/);
 VN.step();
 assert.match(txt(), /prova generale/);
 VN.step();
-assert.match(txt(), /fai l'host tu/);
+assert.match(txt(), /un piccolo problema/);
+VN.step();
+assert.match(txt(), /unico essere umano/);
+VN.step();
+assert.match(txt(), /fai l'host/);
 VN.step();
 
 // [S2.03] tre opzioni, solo tono: nessuna tocca il punteggio
@@ -604,10 +608,12 @@ assert.equal($('npc').classList.contains('micro'), false,
   'bug: la classe della reazione micro restava addosso e rendeva invisibile il personaggio dopo');
 assert.ok($('npc').classList.contains('in'), 'e il personaggio entra con la sua animazione');
 assert.match(txt(), /ultima porta a destra/, 'fondale e battuta del camerino arrivano insieme');
+VN.step();
+assert.match(txt(), /crolli il resto/, 'e Susan torna al suo di problema');
 
 // le altre due risposte non alzano il flag
 VN.boot(story, { speed: 0, banca, quiz, scene: 'aggancio' });
-for (let i = 0; i < 4; i++) VN.step();
+for (let i = 0; i < 6; i++) VN.step();
 [...$('choices').querySelectorAll('.ch')][2].onclick({ stopPropagation() {} });   // annuire in silenzio
 assert.equal(VN.state.sfacciato, false);
 
@@ -694,12 +700,13 @@ assert.equal(VN.state.sfacciato, false);
   // la variabile, non uno step per valore
   assert.ok($('npcBody').getAttribute('src').includes('chr_susan_commento_stile_ingegnere'),
     'la posa "commento_{stile}" si risolve sulla scelta');
-  assert.match(txt(), /^Una che sembra sapere quello che dice/, 'commento dello stile giusto, declinato');
+  assert.match(txt(), /^Ingegnere\. Perfetto\./, 'commento dello stile giusto');
 }
 
 /* ---------- 5e. S4: dietro le quinte ----------
    Qui succedono due cose per la prima volta: il giocatore entra in scena come
-   figura, e qualcuno parla senza esserci (Martha, dalla regia). */
+   figura, e qualcuno parla senza esserci — Susan, che da qui in poi e' la regia
+   e parla in cuffia. */
 {
   // Si entra da S3, non saltando direttamente qui: lo stile va scelto prima che
   // la scena parta, perche' e' lui a decidere lo sprite del giocatore.
@@ -738,14 +745,21 @@ assert.equal(VN.state.sfacciato, false);
   assert.equal(sip.dietro, 'palco_platea_piena');
   assert.ok($('bg').getAttribute('src').includes('palco_platea_piena'), 'si apre sul palco');
 
-  // Martha parla dalla regia: niente sprite in scena, icona e box di un altro colore
-  assert.equal($('nametxt').textContent, 'Martha');
+  // [S4.03] Susan passa in regia: niente sprite in scena, icona dell'auricolare
+  // accanto al nome e box di un altro colore. Non e' un personaggio "voce" come
+  // era Martha — e' lo step a chiedere la cuffia.
+  assert.equal($('nametxt').textContent, 'Susan');
+  assert.equal($('npc').classList.contains('out'), true, 'e non e\' piu\' in scena');
   assert.ok($('name').classList.contains('incuffia'), 'accanto al nome c\'e\' l\'auricolare');
   assert.ok($('boxwrap').classList.contains('incuffia'), 'e il box cambia colore');
-  assert.ok($('voce').getAttribute('src').includes('chr_martha_indicatore_regia'));
-  assert.match(txt(), /sono Martha, regia/);
+  assert.ok($('voce').getAttribute('src').includes('chr_indicatore_regia'));
+  assert.match(txt(), /Tra trenta secondi andiamo/);
+  VN.step();
+  assert.match(txt(), /sono io/, 'e ti avvisa che la voce in cuffia e\' la sua');
   VN.step(); VN.step();
-  assert.match(txt(), /Quando sei pronta tu/, 'ultima riga, declinata');
+  assert.match(txt(), /nessuno sa che sei il sostituto/, '[S4.04] ultimo briefing');
+  VN.step(); VN.step();
+  assert.match(txt(), /crolli il resto/, 'e torna al suo di lavoro');
 
   // e quando riprende a parlare qualcuno che c'e' davvero, la cuffia sparisce
   VN.boot(story, { speed: 0, banca, quiz, scene: 'camerino' });
@@ -765,9 +779,15 @@ assert.equal(VN.state.sfacciato, false);
   VN.boot(story, { speed: 0, banca, quiz, scene: 'keynote' });
   VN.state.genere = 'f'; VN.state.stile = 'drip'; VN.state.nome = 'Franca';
 
+  // [S5] Susan apre dalla regia con una battuta pescata dal pool
+  assert.equal($('nametxt').textContent, 'Susan');
+  assert.ok($('boxwrap').classList.contains('incuffia'), 'parla in cuffia, non e\' sul palco');
+  assert.ok(story.regia.apertura.includes(txt()), 'la battuta d\'apertura viene dal pool');
+  VN.step();
+
   // [S5.INTERMEZZO.R1/R2]: due scommesse di regia prima di cominciare
   assert.match(txt(), /chi entra per primo/, 'primo intermezzo');
-  assert.equal($('nametxt').textContent, 'Martha');
+  assert.equal($('nametxt').textContent, 'Susan');
   scegli(1);                                                   // John Ternus, val 2
   assert.equal(VN.state.punti, 2, 'gli intermezzi valgono il "val" secco');
   assert.match(txt(), /la luce per Craig/, 'secondo intermezzo');
@@ -811,9 +831,12 @@ assert.equal(VN.state.sfacciato, false);
   assert.equal(Object.keys(VN.state.picks.watch.core).length, 3, 'tutte e tre le core segnate');
 
   // [S5.BIVIO]: le facoltative si pescano QUI, non a inizio partita
-  assert.match(txt(), /entrare nel dettaglio/, 'il bivio di Martha');
+  assert.match(txt(), /entrare nel dettaglio o passiamo al prossimo argomento/, 'il bivio della regia');
   assert.equal(VN.state.pescate, null, 'prima del bivio non e\' stato pescato niente');
   scegli(0);                                                   // approfondiamo
+  // la regia commenta la scelta: e' una risposta al giocatore, non un giudizio
+  // sul pronostico, quindi qui puo' dipendere da cosa ha scelto
+  assert.match(txt(), /Perche' fermarsi quando stava andando tutto bene/, 'Susan commenta il bivio');
   assert.equal(VN.state.pescate.length, 3, 'tre facoltative pescate dal pool');
   const pool = banca.categorie.watch.extra.map((d) => d.id);
   assert.ok(VN.state.pescate.every((x) => pool.includes(x)), 'e vengono dal pool giusto');
@@ -866,6 +889,168 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   const engineSrc = fs.readFileSync(path.join(ROOT, 'game/engine.js'), 'utf8');
   assert.match(engineSrc, /mescola\(valori\.slice\(\)\)/, 'il mapping A/B/C dei micro-eventi viene mescolato a runtime');
   assert.doesNotMatch(engineSrc, /Momentum|Chaos/i, 'non introdurre Momentum/Chaos');
+
+  /* La randomizzazione non basta scriverla: se la prima opzione prendesse sempre
+     lo stesso valore, chi rigioca imparerebbe la risposta buona e i micro-eventi
+     non varrebbero piu' niente. Qui si gioca lo stesso evento tante volte e si
+     controlla che ogni posizione abbia visto tutti e tre gli esiti. */
+  const storyRnd = JSON.parse(JSON.stringify(story));
+  storyRnd.regia.probabilitaEvento = 1;
+  const vistiPerPosizione = [new Set(), new Set(), new Set()];
+  for (let giro = 0; giro < 60; giro++) {
+    const posto = giro % 3;
+    VN.clearSave();
+    VN.boot(storyRnd, { speed: 0, banca, quiz, scene: 'keynote' });
+    VN.state.genere = 'f'; VN.state.stile = 'drip'; VN.state.nome = 'Franca';
+    VN.state.eventi_sacchetto = ['MARIMBA'];
+    for (let g = 0; g < 40; g++) {
+      if (txt().includes('Marimba')) {
+        VN.step();                                             // la battuta della regia
+        [...$('choices').querySelectorAll('.ch')][posto].onclick({ stopPropagation() {} });
+        vistiPerPosizione[posto].add(VN.state.picks.micro_eventi.r.MARIMBA.p);
+        break;
+      }
+      if ($('griglia').classList.contains('on')) {
+        [...$('griglia').querySelectorAll('.gcell')].filter((c) => !c.classList.contains('fatta'))[0]
+          ?.onclick({ stopPropagation() {} });
+      } else if ($('choices').classList.contains('on')) {
+        [...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });
+      } else VN.step();
+    }
+  }
+  vistiPerPosizione.forEach((visti, i) => {
+    assert.deepEqual([...visti].sort((a, b) => a - b), [-3, 0, 3],
+      `la risposta in posizione ${i + 1} non ha visto tutti e tre gli esiti: il mapping non e' davvero casuale`);
+  });
+}
+
+
+/* ---------- 5k. la regia e' Susan, e parla in cuffia ----------
+   Martha e' stata eliminata dal progetto: il suo ruolo lo prende Susan, che pero'
+   e' un personaggio vero — in S2, S3 e S7 e' li' in scena. La cuffia quindi non
+   e' una proprieta' del personaggio ma dello step: chi parla dalla regia lo
+   dichiara con "incuffia". */
+{
+  assert.equal(story.cast.martha, undefined, 'Martha non e\' piu\' nel cast');
+  assert.ok(story.cast.susan.icona?.length, 'Susan ha l\'icona dell\'auricolare per quando e\' in regia');
+  for (const f of story.cast.susan.icona) {
+    assert.ok(fs.existsSync(path.join(ROOT, base + f)), `icona regia mancante: ${f}`);
+    assert.doesNotMatch(f, /martha/i, 'l\'icona della regia non porta piu\' il nome di Martha');
+  }
+  assert.equal(story.cast.susan.voce, undefined,
+    'Susan NON e\' un personaggio "voce": in S2, S3 e S7 e\' in scena davvero');
+  assert.equal(story.regia.chi, 'susan', 'la regia e\' Susan');
+
+  // ogni step che la fa parlare dalla regia deve chiedere la cuffia, altrimenti
+  // a schermo sembra che sia li' sul palco insieme al giocatore
+  const inRegia = ['keynote', 'argomenti', 'argomento', 'teleprompter'];
+  for (const id of inRegia) {
+    for (const st of story.scenes[id].steps) {
+      if (st.who !== 'susan') continue;
+      assert.equal(st.incuffia, true, `scena ${id}: Susan parla dalla regia, serve "incuffia"`);
+    }
+  }
+  // ...e in S2/S3 no: li' e' in scena
+  for (const id of ['aggancio', 'camerino']) {
+    for (const st of story.scenes[id].steps) {
+      assert.notEqual(st.incuffia, true, `scena ${id}: qui Susan e\' in scena, non in cuffia`);
+    }
+  }
+}
+
+/* ---------- 5l. i pool di battute della regia ----------
+   Lo script chiede che Susan non parli dopo ogni singola scelta: le sue battute
+   vengono da pool per situazione, e i tre pool degli esiti sono l'unico ritorno
+   che il giocatore riceve dopo un micro-evento. Non devono mai far capire quanto
+   vale la risposta. */
+{
+  const pool = ['apertura', 'introDomanda', 'improvvisazione', 'caos', 'critica', 'scarica'];
+  for (const k of pool) {
+    assert.ok(Array.isArray(story.regia[k]) && story.regia[k].length,
+      `story.regia.${k}: pool mancante o vuoto`);
+    for (const riga of story.regia[k]) {
+      assert.equal(typeof riga, 'string');
+      assert.doesNotMatch(riga, /[+-]\s?\d|\bbonus\b|\bmalus\b|\bpunt/i,
+        `story.regia.${k}: "${riga}" lascia trapelare il punteggio`);
+    }
+  }
+  // uno step "say" puo' pescare da un pool invece di avere il testo scritto
+  const apre = story.scenes.keynote.steps.find((st) => st.pool);
+  assert.equal(apre?.pool, 'apertura', 'S5 si apre con una battuta pescata dal pool');
+  assert.equal(apre.text, undefined, 'e senza testo fisso accanto');
+}
+
+/* ---------- 5m. il micro-evento: Susan prima, Susan dopo, mai un numero ----------
+   Il giocatore deve capire come e' andata solo da come gliela racconta la regia. */
+{
+  const scegli = (i) => [...$('choices').querySelectorAll('.ch')][i].onclick({ stopPropagation() {} });
+  const clicker = banca.micro_eventi.find((e) => e.id === 'CLICKER');
+  assert.ok(clicker.regia, 'il clicker porta la battuta della regia fuori dalla narrazione');
+  assert.doesNotMatch(clicker.testo, /Susan|Martha/, 'che quindi non e\' piu\' dentro al testo');
+
+  VN.clearSave();
+
+  // L'evento si forza invece di aspettare il 30%: qui interessa il giro, non il
+  // caso. Si lavora su una copia dello script, cosi' la probabilita' alzata non
+  // si porta dietro negli altri test.
+  const storyEvento = JSON.parse(JSON.stringify(story));
+  storyEvento.regia.probabilitaEvento = 1;
+  const conseguenze = new Set([...story.regia.improvvisazione, ...story.regia.caos, ...story.regia.critica]);
+  let visto = false;
+  for (let tentativi = 0; tentativi < 5 && !visto; tentativi++) {
+    VN.boot(storyEvento, { speed: 0, banca, quiz, scene: 'keynote' });
+    VN.state.genere = 'f'; VN.state.stile = 'drip'; VN.state.nome = 'Franca';
+    VN.state.eventi_sacchetto = ['CLICKER'];
+    VN.state.categoria = 'watch';
+    // si tira avanti finche' non compare la narrazione del clicker
+    for (let g = 0; g < 60; g++) {
+      if (txt().includes('Il clicker non risponde')) {
+        // la narrazione si legge da sola: se la battuta della regia le scrivesse
+        // sopra nello stesso istante, il giocatore non saprebbe mai cos'e'
+        // successo (ed e' quello che faceva la prima versione)
+        assert.equal($('choices').classList.contains('on'), false,
+          'prima si legge cos\'e\' successo, le risposte arrivano dopo');
+        VN.step();                                             // -> la battuta della regia
+        assert.equal($('nametxt').textContent, 'Susan', 'la regia si annuncia col nome di Susan');
+        assert.ok($('boxwrap').classList.contains('incuffia'), 'e in cuffia');
+        assert.equal(txt(), clicker.regia, 'con la battuta scritta sull\'evento');
+        const btn = [...$('choices').querySelectorAll('.ch')];
+        assert.equal(btn.length, 3, 'tre risposte');
+        const puntiPrima = VN.state.punti;
+        btn[0].onclick({ stopPropagation() {} });
+        // il ritorno e' solo narrativo: nessun numero, nessun badge
+        assert.ok(conseguenze.has(txt()), 'la conseguenza viene dai pool della regia');
+        assert.equal($('nametxt').textContent, 'Susan');
+        assert.doesNotMatch(txt(), /[+-]\s?\d|\bbonus\b|\bmalus\b/i, 'e non dice mai quanto vale');
+        const dato = VN.state.picks.micro_eventi.r.CLICKER;
+        assert.ok([3, 0, -3].includes(dato.p), 'il punteggio applicato e\' uno dei tre');
+        assert.equal(VN.state.punti, puntiPrima + dato.p, 'e finisce nel totale');
+        visto = true;
+        break;
+      }
+      if ($('griglia').classList.contains('on')) {
+        [...$('griglia').querySelectorAll('.gcell')].filter((c) => !c.classList.contains('fatta'))[0]
+          ?.onclick({ stopPropagation() {} });
+      } else if ($('choices').classList.contains('on')) scegli(0);
+      else VN.step();
+    }
+  }
+  assert.ok(visto, 'il micro-evento del clicker non e\' comparso nemmeno a probabilita\' 1');
+}
+
+/* ---------- 5n. Martha non esiste piu' da nessuna parte ----------
+   Non basta toglierla dalle scene: un id rimasto in un dato o in un asset la
+   riporterebbe dentro in silenzio. */
+{
+  const daControllare = ['game/story.json', 'game/domande.json', 'game/quiz.json',
+    'game/engine.js', 'game/engine.css', 'index.html'];
+  for (const f of daControllare) {
+    const testo = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    assert.doesNotMatch(testo, /martha/i, `${f}: c'e' ancora un riferimento a Martha`);
+  }
+  const chars = fs.readdirSync(path.join(ROOT, base, 'chars'));
+  const orfani = chars.filter((f) => /martha/i.test(f));
+  if (orfani.length) console.log(`asset di Martha rimasti, non piu' usati da nessuna scena: ${orfani.join(', ')}`);
 }
 
 /* ---------- 5h. S5: il keynote si chiude da solo ----------
@@ -911,7 +1096,7 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   /* ---------- S6: recap, modifica, blocco ---------- */
   // si arriva qui con una partita vera alle spalle: e' il momento giusto per
   // provare il recap, che senza risposte non avrebbe niente da mostrare
-  VN.step(); VN.step();                                        // le due battute di Martha
+  VN.step(); VN.step();                                        // le due battute di Susan
   assert.ok($('recap').classList.contains('on'), 'il recap si apre');
   assert.ok($('boxwrap').classList.contains('recap'), 'il box lascia spazio alla lista');
 

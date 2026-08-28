@@ -40,7 +40,7 @@ Rinominarli rompe la corrispondenza con le schedine bloccate.
 | `ALTRO.E5` | Altro | extra | — | 2 | Teaser smart glasses o Vision Pro? |
 | `ALTRO.E6` | Altro | extra | — | 2 | Un vero 'one more thing'? |
 
-## Intermezzi di regia (Martha)
+## Intermezzi di regia (Susan)
 
 Non hanno battute per stile: il personaggio risponde in cuffia, non alla platea.
 

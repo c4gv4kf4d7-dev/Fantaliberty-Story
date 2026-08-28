@@ -62,7 +62,6 @@ in scena senza toccare il codice. Finché mancano, la scena gira senza personagg
 | Lucas ✅ | sprite unico (prototipo) | — |
 | Susan | in_piedi, spinta | neutro, ansia, sorpresa, scettica, positiva |
 | Maurice | in_piedi | neutro, positivo, sorpreso |
-| Martha | in_piedi | neutro, positivo |
 | Veterano | seduto | neutro, compiaciuto, scettico |
 | Premi | in_piedi, tada | neutro, positivo |
 | Avatar giocatore | 4 file interi (`avt_a..d.png`) | segnaposto in repo |

@@ -47,6 +47,34 @@ Questo documento resta l'autorità su scene, dialoghi, struttura e formule.
 
 ---
 
+## PERSONAGGI
+
+| chi | ruolo |
+|---|---|
+| **Lucas** | accredito, S0 |
+| **Francesca** | lobby, S1 |
+| **Susan** | responsabile dell'evento, coordinamento **e regia**: S2, S3, S4, S5, S6, S7 |
+| **Peter** | il quiz finale, S8 |
+
+**Martha non esiste più.** Il ruolo della regia durante il keynote è di Susan.
+Non è un rinominamento: le battute sono riscritte sulla sua caratterizzazione.
+
+### Susan
+
+Responsabile diretta dell'evento e della regia. Competente, molto sotto
+pressione, consapevole del peso che ha addosso. Ironica come valvola di sfogo:
+diretta, rapida, concreta, e tende a scaricare ironicamente parte della pressione
+sul giocatore. **Non è cattiva né cinica, e non deve diventare una macchietta.**
+
+La comicità nasce dal contrasto fra *Susan deve far funzionare tutto* e *il
+giocatore è diventato improvvisamente un altro problema da gestire*.
+
+Da `[S4.03]` in poi Susan **non è in scena**: parla in cuffia dalla regia. A
+schermo questo si vede dall'icona dell'auricolare accanto al nome e dal box di un
+altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprite.
+
+---
+
 ## INDICE SCENE
 
 | ID | Scena |
@@ -205,16 +233,22 @@ Questo documento resta l'autorità su scene, dialoghi, struttura e formule.
 ```
 [S2.01] Ingresso in sala (post-transizione tenda)
   Asset: bg_sala_ingresso_superiore + chr_susan_panico_telefoni (piccola, in fondo)
-  SUSAN (urlando): "Ehi TU! Sì, tu! Scendi!"
+  SUSAN: "Ehi, tu! Sì, proprio tu. Vieni qui."
   → transizione verso il palco (fade o parallax opzionale) → [S2.02]
 
 [S2.02] SUSAN — dialogo (forma neutra, nessun indirizzo di genere)
   Asset: bg_sala_ingresso_superiore (ravvicinata) + chr_susan_mani_capelli
-  "Ascolta. Il CEO è bloccato in tangenziale, no in autostrada... insomma
-   è fermo. Tra quaranta minuti c'è la prova generale, con la regia, le
-   luci, i grafici, tutto. Se non la facciamo, stasera non si va in onda.
-   Tu sei l'unico essere umano in questa sala. Congratulazioni: fai
-   l'host tu."
+  "Ascolta. Il CEO è bloccato in tangenziale, no in autostrada...
+   insomma è fermo.
+
+   Tra quaranta minuti abbiamo la prova generale: regia, luci, grafici,
+   tutto. E senza di lui non si fa niente.
+
+   Quindi abbiamo un piccolo problema.
+
+   Tu sei l'unico essere umano qui dentro...
+
+   Congratulazioni: fai l'host."
   → [S2.03]
 
 [S2.03] SCELTA — SOLO TONO, nessun effetto su stato o punteggio
@@ -229,6 +263,7 @@ Questo documento resta l'autorità su scene, dialoghi, struttura e formule.
   Tap 1: "Ottimo, hai detto sì."
   Tap 2: "Camerino, ultima porta a destra. Hai quattro minuti e ne hai
           già persi due."
+  Tap 3: "Vai. Io intanto provo a evitare che crolli il resto."
   → [S3.01]
 ```
 
@@ -242,8 +277,8 @@ più avanti in `[S5]`. Salvare in `run.flags.sfacciato_s2 = true/false`.
 ```
 [S3.01] SUSAN — dialogo
   Asset: bg_camerino + chr_susan_guarda_orologio
-  "Scegli il tuo stile e cambiati. Veloce, la platea perdona tutto tranne
-   l'esitazione."
+  "Scegli il tuo stile e cambiati. Veloce. Ho una prova generale da
+   salvare e tu sei ufficialmente il mio problema numero due."
   → [S3.02]
 
 [S3.02] SCHERMATA STILE — carosello, 4 opzioni
@@ -271,10 +306,13 @@ più avanti in `[S5]`. Salvare in `run.flags.sfacciato_s2 = true/false`.
 [S3.04] SUSAN — commento, varia SOLO in base a run.style
   Asset: bg_camerino + chr_susan_commento_stile (testa tagliata corrispondente
     allo stile, dallo sprite sheet a 4 teste)
-  hawaiano  → "...coraggioso/a. Speriamo tu sia sveglio/a quanto sei rilassato/a."
-  showman   → "Wow... sembri essere nato/a per questo..."
-  drip      → "Capisco la metà di quello che dici, ma sono certa che andrà bene."
-  ingegnere → "Uno/a che sembra sapere quello che dice. Basta e avanza."
+  hawaiano  → "Ok. Relax. Ottimo. Proprio quello che mi serviva in una
+               situazione del genere."
+  showman   → "Perfetto. Uno che non avrà problemi a parlare. Il problema
+               sarà farlo smettere."
+  drip      → "Va bene. Non ho idea di cosa significhi, ma evidentemente tu sì."
+  ingegnere → "Ingegnere. Perfetto. Finalmente qualcuno che può spiegarmi
+               perché tutto sta andando storto."
   → [S4.01]
 ```
 
@@ -297,12 +335,21 @@ più avanti in `[S5]`. Salvare in `run.flags.sfacciato_s2 = true/false`.
   "Le luci sono calde. Non guardare in alto. Vai."
   → effetto sipario (split animato di bg_palco_sipario_chiuso) → [S4.03]
 
-[S4.03] MARTHA — prima battuta in cuffia
+[S4.03] SUSAN — passa in regia, prima battuta in cuffia
   Asset: bg_palco_sipario_chiuso → fx_apertura_sipario → bg_palco_platea_piena
-         + chr_martha_indicatore_regia + stile_X_idle_palco
-  "Ciao, sono Martha, regia. Ti sento bene, tu senti me. Non esistono
-   risposte sbagliate, esistono solo risposte che qualcuno ha raccontato
-   con poca sicurezza. Quando sei pronto/a tu."
+         + chr_indicatore_regia + stile_X_idle_palco
+  "Ok. Tra trenta secondi andiamo."
+  (pausa)
+  "Se senti qualcuno parlare nell'auricolare, sono io.
+   Se senti qualcun altro, probabilmente è un problema."
+  "Le luci sono calde. Non guardare in alto.
+   E soprattutto, se qualcosa va storto... continua a parlare."
+
+[S4.04] SUSAN — ultimo briefing
+  "Ricordati una cosa: nessuno sa che sei il sostituto."
+  (pausa)
+  "Quindi, tecnicamente, non puoi deludere nessuno."
+  "Vai. Io intanto provo a evitare che crolli il resto."
   → [S5.INTERMEZZO.R1]
 ```
 
@@ -315,7 +362,7 @@ più avanti in `[S5]`. Salvare in `run.flags.sfacciato_s2 = true/false`.
 ```
 [S5.INTERMEZZO.R1] → intermezzo di regia R1
 [S5.INTERMEZZO.R2] → intermezzo di regia R2
-  Asset: bg_palco_platea_piena + chr_martha_indicatore_regia + stile_X_idle_palco
+  Asset: bg_palco_platea_piena + chr_indicatore_regia + stile_X_idle_palco
   ↓
 [S5.HUB] GRIGLIA 3 MACROARGOMENTI, ordine libero
   Asset: bg_palco_schermo_categorie + obj_icone_categorie (stato attiva/
@@ -328,11 +375,14 @@ Entrando in un macroargomento: tutte le CORE in ordine fisso, sequenza
 obbligata, nessuna scelta di rumor → [S5.BIVIO]
 
 [S5.BIVIO] dopo l'ultima core
-  MARTHA: "Siamo in tempo. Vuoi entrare nel dettaglio o passiamo al prossimo?"
-  APPROFONDISCI → pesca 3 facoltative a caso dal pool della categoria
+  SUSAN: "Siamo in tempo. Vuoi entrare nel dettaglio o passiamo al prossimo
+          argomento?"
+  APPROFONDISCI → SUSAN: "Certo. Perché fermarsi quando stava andando tutto
+    bene." → pesca 3 facoltative a caso dal pool della categoria
     (pescate ORA, non a inizio partita: chi rigioca in privato non può
     mapparle) → esegui le 3 → intermezzo → torna a [S5.HUB]
-  PASSA AL PROSSIMO → intermezzo → torna a [S5.HUB]
+  PASSA AL PROSSIMO → SUSAN: "Ottima scelta. Una cosa in meno da gestire."
+    → intermezzo → torna a [S5.HUB]
 
 Tutti e 3 i macroargomenti completati → [S6.01]
 ```
@@ -345,7 +395,8 @@ Tutti e 3 i macroargomenti completati → [S6.01]
   categoria attiva) + stile_X_annuncio / stile_X_indica_schermo (alternati a
   caso) + reazione platea (assegnata a caso, MAI legata alla risposta)
 
-  1. MARTHA introduce la domanda (riga generica, es. "Tocca a te.")
+  1. SUSAN introduce la domanda dalla regia (riga corta, dal pool
+     `regia.introDomanda`: "Tocca a te.", "Vai.", "Slide su."...)
   2. Card con le opzioni (2-4)
   3. Il giocatore sceglie → run.picks[categoria][core|extra][ID]
   4. Il personaggio annuncia alla platea con la battuta del suo stile
@@ -364,6 +415,26 @@ Tutti e 3 i macroargomenti completati → [S6.01]
 > il gioco suggerisce le risposte e falsa i pronostici. Il quiz di Peter `[S8]` è
 > l'eccezione dichiarata: lì il feedback giusto/sbagliato è corretto, perché le
 > domande hanno risposte oggettive.
+
+## Le battute di Susan durante il keynote
+
+Susan **non parla dopo ogni singola scelta**: sarebbe rumore, e la farebbe
+sembrare un commentatore invece che una che sta lavorando. Le sue battute stanno
+in **pool per situazione** (`story.regia` in `game/story.json`) e escono nei
+punti dove servono:
+
+| pool | quando esce |
+|---|---|
+| `apertura` | una volta sola, a inizio `[S5]` |
+| `introDomanda` | riga corta prima di ogni domanda ("Tocca a te.", "Slide su.") |
+| `scarica` | quando parte un micro-evento che non ha una sua battuta scritta |
+| `improvvisazione` | conseguenza di un micro-evento andato bene |
+| `caos` | conseguenza di un micro-evento neutro |
+| `critica` | conseguenza di un micro-evento andato male |
+
+I tre pool di conseguenza sono l'**unico** ritorno che il giocatore riceve dopo
+un micro-evento. Non devono mai far capire quanto vale la risposta: niente
+numeri, niente "bene"/"male" espliciti, solo come Susan racconta com'è andata.
 
 ## Micro-eventi generali, eventi personali, intermezzi
 
@@ -389,10 +460,10 @@ Indice degli id in `docs/indice-domande.md`.
 # [S6] TELEPROMPTER / RECAP
 
 ```
-[S6.01] MARTHA
-  Asset: bg_palco_luci_calate + chr_martha_indicatore_regia + stile_X_idle_palco
+[S6.01] SUSAN
+  Asset: bg_palco_luci_calate + chr_indicatore_regia + stile_X_idle_palco
   "Ultimo giro. Da adesso non si torna indietro. Prenditi il tempo che vuoi.
-   Nessuno ha fretta." (pausa) "Susan ha fretta. Ma nessun altro."
+   Nessuno ha fretta." (pausa) "Io sì. Ma fai con calma."
   → [S6.02]
 
 [S6.02] SCHERMATA RECAP
@@ -423,9 +494,9 @@ Indice degli id in `docs/indice-domande.md`.
   Asset: bg_finale_porta_illuminata + fx_fascio_luce_porta
          + chr_ceo_sagoma → (dopo 2s) chr_ceo_pollice_su
 
-[S7.03] MARTHA — ultima battuta
-  Asset: stessa inquadratura + chr_martha_indicatore_regia
-  "Regia a host: bella prova. Ci vediamo tra poco per quella vera."
+[S7.03] SUSAN — ultima battuta
+  Asset: stessa inquadratura + chr_indicatore_regia
+  "Bella prova. Ci vediamo tra poco per quella vera."
 
 [S7.04] Nero
 
@@ -561,7 +632,7 @@ fasce sempre uguale: scena 55% · dialogo 25% · azioni 20% (zona pollice).
 
 ## UI senza asset grafici (solo codice/CSS)
 
-Box dialogo (variante colore per Martha) · bottone scelta · navigazione lobby
+Box dialogo (variante colore per la regia) · bottone scelta · navigazione lobby
 (frecce+dot) · hotspot pulsante · carosello scelta stile · card domanda ·
 schermata recap · modale conferma · timer domanda · badge moltiplicatore quiz ·
 banner notifica fantasma · countdown finale · card "bentornato".

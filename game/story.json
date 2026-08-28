@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "FantaLiberty — Nexus",
-    "version": "0.12.0",
+    "version": "0.13.0",
     "start": "arrivo",
     "assetBase": "assets/",
     "genderVar": "genere",
@@ -94,7 +94,11 @@
         "commento_ingegnere": "chars/chr_susan_commento_stile_ingegnere.webp"
       },
       "heads": {},
-      "_nota": "Sprite unico per posa (come lucas/francesca): niente head/neck. Le quattro pose commento_* vengono dal foglio chr_susan_commento_stile, tagliato in ordine drip, hawaiano, showman, ingegnere: in S3 si mostra quella che corrisponde a run.stile."
+      "_nota": "Sprite unico per posa (come lucas/francesca): niente head/neck. Le quattro pose commento_* vengono dal foglio chr_susan_commento_stile, tagliato in ordine drip, hawaiano, showman, ingegnere: in S3 si mostra quella che corrisponde a run.stile. Susan e' anche la regia: da S4 in poi parla in cuffia e li' non ha uno sprite in scena, ma l'icona dell'auricolare accanto al nome. Non e' un personaggio di sola voce — in S2, S3 e S7 e' li' davanti — quindi la cuffia la chiede il singolo step con \"incuffia\": true.",
+      "icona": [
+        "chars/chr_indicatore_regia_1.webp",
+        "chars/chr_indicatore_regia_2.webp"
+      ]
     },
     "francesca": {
       "name": "Francesca",
@@ -149,17 +153,6 @@
         }
       },
       "_notaVolti": "Misura del viso in ogni posa: altezza, centro orizzontale e verticale, in frazione dell'immagine. Il motore ci calcola sopra il riquadro (vedi inquadra()), cosi' il viso viene sempre grande come quello di Lucas e nello stesso punto dell'inquadratura. Serve perche' le pose non sono tutte dello stesso taglio: cinque sono mezzibusti, 'ride' e 'scettica' sono primi piani di sola testa. Ricavate con il riconoscimento dell'incarnato (vedi il commento nel motore): se arriva una posa nuova, misurarla allo stesso modo invece di stimarla a occhio."
-    },
-    "martha": {
-      "name": "Martha",
-      "voce": true,
-      "icona": [
-        "chars/chr_martha_indicatore_regia_1.webp",
-        "chars/chr_martha_indicatore_regia_2.webp"
-      ],
-      "bodies": {},
-      "heads": {},
-      "_nota": "Nel manifest: 'nessun corpo, solo icona'. Parla dalla regia, quindi niente sprite in scena — accanto al nome lampeggia l'auricolare a due frame e il box cambia colore. chr_martha_ritratto_regia serve solo al finale (S7), in un riquadro stile monitor."
     },
     "peter": {
       "name": "Peter",
@@ -689,7 +682,7 @@
         {
           "t": "say",
           "who": "susan",
-          "text": "Ehi TU! Si', tu! Scendi!"
+          "text": "Ehi, tu! Si', proprio tu. Vieni qui."
         },
         {
           "t": "carrellata",
@@ -714,12 +707,22 @@
         {
           "t": "say",
           "who": "susan",
-          "text": "Tra quaranta minuti c'e' la prova generale. Con la regia, le luci, i grafici, tutto. Se non la facciamo, stasera non si va in onda."
+          "text": "Tra quaranta minuti abbiamo la prova generale: regia, luci, grafici, tutto. E senza di lui non si fa niente."
         },
         {
           "t": "say",
           "who": "susan",
-          "text": "Tu sei l'unico essere umano in questa sala. Congratulazioni: fai l'host tu."
+          "text": "Quindi abbiamo un piccolo problema."
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "text": "Tu sei l'unico essere umano qui dentro..."
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "text": "Congratulazioni: fai l'host."
         },
         {
           "t": "choice",
@@ -764,6 +767,11 @@
           "t": "say",
           "who": "susan",
           "text": "Camerino, ultima porta a destra. Hai quattro minuti e ne hai gia' persi due."
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "text": "Vai. Io intanto provo a evitare che crolli il resto."
         }
       ],
       "next": "camerino"
@@ -784,7 +792,7 @@
         {
           "t": "say",
           "who": "susan",
-          "text": "Scegli il tuo stile e cambiati. Veloce, la platea perdona tutto tranne l'esitazione."
+          "text": "Scegli il tuo stile e cambiati. Veloce. Ho una prova generale da salvare e tu sei ufficialmente il mio problema numero due."
         },
         {
           "t": "carosello",
@@ -814,10 +822,10 @@
           "who": "susan",
           "by": "stile",
           "text": {
-            "hawaiano": "...{g:coraggioso|coraggiosa}. Speriamo tu sia {g:sveglio|sveglia} quanto sei {g:rilassato|rilassata}.",
-            "showman": "Wow... sembri essere {g:nato|nata} per questo...",
-            "drip": "Capisco la meta' di quello che dici, ma sono certa che andra' bene.",
-            "ingegnere": "{g:Uno|Una} che sembra sapere quello che dice. Basta e avanza.",
+            "hawaiano": "Ok. Relax. Ottimo. Proprio quello che mi serviva in una situazione del genere.",
+            "showman": "Perfetto. Uno che non avra' problemi a parlare. Il problema sara' farlo smettere.",
+            "drip": "Va bene. Non ho idea di cosa significhi, ma evidentemente tu si'.",
+            "ingegnere": "Ingegnere. Perfetto. Finalmente qualcuno che puo' spiegarmi perche' tutto sta andando storto.",
             "*": "Bene. Adesso muoviti, che ci aspettano."
           }
         }
@@ -909,18 +917,39 @@
         },
         {
           "t": "say",
-          "who": "martha",
-          "text": "Ciao, sono Martha, regia. Ti sento bene, tu senti me."
+          "who": "susan",
+          "incuffia": true,
+          "text": "Ok. Tra trenta secondi andiamo."
         },
         {
           "t": "say",
-          "who": "martha",
-          "text": "Non esistono risposte sbagliate. Esistono solo risposte che qualcuno ha raccontato con poca sicurezza."
+          "who": "susan",
+          "incuffia": true,
+          "text": "Se senti qualcuno parlare nell'auricolare, sono io.\nSe senti qualcun altro, probabilmente e' un problema."
         },
         {
           "t": "say",
-          "who": "martha",
-          "text": "Quando sei {g:pronto|pronta} tu."
+          "who": "susan",
+          "incuffia": true,
+          "text": "Le luci sono calde. Non guardare in alto.\nE soprattutto, se qualcosa va storto... continua a parlare."
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "incuffia": true,
+          "text": "Ricordati una cosa: nessuno sa che sei il sostituto."
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "incuffia": true,
+          "text": "Quindi, tecnicamente, non puoi deludere nessuno."
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "incuffia": true,
+          "text": "Vai. Io intanto provo a evitare che crolli il resto."
         }
       ],
       "next": "keynote"
@@ -928,19 +957,27 @@
     "keynote": {
       "title": "S5 — Il keynote",
       "bg": "palco_platea_piena",
-      "_nota": "[S5.INTERMEZZO.R1] e R2 prima del primo macroargomento: Martha scommette con te mentre la sala si scalda.",
+      "_nota": "[S5]. Susan apre dalla regia (una battuta pescata da regia.apertura), poi [S5.INTERMEZZO.R1] e R2 mentre la sala si scalda.",
       "steps": [
         {
           "t": "io",
           "posa": "idle_palco"
         },
         {
-          "t": "intermezzo",
-          "who": "martha"
+          "t": "say",
+          "who": "susan",
+          "incuffia": true,
+          "pool": "apertura"
         },
         {
           "t": "intermezzo",
-          "who": "martha"
+          "who": "susan",
+          "incuffia": true
+        },
+        {
+          "t": "intermezzo",
+          "who": "susan",
+          "incuffia": true
         }
       ],
       "next": "argomenti"
@@ -959,9 +996,10 @@
           "var": "categoria",
           "da": "argomenti",
           "goto": "argomento",
-          "who": "martha",
+          "who": "susan",
           "text": "Tre blocchi. Scegli tu da dove partire, io ti seguo.",
-          "etichettaFatta": "fatto"
+          "etichettaFatta": "fatto",
+          "incuffia": true
         }
       ],
       "next": "teleprompter"
@@ -969,7 +1007,7 @@
     "argomento": {
       "title": "S5 — Pronostici",
       "bg": "palco_platea_piena",
-      "_nota": "Un macroargomento: tutte le core in sequenza fissa, poi il bivio di Martha che pesca 3 facoltative dal pool, poi un intermezzo e si torna alla griglia.",
+      "_nota": "Un macroargomento: tutte le core in sequenza fissa, poi il bivio della regia che pesca 3 facoltative dal pool, poi un intermezzo e si torna alla griglia. Da qui in poi Susan parla sempre in cuffia: e' in regia, non sul palco.",
       "steps": [
         {
           "t": "io",
@@ -986,23 +1024,29 @@
         {
           "t": "domande",
           "set": "core",
-          "who": "martha"
+          "who": "susan",
+          "incuffia": true
         },
         {
           "t": "bivio",
-          "who": "martha",
-          "text": "Siamo in tempo. Vuoi entrare nel dettaglio o passiamo al prossimo?",
+          "who": "susan",
+          "text": "Siamo in tempo. Vuoi entrare nel dettaglio o passiamo al prossimo argomento?",
           "approfondisci": "Entriamo nel dettaglio",
-          "passa": "Passiamo al prossimo"
+          "passa": "Passiamo al prossimo",
+          "incuffia": true,
+          "dopoApprofondisci": "Certo. Perche' fermarsi quando stava andando tutto bene.",
+          "dopoPassa": "Ottima scelta. Una cosa in meno da gestire."
         },
         {
           "t": "domande",
           "set": "extra",
-          "who": "martha"
+          "who": "susan",
+          "incuffia": true
         },
         {
           "t": "intermezzo",
-          "who": "martha"
+          "who": "susan",
+          "incuffia": true
         },
         {
           "t": "prop",
@@ -1026,17 +1070,19 @@
         },
         {
           "t": "say",
-          "who": "martha",
-          "text": "Ultimo giro. Da adesso non si torna indietro. Prenditi il tempo che vuoi, nessuno ha fretta."
+          "who": "susan",
+          "incuffia": true,
+          "text": "Ultimo giro. Da adesso non si torna indietro. Prenditi il tempo che vuoi.\nNessuno ha fretta."
         },
         {
           "t": "say",
-          "who": "martha",
-          "text": "Susan ha fretta. Ma nessun altro."
+          "who": "susan",
+          "incuffia": true,
+          "text": "Io si'. Ma fai con calma."
         },
         {
           "t": "recap",
-          "who": "martha",
+          "who": "susan",
           "da": "argomenti",
           "text": "Rileggi tutto. Tocca una riga per cambiarla.",
           "daFare": "Facoltativa non giocata",
@@ -1046,7 +1092,8 @@
             "si": "Si', blocco tutto",
             "no": "Fammi rileggere"
           },
-          "goto": "finale"
+          "goto": "finale",
+          "incuffia": true
         }
       ]
     },
@@ -1231,30 +1278,6 @@
           ]
         }
       ]
-    },
-    "backstage": {
-      "title": "Atto 4 — Backstage / regia",
-      "bg": "sala_teatro",
-      "steps": [
-        {
-          "t": "hide"
-        },
-        {
-          "t": "show",
-          "who": "martha"
-        },
-        {
-          "t": "say",
-          "who": "martha",
-          "text": "[BOZZA] Cuffie, microfono, tre minuti. Qui si decide come va lo show: le tue previsioni sul keynote."
-        },
-        {
-          "t": "say",
-          "who": "martha",
-          "text": "[BOZZA] (qui va il blocco previsioni FantaLiberty. Regola: le reazioni degli NPC e della platea seguono il TONO della risposta, mai il contenuto del pronostico.)"
-        }
-      ],
-      "next": "finale"
     },
     "quiz": {
       "title": "S8 — Il quiz di Peter",
@@ -1473,8 +1496,9 @@
         },
         {
           "t": "say",
-          "who": "martha",
-          "text": "Regia a host: bella prova. Ci vediamo tra poco per quella vera."
+          "who": "susan",
+          "text": "Bella prova. Ci vediamo tra poco per quella vera.",
+          "incuffia": true
         },
         {
           "t": "hide"
@@ -1730,7 +1754,13 @@
     }
   },
   "regia": {
+    "_nota": "La regia e' Susan. Durante il keynote non e' in scena: parla in cuffia, quindi gli step che la fanno parlare da qui chiedono \"incuffia\". Le battute stanno in pool per situazione e non in fila nello script: cosi' non dice sempre le stesse cose, e soprattutto non parla dopo ogni singola scelta — i pool situazionali escono solo sui micro-eventi.",
+    "chi": "susan",
     "probabilitaEvento": 0.3,
+    "apertura": [
+      "Ok. Ci siamo.",
+      "Respira. Non troppo, pero'. Abbiamo tempi stretti."
+    ],
     "introDomanda": [
       "Tocca a te.",
       "Vai.",
@@ -1739,6 +1769,23 @@
       "Questa la sentono tutti.",
       "Quando vuoi.",
       "Slide su."
+    ],
+    "_nota_esiti": "I tre pool qui sotto sono la conseguenza di un micro-evento, uno per esito. Il giocatore non vede numeri: capisce come e' andata solo da come gliela racconta Susan. Non aggiungere qui niente che dica quanto vale.",
+    "improvvisazione": [
+      "Bravissimo. Hai appena improvvisato e nessuno se n'e' accorto.\nCredo.",
+      "Ok...\nSta funzionando.\nNon dirlo ad alta voce. Porta sfortuna."
+    ],
+    "caos": [
+      "Ok. Perfetto.\nNon era perfetto. Ma andiamo avanti.",
+      "Piccolo problema.\nQuando dico piccolo, intendo che per ora non lo vedono da casa."
+    ],
+    "critica": [
+      "Non preoccuparti. E' tutto sotto controllo.\nNon il mio controllo, ma qualcuno lo controlla.",
+      "Va bene. Va bene.\nSto gia' pensando a come sistemarla. Tu intanto continua a parlare."
+    ],
+    "scarica": [
+      "Vai. Gestiscila tu. Io sto gia' gestendo il resto.",
+      "Questa te la lascio. Ho le mani occupate."
     ]
   }
 }

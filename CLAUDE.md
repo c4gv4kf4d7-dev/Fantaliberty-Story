@@ -107,7 +107,7 @@ scene** al nome giusto.
 | `francesca` | Francesca | 7 pose, tutte collegate |
 | `susan` | Susan | 12 pose collegate, comprese le 4 `commento_*` (ordine confermato dall'utente: 1 drip, 2 hawaiano, 3 showman, 4 ingegnere), usate in S3 |
 | `peter` (ex `veterano`) | Peter | 6 pose, tutte collegate. Lo stato *dorme finché `locked` è falso, si sveglia dopo* **è modellato nella lobby** (zona 4, due varianti con `when`); le altre quattro pose (`annuisce`, `scuote_testa`, `guarda_orologio`, `applauso_ironico`) sono il quiz di S8. Tutte a `height 44%` **e `bottom 34%`**: è seduto a un tavolino in primo piano, non è una figura intera, e con il box del dialogo alto cinque righe alla misura standard gli resta fuori solo un braccio |
-| `martha` | Martha | **Voce, non personaggio**: `voce: true` + `icona` a 2 frame, come chiede il manifest. Parla in S4 dalla regia — icona dell'auricolare accanto al nome e box di un altro colore, nessuno sprite in scena. I 3 file `@3x` del segnaposto non esistono più. `chr_martha_ritratto_regia` resta da collegare al finale (S7) |
+| ~~`martha`~~ | — | **Eliminata su richiesta dell'utente.** Il ruolo della regia è passato a Susan, riscrivendo le battute sulla sua caratterizzazione — non con un search/replace. L'icona dell'auricolare era generica ed è stata rinominata `chr_indicatore_regia_*`: ora è di Susan. `chr_martha_ritratto_regia` è rimasto nel repo ma non lo usa più nessuno (segnalato da `npm test`) |
 | ~~`premi`~~ | — | **Eliminato con S7.** Non esiste un NPC "Premi" nel manifest: la sezione premi è gestita da Francesca in zona 3 (`chr_francesca_orgogliosa`). Nessuno sprite è mai stato consegnato per `premi`. Prima di cancellarlo controlla che la scena `premi` in `story.json` non serva ancora come segnaposto di flusso |
 
 ## Lo script master v4.0 e i due strati del lavoro
@@ -180,7 +180,7 @@ Ordine dei lavori e stato:
 | **S1 lobby** | **fatto**: hub a 4 zone con swipe, hotspot, zona 4 condizionata a `locked` |
 | **S2 l'aggancio** | **fatto**: scena `aggancio`, con il sipario della tenda e la carrellata di discesa |
 | **S3 camerino** | **fatto**: carosello dei 4 stili e conferma irreversibile, commento di Susan per stile. Rifatto a livello visivo (vedi sotto) |
-| **S4 dietro le quinte** | **fatto**: il giocatore entra in scena (step `io`), il sipario del palco riusa lo step di S2, Martha entra come voce in cuffia |
+| **S4 dietro le quinte** | **fatto**: il giocatore entra in scena (step `io`), il sipario del palco riusa lo step di S2, Susan passa in regia e da lì in poi parla in cuffia |
 | **S5 keynote** | **fatto**: griglia a 3 macroargomenti, core in sequenza, bivio che pesca 3 facoltative, battuta per stile, micro-eventi ed evento personale, intermezzi, punteggio |
 | **S6 teleprompter** | **fatto**: recap modificabile, blocco irreversibile, invio a Supabase (chiave anon configurata e verificata dal vivo) |
 | **S7 finale** | **fatto**: la porta a tre fotogrammi, il countdown persistente, la card da salvare |
@@ -279,9 +279,13 @@ carosello degli avatar componibili è stato **eliminato**: era l'unico altro
 pezzo di codice che scriveva su `#avatar`, e due sistemi sullo stesso nodo si
 sarebbero pestati i piedi come già successo con le animazioni.
 
-Un personaggio può anche essere una **voce** (`voce: true` + `icona` a 2
-frame): niente sprite, l'icona lampeggia accanto al nome e il box cambia
-colore. È il caso di Martha, che parla dalla regia.
+Chi parla dalla regia non ha uno sprite in scena: l'icona dell'auricolare
+lampeggia accanto al nome e il box cambia colore. Si chiede in due modi, e la
+differenza conta: un personaggio che esiste **solo** come voce lo dichiara nel
+cast (`voce: true`), mentre **Susan è un personaggio vero** — in S2, S3 e S7 è lì
+davanti — quindi per lei la cuffia la chiede il **singolo step** con
+`"incuffia": true`. Metterle `voce: true` la cancellerebbe dalle scene in cui
+deve esserci.
 
 ## Non tutti gli sprite si mostrano alla stessa misura
 
