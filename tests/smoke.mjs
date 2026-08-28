@@ -248,6 +248,64 @@ function controllaCarosello(id, st) {
   assert.ok(st.conferma?.text, `scena ${id}: carosello irreversibile senza modale di conferma`);
 }
 
+/* ---------- 1c. le battute devono stare nel box ----------
+   Il box del dialogo ha un'altezza FISSA di tre righe (vedi #box in engine.css):
+   il testo che sfora non manda a capo il box, sparisce sotto overflow:hidden.
+   E' l'errore che non si vede finche' qualcuno non gioca quella scena.
+
+   Le righe si contano a caratteri, non a pixel: il corpo del testo e' in vw e
+   il box e' una percentuale della larghezza, quindi i caratteri per riga
+   restano ~60 su qualunque telefono (verificato da iPhone SE a iPhone 13 e
+   oltre, dove entrano in gioco i limiti del clamp). Qui si tiene 56, un po'
+   stretto, perche' il conto e' una stima e il margine deve stare dalla parte
+   giusta. */
+const PER_RIGA = 56;
+const RIGHE_MAX = 3;
+
+// il testo piu' lungo che quella battuta puo' produrre a schermo: nome lungo,
+// variante di genere piu' lunga, etichetta di una risposta al posto del segnaposto
+function testoPeggiore(t) {
+  return String(t)
+    .replace(/\{NOME\}/g, 'MASSIMILIANO')
+    .replace(/\{nome\}/g, 'Massimiliano')
+    .replace(/\{g:([^}]*)\}/g, (_, v) => v.split('|').sort((a, b) => b.length - a.length)[0])
+    .replace(/\{label:[^}]*\}/g, 'Nessun aumento, resta a 1.239 euro')
+    .replace(/\{[^}]*\}/g, 'XXXXXXXX');
+}
+
+function quanteRighe(t) {
+  let n = 1, len = 0;
+  for (const parola of testoPeggiore(t).split(/\s+/)) {
+    if (len && len + 1 + parola.length > PER_RIGA) { n++; len = parola.length; }
+    else len += (len ? 1 : 0) + parola.length;
+  }
+  return n;
+}
+
+function controllaLunghezza(dove, t) {
+  const n = quanteRighe(t);
+  assert.ok(n <= RIGHE_MAX,
+    `${dove}: la battuta occupa ${n} righe, il box ne tiene ${RIGHE_MAX} — ` +
+    `accorciala. "${String(t).slice(0, 70)}..."`);
+}
+
+for (const [id, sc] of Object.entries(story.scenes)) {
+  for (const st of sc.steps) {
+    const testi = typeof st.text === 'string' ? [st.text]
+      : (st.text && typeof st.text === 'object' ? Object.values(st.text) : []);
+    for (const t of testi) controllaLunghezza(`scena ${id}`, t);
+  }
+}
+for (const [cat, c] of Object.entries(banca.categorie || {})) {
+  for (const d of [...(c.core || []), ...(c.extra || [])]) {
+    for (const op of d.opzioni || []) {
+      for (const [stile, battuta] of Object.entries(op.battute || {})) {
+        controllaLunghezza(`${d.id} / ${stile}`, battuta);
+      }
+    }
+  }
+}
+
 /* ---------- 1b. niente asterischi di declinazione nei dialoghi ---------- */
 // Dopo che il giocatore ha detto come rivolgersi a lui, ogni frase deve essere
 // declinata: "impalat*" a schermo e' un difetto visibile.
