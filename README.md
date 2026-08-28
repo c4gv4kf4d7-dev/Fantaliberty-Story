@@ -384,6 +384,26 @@ motore disegna un ripiego al posto loro.
 
 ## Formato e layout
 
+### Il box del dialogo ha un'altezza fissa
+
+Tre righe, sempre, in tutto il gioco. Prima il box si allargava mentre la frase
+si scriveva — una riga, poi due, a volte tre — e il personaggio dietro sembrava
+spostarsi a ogni battuta. Adesso e' un pezzo fisso dell'interfaccia: cambia il
+testo dentro, non la cornice.
+
+Tre e' il massimo che serve davvero: misurate tutte le battute del gioco
+(dialoghi, opzioni, domande di pronostico e quiz) alla larghezza del box, ne
+vengono 223 da una riga, 57 da due e le altre da tre. Le tre righe sono quasi
+tutte i commenti dello stile "Ingegnere", che e' prolisso per come e' scritto:
+accorciarle vorrebbe dire snaturarlo.
+
+**Una battuta piu' lunga di tre righe non manda a capo il box: sparisce sotto
+`overflow:hidden`.** E' un difetto che non si vede finche' qualcuno non gioca
+proprio quella scena, quindi `npm test` lo rifiuta e dice quale battuta
+accorciare. Il conto e' a caratteri (56 per riga) e non a pixel: il corpo del
+testo e' in `vw` e il box e' una percentuale della larghezza, quindi i caratteri
+per riga restano circa gli stessi su qualunque telefono.
+
 Il gioco e' pensato per **iPhone in verticale** (390x844 pt): il fondale occupa
 tutto lo schermo, il terzo inferiore e' area dialogo. Su schermi larghi (Safari sul
 Mac) non si stira a tutto schermo: disegna una cornice con le proporzioni di un
