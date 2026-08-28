@@ -505,7 +505,7 @@ assert.match(term[0], /NOME: FRANCO/, 'il terminale mostra i campi compilati');
 assert.equal($('tval___ok').textContent, '> BADGE IN STAMPA');
 
 // riga di sistema mentre la stampante lavora: non la dice nessuno
-assert.match(txt(), /badge e' in stampa/, 'avviso di stampa nel box');
+assert.match(txt(), /stampa in corso/, 'avviso di stampa nel box');
 assert.ok($('boxwrap').classList.contains('sistema'), 'riga di sistema, senza parlante');
 VN.step();
 
