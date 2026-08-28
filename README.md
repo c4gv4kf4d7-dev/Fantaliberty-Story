@@ -136,7 +136,7 @@ Tutto lo script vive in `game/story.json`. Ogni scena e' una lista di `steps`:
 | `griglia` | `{"t":"griglia","var":"categoria","da":"argomenti","goto":"argomento"}` | i macroargomenti del keynote: pannelli con stato. Vedi sotto |
 | `domande` | `{"t":"domande","set":"core"}` · `{"t":"domande","set":"extra"}` | il giro dei pronostici della categoria corrente |
 | `bivio` | `{"t":"bivio","text":"…","approfondisci":"…","passa":"…"}` | pesca 3 facoltative dal pool, oppure passa oltre |
-| `intermezzo` | `{"t":"intermezzo","who":"martha"}` | la prossima scommessa di regia, in ordine |
+| `intermezzo` | `{"t":"intermezzo","who":"susan","incuffia":true}` | la prossima scommessa di regia, in ordine |
 | `recap` | `{"t":"recap","da":"argomenti","lock":{…},"goto":"finale"}` | il teleprompter di S6: tutte le risposte, modificabili, e il blocco |
 | `countdown` | `{"t":"countdown","azioni":[{"label":"…","goto":"lobby"},{"label":"…","card":true}]}` | l'ultima schermata: quanto manca al keynote vero, e la card da salvare |
 | `quizhub` | `{"t":"quizhub","goto":"quiz_livello","gotoMult":"moltiplicatori","esci":{…}}` | i tre livelli del quiz di Peter, con lo stato di ognuno. Vedi sotto |
@@ -240,19 +240,32 @@ L'inquadratura ha due posti fissi: **il giocatore a sinistra** (step `io`, sprit
 dello stile scelto in S3) e **gli NPC a destra** (step `show`). Da S4 in poi i
 due condividono la scena.
 
-Un personaggio del cast puo' anche essere dichiarato **voce**, senza pose:
+### Parlare in cuffia
+
+Chi parla dalla regia non ha uno sprite in scena: al suo posto compare l'icona
+dell'auricolare accanto al nome — alternando i due frame, cosi' "trasmette" — e
+il box del dialogo cambia colore. Serve a distinguere una voce nell'orecchio da
+qualcuno che ti sta davvero davanti.
+
+Si chiede in due modi. Un personaggio che esiste **solo** come voce lo dichiara
+nel cast con `"voce": true` (e allora non deve avere pose: `npm test` lo
+controlla, e controlla che le sue icone esistano).
+
+**Susan invece e' un personaggio vero**: in S2, S3 e S7 e' li' in scena, dal
+keynote in poi parla dalla regia. Per lei la cuffia la chiede il singolo step:
 
 ```json
-"martha": { "name": "Martha", "voce": true,
-            "icona": ["chars/chr_martha_indicatore_regia_1.webp",
-                      "chars/chr_martha_indicatore_regia_2.webp"] }
+{ "t": "say", "who": "susan", "incuffia": true, "text": "Ok. Tra trenta secondi andiamo." }
 ```
 
-Quando parla, invece di uno sprite in scena compare l'icona accanto al nome —
-alternando i frame, cosi' "trasmette" — e il box del dialogo cambia colore.
-Serve a distinguere una voce in cuffia (Martha, dalla regia) da qualcuno che ti
-sta davvero davanti. `npm test` controlla che una voce non abbia pose e che le
-sue icone esistano.
+Funziona su `say`, `choice`, `griglia`, `domande`, `bivio`, `intermezzo` e
+`recap`. Il cast di Susan dichiara solo l'`icona`:
+
+```json
+"susan": { "name": "Susan", "bodies": { "...": "..." },
+           "icona": ["chars/chr_indicatore_regia_1.webp",
+                     "chars/chr_indicatore_regia_2.webp"] }
+```
 
 ### S5, il keynote: griglia, domande, bivio, intermezzi
 
@@ -285,8 +298,44 @@ Tre regole dello script che il codice deve rispettare:
 * **gli eventi non si ripetono**: si pescano da un sacchetto senza rimessa, con
   dentro i cinque micro-eventi piu' quello personale dello stile scelto.
 
-`story.regia` regola il contorno: `probabilitaEvento` e le righe generiche con
-cui Martha apre una domanda (`introDomanda`, scelte a caso).
+### Le battute della regia
+
+`story.regia` e' il blocco della regia: chi e' (`chi`), ogni quanto succede
+qualcosa (`probabilitaEvento`) e **i pool delle sue battute**.
+
+Susan non parla dopo ogni singola scelta — sarebbe rumore, e la farebbe sembrare
+una commentatrice invece che una che sta lavorando. Le battute stanno in pool per
+situazione, e ognuno esce nel suo punto:
+
+| pool | quando esce |
+|---|---|
+| `apertura` | una volta sola, a inizio S5 |
+| `introDomanda` | riga corta prima di ogni domanda |
+| `scarica` | quando parte un micro-evento senza una battuta sua |
+| `improvvisazione` / `caos` / `critica` | conseguenza di un micro-evento, per esito |
+
+Uno step `say` puo' pescare da un pool invece di avere il testo scritto:
+
+```json
+{ "t": "say", "who": "susan", "incuffia": true, "pool": "apertura" }
+```
+
+### I micro-eventi: tre risposte, e il punteggio non si vede
+
+Un micro-evento non e' una scenetta passiva: ha **tre risposte**, e vale
+`+3`, `0` o `-3`. Il valore `editoriale` scritto in `game/domande.json` dice
+soltanto che tono ha ciascuna risposta — **non e' il mapping del gioco**. A ogni
+attivazione il motore mescola i tre esiti e li riassegna alle tre opzioni, cosi'
+chi rigioca non puo' imparare "la B e' quella buona".
+
+Il giro e': narrazione dell'evento → un tocco → Susan dalla regia, con le tre
+risposte sotto → la conseguenza, sempre detta da Susan.
+
+**Il giocatore non deve mai vedere il valore.** Niente numeri, badge, popup,
+"bonus" o "malus": l'unico ritorno e' come Susan racconta com'e' andata. `npm
+test` controlla che ogni evento abbia esattamente un `+3`, uno `0` e un `-3`,
+che le etichette e i pool non contengano cifre, e che il mapping venga davvero
+mescolato a runtime.
 
 ### S6: il recap e l'invio
 
@@ -554,7 +603,7 @@ un colpo solo e ogni file finisce nella sua sottocartella:
 | prefisso | va in | cos'e' |
 |---|---|---|
 | `bg_` | `assets/bg/` | fondali |
-| `chr_` | `assets/chars/` | NPC (Lucas, Francesca, Peter, Susan, Martha) |
+| `chr_` | `assets/chars/` | NPC (Lucas, Francesca, Peter, Susan) e l'icona della regia |
 | `stile_` | `assets/stili/` | i 4 stili del personaggio giocante |
 | `prop_` (o `obj_`) | `assets/props/` | oggetti di scena |
 | `pla_` | `assets/platea/` | layer di reazione della platea |

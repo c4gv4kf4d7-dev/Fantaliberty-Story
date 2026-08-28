@@ -1051,7 +1051,7 @@
       ]
     }
   },
-  "_nota_intermezzi": "Le 5 domande di regia non hanno battute per stile: il personaggio risponde a Martha in cuffia, sottovoce, non le annuncia alla platea. R1 e R2 vanno prima del primo macroargomento, R3-R5 dopo ciascuno dei tre completati (in ordine di completamento, non fisso per categoria).",
+  "_nota_intermezzi": "Le 5 domande di regia non hanno battute per stile: il personaggio risponde a Susan in cuffia, sottovoce, non le annuncia alla platea. R1 e R2 vanno prima del primo macroargomento, R3-R5 dopo ciascuno dei tre completati (in ordine di completamento, non fisso per categoria).",
   "intermezzi": [
     {
       "id": "R1",
@@ -1201,7 +1201,7 @@
   "micro_eventi": [
     {
       "id": "CLICKER",
-      "testo": "Il clicker non risponde.\nPremi di nuovo. Niente.\nMartha parla nella cuffia:\n«Non funziona.»",
+      "testo": "Il clicker non risponde.\nPremi di nuovo. Niente.",
       "asset": "props/prop_clicker_inceppato.webp",
       "opzioni": [
         {
@@ -1216,7 +1216,8 @@
           "label": "«Facciamo finta che fosse previsto.»",
           "editoriale": -3
         }
-      ]
+      ],
+      "regia": "Non funziona."
     },
     {
       "id": "TIM",
@@ -1258,7 +1259,7 @@
     },
     {
       "id": "NOTIFICA",
-      "testo": "Il tuo iPhone vibra sul leggio.\nUna notifica compare sullo schermo.\n«Martha: NON GUARDARE IL TELEFONO.»",
+      "testo": "Il tuo iPhone vibra sul leggio.\nUna notifica compare sullo schermo.\n«Susan: NON GUARDARE IL TELEFONO.»",
       "banner": "susan",
       "opzioni": [
         {
@@ -1321,7 +1322,7 @@
       "id": "APPLAUSO",
       "stile": "showman",
       "titolo": "L'applauso",
-      "testo": "«BRAVO!»\nParte un applauso.\nTu non hai ancora detto niente.\nMartha ti guarda dalla regia, confusa.",
+      "testo": "«BRAVO!»\nParte un applauso.\nTu non hai ancora detto niente.\nSusan ti guarda dalla regia, confusa.",
       "asset": "stili/stile_showman_evento_assolo.webp",
       "platea": "pla_coro_nome",
       "opzioni": [
@@ -1352,7 +1353,7 @@
           "editoriale": -3
         },
         {
-          "label": "«Lascia pure a Martha.»",
+          "label": "«Lascia pure a Susan.»",
           "editoriale": 0
         },
         {
@@ -1365,7 +1366,7 @@
       "id": "DOMANDA_TECNICA",
       "stile": "ingegnere",
       "titolo": "La domanda tecnica",
-      "testo": "Dal fondo della sala qualcuno urla:\n«Ma tecnicamente come funziona?»\n\nMartha dalla regia:\n«Non rispondere.»",
+      "testo": "Dal fondo della sala qualcuno urla:\n«Ma tecnicamente come funziona?»",
       "asset": "stili/stile_ingegnere_evento_domanda.webp",
       "opzioni": [
         {
@@ -1380,7 +1381,8 @@
           "label": "«È una questione di microfrequenze vettoriali che sincronizzano il buffer termico con la latenza fotonica del processore.»",
           "editoriale": 3
         }
-      ]
+      ],
+      "regia": "Non rispondere."
     }
   },
   "reazioni_platea": [

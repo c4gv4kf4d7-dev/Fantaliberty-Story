@@ -46,7 +46,7 @@ def main():
                          % (x["id"], c["nome"], grp, x.get("diff", "—"),
                             len(x["opzioni"]), x["q"]))
 
-    r += ["", "## Intermezzi di regia (Martha)", "",
+    r += ["", "## Intermezzi di regia (Susan)", "",
           "Non hanno battute per stile: il personaggio risponde in cuffia, non alla platea.",
           "", "| id | domanda | opzioni |", "|---|---|---|"]
     for x in d["intermezzi"]:

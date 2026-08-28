@@ -81,6 +81,10 @@
   // il nome della variabile e "text" come oggetto valore -> frase ("*" e' il
   // ripiego). Serve per far dire a Lucas cose diverse a seconda delle risposte.
   function testoDi(st) {
+    // "pool": la battuta si pesca da un elenco di story.regia invece di essere
+    // scritta nello step. Serve alle battute di Susan durante il keynote, che
+    // lo script vuole variabili e non sempre le stesse.
+    if (st.pool) return aCaso((VN.story.regia || {})[st.pool]) || '';
     if (typeof st.text === 'string') return st.text;
     if (!st.text) return '';
     var v = st.by ? VN.state[st.by] : null;
@@ -464,7 +468,7 @@
 
       case 'say':
         el.boxwrap.classList.add('in');
-        setSpeaker(st.who);
+        setSpeaker(st.who, st.incuffia);
         // revealUI duplica il completamento di type(): se il tap arriva PRIMA che
         // il typewriter finisca da solo, skip() cancella il tick in corso e la sua
         // callback (quella su type()) non parte mai. Senza questa copia, "pending"
@@ -485,7 +489,7 @@
       case 'choice':
         el.boxwrap.classList.remove('sistema');
         el.boxwrap.classList.add('in');
-        setSpeaker(st.who);
+        setSpeaker(st.who, st.incuffia);
         type(fmt(st.text), function () { showChoices(st); });
         revealUI = function () { showChoices(st); };
         return;
@@ -493,7 +497,7 @@
       case 'input':
         el.boxwrap.classList.remove('sistema');
         el.boxwrap.classList.add('in');
-        setSpeaker(st.who);
+        setSpeaker(st.who, st.incuffia);
         type(fmt(st.text), function () { showInput(st); });
         revealUI = function () { showInput(st); };
         return;
@@ -501,7 +505,7 @@
       case 'list':
         el.boxwrap.classList.remove('sistema');
         el.boxwrap.classList.add('in');
-        setSpeaker(st.who);
+        setSpeaker(st.who, st.incuffia);
         type(fmt(st.text), function () { showList(st); });
         revealUI = function () { showList(st); };
         return;
@@ -512,7 +516,7 @@
         // aspettava che finisse di scrivere e poi un altro tap. Adesso la
         // tessera entra subito, e il tap serve solo ad andare avanti.
         el.boxwrap.classList.add('in');
-        if (st.who) setSpeaker(st.who);
+        if (st.who) setSpeaker(st.who, st.incuffia);
         mostraBadge(st);
         if (st.text) {
           var avanzaBadge = function () { pending = chiudiBadge; el.arrow.style.opacity = 1; };
@@ -1134,7 +1138,7 @@
 
   /* ================ S5: il keynote ================
      Tre macroargomenti in ordine libero; dentro ognuno le domande core in
-     sequenza fissa, poi il bivio di Martha che puo' pescare tre facoltative dal
+     sequenza fissa, poi il bivio della regia che puo' pescare tre facoltative dal
      pool. Le domande, le battute per stile, gli eventi e gli intermezzi stanno
      in game/domande.json (VN.banca), non in story.json: sono contenuto che
      cambia per conto suo, e messi insieme pesano quanto tutto il resto. */
@@ -1233,7 +1237,7 @@
     });
 
     el.boxwrap.classList.add('in');
-    setSpeaker(st.who);
+    setSpeaker(st.who, st.incuffia);
     el.griglia.classList.add('on');
     pending = null;
     if (st.text) typeKeep(fmt(st.text));
@@ -1252,7 +1256,7 @@
   }
 
   /* ---------------- il giro di una domanda [S5.DOMANDA] ----------------
-     Martha introduce, il giocatore sceglie, il personaggio annuncia alla platea
+     La regia introduce, il giocatore sceglie, il personaggio annuncia alla platea
      con la battuta del suo stile, e ogni tanto succede qualcosa.
 
      Regola d'oro dello script: la reazione della platea e' SEMPRE casuale, mai
@@ -1276,7 +1280,7 @@
       var d = lista[i];
       el.boxwrap.classList.add('in');
       mostraIo({ posa: 'idle_palco' });
-      setSpeaker(st.who || 'martha');
+      setSpeaker(st.who || 'susan', st.incuffia !== false);
       var apri = function () { opzioni(d); };
       type(fmt(aCaso(VN.story.regia && VN.story.regia.introDomanda) || 'Tocca a te.') + ' ' + fmt(d.q), apri);
       revealUI = apri;
@@ -1356,15 +1360,23 @@
     return trovaEvento(v.shift());
   }
 
+  /* I tre esiti di un micro-evento sono sempre +3, 0 e -3 — uno per opzione — ma
+     l'abbinamento si rimescola a ogni attivazione. I valori "editoriale" scritti
+     nella banca dicono soltanto che tono ha ciascuna risposta: NON sono il
+     mapping del gioco. Cosi' chi rigioca non puo' imparare "la B e' quella
+     buona", e deve scegliere la risposta che gli sembra giusta. */
   function esitiMicroEvento(e) {
     var valori = e.valori || [3, 0, -3];
     return mescola(valori.slice());
   }
 
+  /* Come e' andata lo dice Susan, e lo dice a parole: niente numeri, niente
+     "bonus", nessun segnale che riveli il punteggio. Le tre battute vengono da
+     tre pool diversi di story.regia, uno per esito. */
   function conseguenzaMicroEvento(punti) {
-    if (punti > 0) return 'La platea segue il ritmo. Martha lascia correre e il keynote riparte.';
-    if (punti < 0) return 'Per un secondo resta solo il ronzio delle luci. Poi Martha riapre la linea.';
-    return 'La regia assorbe il colpo. Nessuno capisce se fosse previsto, e va bene cosi\'.';
+    var r = VN.story.regia || {};
+    var pool = punti > 0 ? r.improvvisazione : punti < 0 ? r.critica : r.caos;
+    return aCaso(pool) || '';
   }
 
   function mostraEvento(e, done) {
@@ -1380,19 +1392,32 @@
     el.boxwrap.classList.add('in');
     setSpeaker(null);
     el.name.classList.add('hidden');
-    var poi = function () {
-      var opzioni = e.opzioni || [];
-      if (opzioni.length) return scelteEvento(e, opzioni, done);
-      pending = function () {
-        nascondiOspite();
-        el.evpropwrap.classList.remove('on');
-        if (e.martha) return battutaMartha(e.martha, done);
-        done();
-      };
-      el.arrow.style.opacity = 1;
-    };
+    var opzioni = e.opzioni || [];
+    // Dopo la narrazione parla Susan, dalla regia: la battuta scritta
+    // sull'evento se ce l'ha, altrimenti una di quelle con cui ti scarica addosso
+    // il problema. E' l'unico modo in cui la regia si fa sentire durante il
+    // keynote, e succede solo sugli eventi — non a ogni domanda.
+    var suo = e.regia || aCaso((VN.story.regia || {}).scarica);
+
+    // le risposte compaiono sotto l'ultima riga, senza un tocco in mezzo
+    var apri = opzioni.length
+      ? function () { scelteEvento(e, opzioni, done); }
+      : function () { pending = function () { chiudiEvento(); done(); }; el.arrow.style.opacity = 1; };
+
+    // La narrazione va letta: senza questo tocco in mezzo la battuta della regia
+    // ci scriveva sopra nello stesso istante e il giocatore non vedeva mai
+    // cos'era successo.
+    var poi = suo
+      ? function () { pending = function () { battutaRegia(suo, apri); }; el.arrow.style.opacity = 1; }
+      : apri;
+
     type(fmt(e.testo), poi);
     revealUI = poi;
+  }
+
+  function chiudiEvento() {
+    nascondiOspite();
+    el.evpropwrap.classList.remove('on');
   }
 
   function scelteEvento(e, opzioni, done) {
@@ -1404,25 +1429,24 @@
           segna('micro_eventi', 'r', e.id, o.label, punti);
           VN.progressed = true;
           VN.saveNow();
-          setSpeaker(null);
-          el.name.classList.add('hidden');
-          type(fmt(o.esito || conseguenzaMicroEvento(punti)), function () {
-            pending = function () {
-              nascondiOspite();
-              el.evpropwrap.classList.remove('on');
-              if (e.martha) return battutaMartha(e.martha, done);
-              done();
-            };
-            el.arrow.style.opacity = 1;
+          chiudiEvento();
+          // la conseguenza la racconta Susan in cuffia: e' l'unico ritorno che
+          // il giocatore riceve, e non dice mai quanto vale
+          battutaRegia(o.esito || conseguenzaMicroEvento(punti), function () {
+            pending = done; el.arrow.style.opacity = 1;
           });
         } };
       })
     });
   }
 
-  function battutaMartha(testo, done) {
-    setSpeaker('martha');
-    var poi = function () { pending = done; el.arrow.style.opacity = 1; };
+  /* Una battuta della regia: Susan, in cuffia, senza sprite in scena. "poi" viene
+     chiamata quando la riga e' tutta a schermo — sta a chi chiama decidere se
+     mostrare subito qualcosa sotto (le risposte di un evento) o aspettare un
+     tocco. */
+  function battutaRegia(testo, poi) {
+    if (!testo) return poi();           // pool vuoto: niente box muto da toccare
+    setSpeaker((VN.story.regia && VN.story.regia.chi) || 'susan', true);
     type(fmt(testo), poi);
     revealUI = poi;
   }
@@ -1465,7 +1489,18 @@
     var cat = catCorrente();
     if (!cat) return next();
     el.boxwrap.classList.add('in');
-    setSpeaker(st.who || 'martha');
+    setSpeaker(st.who || 'susan', st.incuffia !== false);
+    // La regia commenta la scelta prima di andare avanti: e' una risposta, non
+    // un giudizio sul pronostico, quindi qui la battuta puo' dipendere da cosa
+    // hai scelto senza infrangere la regola d'oro.
+    var commenta = function (testo) {
+      hideUI();
+      if (!testo) return next();
+      var poi = function () { pending = next; el.arrow.style.opacity = 1; };
+      type(fmt(testo), poi);
+      revealUI = poi;
+    };
+
     var apri = function () {
       showChoices({
         options: [
@@ -1473,14 +1508,12 @@
               var pool = (cat.extra || []).map(function (d) { return d.id; });
               VN.state.pescate = mescola(pool).slice(0, cat.n_extra_da_pescare || 3);
               VN.progressed = true;
-              hideUI();
-              next();
+              commenta(st.dopoApprofondisci);
             } },
           { label: st.passa || 'Passiamo al prossimo', value: 0, _do: function () {
               VN.state.pescate = [];
               VN.progressed = true;
-              hideUI();
-              next();
+              commenta(st.dopoPassa);
             } }
         ]
       });
@@ -1501,7 +1534,7 @@
     VN.state.intermezzi = n + 1;
 
     el.boxwrap.classList.add('in');
-    setSpeaker(st.who || 'martha');
+    setSpeaker(st.who || 'susan', st.incuffia !== false);
     var apri = function () {
       showChoices({
         options: (q.opzioni || []).map(function (o) {
@@ -1603,7 +1636,7 @@
     function chiedi(cat, tipo, d) {
       el.recap.classList.remove('on');
       el.boxwrap.classList.remove('recap');
-      setSpeaker(st.who);
+      setSpeaker(st.who, st.incuffia);
       var apri = function () {
         el.choices.innerHTML = '';
         (d.opzioni || []).forEach(function (o) {
@@ -1629,7 +1662,7 @@
     function apriRecap() {
       hideUI();
       righe();
-      setSpeaker(st.who);
+      setSpeaker(st.who, st.incuffia);
       el.txt.textContent = fmt(st.text || '');
       el.arrow.style.opacity = 0;
       el.boxwrap.classList.add('in', 'recap');
@@ -2427,19 +2460,24 @@
   }
 
   /* ---------------- UI ---------------- */
-  // Chi parla. Un personaggio dichiarato "voce" (Martha, dalla regia) non ha uno
-  // sprite in scena: al suo posto lampeggia l'icona dell'auricolare accanto al
-  // nome, e il box cambia colore. Serve a distinguere una voce in cuffia da
-  // qualcuno che ti sta davvero davanti.
+  // Chi parla. Chi parla in cuffia non ha uno sprite in scena: al suo posto
+  // lampeggia l'icona dell'auricolare accanto al nome, e il box cambia colore.
+  // Serve a distinguere una voce nell'auricolare da qualcuno che ti sta davvero
+  // davanti.
+  //
+  // Due modi per chiederlo. Un personaggio che esiste SOLO come voce lo dichiara
+  // nel cast (`voce: true`). Susan invece e' un personaggio vero — in S2, S3 e
+  // S7 e' li' in scena — ma dal keynote in poi parla dalla regia: la' la cuffia
+  // la chiede il singolo step con "incuffia": true.
   var vId = null;
-  function setSpeaker(who) {
+  function setSpeaker(who, incuffia) {
     var c = cast(who);
     var label = c ? (c.name || who) : who;
     el.nametxt.textContent = label || '';
     el.name.classList.toggle('hidden', !label);
 
     if (vId) { clearInterval(vId); vId = null; }
-    var frames = (c && c.voce && c.icona) || null;
+    var frames = (c && (c.voce || incuffia) && c.icona) || null;
     el.name.classList.toggle('incuffia', !!frames);
     el.boxwrap.classList.toggle('incuffia', !!frames);
     if (!frames) return;

@@ -72,13 +72,18 @@ P2, solo se scelta sfacciata in S2)
 `chr_peter_applauso_ironico` (S8, P2, punteggio pieno) ·
 `chr_peter_guarda_orologio` (S8, timer sotto i 3 secondi)
 
-### Martha — nessun corpo, solo in Scene 4, 5, 8, 7
-`chr_martha_indicatore_regia` — **icona, non personaggio**: 2 frame di
-cuffia+onde sonore, mostrata accanto al box dialogo ogni volta che Martha
-parla (box con colore diverso dagli altri, per distinguere "voce" da
-"presenza fisica")
-`chr_martha_ritratto_regia` (P2, opzionale) — unica immagine con un volto,
-usata solo nel finale (S7) in un riquadro stile monitor
+### La regia — nessun corpo, solo un'icona (S4, S5, S6, S7)
+`chr_indicatore_regia` — **icona, non personaggio**: 2 frame di cuffia+onde
+sonore, mostrata accanto al box dialogo ogni volta che parla la regia (box con
+colore diverso dagli altri, per distinguere "voce" da "presenza fisica").
+Era `chr_martha_indicatore_regia`: rinominato quando Martha e' stata eliminata,
+perche' l'icona e' generica e ora serve a **Susan**, che dal keynote in poi
+parla dalla regia.
+
+`chr_martha_ritratto_regia` — **non piu' usato.** Era l'unica immagine con il
+volto di Martha, prevista per il finale in un riquadro stile monitor. Con Martha
+eliminata non ha piu' un posto nel gioco: il file e' ancora nel repo, da
+cancellare quando qualcuno conferma che non serve.
 
 ### CEO — solo Scena 7
 `chr_ceo_sagoma` (silhouette, immobile) → `chr_ceo_pollice_su` (2° frame,
@@ -155,7 +160,7 @@ della risposta data.
 
 ## UI (nessun asset grafico — solo codice/CSS)
 
-box dialogo (variante colore per Martha) · bottone scelta · navigazione
+box dialogo (variante colore per la regia) · bottone scelta · navigazione
 lobby (frecce+dot) · hotspot pulsante · carosello scelta stile · card
 domanda · schermata recap · modale conferma · timer domanda (10s, +3s per
 l'Ingegnere) · badge/salvadanaio moltiplicatore quiz · banner notifica
