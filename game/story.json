@@ -1514,78 +1514,83 @@
         {
           "t": "title",
           "_nota": "[S7.04b] I titoli di coda: dopo il pollice in su del CEO e prima del countdown. Cinque blocchi che compaiono, restano e sfumano uno nell'altro — non si accumulano come il cartello d'apertura. Vanno da soli, un tocco li salta tutti. Totale ~15 secondi. Il tono e' asciutto: i primi crediti seri, poi due assurdi, e la chiusa sui 30 Newton.",
-          "dissolvenza": 600,
+          "dissolvenza": 400,
           "blocchi": [
             {
               "righe": [
                 {
                   "text": "FANTALIBERTY",
                   "small": true,
-                  "pausa": 200
+                  "pausa": 150
                 },
                 {
                   "text": "STORY",
-                  "big": true
+                  "big": true,
+                  "pausa": 240
                 }
               ],
-              "tieni": 1500
+              "tieni": 800
             },
             {
               "righe": [
                 {
                   "text": "CREATO DA",
                   "small": true,
-                  "pausa": 260
+                  "pausa": 180
                 },
                 {
                   "text": "Lorenzo",
-                  "pausa": 240
+                  "pausa": 180
                 },
                 {
-                  "text": "Michael"
+                  "text": "Michael",
+                  "pausa": 240
                 }
               ],
-              "tieni": 1600
+              "tieni": 800
             },
             {
               "righe": [
                 {
                   "text": "TEST",
                   "small": true,
-                  "pausa": 260
+                  "pausa": 180
                 },
                 {
-                  "text": "Qualcuno, probabilmente"
+                  "text": "Qualcuno, probabilmente",
+                  "pausa": 240
                 }
               ],
-              "tieni": 1500
+              "tieni": 800
             },
             {
               "righe": [
                 {
                   "text": "SUPPORTO PSICOLOGICO",
                   "small": true,
-                  "pausa": 260
+                  "pausa": 180
                 },
                 {
-                  "text": "Assente"
+                  "text": "Assente",
+                  "pausa": 240
                 }
               ],
-              "tieni": 1500
+              "tieni": 800
             },
             {
               "righe": [
                 {
                   "text": "BUDGET",
                   "small": true,
-                  "pausa": 260
+                  "pausa": 180
                 },
                 {
                   "text": "30 Newton",
-                  "big": true
+                  "big": true,
+                  "pausa": 240
                 }
               ],
-              "tieni": 2000
+              "tieni": 1100
             }
           ]
         }
