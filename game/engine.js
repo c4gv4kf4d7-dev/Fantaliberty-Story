@@ -29,7 +29,7 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '6',
+    engine: '7',
     story: null,
     banca: null,    // game/domande.json: domande, battute per stile, eventi, intermezzi
     state: {},      // variabili di gioco (nome, genere, stile, ...)
@@ -422,6 +422,7 @@
 
   function exec(st) {
     if (!silent && (st.t === 'say' || st.t === 'choice' || st.t === 'input' ||
+                    st.t === 'list' || st.t === 'badge' ||
                     st.t === 'carosello' || st.t === 'hub' || st.t === 'griglia' ||
                     st.t === 'domande' || st.t === 'bivio' || st.t === 'intermezzo')) VN.saveNow();
 
@@ -463,12 +464,27 @@
         return;
 
       case 'badge':
+        // Il badge compare mentre Lucas dice "ecco il tuo badge": prima si
+        // aspettava che finisse di scrivere e poi un altro tap. Adesso la
+        // tessera entra subito, e il tap serve solo ad andare avanti.
         el.boxwrap.classList.add('in');
         if (st.who) setSpeaker(st.who);
-        if (st.text) type(fmt(st.text), function () { mostraBadge(st, next); });
-        else mostraBadge(st, next);
-        revealUI = function () { mostraBadge(st, next); };
+        mostraBadge(st);
+        if (st.text) {
+          var avanzaBadge = function () { pending = chiudiBadge; el.arrow.style.opacity = 1; };
+          type(fmt(st.text), avanzaBadge);
+          revealUI = avanzaBadge;
+        } else {
+          pending = chiudiBadge; el.arrow.style.opacity = 1;
+        }
         return;
+
+      // dissolvenza al nero e ritorno: coprono un cambio di scena
+      case 'nero':
+        return velaNero(true, st.ms, next);
+
+      case 'luce':
+        return velaNero(false, st.ms, next);
 
       // la figura del giocatore: entra, cambia posa, esce
       case 'io':
@@ -557,8 +573,13 @@
         return next();
 
       case 'bg':
-        setBg(st.id || (VN.scene && VN.scene.bg), st.fx, st.dissolvenza);
+        var cambiato = setBg(st.id || (VN.scene && VN.scene.bg), st.fx, st.dissolvenza);
         if (st.uccelli != null || st.foglie != null || st.pulviscolo != null) atmosfera(st);
+        // Con la dissolvenza il fondale nuovo arriva 1,4s dopo. Senza questa
+        // attesa lo "show" successivo cambiava posa e faccia subito, sopra il
+        // fondale vecchio: si vedeva prima lo scatto del personaggio e poi il
+        // fondale. Ora i due coincidono.
+        if (cambiato && VN.speed) return setTimeout(next, BG_FADE);
         return next();
 
       case 'fx':
@@ -595,7 +616,21 @@
     }
   }
 
-  /* ---------------- personaggi: corpo + testa ---------------- */
+  // Copia dello step con la misura ridotta dell'hub, se il cast ne dichiara una.
+  function perHub(st) {
+    var c = cast(st.who || st.char);
+    if (st.scala != null || !c || c.scalaHub == null) return st;
+    var fuori = {};
+    for (var k in st) if (Object.prototype.hasOwnProperty.call(st, k)) fuori[k] = st[k];
+    fuori.scala = c.scalaHub;
+    return fuori;
+  }
+
+  /* ---------------- personaggi: corpo + testa ----------------
+     NPC_H e' l'altezza di riferimento del riquadro #npc, la stessa scritta nel
+     CSS: va tenuta allineata a mano perche' serve a calcolare le scale. */
+  var NPC_H = 56;
+
   function cast(who) { return (VN.story.cast && VN.story.cast[who]) || null; }
 
   function partUrl(who, kind, id) {
@@ -633,8 +668,14 @@
       el.npcHead.style.top = c.neck.y || '4%';
       el.npcHead.style.width = c.neck.w || '34%';
     }
-    // la scena puo' riposizionare il personaggio (es. quando c'e' il terminale)
-    el.npc.style.height = st.height || '';
+    // Misura. Il riquadro #npc ha proporzione fissa (3/5) e l'immagine ci sta
+    // dentro con object-fit:contain, quindi uno sprite largo (Francesca a
+    // braccia aperte, 1536x1024) viene limitato dalla larghezza e finisce alto
+    // meta' di uno stretto (Lucas, 1162x1353) a parita' di riquadro. Il
+    // "scala" del cast compensa il ritaglio del disegno, cosi' tutti i
+    // personaggi hanno la stessa presenza in scena di Lucas.
+    var scala = st.scala != null ? st.scala : ((c && c.scala) || 1);
+    el.npc.style.height = st.height || (scala === 1 ? '' : (NPC_H * scala).toFixed(1) + '%');
     el.npc.style.bottom = st.bottom || '';
     el.npc.style.right = st.right || '';
 
@@ -1314,7 +1355,10 @@
       visti[z.id] = true;
 
       if (z.bg) setBg(z.bg, z.bgFx);
-      if (z.who) showChar(z);
+      // Nell'hub il protagonista e' l'ambiente: il personaggio commenta da
+      // bordo scena e non deve coprire quello che c'e' da toccare. Percio' qui
+      // vale "scalaHub" del cast (piu' contenuta) invece di "scala".
+      if (z.who) showChar(perHub(z));
       else { el.npc.classList.remove('in', 'pop'); el.npc.classList.add('out'); current.who = null; }
 
       if (dir) {
@@ -1338,7 +1382,7 @@
         else { stopTyping(); typing = false; el.txt.textContent = fmt(battuta); }
       }
       if (!scorso && st.tutorial && st.tutorial.body) {
-        showChar({ who: chi, body: st.tutorial.body });
+        showChar(perHub({ who: chi, body: st.tutorial.body }));
       }
       render();
     }
@@ -1351,7 +1395,12 @@
         var bloccato = h.richiede === 'swipe' && !scorso;
         var b = global.document.createElement('button');
         b.className = 'hspot' + (bloccato ? ' chiuso' : '');
-        b.textContent = fmt(h.label || '');
+        // Niente scritta a schermo: il rettangolo con "LE TARGHE" scritto sopra
+        // le targhe copriva il disegno e ripeteva quello che si vede gia'. Il
+        // nome resta come etichetta accessibile, il segnale luminoso (<i>) dice
+        // che li' si tocca.
+        b.setAttribute('aria-label', fmt(h.label || 'Zona interattiva'));
+        b.appendChild(global.document.createElement('i'));
         b.style.left = h.x || '35%';
         b.style.top = h.y || '40%';
         b.style.width = h.w || '30%';
@@ -1597,6 +1646,14 @@
   // l'altezza dall'immagine del Mac, quindi finche' il PNG non e' caricato lo
   // schermo e' alto quanto il suo solo padding. Misurare li' rimpicciolirebbe il
   // testo al minimo per sempre.
+  // La riga piu' larga sta dentro? scrollWidth del contenitore non basta: le
+  // righe sono blocchi larghi quanto lui, e' il loro contenuto che deborda.
+  function sfora(s) {
+    var righe = s.children, w = s.clientWidth;
+    for (var i = 0; i < righe.length; i++) if (righe[i].scrollWidth > w + 1) return true;
+    return false;
+  }
+
   var TERM_H_MIN = 24;
   var TERM_FS_MIN = 3.2;
   function adattaTerminale() {
@@ -1606,7 +1663,10 @@
     var fs = parseFloat(global.getComputedStyle(s).fontSize) || 10;
     // scrollHeight non scende mai sotto clientHeight: quando i due coincidono il
     // testo ci sta, e il ciclo si ferma da solo
-    for (var i = 0; i < 12 && s.scrollHeight > s.clientHeight && fs > TERM_FS_MIN; i++) {
+    // Sfora sia in altezza (troppe righe) sia in larghezza: le righe sono
+    // nowrap, quindi un valore lungo — "shopping" fra le categorie — usciva a
+    // destra e spariva sotto overflow:hidden invece di mandare a capo.
+    for (var i = 0; i < 20 && fs > TERM_FS_MIN && (s.scrollHeight > s.clientHeight || sfora(s)); i++) {
       fs = Math.max(TERM_FS_MIN, fs * 0.94);
       s.style.fontSize = fs.toFixed(2) + 'px';
     }
@@ -1644,8 +1704,8 @@
      docs/manifest-asset.md); il nome ci viene scritto sopra qui.
      Se il file non c'e' ancora, la cornice viene disegnata in CSS: il nome
      resta leggibile e la scena non mostra un'icona di immagine rotta. */
-  function mostraBadge(st, done) {
-    if (!el.badgewrap) return done();
+  function mostraBadge(st) {
+    if (!el.badgewrap) return;
     el.badgeName.textContent = fmt(st.nome || '{NOME}');
     el.badgewrap.classList.remove('senzaimg');
 
@@ -1658,8 +1718,11 @@
     }
 
     el.badgewrap.classList.add('in');
-    pending = function () { el.badgewrap.classList.remove('in'); done(); };
-    el.arrow.style.opacity = 1;
+  }
+
+  function chiudiBadge() {
+    if (el.badgewrap) el.badgewrap.classList.remove('in');
+    next();
   }
 
   /* ---------------- asset ---------------- */
@@ -1677,10 +1740,28 @@
   // Cambio fondale. Con "dissolvenza" il nuovo entra sopra il vecchio e prende
   // il suo posto a transizione finita, cosi' il passaggio non e' uno stacco secco.
   var bgCorrente = null;
+  /* Dissolvenza al nero. Serve a coprire un cambio di scena: il motore va
+     avanti solo quando il buio e' pieno, quindi fondale e personaggio nuovi
+     vengono montati mentre non si vede niente. In modalita' test (speed 0)
+     e' istantanea. */
+  function velaNero(giu, ms, done) {
+    if (!el.nero) return done();
+    var d = ms == null ? 1000 : ms;
+    if (!VN.speed) { el.nero.classList.toggle('on', !!giu); return done(); }
+    el.nero.style.setProperty('--nero', d + 'ms');
+    el.nero.classList.add('sfuma');
+    void el.nero.offsetWidth;
+    el.nero.classList.toggle('on', !!giu);
+    setTimeout(done, d);
+  }
+
+  var BG_FADE = 1400;          // deve combaciare con #bg2.mostra nel CSS
+
   function setBg(id, fx, dissolvenza) {
     var src = id ? assetUrl('bg', id) : el.bg.src;
 
-    if (dissolvenza && VN.speed && bgCorrente && id !== bgCorrente) {
+    var inDissolvenza = !!(dissolvenza && VN.speed && bgCorrente && id !== bgCorrente);
+    if (inDissolvenza) {
       el.bg2.src = src;
       el.bg2.className = '';
       void el.bg2.offsetWidth;
@@ -1690,13 +1771,14 @@
         el.bg.src = src;
         applicaFx(el.bg, fx);
         el.bg2.className = '';
-      }, 1400);
+      }, BG_FADE);
     } else {
       if (id) el.bg.src = src;
       applicaFx(el.bg, fx);
       el.bg2.className = '';
     }
     if (id) bgCorrente = id;
+    return inDissolvenza;
   }
 
   function applicaFx(node, fx) {
@@ -1788,7 +1870,9 @@
 
     el = {
       stage: $('stage'), bg: $('bg'), bg2: $('bg2'), sky: $('sky'), npc: $('npc'), npcBody: $('npcBody'), npcHead: $('npcHead'),
-      curtain: $('curtain'), curtainTxt: $('curtainTxt'), curtainArrow: $('curtainArrow'), hint: $('hint'),
+      curtain: $('curtain'), curtainTxt: $('curtainTxt'), curtainArrow: $('curtainArrow'),
+      hint: $('hint') || { style: {} },   // la scritta "tap" e' stata tolta: stub muto
+      nero: $('nero'),
       boot: $('boot'), bootbar: $('bootbar'), logo: $('logo'), logoImg: $('logoImg'),
       avatar: $('avatar'), propwrap: $('propwrap'), prop: $('prop'), screen: $('screen'),
       boxwrap: $('boxwrap'), name: $('name'), nametxt: $('nametxt'), voce: $('voce'),
@@ -1811,6 +1895,7 @@
     el.avatar.innerHTML = '';
     el.avatar.classList.remove('on', 'entra');
     if ($('badgewrap')) $('badgewrap').classList.remove('in');
+    if (el.nero) el.nero.classList.remove('on', 'sfuma');   // ripartenza pulita: mai il nero addosso
     hubTasti = null;
     chiudiHub();
     chiudiCarosello();
