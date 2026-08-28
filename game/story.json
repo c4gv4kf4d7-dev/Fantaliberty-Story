@@ -333,7 +333,8 @@
           "who": "lucas",
           "var": "nome",
           "max": 14,
-          "text": "Registriamoti al terminale. Come ti chiami?"
+          "text": "Registriamoti al terminale. Come ti chiamiamo? Nome vero o soprannome, decidi tu.",
+          "_nota": "Il nome vero non serve: e' l'etichetta con cui il gioco si rivolge al giocatore e con cui compare in classifica. Il regolamento (zona 3 della lobby) lo chiama nickname, e deve restare coerente con quello che si chiede qui."
         },
         {
           "t": "choice",
@@ -1512,84 +1513,79 @@
         },
         {
           "t": "title",
-          "lines": [
+          "_nota": "[S7.04b] I titoli di coda: dopo il pollice in su del CEO e prima del countdown. Cinque blocchi che compaiono, restano e sfumano uno nell'altro — non si accumulano come il cartello d'apertura. Vanno da soli, un tocco li salta tutti. Totale ~15 secondi. Il tono e' asciutto: i primi crediti seri, poi due assurdi, e la chiusa sui 30 Newton.",
+          "dissolvenza": 600,
+          "blocchi": [
             {
-              "text": "FANTALIBERTY",
-              "pausa": 500
+              "righe": [
+                {
+                  "text": "FANTALIBERTY",
+                  "small": true,
+                  "pausa": 200
+                },
+                {
+                  "text": "STORY",
+                  "big": true
+                }
+              ],
+              "tieni": 1500
             },
             {
-              "text": "STORY",
-              "big": true,
-              "pausa": 1200
+              "righe": [
+                {
+                  "text": "CREATO DA",
+                  "small": true,
+                  "pausa": 260
+                },
+                {
+                  "text": "Lorenzo",
+                  "pausa": 240
+                },
+                {
+                  "text": "Michael"
+                }
+              ],
+              "tieni": 1600
             },
             {
-              "text": "CREATO DA",
-              "small": true,
-              "pausa": 260
+              "righe": [
+                {
+                  "text": "TEST",
+                  "small": true,
+                  "pausa": 260
+                },
+                {
+                  "text": "Qualcuno, probabilmente"
+                }
+              ],
+              "tieni": 1500
             },
             {
-              "text": "Lorenzo & Michael",
-              "pausa": 900
+              "righe": [
+                {
+                  "text": "SUPPORTO PSICOLOGICO",
+                  "small": true,
+                  "pausa": 260
+                },
+                {
+                  "text": "Assente"
+                }
+              ],
+              "tieni": 1500
             },
             {
-              "text": "IDEA, DESIGN, SCRITTURA,",
-              "small": true,
-              "pausa": 180
-            },
-            {
-              "text": "CORREZIONI DELL'ULTIMO MINUTO",
-              "small": true,
-              "pausa": 260
-            },
-            {
-              "text": "Lorenzo & Michael",
-              "pausa": 900
-            },
-            {
-              "text": "TEST",
-              "small": true,
-              "pausa": 220
-            },
-            {
-              "text": "Qualcuno, probabilmente",
-              "pausa": 850
-            },
-            {
-              "text": "SUPPORTO PSICOLOGICO",
-              "small": true,
-              "pausa": 220
-            },
-            {
-              "text": "Assente",
-              "pausa": 850
-            },
-            {
-              "text": "BUDGET",
-              "small": true,
-              "pausa": 220
-            },
-            {
-              "text": "30 Newton",
-              "big": true,
-              "pausa": 1100
-            },
-            {
-              "text": "NESSUN DIPARTIMENTO È STATO DANNEGGIATO",
-              "small": true,
-              "pausa": 140
-            },
-            {
-              "text": "DURANTE LA PRODUZIONE DI QUESTO GIOCO.",
-              "small": true,
-              "pausa": 500
-            },
-            {
-              "text": "Probabilmente.",
-              "pausa": 1000
-            },
-            {
-              "text": "ORA TOCCA AD APPLE.",
-              "big": true
+              "righe": [
+                {
+                  "text": "BUDGET",
+                  "small": true,
+                  "pausa": 260
+                },
+                {
+                  "text": "30 Newton",
+                  "big": true
+                }
+              ],
+              "tieni": 2000
             }
           ]
         }
@@ -1876,52 +1872,187 @@
     ]
   },
   "regolamento": {
-    "_nota": "[S1.ZONA3]. Si apre dal cartellone della lobby e si chiude con HO CAPITO: non tocca niente della partita — ne' punti, ne' picks, ne' locked, ne' stile. E' solo da leggere. Il testo sta qui e non nel motore perche' e' contenuto: cambiarlo non deve voler dire toccare il codice.",
+    "_nota": "[S1.ZONA3]. Si apre dal cartellone della lobby e si chiude con HO CAPITO: non tocca niente della partita — ne' punti, ne' picks, ne' locked, ne' stile. E' solo da leggere. Due gruppi: le regole del gioco e le informazioni sul progetto (partecipazione, privacy, indipendenza da Apple, contatti). Sono tutte qui e non in una voce di menu a parte, cosi' chi cerca le regole trova anche il resto. Il testo sta nei dati e non nel motore perche' e' contenuto: cambiarlo non deve voler dire toccare il codice. Una riga puo' essere una stringa (paragrafo), {h} (sottotitolo), {lista} (elenco) o {mail}.",
     "titolo": "REGOLAMENTO",
     "sezioni": [
       {
-        "n": "01",
-        "titolo": "OBIETTIVO",
+        "id": "come_si_gioca",
+        "titolo": "COME SI GIOCA",
         "righe": [
+          {
+            "h": "L'obiettivo"
+          },
           "Prevedi il keynote.",
           "Fai piu' punti possibile.",
-          "Cerca di non pentirti delle tue scelte."
-        ]
-      },
-      {
-        "n": "02",
-        "titolo": "PREVISIONI",
-        "righe": [
+          "Cerca di non pentirti delle tue scelte.",
+          {
+            "h": "Le previsioni"
+          },
           "Durante il keynote ti verranno proposte diverse previsioni.",
-          "Scegli quella che pensi sia piu' probabile. Alcune valgono piu' punti di altre."
-        ]
-      },
-      {
-        "n": "03",
-        "titolo": "LE SCELTE",
-        "righe": [
+          "Scegli quella che pensi sia piu' probabile. Alcune valgono piu' punti di altre.",
+          {
+            "h": "Le tre risposte"
+          },
           "CONSENSO — la risposta che molti si aspettano.",
           "PLAUSIBILE — non e' la piu' ovvia, ma potrebbe succedere.",
           "CONTROCORRENTE — improbabile, ma se ci prendi... hai fatto centro."
         ]
       },
       {
-        "n": "04",
-        "titolo": "MICRO-EVENTI",
+        "id": "punteggi",
+        "titolo": "PUNTEGGI",
         "righe": [
+          {
+            "h": "I micro-eventi"
+          },
           "Durante il keynote puo' succedere di tutto.",
           "Quando succede, dovrai reagire.",
           "La tua scelta puo' valere +3, 0 oppure -3 punti.",
-          "Non saprai quale."
-        ]
-      },
-      {
-        "n": "05",
-        "titolo": "IL FINALE",
-        "righe": [
+          "Non saprai quale.",
+          {
+            "h": "Il finale"
+          },
           "Alla fine del keynote arriva Peter.",
           "E arrivano le domande vere.",
           "Il quiz finale puo' cambiare tutto."
+        ]
+      }
+    ],
+    "gruppo": "INFORMAZIONI SUL PROGETTO",
+    "informazioni": [
+      {
+        "id": "partecipazione",
+        "titolo": "PARTECIPAZIONE",
+        "righe": [
+          "La partecipazione a FantaLiberty Story e' completamente volontaria e gratuita.",
+          "Il gioco e' un'attivita' ricreativa e non costituisce una competizione professionale ne' una forma di valutazione delle prestazioni lavorative.",
+          "Le classifiche, i punteggi e i risultati hanno esclusivamente finalita' di intrattenimento.",
+          "La partecipazione o il risultato ottenuto nel gioco non comportano conseguenze sull'attivita' lavorativa dei partecipanti."
+        ]
+      },
+      {
+        "id": "progetto",
+        "titolo": "IL PROGETTO",
+        "righe": [
+          {
+            "h": "Perche' esiste FantaLiberty Story"
+          },
+          "FantaLiberty Story e' un progetto ludico, indipendente e senza scopo di lucro.",
+          "E' stato creato con un obiettivo semplice: trasformare un evento di interesse comune in un'occasione per stare insieme, divertirsi e creare una sana competizione tra colleghi.",
+          "L'iniziativa e' pensata per favorire l'aggregazione, il rapporto tra i partecipanti e un momento informale condiviso al di fuori delle normali attivita' lavorative.",
+          "Attraverso previsioni e quiz, il gioco vuole anche stimolare la curiosita' e l'interesse verso prodotti, servizi e novita' dell'azienda in un contesto esclusivamente ludico e non formativo ufficiale.",
+          "FantaLiberty Story non ha finalita' commerciali.",
+          "Non sono previste quote di partecipazione, scommesse, premi in denaro, raccolte di denaro o altre attivita' economiche.",
+          "Nessun organizzatore o partecipante ottiene un vantaggio economico dalla partecipazione."
+        ]
+      },
+      {
+        "id": "privacy",
+        "titolo": "PRIVACY E DATI",
+        "righe": [
+          {
+            "h": "Quali dati vengono raccolti"
+          },
+          "Per consentire il funzionamento del gioco e delle classifiche possono essere raccolti:",
+          {
+            "lista": [
+              "il nickname scelto dal giocatore",
+              "il genere selezionato, per personalizzare alcune parti narrative",
+              "lo store",
+              "il reparto",
+              "gli anni di esperienza in Apple",
+              "il dispositivo utilizzato",
+              "lo stile scelto",
+              "le previsioni effettuate",
+              "le risposte ai quiz",
+              "i punteggi",
+              "bonus e moltiplicatori",
+              "i risultati della partita"
+            ]
+          },
+          {
+            "h": "Perche' raccogliamo questi dati"
+          },
+          "I dati vengono utilizzati esclusivamente per:",
+          {
+            "lista": [
+              "personalizzare alcune parti dell'esperienza di gioco",
+              "registrare la schedina del partecipante",
+              "gestire il corretto funzionamento della partita",
+              "calcolare punteggi, bonus e risultati",
+              "creare classifiche generali e per categoria",
+              "determinare i risultati finali dell'iniziativa"
+            ]
+          },
+          "I dati non vengono utilizzati per pubblicita', marketing, profilazione o altre finalita' commerciali.",
+          "Non vengono venduti o ceduti a terzi per finalita' commerciali.",
+          {
+            "h": "Dove vengono conservati"
+          },
+          "I dati della partita vengono inviati e conservati su un database gestito tramite Supabase, con infrastruttura ospitata nell'Unione Europea.",
+          "Il gioco utilizza inoltre la memoria locale del browser per salvare temporaneamente lo stato della partita e consentirne il corretto funzionamento.",
+          {
+            "h": "Chi puo' accedere ai dati"
+          },
+          "I dati completi raccolti attraverso FantaLiberty Story sono accessibili esclusivamente agli organizzatori del progetto, Lorenzo e Michael, per la gestione tecnica dell'iniziativa, delle schedine e delle classifiche.",
+          "Gli altri partecipanti non possono accedere ai dati completi degli altri giocatori.",
+          {
+            "h": "Per quanto tempo"
+          },
+          "I dati vengono conservati fino alla conclusione dell'iniziativa e cancellati entro 30 giorni dalla sua conclusione.",
+          {
+            "h": "I tuoi diritti"
+          },
+          "In qualsiasi momento e' possibile richiedere informazioni sui propri dati, chiederne la correzione o richiederne la cancellazione anticipata.",
+          "Per qualsiasi richiesta relativa ai dati raccolti:",
+          {
+            "mail": "hello@fantaliberty.com"
+          }
+        ]
+      },
+      {
+        "id": "sicurezza",
+        "titolo": "SICUREZZA",
+        "righe": [
+          "I dati vengono gestiti tramite servizi protetti da autenticazione e sono accessibili esclusivamente agli organizzatori autorizzati alla gestione dell'iniziativa.",
+          "Vengono adottate misure ragionevoli per limitare l'accesso ai dati e proteggerli da accessi non autorizzati."
+        ]
+      },
+      {
+        "id": "indipendenza",
+        "titolo": "INDIPENDENZA",
+        "righe": [
+          {
+            "h": "Il rapporto con Apple"
+          },
+          "FantaLiberty Story e' un progetto ludico indipendente.",
+          "Non e' un prodotto ufficiale Apple e non e' affiliato, sponsorizzato o approvato da Apple Inc.",
+          "Il progetto e' stato realizzato autonomamente dagli organizzatori come iniziativa ricreativa senza finalita' commerciali.",
+          "Le previsioni, i quiz, i dialoghi e le situazioni presenti nel gioco sono creati esclusivamente a scopo narrativo e di intrattenimento.",
+          "Eventuali riferimenti a persone, prodotti, eventi o comunicazioni reali non costituiscono dichiarazioni ufficiali, anticipazioni o comunicazioni attribuibili ad Apple Inc. o alle persone eventualmente citate."
+        ]
+      },
+      {
+        "id": "marchi",
+        "titolo": "MARCHI E CONTENUTI",
+        "righe": [
+          "Apple, iPhone, Mac, iPad, Apple Watch, AirPods, HomePod, Apple TV, Apple Vision Pro e altri nomi di prodotti o servizi eventualmente citati all'interno del gioco sono marchi di Apple Inc., registrati negli Stati Uniti e in altri Paesi e regioni.",
+          "I riferimenti a tali nomi sono utilizzati esclusivamente a scopo descrittivo, narrativo e di intrattenimento.",
+          "FantaLiberty Story non intende rappresentare o sostituire comunicazioni, prodotti, servizi o contenuti ufficiali di Apple."
+        ]
+      },
+      {
+        "id": "contatti",
+        "titolo": "CONTATTI",
+        "righe": [
+          {
+            "h": "Organizzatori"
+          },
+          "Lorenzo & Michael",
+          "Per informazioni sul progetto o richieste relative ai dati personali:",
+          {
+            "mail": "hello@fantaliberty.com"
+          }
         ]
       }
     ],

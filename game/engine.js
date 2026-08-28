@@ -110,6 +110,8 @@
   // Le transizioni durano piu' di un tap: se si cambia scena mentre una e' in
   // corso, quello che resta a schermo va tolto o copre la scena nuova.
   function chiudiTransizioni() {
+    if (codaId) { clearTimeout(codaId); codaId = null; }
+    if (el.curtainTxt) el.curtainTxt.classList.remove('sfumato');
     if (el.prlx) { el.prlx.classList.remove('on'); el.prlx.innerHTML = ''; }
     if (el.tende) el.tende.classList.remove('on', 'apri');
     if (el.platea) el.platea.classList.remove('on');
@@ -281,7 +283,75 @@
   /* ---------------- cartello d'apertura ----------------
      Schermo nero, righe a macchina da scrivere una dopo l'altra; al tap la scena
      si accende (il nero sfuma via e sotto c'e' gia' il fondale). */
-  function typeLines(lines, done) {
+  function righeTitolo(lines) {
+    return (lines || []).map(function (l) {
+      return typeof l === 'string' ? { text: fmt(l) }
+        : { text: fmt(l.text), small: l.small, big: l.big, pausa: l.pausa };
+    });
+  }
+
+  /* ---------------- titoli di coda ----------------
+     Stessa schermata del cartello d'apertura ("-1 / ORA: CUPERTINO"): nero,
+     testo centrato, scritto a macchina. La differenza e' che qui i blocchi non
+     si sommano — ognuno compare, resta, sfuma, e lascia il posto al prossimo.
+     Va avanti da solo: e' una sequenza da guardare, non da tappare. Un tocco
+     solo la salta tutta. */
+  var codaId = null;
+  function titoliDiCoda(st, done) {
+    var blocchi = st.blocchi || [];
+    var sfuma = st.dissolvenza != null ? st.dissolvenza : 600;
+    var i = 0, saltato = false;
+
+    function stop() {
+      if (codaId) { clearTimeout(codaId); codaId = null; }
+      stopTyping();
+      typing = false;
+    }
+
+    // Fine della sequenza: sia quando finisce da sola sia quando un tocco la
+    // salta, il gioco prosegue subito. Non c'e' un tap finale da fare: i titoli
+    // di coda sono una cosa da guardare, e quando sono finiti sono finiti.
+    function chiudi() {
+      if (saltato) return;
+      saltato = true;
+      stop();
+      el.curtainTxt.classList.remove('sfumato');
+      el.curtainTxt.innerHTML = '';
+      revealUI = null;
+      pending = null;
+      el.curtainArrow.style.opacity = 0;
+      done();
+    }
+
+    function prossimo() {
+      if (saltato) return;
+      if (i >= blocchi.length) return chiudi();
+      var b = blocchi[i++];
+      el.curtainTxt.classList.remove('sfumato');
+      el.curtainTxt.innerHTML = '';
+      typeLines(righeTitolo(b.righe), function () {
+        if (saltato) return;
+        // durante la pausa fra un blocco e l'altro il typewriter e' fermo:
+        // senza "pending" un tocco qui non farebbe niente e la sequenza
+        // sembrerebbe bloccata
+        revealUI = chiudi;
+        pending = chiudi;
+        codaId = setTimeout(function () {
+          if (saltato) return;
+          el.curtainTxt.classList.add('sfumato');
+          codaId = setTimeout(prossimo, sfuma);
+        }, b.tieni != null ? b.tieni : 1200);
+      }, true);
+      revealUI = chiudi;
+    }
+
+    if (!VN.speed) return chiudi();         // test/skip: niente sequenza a tempo
+    prossimo();
+  }
+
+  /* "subito": a fine sequenza chiama done() invece di aspettare un tocco. Il
+     cartello d'apertura aspetta il giocatore; i titoli di coda vanno da soli. */
+  function typeLines(lines, done, subito) {
     el.curtainTxt.innerHTML = '';
     el.curtainArrow.style.opacity = 0;
     var i = 0, nodi = [];
@@ -313,6 +383,7 @@
 
     function fine() {
       revealUI = null;
+      if (subito) { pending = null; el.curtainArrow.style.opacity = 0; return done(); }
       pending = done;
       el.curtainArrow.style.opacity = 1;
     }
@@ -411,6 +482,23 @@
   var silent = false;   // true durante il ripristino
   function next() { if (silent) return; VN.i++; run(); }
 
+  /* Una scena che COMINCIA su un cartello nero (sigla, barra di caricamento,
+     titolo) si tiene addosso il sipario nero. Una che ce l'ha in mezzo o in
+     fondo no: i titoli di coda stanno alla fine del finale, e cercando un
+     "title" in qualunque punto della scena il nero restava su per tutta la
+     sequenza della porta — che quindi non si vedeva. Gli step che non mostrano
+     niente (hide, wait, set, nero, luce) si saltano: possono stare prima senza
+     voler dire che la scena parte illuminata. */
+  var INVISIBILI = { hide: 1, wait: 1, set: 1, nero: 1, luce: 1 };
+  function apreSulNero(sc) {
+    var steps = sc.steps || [];
+    for (var i = 0; i < steps.length; i++) {
+      if (INVISIBILI[steps[i].t]) continue;
+      return steps[i].t === 'title' || steps[i].t === 'boot' || steps[i].t === 'logo';
+    }
+    return false;
+  }
+
   function goScene(id) {
     var sc = VN.story.scenes[id];
     if (!sc) throw new Error('scena inesistente: ' + id);
@@ -423,9 +511,7 @@
     chiudiRegole();
     chiudiTransizioni();
     if (el.modal) el.modal.classList.remove('on');
-    if (!(sc.steps || []).some(function (s) { return s.t === 'title' || s.t === 'boot' || s.t === 'logo'; })) {
-      el.curtain.classList.remove('on', 'lights');
-    }
+    if (!apreSulNero(sc)) el.curtain.classList.remove('on', 'lights');
     // Il box del dialogo restava acceso con l'ultima battuta della scena
     // precedente finche' non ne arrivava una nuova: si vedeva la vecchia frase
     // sopra il fondale nuovo.
@@ -591,24 +677,28 @@
       case 'logo':
         el.boxwrap.classList.remove('in');
         el.hint.style.opacity = 0;
+        scopriCartello();
         sigla(st, next);
         return;
 
       case 'boot':
         el.boxwrap.classList.remove('in');
         el.hint.style.opacity = 0;
+        scopriCartello();
         boot(st, next);
         return;
 
       case 'title':
         el.boxwrap.classList.remove('in');
         el.hint.style.opacity = 0;
+        scopriCartello();
         el.curtain.classList.remove('lights');
         el.curtain.classList.add('on');
-        typeLines((st.lines || []).map(function (l) {
-          return typeof l === 'string' ? { text: fmt(l) }
-            : { text: fmt(l.text), small: l.small, big: l.big, pausa: l.pausa };
-        }), next);
+        // "blocchi": i titoli di coda. Le righe non si accumulano come nel
+        // cartello d'apertura — ogni blocco compare, resta, sfuma, e arriva il
+        // prossimo. Va da solo, un tocco salta tutto.
+        if (st.blocchi) return titoliDiCoda(st, next);
+        typeLines(righeTitolo(st.lines), next);
         return;
 
       case 'show':
@@ -1752,8 +1842,19 @@
       body: JSON.stringify(corpo)
     }).then(function (r) {
       if (r.ok) return svuotaCoda();
+      // Un rifiuto va in coda e si riprova al prossimo avvio, ma resta muto per
+      // il giocatore: se e' un problema di schema (una colonna che manca nella
+      // tabella) nessuno se ne accorgerebbe mai. Il motivo finisce almeno in
+      // console, cosi' e' diagnosticabile.
       accoda(corpo);
-    }).catch(function () { accoda(corpo); });
+      if (global.console && r.text) {
+        r.text().then(function (t) { global.console.warn('schedina non accettata:', r.status, t); },
+                      function () {});
+      }
+    }).catch(function (e) {
+      accoda(corpo);
+      if (global.console) global.console.warn('schedina non spedita:', e);
+    });
   }
 
   function accoda(corpo) {
@@ -2331,23 +2432,22 @@
     el.regtit.textContent = fmt(r.titolo || 'REGOLAMENTO');
     el.regcorpo.innerHTML = '';
 
-    (r.sezioni || []).forEach(function (s) {
-      var box = global.document.createElement('div');
-      box.className = 'regsez';
-      var h = global.document.createElement('div');
-      h.className = 'regh';
-      h.innerHTML = '<span class="regn"></span><span class="regnome"></span>';
-      h.querySelector('.regn').textContent = s.n || '';
-      h.querySelector('.regnome').textContent = fmt(s.titolo || '');
-      box.appendChild(h);
-      (s.righe || []).forEach(function (riga) {
-        var p = global.document.createElement('p');
-        p.className = 'regriga';
-        p.textContent = fmt(riga);
-        box.appendChild(p);
-      });
-      el.regcorpo.appendChild(box);
-    });
+    (r.sezioni || []).forEach(function (s) { el.regcorpo.appendChild(sezioneRegole(s)); });
+
+    // Le informazioni sul progetto stanno nella stessa schermata delle regole,
+    // sotto un separatore: chi cerca come si gioca trova anche privacy,
+    // indipendenza e contatti, senza una voce di menu in piu'.
+    if ((r.informazioni || []).length) {
+      var sep = global.document.createElement('div');
+      sep.className = 'reggruppo';
+      sep.appendChild(global.document.createElement('i'));
+      var et = global.document.createElement('span');
+      et.textContent = fmt(r.gruppo || 'INFORMAZIONI SUL PROGETTO');
+      sep.appendChild(et);
+      sep.appendChild(global.document.createElement('i'));
+      el.regcorpo.appendChild(sep);
+      r.informazioni.forEach(function (s) { el.regcorpo.appendChild(sezioneRegole(s)); });
+    }
 
     if (r.chiusa) {
       var c = global.document.createElement('div');
@@ -2369,8 +2469,95 @@
       if (done) done();
     };
     el.regcorpo.scrollTop = 0;
+    // ripiego per i browser senza overflow:clip, dove il fuoco su un bottone
+    // puo' aver spostato di lato tutta la scena
+    if (el.stage) el.stage.scrollLeft = 0;
     if (el.bg) el.bg.classList.add('sfoca');
     el.regole.classList.add('on');
+  }
+
+  /* Una sezione richiudibile: la riga col titolo e il "+", e sotto il testo.
+     Si apre una alla volta al tocco, e si parte tutte chiuse — l'elenco delle
+     voci deve stare in una schermata sola, altrimenti non si capisce cosa c'e'.
+
+     Lo stato aperto/chiuso vive nel DOM e basta: NON va in VN.state. Leggere il
+     regolamento non deve toccare la partita, e il test lo controlla
+     confrontando lo stato prima e dopo. */
+  function sezioneRegole(s) {
+    var box = global.document.createElement('div');
+    box.className = 'regsez';
+    if (s.id) box.dataset.sez = s.id;
+
+    var testa = global.document.createElement('button');
+    testa.className = 'regtesta';
+    testa.type = 'button';
+    testa.setAttribute('aria-expanded', 'false');
+    var nome = global.document.createElement('span');
+    nome.className = 'regnome';
+    nome.textContent = fmt(s.titolo || '');
+    var segno = global.document.createElement('span');
+    segno.className = 'regsegno';
+    segno.textContent = '+';
+    testa.appendChild(nome); testa.appendChild(segno);
+
+    // due nodi: quello esterno si apre da 0fr a 1fr, quello interno tiene il
+    // testo. Senza il secondo il contenuto verrebbe schiacciato invece che
+    // tagliato mentre si apre.
+    var sotto = global.document.createElement('div');
+    sotto.className = 'regsotto';
+    var dentro = global.document.createElement('div');
+    dentro.className = 'regdentro';
+    sotto.appendChild(dentro);
+
+    (s.righe || []).forEach(function (riga) { dentro.appendChild(rigaRegole(riga)); });
+
+    testa.onclick = function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      var apri = !box.classList.contains('aperta');
+      box.classList.toggle('aperta', apri);
+      segno.textContent = apri ? '\u2212' : '+';       // meno vero, non un trattino
+      testa.setAttribute('aria-expanded', apri ? 'true' : 'false');
+    };
+
+    box.appendChild(testa);
+    box.appendChild(sotto);
+    return box;
+  }
+
+  /* Una riga del regolamento. Di solito e' un paragrafo, ma la parte legale ha
+     bisogno anche di sottotitoli, elenchi puntati e dell'indirizzo di posta. */
+  function rigaRegole(riga) {
+    var doc = global.document;
+    if (typeof riga === 'string') {
+      var p = doc.createElement('p');
+      p.className = 'regriga';
+      p.textContent = fmt(riga);
+      return p;
+    }
+    if (riga && riga.h) {
+      var h = doc.createElement('div');
+      h.className = 'regsotto-tit';
+      h.textContent = fmt(riga.h);
+      return h;
+    }
+    if (riga && riga.lista) {
+      var ul = doc.createElement('ul');
+      ul.className = 'reglista';
+      riga.lista.forEach(function (v) {
+        var li = doc.createElement('li');
+        li.textContent = fmt(v);
+        ul.appendChild(li);
+      });
+      return ul;
+    }
+    if (riga && riga.mail) {
+      var a = doc.createElement('a');
+      a.className = 'regmail';
+      a.href = 'mailto:' + riga.mail;
+      a.textContent = riga.mail;
+      return a;
+    }
+    return doc.createTextNode('');
   }
 
   function chiudiRegole() {
@@ -2914,6 +3101,15 @@
      avanti solo quando il buio e' pieno, quindi fondale e personaggio nuovi
      vengono montati mentre non si vede niente. In modalita' test (speed 0)
      e' istantanea. */
+  /* Un cartello a schermo pieno (sigla, caricamento, titolo) arriva spesso dopo
+     una dissolvenza al nero — i titoli di coda vengono proprio da li'. Il velo
+     #nero pero' sta SOPRA il cartello, quindi lo coprirebbe: il testo c'e' nel
+     DOM ma lo schermo resta nero e sembra che non succeda niente. Toglierlo non
+     si vede, perche' il cartello e' nero a sua volta. */
+  function scopriCartello() {
+    if (el.nero) el.nero.classList.remove('on', 'sfuma');
+  }
+
   function velaNero(giu, ms, done) {
     if (!el.nero) return done();
     var d = ms == null ? 1000 : ms;
