@@ -81,6 +81,10 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #npc{position:absolute;right:-2%;bottom:16%;height:56%;aspect-ratio:3/5;opacity:0;z-index:1;
  filter:drop-shadow(0 10px 20px rgba(0,0,0,.55));transform:translateX(60px);
  transition:height .5s ease, bottom .5s ease}
+/* Personaggi inquadrati sul viso (vedi inquadra() nel motore): il riquadro cambia
+   misura a ogni posa e vederlo scorrere sembra un rimpicciolimento. Qui il
+   cambio e' istantaneo, sotto l'animazione d'ingresso. */
+#npc.fisso{transition:none}
 #npcBody{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
  object-position:bottom center;image-rendering:pixelated}
 #npcHead{position:absolute;left:50%;top:4%;width:34%;transform:translateX(-50%);
@@ -182,6 +186,12 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  opacity:0;transform:translateY(18px);transition:opacity .5s ease, transform .5s ease;
  max-height:46%;display:flex;flex-direction:column}
 #boxwrap.in{opacity:1;transform:translateY(0)}
+/* Riga di sistema: non la dice nessuno, e' il gioco che avvisa ("il badge e'
+   in stampa"). Cornice tratteggiata e testo centrato, perche' si distingua da
+   una battuta di un personaggio. */
+#boxwrap.sistema #box{border-style:dashed;background:rgba(10,12,22,.82);
+ text-align:center;color:#cfd6ee}
+#boxwrap.sistema #name{display:none}
 #name{align-self:flex-start;background:#1b1f33;border:3px solid #fff;border-radius:10px;
  padding:7px 14px;color:#fff;font-size:clamp(8px,2.15vw,12px);margin-left:12px;position:relative;z-index:2;
  box-shadow:0 4px 0 rgba(0,0,0,.5);display:flex;align-items:center;gap:7px}
