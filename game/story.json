@@ -640,7 +640,7 @@
           "t": "say",
           "sistema": true,
           "attesa": 2000,
-          "text": "# Attendi: il badge e' in stampa #"
+          "text": "### stampa in corso ###"
         },
         {
           "t": "prop",
