@@ -341,6 +341,36 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  cursor:default;box-shadow:none}
 .gcell.fatta:hover{background:#1b1f33}
 
+/* ---------- recap del teleprompter (S6) ----------
+   Tutte le risposte in una lista che scorre, ognuna ancora toccabile, e sotto
+   il bottone rosso che chiude la schedina. Il box del dialogo si stringe per
+   fargli posto: qui il contenuto e' la lista, non la battuta. */
+#recapwrap{margin-top:10px;display:none;flex-direction:column;gap:8px;min-height:0}
+#recapwrap.on{display:flex}
+#boxwrap.recap{max-height:74%}
+#boxwrap.recap #box{min-height:0;font-size:clamp(7px,2vw,11px);line-height:1.6}
+#boxwrap.recap #recapwrap{display:flex}
+#recap{overflow-y:auto;display:flex;flex-direction:column;gap:5px;
+ -webkit-overflow-scrolling:touch}
+.rtit{color:#ffd98a;font-size:clamp(7px,2vw,10px);margin-top:6px;letter-spacing:.08em}
+.rtit:first-child{margin-top:0}
+.rriga{background:#2a3050;border:2px solid rgba(255,255,255,.55);border-radius:7px;
+ padding:8px 10px;color:#fff;font-family:inherit;cursor:pointer;text-align:left;
+ display:flex;flex-direction:column;gap:4px}
+.rriga:hover,.rriga:focus{background:#3d466e;outline:none}
+.rq{font-size:clamp(6px,1.75vw,9px);opacity:.72;line-height:1.5}
+.rv{font-size:clamp(7px,2vw,10px);line-height:1.5}
+/* posto ancora libero fra le facoltative: si vede che manca qualcosa */
+.rriga.vuota{border-style:dashed;border-color:rgba(255,255,255,.3);background:rgba(0,0,0,.2)}
+.rriga.vuota .rv{color:#ffd98a;font-size:clamp(9px,2.6vw,13px)}
+/* il bottone che chiude la schedina: rosso, fisso in fondo, non si perde
+   scorrendo la lista */
+#blocca{flex:none;background:#8e2a2a;border:3px solid #ff9a9a;border-radius:8px;
+ color:#fff;font-family:inherit;font-size:clamp(8px,2.3vw,12px);padding:12px 13px;
+ cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.5);letter-spacing:.04em}
+#blocca:hover,#blocca:focus{background:#a83333;outline:none}
+#blocca:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.5)}
+
 /* ---------- carosello di scelta (gli stili di S3) ----------
    La figura sta in mezzo alla scena, la scheda che la descrive sotto, al posto
    del box del dialogo: la scelta dello stile e' l'unica cosa a schermo, e ci

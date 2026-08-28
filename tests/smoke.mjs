@@ -31,7 +31,7 @@ function partOf(who, kind, id) {
   const c = story.cast?.[who];
   return c && id ? c[kind]?.[id] : undefined;
 }
-const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'hub', 'carosello', 'griglia', 'domande', 'bivio', 'intermezzo', 'show', 'hide', 'io', 'prop', 'bg', 'react', 'fx', 'carrellata', 'sipario', 'nero', 'luce', 'wait', 'set', 'goto', 'end']);
+const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'hub', 'carosello', 'griglia', 'domande', 'bivio', 'intermezzo', 'recap', 'show', 'hide', 'io', 'prop', 'bg', 'react', 'fx', 'carrellata', 'sipario', 'nero', 'luce', 'wait', 'set', 'goto', 'end']);
 assert.ok(story.scenes[story.meta.start], 'meta.start punta a una scena esistente');
 
 // Tutti i valori che una variabile puo' assumere, raccolti da chi la scrive.
@@ -139,6 +139,11 @@ for (const [id, sc] of Object.entries(story.scenes)) {
         `scena ${id}: domande set "${st.set}" - solo "core" o "extra"`);
     }
     if (st.t === 'bivio') assert.ok(st.text, `scena ${id}: bivio senza domanda`);
+    if (st.t === 'recap') {
+      assert.ok(story[st.da || 'argomenti'], `scena ${id}: recap su "${st.da}", che non esiste`);
+      assert.ok(st.lock?.text, `scena ${id}: il blocco e' irreversibile, serve una conferma`);
+      if (st.goto) assert.ok(story.scenes[st.goto], `scena ${id}: recap verso "${st.goto}", che non esiste`);
+    }
     if (st.t === 'carosello') controllaCarosello(id, st);
     if (st.t === 'sipario') {
       for (const k of ['davanti', 'dietro']) {
@@ -699,6 +704,8 @@ assert.equal(VN.state.sfacciato, false);
     assert.equal(txt(), core[k].opzioni[0].battute.drip, `battuta dello stile sulla domanda ${k + 1}`);
     assert.equal($('nametxt').textContent, 'FRANCA', 'a parlare alla platea e\' il giocatore');
     assert.equal(VN.state.punti, prima + core[k].opzioni[0].pt, 'punti della core presi dalla banca');
+    assert.equal(VN.state.picks.watch.core[core[k].id].v, core[k].opzioni[0].label,
+      'la risposta segnata e\' l\'etichetta scelta');
     VN.step();                                                 // via la battuta
     // gli eventi si intromettono a caso fra una domanda e l'altra: si tira
     // avanti finche' non ricompaiono dei bottoni (la prossima domanda, o il bivio)
@@ -751,7 +758,7 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   // tutto il resto. Il limite di giri e' una rete di sicurezza, non un'attesa:
   // se il keynote non finisce, il test si ferma e lo dice.
   let giri = 0;
-  while (VN.sceneId !== 'backstage' && giri++ < 900) {
+  while (VN.sceneId !== 'teleprompter' && giri++ < 900) {
     if ($('griglia').classList.contains('on')) {
       const libere = celle().filter((c) => !c.classList.contains('fatta'));
       if (!libere.length) { VN.step(); continue; }
@@ -762,7 +769,7 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
       VN.step();
     }
   }
-  assert.equal(VN.sceneId, 'backstage', `il keynote non si e' chiuso in ${giri} passi`);
+  assert.equal(VN.sceneId, 'teleprompter', `il keynote non si e' chiuso in ${giri} passi`);
   for (const k of ['iphone', 'watch', 'altro']) {
     assert.equal(Object.keys(VN.state.picks[k].core).length, banca.categorie[k].core.length,
       `${k}: mancano delle core`);
@@ -775,6 +782,57 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.ok(VN.state.eventi_sacchetto, 'il sacchetto degli eventi e\' stato creato');
   const tutti = banca.micro_eventi.length + 1;
   assert.ok(VN.state.eventi_sacchetto.length < tutti, 'e qualche evento e\' uscito');
+
+  /* ---------- S6: recap, modifica, blocco ---------- */
+  // si arriva qui con una partita vera alle spalle: e' il momento giusto per
+  // provare il recap, che senza risposte non avrebbe niente da mostrare
+  VN.step(); VN.step();                                        // le due battute di Martha
+  assert.ok($('recap').classList.contains('on'), 'il recap si apre');
+  assert.ok($('boxwrap').classList.contains('recap'), 'il box lascia spazio alla lista');
+
+  const righe = () => [...$('recap').querySelectorAll('.rriga')];
+  const titoli = [...$('recap').querySelectorAll('.rtit')].map((t) => t.textContent);
+  assert.deepEqual(titoli, ['iPhone', 'Watch', 'Altro'], 'una sezione per macroargomento');
+  // 12 core + 9 facoltative pescate: tutte le risposte sono in lista
+  assert.equal(righe().length, 21, 'tutte le domande giocate sono in lista');
+  assert.equal(righe().filter((r) => r.classList.contains('vuota')).length, 0,
+    'nessun posto libero: le facoltative erano state giocate tutte');
+
+  // modificare una riga: si riapre la stessa domanda e il punteggio si aggiorna
+  const puntiPrima = VN.state.punti;
+  const primaDomanda = banca.categorie.iphone.core[0];
+  righe()[0].onclick({ stopPropagation() {} });
+  assert.equal(txt(), primaDomanda.q, 'tocco la riga e torna la domanda originale');
+  const opz = [...$('choices').querySelectorAll('.ch')];
+  assert.equal(opz.length, primaDomanda.opzioni.length);
+  const ultima = primaDomanda.opzioni[primaDomanda.opzioni.length - 1];
+  opz[opz.length - 1].onclick({ stopPropagation() {} });
+  assert.ok($('recap').classList.contains('on'), 'e si torna al recap');
+  assert.equal(VN.state.picks.iphone.core[primaDomanda.id].v, ultima.label, 'la risposta e\' cambiata');
+  // il totale e' ricalcolato dalle risposte, non accumulato: senza, correggere
+  // una risposta lascerebbe i punti della vecchia dentro al conto
+  assert.equal(VN.state.punti,
+    puntiPrima - primaDomanda.opzioni[0].pt + ultima.pt, 'e il punteggio si e\' aggiornato');
+
+  // il blocco e' irreversibile: prima la conferma
+  assert.equal(VN.state.locked, false);
+  $('blocca').onclick({ stopPropagation() {} });
+  assert.ok($('modal').classList.contains('on'), 'conferma prima di chiudere la schedina');
+  [...$('modalbtns').querySelectorAll('.ch')][1].onclick({ stopPropagation() {} });   // fammi rileggere
+  assert.equal(VN.state.locked, false, 'annullare non chiude niente');
+  assert.ok($('recap').classList.contains('on'), 'e si resta sul recap');
+
+  $('blocca').onclick({ stopPropagation() {} });
+  [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });
+  assert.equal(VN.state.locked, true, 'la schedina e\' chiusa');
+  assert.equal(VN.sceneId, 'finale', 'e si va al finale');
+  // senza chiave configurata l'invio non si perde: resta in coda per il prossimo avvio
+  const coda = JSON.parse(dom.window.localStorage.getItem('fl_nexus_da_inviare') || 'null');
+  assert.ok(coda, 'la schedina non spedita resta in coda');
+  assert.equal(coda.stile, 'ingegnere');
+  assert.equal(coda.punti, VN.state.punti);
+  assert.ok(coda.picks.iphone.core, 'e porta con se\' tutte le risposte');
+  assert.ok(!('submitted_at' in coda), 'il timestamp lo mette il server, non il client');
 }
 
 /* ---------- 5g. S5: la regola d'oro della platea ----------

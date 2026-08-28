@@ -14,6 +14,7 @@ game/
   story.json            SCRIPT DEL GIOCO: scene, battute, scelte, asset  <- si edita qui
   domande.json          banca pronostici [S5]: 29 domande, 316 battute (una per stile)
   quiz.json             quiz di Peter [S8]: 44 domande, due pool per livello
+  backend.json          dove spedire la schedina chiusa (url + chiave anon)
 assets/
   bg/                   sfondi
   chars/                sprite personaggi (un file per espressione)
@@ -30,6 +31,7 @@ docs/
   script-master.md      DOCUMENTO UNICO di riferimento: scene S0B-S8, formule
   manifest-asset.md     quale file grafico serve in quale scena
   indice-domande.md     indice degli id, rigenerato da `npm run indice`
+  backend.sql           schema e policy della tabella runs, da incollare in Supabase
 tests/smoke.mjs         smoke test headless con jsdom
 archivio/wwdc26/        edizione precedente (classifica, previsioni, pagina di manutenzione)
 ```
@@ -111,6 +113,7 @@ Tutto lo script vive in `game/story.json`. Ogni scena e' una lista di `steps`:
 | `domande` | `{"t":"domande","set":"core"}` · `{"t":"domande","set":"extra"}` | il giro dei pronostici della categoria corrente |
 | `bivio` | `{"t":"bivio","text":"…","approfondisci":"…","passa":"…"}` | pesca 3 facoltative dal pool, oppure passa oltre |
 | `intermezzo` | `{"t":"intermezzo","who":"martha"}` | la prossima scommessa di regia, in ordine |
+| `recap` | `{"t":"recap","da":"argomenti","lock":{…},"goto":"finale"}` | il teleprompter di S6: tutte le risposte, modificabili, e il blocco |
 | `logo` | `{"t":"logo","img":"ui/logo_studio.png"}` | sigla che si accende come un neon |
 | `boot` | `{"t":"boot","ms":2200,"cursore":1600}` | barra LOADING, poi cursore sul nero |
 | `title` | `{"t":"title","lines":[…]}` | cartello nero a righe |
@@ -250,6 +253,38 @@ Tre regole dello script che il codice deve rispettare:
 
 `story.regia` regola il contorno: `probabilitaEvento` e le righe generiche con
 cui Martha apre una domanda (`introDomanda`, scelte a caso).
+
+### S6: il recap e l'invio
+
+Lo step `recap` mostra tutte le risposte date, per macroargomento, ognuna ancora
+toccabile: toccarla riapre la domanda originale con le stesse opzioni. Le
+facoltative saltate compaiono come righe vuote e si possono giocare adesso — se
+il pescaggio non era stato fatto, si fa ora.
+
+Il punteggio **non e' accumulato ma derivato** dalle risposte: qui si possono
+cambiare, e un contatore accumulato andrebbe fuori sincrono alla prima
+correzione.
+
+Il bottone rosso chiude la schedina: `run.locked = true`, e da quel momento la
+zona 4 della lobby si apre (e' gia' condizionata a `locked`, non serve altro).
+
+**L'invio.** `game/backend.json` dice dove spedire:
+
+```json
+{ "url": "https://....supabase.co", "tabella": "runs", "chiave": "<anon key>" }
+```
+
+Lo schema della tabella e le policy stanno in `docs/backend.sql`. La chiave
+`anon` di Supabase e' fatta apposta per stare in un sito statico: la policy RLS
+concede **solo INSERT**, quindi da sola non puo' leggere ne' modificare niente.
+La chiave `service_role` non deve mai finire li' dentro.
+
+Il timestamp lo mette il server (`default now()` sulla colonna), non il client:
+un orologio del telefono spostato non deve poter cambiare l'ordine di arrivo.
+
+Il blocco e' locale e irreversibile, quindi se l'invio fallisce — rete assente,
+chiave non ancora configurata — la schedina **resta in coda** in `localStorage`
+e si riprova da sola al prossimo avvio, invece di perdersi.
 
 ### Le pose che dipendono da una variabile
 

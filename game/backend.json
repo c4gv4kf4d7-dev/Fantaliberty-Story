@@ -1,0 +1,6 @@
+{
+  "_nota": "Dove finisce la schedina quando il giocatore la blocca in S6. La chiave 'anon' di Supabase e' fatta apposta per stare in un sito statico: da sola non puo' leggere niente, perche' la policy RLS concede solo INSERT. La chiave 'service_role' NON deve mai finire qui.",
+  "url": "https://pmjbdvzwbmudxsmmcntz.supabase.co",
+  "tabella": "runs",
+  "chiave": ""
+}

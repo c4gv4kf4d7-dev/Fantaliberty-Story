@@ -14,7 +14,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"
       media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="./game/engine.css?v=28">
+<link rel="stylesheet" href="./game/engine.css?v=34">
 </head>
 <body>
 <div id="stage">
@@ -94,6 +94,12 @@
     <div id="choices"></div>
     <!-- i tre macroargomenti del keynote: pannelli con nome e stato -->
     <div id="griglia"></div>
+    <!-- il recap di S6: tutte le risposte, ancora modificabili, e il bottone
+         rosso che chiude la schedina -->
+    <div id="recapwrap">
+      <div id="recap"></div>
+      <button id="blocca">BLOCCA LA SCALETTA</button>
+    </div>
     <div id="inputform">
       <input id="ti" type="text" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Il tuo nome">
       <button id="tok">OK</button>
@@ -144,7 +150,7 @@
   </div>
 </div>
 
-<script src="./game/engine.js?v=28"></script>
+<script src="./game/engine.js?v=34"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -154,7 +160,7 @@
   };
   if (params.get('reset')) { try { localStorage.removeItem('fl_nexus_save_v1'); } catch (e) {} }
 
-  var ENGINE_ATTESO = '7';   // deve combaciare con VN.engine in game/engine.js
+  var ENGINE_ATTESO = '8';   // deve combaciare con VN.engine in game/engine.js
   var partito = false;
 
   function mostraErrore(msg) {
@@ -176,7 +182,7 @@
     location.replace(location.pathname + '?r=' + Date.now());    // URL nuovo: bypassa la cache
   };
 
-  function start(story, banca) {
+  function start(story, banca, backend) {
     // Motore e pagina devono essere della stessa versione: se il browser ne ha
     // mescolate due dalla cache si ricarica una volta sola con un indirizzo
     // nuovo, che la cache non puo' servire.
@@ -193,6 +199,7 @@
 
     try {
       opts.banca = banca;
+      opts.backend = backend;
       VN.boot(story, opts);
       partito = true;
     } catch (e) {
@@ -205,16 +212,22 @@
   // STORY_INLINE / BANCA_INLINE vengono definiti dal build single-file
   // (tools/build_single_file.py): in quel caso non serve nessuna richiesta HTTP
   // e il gioco gira anche da file://
-  if (window.STORY_INLINE) return start(window.STORY_INLINE, window.BANCA_INLINE);
+  if (window.STORY_INLINE) return start(window.STORY_INLINE, window.BANCA_INLINE, window.BACKEND_INLINE);
 
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=28', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=34', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
-  Promise.all([prendi('story.json'), prendi('domande.json')])
-    .then(function (x) { start(x[0], x[1]); })
+  // backend.json e' facoltativo: senza, la partita si chiude lo stesso e
+  // l'invio resta in coda per il prossimo avvio
+  Promise.all([
+    prendi('story.json'),
+    prendi('domande.json'),
+    prendi('backend.json').catch(function () { return null; })
+  ])
+    .then(function (x) { start(x[0], x[1], x[2]); })
     .catch(function (e) {
       console.error('gioco non caricato:', e);
       mostraErrore('Non riesco a caricare il gioco.<br><small>' + e + '</small>');
