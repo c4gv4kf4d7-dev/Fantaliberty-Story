@@ -31,7 +31,7 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '15',
+    engine: '16',
     story: null,
     banca: null,    // game/domande.json: domande, battute per stile, eventi, intermezzi
     quiz: null,     // game/quiz.json: i tre livelli del quiz di Peter [S8]
@@ -420,6 +420,7 @@
     chiudiRecap();
     chiudiCountdown();
     chiudiQuiz();
+    chiudiRegole();
     chiudiTransizioni();
     if (el.modal) el.modal.classList.remove('on');
     if (!(sc.steps || []).some(function (s) { return s.t === 'title' || s.t === 'boot' || s.t === 'logo'; })) {
@@ -1109,6 +1110,7 @@
 
     hubTasti = function (k) {
       if (uscito) return false;
+      if (el.regole && el.regole.classList.contains('on')) return false;
       if (k === 'ArrowLeft') { mostra(cur - 1, -1); return true; }
       if (k === 'ArrowRight') { mostra(cur + 1, 1); return true; }
       return false;
@@ -2294,6 +2296,70 @@
     righe();
   }
 
+  /* ---------------- il regolamento [S1.ZONA3] ----------------
+     Un pannello che si legge e si chiude. Non e' una scena: si apre sopra la
+     lobby, e alla chiusura il giocatore e' esattamente dov'era. Non tocca
+     NIENTE della partita — ne' punti, ne' picks, ne' locked, ne' stile, ne' le
+     domande gia' consumate: e' solo da leggere.
+
+     Il fondale va sfocato, come nel camerino: cosi' il pannello si stacca dal
+     cartellone invece di confondercisi dentro. */
+  function mostraRegole(id, done) {
+    var r = VN.story[id || 'regolamento'];
+    if (!r) return done && done();
+
+    el.regtit.textContent = fmt(r.titolo || 'REGOLAMENTO');
+    el.regcorpo.innerHTML = '';
+
+    (r.sezioni || []).forEach(function (s) {
+      var box = global.document.createElement('div');
+      box.className = 'regsez';
+      var h = global.document.createElement('div');
+      h.className = 'regh';
+      h.innerHTML = '<span class="regn"></span><span class="regnome"></span>';
+      h.querySelector('.regn').textContent = s.n || '';
+      h.querySelector('.regnome').textContent = fmt(s.titolo || '');
+      box.appendChild(h);
+      (s.righe || []).forEach(function (riga) {
+        var p = global.document.createElement('p');
+        p.className = 'regriga';
+        p.textContent = fmt(riga);
+        box.appendChild(p);
+      });
+      el.regcorpo.appendChild(box);
+    });
+
+    if (r.chiusa) {
+      var c = global.document.createElement('div');
+      c.className = 'regsez chiusa';
+      var t = global.document.createElement('div');
+      t.className = 'regnome';
+      t.textContent = fmt(r.chiusa.titolo || '');
+      var p2 = global.document.createElement('p');
+      p2.className = 'regriga';
+      p2.textContent = fmt(r.chiusa.testo || '');
+      c.appendChild(t); c.appendChild(p2);
+      el.regcorpo.appendChild(c);
+    }
+
+    el.regok.textContent = fmt(r.bottone || 'HO CAPITO');
+    el.regok.onclick = function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      chiudiRegole();
+      if (done) done();
+    };
+    el.regcorpo.scrollTop = 0;
+    if (el.bg) el.bg.classList.add('sfoca');
+    el.regole.classList.add('on');
+  }
+
+  function chiudiRegole() {
+    if (!el.regole) return;
+    el.regole.classList.remove('on');
+    el.regcorpo.innerHTML = '';
+    if (el.bg) el.bg.classList.remove('sfoca');
+  }
+
   /* ---------------- hub a zone ----------------
      La lobby dello script: quattro zone che si scorrono di lato, senza ordine
      imposto, ognuna con il suo fondale, il suo personaggio e le sue aree
@@ -2399,6 +2465,9 @@
       var vai = function () {
         if (uscito) return;
         if (h.set) { VN.state[h.set.var] = h.set.value; termSet(h.set.var); }
+        // un pannello da leggere (il regolamento): si apre sopra la lobby e si
+        // chiude da solo, senza cambiare scena e senza toccare la partita
+        if (h.apre) return mostraRegole(h.apre, null);
         if (h.say) {                      // commento e basta: si resta nell'hub
           var righe = [{ who: h.who || zones[cur].who, text: h.say }].concat(h.after || []);
           var k = 0;
@@ -2431,6 +2500,7 @@
     el.hub.ontouchstart = function (e) { x0 = e.touches && e.touches[0] ? e.touches[0].clientX : null; };
     el.hub.ontouchend = function (e) {
       if (x0 == null) return;
+      if (el.regole && el.regole.classList.contains('on')) { x0 = null; return; }
       var t = e.changedTouches && e.changedTouches[0];
       var dx = t ? t.clientX - x0 : 0;
       x0 = null;
@@ -3170,6 +3240,7 @@
       recap: $('recap'), blocca: $('blocca'),
       quizbar: $('quizbar'), qinfo: $('qinfo'), qtimer: $('qtimer'), qbar: $('qbar'), qsec: $('qsec'),
       multwrap: $('multwrap'), multrighe: $('multrighe'), multresto: $('multresto'), multok: $('multok'),
+      regole: $('regole'), regtit: $('regtit'), regcorpo: $('regcorpo'), regok: $('regok'),
       countdown: $('countdown'), cdnome: $('cdnome'), cdlabel: $('cdlabel'),
       cdtempo: $('cdtempo'), cdpunti: $('cdpunti'), cdbtn: $('cdbtn'),
       cardwrap: $('cardwrap'), cardImg: $('cardImg'), cardsalva: $('cardsalva'),
@@ -3190,6 +3261,7 @@
     chiudiRecap();
     chiudiCountdown();
     chiudiQuiz();
+    chiudiRegole();
     chiudiTransizioni();
     if (el.modal) el.modal.classList.remove('on');
     bgCorrente = null;
@@ -3202,7 +3274,7 @@
            e.target.closest('#carta') || e.target.closest('#carosello') ||
            e.target.closest('#griglia') || e.target.closest('#recapwrap') ||
            e.target.closest('#countdown') || e.target.closest('#cardwrap') ||
-           e.target.closest('#multwrap') ||
+           e.target.closest('#multwrap') || e.target.closest('#regole') ||
            e.target.closest('#propwrap'))) return;
       VN.step();
     };
@@ -3218,6 +3290,7 @@
           (el.recap && el.recap.classList.contains('on')) ||
           (el.countdown && el.countdown.classList.contains('on')) ||
           (el.multwrap && el.multwrap.classList.contains('on')) ||
+          (el.regole && el.regole.classList.contains('on')) ||
           (el.modal && el.modal.classList.contains('on'))) return;
       VN.step();
     };

@@ -63,7 +63,6 @@ in scena senza toccare il codice. Finché mancano, la scena gira senza personagg
 | Susan | in_piedi, spinta | neutro, ansia, sorpresa, scettica, positiva |
 | Maurice | in_piedi | neutro, positivo, sorpreso |
 | Veterano | seduto | neutro, compiaciuto, scettico |
-| Premi | in_piedi, tada | neutro, positivo |
 | Avatar giocatore | 4 file interi (`avt_a..d.png`) | segnaposto in repo |
 
 `npm test` stampa l'elenco aggiornato di cosa manca ancora.

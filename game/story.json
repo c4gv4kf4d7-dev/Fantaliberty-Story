@@ -30,7 +30,7 @@
       "lobby": "bg/bg_lobby.webp",
       "lobby_z1_tenda": "bg/bg_lobby_z1_tenda.webp",
       "lobby_z2_hall_of_fame": "bg/bg_lobby_z2_hall_of_fame.webp",
-      "lobby_z3_premi": "bg/bg_lobby_z3_premi.webp",
+      "lobby_z3_regolamento": "bg/bg_lobby_z3_regolamento.webp",
       "lobby_z4_quiz_bloccata": "bg/bg_lobby_z4_quiz_bloccata.webp",
       "lobby_z4_quiz_aperta": "bg/bg_lobby_z4_quiz_aperta.webp",
       "sala_teatro": "bg/bg_sala_teatro.webp",
@@ -1195,23 +1195,20 @@
               ]
             },
             {
-              "id": "premi",
-              "bg": "lobby_z3_premi",
+              "id": "regolamento",
+              "bg": "lobby_z3_regolamento",
               "who": "francesca",
-              "body": "orgogliosa",
-              "say": "E questa e' la teca dei premi.",
+              "body": "idle",
+              "say": "Prima di entrare puoi dare un'occhiata alle regole. Non sono molte. Anche perche' abbiamo preferito lasciarti qualche possibilita' di sbagliare.",
               "hotspots": [
                 {
-                  "label": "LA TECA",
-                  "x": "38%",
-                  "y": "38%",
-                  "w": "38%",
-                  "h": "50%",
-                  "who": "francesca",
-                  "say": "Il nuovo iPhone? Una macchina nuova? Un viaggio? Naa, non credo, siamo in spending review.",
-                  "react": {
-                    "level": "micro"
-                  }
+                  "label": "IL REGOLAMENTO",
+                  "x": "30%",
+                  "y": "16%",
+                  "w": "60%",
+                  "h": "42%",
+                  "apre": "regolamento",
+                  "_nota": "Il riquadro illuminato del cartellone, misurato sul fondale."
                 }
               ]
             },
@@ -1787,5 +1784,61 @@
       "Vai. Gestiscila tu. Io sto gia' gestendo il resto.",
       "Questa te la lascio. Ho le mani occupate."
     ]
+  },
+  "regolamento": {
+    "_nota": "[S1.ZONA3]. Si apre dal cartellone della lobby e si chiude con HO CAPITO: non tocca niente della partita — ne' punti, ne' picks, ne' locked, ne' stile. E' solo da leggere. Il testo sta qui e non nel motore perche' e' contenuto: cambiarlo non deve voler dire toccare il codice.",
+    "titolo": "REGOLAMENTO",
+    "sezioni": [
+      {
+        "n": "01",
+        "titolo": "OBIETTIVO",
+        "righe": [
+          "Prevedi il keynote.",
+          "Fai piu' punti possibile.",
+          "Cerca di non pentirti delle tue scelte."
+        ]
+      },
+      {
+        "n": "02",
+        "titolo": "PREVISIONI",
+        "righe": [
+          "Durante il keynote ti verranno proposte diverse previsioni.",
+          "Scegli quella che pensi sia piu' probabile. Alcune valgono piu' punti di altre."
+        ]
+      },
+      {
+        "n": "03",
+        "titolo": "LE SCELTE",
+        "righe": [
+          "CONSENSO — la risposta che molti si aspettano.",
+          "PLAUSIBILE — non e' la piu' ovvia, ma potrebbe succedere.",
+          "CONTROCORRENTE — improbabile, ma se ci prendi... hai fatto centro."
+        ]
+      },
+      {
+        "n": "04",
+        "titolo": "MICRO-EVENTI",
+        "righe": [
+          "Durante il keynote puo' succedere di tutto.",
+          "Quando succede, dovrai reagire.",
+          "La tua scelta puo' valere +3, 0 oppure -3 punti.",
+          "Non saprai quale."
+        ]
+      },
+      {
+        "n": "05",
+        "titolo": "IL FINALE",
+        "righe": [
+          "Alla fine del keynote arriva Peter.",
+          "E arrivano le domande vere.",
+          "Il quiz finale puo' cambiare tutto."
+        ]
+      }
+    ],
+    "chiusa": {
+      "titolo": "REGOLA NON SCRITTA",
+      "testo": "Se sei {g:sicuro|sicura} al 100%, probabilmente hai gia' perso."
+    },
+    "bottone": "HO CAPITO"
   }
 }
