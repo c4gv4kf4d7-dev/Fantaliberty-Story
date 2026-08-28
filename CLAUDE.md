@@ -1,4 +1,4 @@
-# FantaLiberty — Nexus
+# FantaLiberty — Story
 
 Visual novel per il Keynote WWDC. Sito statico (HTML/CSS/JS vanilla), gira su
 GitHub Pages. Il repo si chiamava `Fantaliberty-WWDC-26`, ora `Fantaliberty-Story`
