@@ -30,7 +30,7 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '11',
+    engine: '12',
     story: null,
     banca: null,    // game/domande.json: domande, battute per stile, eventi, intermezzi
     backend: null,  // game/backend.json: dove spedire la schedina chiusa
