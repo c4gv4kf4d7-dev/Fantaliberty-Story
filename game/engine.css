@@ -628,6 +628,47 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #cdpunti{color:#fff;font-size:clamp(7px,2.1vw,11px);opacity:.85}
 #cdbtn{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:6px}
 
+/* ---------- regolamento (S1, zona 3) ----------
+   Il cartellone della lobby, letto da vicino: il fondale va sfocato (stessa
+   classe del camerino) e il pannello prende la luce calda dell'insegna, ma con
+   i colori del gioco — niente tinte nuove.
+
+   Titolo e bottone sono fissi, scorre solo il corpo: su un iPhone piccolo il
+   "HO CAPITO" deve restare sotto il pollice senza dover scorrere fino in fondo. */
+/* flex e non grid: con "place-items:center" la riga della griglia si dimensiona
+   sul contenuto, quindi il "max-height:100%" del pannello si misurava su se
+   stesso e non limitava niente — il bottone finiva fuori dallo schermo. In un
+   contenitore flex l'altezza del genitore e' definita e la percentuale funziona. */
+#regole{position:absolute;inset:0;z-index:7;display:none;align-items:center;
+ justify-content:center;
+ background:rgba(4,5,10,.62);padding:6vw calc(5vw + env(safe-area-inset-left,0px))
+ calc(5vw + env(safe-area-inset-bottom,0px))}
+#regole.on{display:flex}
+#regbox{display:flex;flex-direction:column;width:100%;max-width:24em;max-height:100%;
+ background:#1b1f33;border:3px solid #fff;border-radius:14px;padding:16px 15px 14px;
+ box-shadow:0 10px 0 rgba(0,0,0,.5), 0 0 34px rgba(255,217,138,.18)}
+#regtit{flex:none;color:#ffd98a;font-size:clamp(10px,3vw,15px);letter-spacing:.12em;
+ text-align:center;padding-bottom:12px;border-bottom:2px solid rgba(255,217,138,.35);
+ text-shadow:0 0 16px rgba(255,217,138,.4)}
+#regcorpo{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+ padding:12px 2px 4px;display:flex;flex-direction:column;gap:14px}
+.regsez{background:#2a3050;border:2px solid rgba(255,255,255,.4);border-radius:9px;
+ padding:11px 12px}
+.regh{display:flex;align-items:baseline;gap:9px;margin-bottom:7px}
+/* il numero e' l'ancora visiva della sezione: si legge prima del titolo */
+.regn{color:#ffd98a;font-size:clamp(11px,3.2vw,16px);letter-spacing:.04em}
+.regnome{color:#fff;font-size:clamp(7px,2.1vw,11px);letter-spacing:.08em}
+.regriga{margin:0 0 6px;color:#cfdaef;font-size:clamp(6.5px,1.95vw,10px);line-height:1.85}
+.regriga:last-child{margin-bottom:0}
+/* la regola non scritta: nessun numero, cornice tratteggiata, sta a se' */
+.regsez.chiusa{background:rgba(0,0,0,.25);border-style:dashed;border-color:rgba(255,217,138,.45)}
+.regsez.chiusa .regnome{color:#ffd98a;display:block;margin-bottom:7px}
+#regok{flex:none;margin-top:12px;background:#2a3050;border:3px solid #fff;border-radius:8px;
+ color:#fff;font-family:inherit;font-size:clamp(8px,2.3vw,12px);padding:12px 13px;
+ cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.5);letter-spacing:.06em}
+#regok:hover,#regok:focus{background:#3d466e;outline:none}
+#regok:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.5)}
+
 #cardwrap{position:absolute;inset:0;z-index:7;display:none;
  background:rgba(4,5,10,.9);padding:6vw;place-items:center}
 #cardwrap.on{display:grid}

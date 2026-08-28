@@ -205,8 +205,11 @@ function controllaHub(id, st) {
       assert.ok(c.bodies?.[body], `scena ${id}, zona ${z.id}: posa "${body}" non dichiarata per ${z.who}`);
     }
     for (const h of z.hotspots || []) {
-      assert.ok(h.goto || h.say || h.set,
+      assert.ok(h.goto || h.say || h.set || h.apre,
         `scena ${id}, zona ${z.id}: hotspot "${h.label}" non fa niente`);
+      // "apre" mostra un pannello da leggere sopra la lobby: dev'esserci
+      if (h.apre) assert.ok(story[h.apre],
+        `scena ${id}: hotspot apre "${h.apre}", che non e' un blocco di story.json`);
       if (h.goto) { assert.ok(story.scenes[h.goto], `scena ${id}: hotspot verso "${h.goto}" inesistente`); usciteTotali++; }
       if (h.richiede) assert.equal(h.richiede, 'swipe',
         `scena ${id}: "richiede" accetta solo "swipe", non "${h.richiede}"`);
@@ -1330,6 +1333,93 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   spot.onclick({ stopPropagation() {} });
   [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });
   assert.equal(VN.sceneId, 'quiz', 'ora la zona 4 porta al quiz');
+}
+
+
+/* ---------- 5o. la zona 3 e' il regolamento, non piu' la teca dei premi ----------
+   E' una zona da leggere: si apre sopra la lobby, si chiude, e la partita deve
+   trovarsi esattamente come prima. Se toccasse anche una sola variabile della
+   run sarebbe un bug grosso — uno che legge le regole non sta giocando. */
+{
+  const zone = story.scenes.lobby.steps.find((st) => st.t === 'hub').zones;
+  const z3 = zone[2];
+  assert.equal(z3.id, 'regolamento', 'la zona 3 ora e\' il regolamento');
+  assert.equal(z3.bg, 'lobby_z3_regolamento');
+  assert.ok(fs.existsSync(path.join(ROOT, base + story.assets.bg.lobby_z3_regolamento)),
+    'il fondale nuovo del regolamento esiste su disco');
+  assert.equal(story.assets.bg.lobby_z3_premi, undefined, 'la teca dei premi non e\' piu\' dichiarata');
+  assert.match(z3.say, /dare un'occhiata alle regole/, 'Francesca introduce la sezione');
+  assert.equal(z3.hotspots.length, 1);
+  assert.equal(z3.hotspots[0].apre, 'regolamento');
+  assert.equal(z3.hotspots[0].goto, undefined, 'non porta a una scena separata: resta nella lobby');
+
+  // il testo: le cinque sezioni e la regola non scritta
+  const r = story.regolamento;
+  assert.equal(r.sezioni.length, 5, 'cinque sezioni');
+  assert.deepEqual(r.sezioni.map((x) => x.n), ['01', '02', '03', '04', '05']);
+  assert.deepEqual(r.sezioni.map((x) => x.titolo),
+    ['OBIETTIVO', 'PREVISIONI', 'LE SCELTE', 'MICRO-EVENTI', 'IL FINALE']);
+  assert.ok(r.chiusa?.testo, 'la regola non scritta c\'e\'');
+  assert.match(r.chiusa.titolo, /REGOLA NON SCRITTA/);
+  for (const sez of r.sezioni) assert.ok(sez.righe.length, `sezione ${sez.n} vuota`);
+
+  // apertura vera dalla lobby
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'lobby' });
+  VN.state.genere = 'f';
+  VN.step(); VN.step(); VN.step();                       // fino all'hub
+  $('hnext').onclick({ stopPropagation() {} });
+  $('hnext').onclick({ stopPropagation() {} });          // zona 3
+  assert.ok($('bg').getAttribute('src').includes('lobby_z3_regolamento'), 'fondale del regolamento');
+  assert.match(txt(), /qualche possibilita' di sbagliare/, 'Francesca dice la sua battuta');
+
+  // una fotografia della partita prima di aprire
+  const prima = JSON.stringify(VN.state);
+  const scenaPrima = VN.sceneId;
+
+  $('hubspots').querySelector('.hspot').onclick({ stopPropagation() {} });
+  assert.ok($('regole').classList.contains('on'), 'il regolamento si apre');
+  assert.ok($('bg').classList.contains('sfoca'), 'e il fondale va fuori fuoco, come nel camerino');
+  assert.equal(VN.sceneId, scenaPrima, 'non e\' una scena separata: si resta nella lobby');
+  assert.ok($('hub').classList.contains('on'), 'e la lobby resta aperta sotto');
+
+  const sezioni = [...$('regcorpo').querySelectorAll('.regsez')];
+  assert.equal(sezioni.length, 6, 'cinque sezioni piu\' la regola non scritta');
+  assert.deepEqual([...$('regcorpo').querySelectorAll('.regn')].map((n) => n.textContent),
+    ['01', '02', '03', '04', '05'], 'i numeri sono a schermo');
+  assert.match($('regtit').textContent, /REGOLAMENTO/);
+  assert.match($('regcorpo').textContent, /CONTROCORRENTE/, 'le tre scelte sono spiegate');
+  assert.match($('regcorpo').textContent, /\+3, 0 oppure -3/, 'e i micro-eventi anche');
+  assert.match($('regcorpo').textContent, /Peter/, 'e il quiz finale');
+  assert.ok(sezioni[5].classList.contains('chiusa'), 'la regola non scritta e\' staccata dalle altre');
+  // il testo va declinato come tutto il resto: qui il genere e' femminile
+  assert.match($('regcorpo').textContent, /sicura al 100%/, 'anche il regolamento e\' declinato');
+
+  // HO CAPITO chiude e riporta in zona 3, senza aver toccato niente
+  assert.match($('regok').textContent, /HO CAPITO/);
+  $('regok').onclick({ stopPropagation() {} });
+  assert.equal($('regole').classList.contains('on'), false, 'il regolamento si chiude');
+  assert.equal($('bg').classList.contains('sfoca'), false, 'e il fondale torna a fuoco');
+  assert.ok($('bg').getAttribute('src').includes('lobby_z3_regolamento'), 'si resta in zona 3');
+  assert.ok($('hub').classList.contains('on'), 'e la lobby e\' di nuovo navigabile');
+  assert.equal(JSON.stringify(VN.state), prima,
+    'leggere il regolamento non deve cambiare NIENTE della partita');
+
+  // e la zona 4 continua a funzionare dopo esserci passati
+  $('hnext').onclick({ stopPropagation() {} });
+  assert.ok($('bg').getAttribute('src').includes('quiz_bloccata'), 'la zona 4 e\' ancora li\'');
+}
+
+/* ---------- 5p. della teca dei premi non resta niente di funzionale ---------- */
+{
+  for (const f of ['game/story.json', 'game/engine.js', 'index.html']) {
+    const testo = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    assert.doesNotMatch(testo, /teca|lobby_z3_premi|obj_teca_premi/i,
+      `${f}: c'e' ancora un riferimento alla teca dei premi`);
+  }
+  const bgs = fs.readdirSync(path.join(ROOT, base, 'bg'));
+  const orfani = bgs.filter((f) => /z3_premi/.test(f));
+  if (orfani.length) console.log(`fondale della vecchia teca, non piu' usato: ${orfani.join(', ')}`);
 }
 
 /* ---------- 6. variante maschile, percorso rapido ---------- */

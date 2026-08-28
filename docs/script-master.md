@@ -191,7 +191,7 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
 [S1.HUB] HUB LOBBY — 4 zone, swipe orizzontale libero, nessun ordine forzato
   ZONA1 → bg_lobby_z1_tenda (nessun oggetto separato per la tenda)
   ZONA2 → bg_lobby_z2_hall_of_fame + obj_targa_hall_of_fame + chr_francesca_idle
-  ZONA3 → bg_lobby_z3_premi + obj_teca_premi + chr_francesca_orgogliosa
+  ZONA3 → bg_lobby_z3_regolamento + chr_francesca_idle
   ZONA4 bloccata   → bg_lobby_z4_quiz_bloccata + obj_tavolino_buzzer_peter
                      (frame non premuto) + chr_peter_occhi_bassi (addormentato)
                      → chr_peter_alza_occhi al tocco
@@ -213,9 +213,21 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
     Targhe cliccabili (albo d'oro edizioni precedenti, dato esterno non hardcoded)
     FRANCESCA: "Ogni anno qualcuno giura di aver 'solo tirato a indovinare'."
 
-  [S1.ZONA3] Sezione premi
-    FRANCESCA: "Qui troverai i premi: il nuovo iPhone? Una macchina nuova?
-      Un viaggio? Naa, non credo, siamo in spending review."
+  [S1.ZONA3] Regolamento
+    FRANCESCA:
+      "Prima di entrare puoi dare un'occhiata alle regole.
+       Non sono molte. Anche perché abbiamo preferito lasciarti
+       qualche possibilità di sbagliare."
+
+    Hotspot sul cartellone: IL REGOLAMENTO
+      → apre la UI Regolamento (pannello sopra la lobby, non una scena a parte:
+        il fondale va fuori fuoco e la lobby resta sotto)
+      → [HO CAPITO] chiude e riporta a [S1.ZONA3]
+
+    La schermata NON tocca niente della partita: né punti, né picks, né
+    run.locked, né lo stile, né le domande già consumate. È solo da leggere.
+    Testo delle cinque sezioni + la regola non scritta in `story.regolamento`
+    (game/story.json).
 
   [S1.ZONA4] Quiz — Peter
     SE run.locked === false:

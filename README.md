@@ -193,8 +193,9 @@ posto da girare: quattro zone che si scorrono di lato, senza ordine imposto.
   ricompare gia' intera.
 * **hotspots**: rettangoli toccabili posizionati in percentuale sulla parte di
   schermo sopra il box dialogo. Un hotspot con `say` commenta e basta (si resta
-  nell'hub); con `goto` porta a un'altra scena; con `conferma` chiede prima
-  conferma in una modale. `react` fa reagire il personaggio.
+  nell'hub); con `goto` porta a un'altra scena; con `apre` mostra un pannello da
+  leggere sopra la lobby (vedi sotto); con `conferma` chiede prima conferma in
+  una modale. `react` fa reagire il personaggio.
 * **`richiede": "swipe"`**: l'hotspot resta spento finche' il giocatore non ha
   cambiato zona almeno una volta, e al tocco dice `bloccato`. Serve a non far
   entrare in sala chi non si e' accorto che la lobby era visitabile.
@@ -207,6 +208,42 @@ posto da girare: quattro zone che si scorrono di lato, senza ordine imposto.
 
 Si scorre con le frecce, con il dito (oltre 40px di trascinamento) o con le
 frecce della tastiera.
+
+### Il regolamento: un pannello che si legge e si chiude
+
+La zona 3 della lobby e' il cartellone del regolamento. L'hotspot non porta a
+una scena: apre un pannello **sopra** la lobby, che alla chiusura lascia tutto
+com'era.
+
+```json
+{ "label": "IL REGOLAMENTO", "x": "30%", "y": "16%", "w": "60%", "h": "42%",
+  "apre": "regolamento" }
+```
+
+`apre` nomina un blocco di `story.json` — oggi solo `regolamento`:
+
+```json
+"regolamento": {
+  "titolo": "REGOLAMENTO",
+  "sezioni": [ { "n": "01", "titolo": "OBIETTIVO", "righe": ["Prevedi il keynote."] } ],
+  "chiusa": { "titolo": "REGOLA NON SCRITTA", "testo": "Se sei {g:sicuro|sicura}..." },
+  "bottone": "HO CAPITO"
+}
+```
+
+Il testo sta nei dati e non nel motore perche' e' contenuto: cambiarlo non deve
+voler dire toccare il codice. Passa da `fmt()` come tutto il resto, quindi
+`{NOME}` e `{g:...}` funzionano anche qui.
+
+**La regola da non rompere: leggere il regolamento non tocca la partita.** Ne'
+punti, ne' `picks`, ne' `locked`, ne' lo stile, ne' le domande gia' consumate.
+`npm test` fotografa `VN.state` prima di aprirlo e lo confronta dopo averlo
+chiuso: se una riga cambia, il test fallisce.
+
+Il fondale va fuori fuoco mentre e' aperto (`#bg.sfoca`, la stessa classe del
+camerino): senza, il pannello si confondeva con il cartellone disegnato dietro.
+Titolo e bottone sono fissi e scorre solo il corpo — su uno schermo piccolo
+"HO CAPITO" deve restare raggiungibile senza scorrere fino in fondo.
 
 ### Lo step `carosello`: scegliere fra piu' schede
 

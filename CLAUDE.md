@@ -108,7 +108,7 @@ scene** al nome giusto.
 | `susan` | Susan | 12 pose collegate, comprese le 4 `commento_*` (ordine confermato dall'utente: 1 drip, 2 hawaiano, 3 showman, 4 ingegnere), usate in S3 |
 | `peter` (ex `veterano`) | Peter | 6 pose, tutte collegate. Lo stato *dorme finché `locked` è falso, si sveglia dopo* **è modellato nella lobby** (zona 4, due varianti con `when`); le altre quattro pose (`annuisce`, `scuote_testa`, `guarda_orologio`, `applauso_ironico`) sono il quiz di S8. Tutte a `height 44%` **e `bottom 34%`**: è seduto a un tavolino in primo piano, non è una figura intera, e con il box del dialogo alto cinque righe alla misura standard gli resta fuori solo un braccio |
 | ~~`martha`~~ | — | **Eliminata su richiesta dell'utente.** Il ruolo della regia è passato a Susan, riscrivendo le battute sulla sua caratterizzazione — non con un search/replace. L'icona dell'auricolare era generica ed è stata rinominata `chr_indicatore_regia_*`: ora è di Susan. `chr_martha_ritratto_regia` è rimasto nel repo ma non lo usa più nessuno (segnalato da `npm test`) |
-| ~~`premi`~~ | — | **Eliminato con S7.** Non esiste un NPC "Premi" nel manifest: la sezione premi è gestita da Francesca in zona 3 (`chr_francesca_orgogliosa`). Nessuno sprite è mai stato consegnato per `premi`. Prima di cancellarlo controlla che la scena `premi` in `story.json` non serva ancora come segnaposto di flusso |
+| ~~`premi`~~ | — | **Eliminato.** Non è mai esistito un NPC "Premi" nel manifest, e da quando la zona 3 è il regolamento non esiste più nemmeno la sezione: `chr_francesca_orgogliosa` non è più collegata da nessuna scena (resta nel repo, potrebbe servire altrove) |
 
 ## Lo script master v4.0 e i due strati del lavoro
 
