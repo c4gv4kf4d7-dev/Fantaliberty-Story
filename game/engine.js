@@ -30,7 +30,7 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '12',
+    engine: '14',
     story: null,
     banca: null,    // game/domande.json: domande, battute per stile, eventi, intermezzi
     backend: null,  // game/backend.json: dove spedire la schedina chiusa
@@ -118,6 +118,7 @@
     el.arrow.style.opacity = 0;
     hideUI();
     curLine = line; typing = true; pending = null; typeTarget = el.txt;
+    riservaAltezza(line);
     if (!VN.speed) { el.txt.textContent = line; typing = false; return after(); }
     var shown = 0, t0 = 0;
     el.txt.textContent = '';
@@ -130,6 +131,22 @@
       tId = global.requestAnimationFrame(tick);
     };
     tId = global.requestAnimationFrame(tick);
+  }
+
+  /* Il testo e' centrato nel box, che ha altezza fissa: senza questo, mentre
+     si scrive, il blocco parte alto una riga e si sposta ogni volta che ne
+     compare un'altra — cioe' lo stesso scatto che l'altezza fissa doveva
+     togliere. Qui si scrive la frase intera un attimo, si misura quanto sara'
+     alta, e si tiene quello spazio da subito: il testo appare dentro un blocco
+     gia' della misura giusta e non si muove piu'. */
+  function riservaAltezza(line) {
+    if (!el.txt) return;
+    el.txt.style.minHeight = '';
+    var prima = el.txt.textContent;
+    el.txt.textContent = line;
+    var h = el.txt.offsetHeight;
+    el.txt.textContent = prima;
+    if (h) el.txt.style.minHeight = h + 'px';
   }
 
   // come type(), ma non chiude la UI aperta: serve a chi resta a schermo mentre
@@ -2036,6 +2053,10 @@
 
   function showInput(st) {
     var max = st.max || 24;
+    // Il limite lo dichiara la scena (story.json), non l'HTML: due limiti
+    // diversi sullo stesso campo sono due verita' che prima o poi divergono.
+    // Passarlo anche al campo fa smettere di accettare invece di tagliare zitto.
+    el.ti.maxLength = max;
     var re = st.pattern ? new RegExp(st.pattern, 'g') : /[^A-Za-zÀ-ÿ0-9' ]/g;
     el.ti.value = '';
     el.tok.disabled = true;
@@ -2146,11 +2167,28 @@
   // l'altezza dall'immagine del Mac, quindi finche' il PNG non e' caricato lo
   // schermo e' alto quanto il suo solo padding. Misurare li' rimpicciolirebbe il
   // testo al minimo per sempre.
-  // La riga piu' larga sta dentro? scrollWidth del contenitore non basta: le
-  // righe sono blocchi larghi quanto lui, e' il loro contenuto che deborda.
+  /* La riga piu' larga sta dentro?
+     Non si puo' chiedere alla riga il suo scrollWidth: le righe hanno
+     overflow:hidden e in quel caso il browser risponde con la larghezza gia'
+     tagliata — cioe' dice sempre che ci sta. E' per questo che "MASSIMILIANO"
+     usciva dallo schermo del Mac senza che la misura se ne accorgesse.
+     Un Range sul contenuto della riga da' invece l'ingombro reale del testo
+     disegnato, tagliato o no. */
+  function larghezzaTesto(riga) {
+    try {
+      var r = global.document.createRange();
+      r.selectNodeContents(riga);
+      return r.getBoundingClientRect().width;
+    } catch (e) {
+      return riga.scrollWidth;
+    }
+  }
+
   function sfora(s) {
-    var righe = s.children, w = s.clientWidth;
-    for (var i = 0; i < righe.length; i++) if (righe[i].scrollWidth > w + 1) return true;
+    var righe = s.children;
+    for (var i = 0; i < righe.length; i++) {
+      if (larghezzaTesto(righe[i]) > righe[i].clientWidth + 1) return true;
+    }
     return false;
   }
 
@@ -2177,6 +2215,12 @@
   var termOsservatore = null;
   function osservaTerminale() {
     if (termOsservatore || !el || !el.screen) return;
+    // Il font vero e' largo quasi il doppio del monospace di ripiego: se la
+    // misura viene fatta prima che sia pronto, il testo "ci sta" e poi non ci
+    // sta piu'. Rimisurare a font caricato e' l'unico modo di non sbagliare.
+    if (global.document.fonts && global.document.fonts.ready) {
+      global.document.fonts.ready.then(function () { adattaTerminale(); adattaBadge(); });
+    }
     if (typeof global.ResizeObserver === 'function') {
       termOsservatore = new global.ResizeObserver(function () { adattaTerminale(); });
       termOsservatore.observe(el.screen);
@@ -2220,12 +2264,16 @@
     var src = st.img ? withBase(st.img) : (st.prop ? assetUrl('props', st.prop) : '');
     if (src) {
       el.badgeImg.onerror = function () { el.badgewrap.classList.add('senzaimg'); };
+      // il riquadro del nome e' in percentuale sull'immagine: finche' non e'
+      // caricata non ha una larghezza vera da misurare
+      el.badgeImg.onload = function () { adattaBadge(); };
       el.badgeImg.src = src;
     } else {
       el.badgewrap.classList.add('senzaimg');
     }
 
     el.badgewrap.classList.add('in');
+    adattaBadge();
     if (st.coriandoli) coriandoli(st.coriandoli === true ? 34 : st.coriandoli);
   }
 
@@ -2250,6 +2298,21 @@
       el.coriandoli.appendChild(d);
     }
     setTimeout(function () { if (el.coriandoli) el.coriandoli.innerHTML = ''; }, 2600);
+  }
+
+  /* Il nome stampato sulla tessera: "MASSIMILIANO" col font vero e' quasi il
+     doppio piu' largo che col monospace di ripiego, e usciva dai bordi del
+     cartoncino. Qui si rimpicciolisce finche' non ci sta, come sul terminale
+     del Mac. */
+  function adattaBadge() {
+    var n = el && el.badgeName;
+    if (!n || !n.clientWidth) return;
+    n.style.fontSize = '';
+    var fs = parseFloat(global.getComputedStyle(n).fontSize) || 10;
+    for (var i = 0; i < 20 && n.scrollWidth > n.clientWidth + 1 && fs > 4; i++) {
+      fs = Math.max(4, fs * 0.92);
+      n.style.fontSize = fs.toFixed(2) + 'px';
+    }
   }
 
   function chiudiBadge() {

@@ -385,25 +385,45 @@ motore disegna un ripiego al posto loro.
 
 ## Formato e layout
 
+### Il font sta nel repo, non su Google Fonts
+
+`assets/font/press-start-2p.woff2` (SIL OFL, licenza in `assets/font/OFL.txt`).
+
+Non e' una preferenza: la richiesta a Google Fonts puo' fallire, e quando
+fallisce il browser ripiega su un monospace di sistema **largo circa la meta'**
+(0.6em per carattere contro 1em). La stessa frase passa da cinque righe a tre e
+tutte le misure dell'interfaccia diventano bugie. E' successo davvero: il box
+del dialogo era stato tarato su un ambiente dove Google Fonts non rispondeva, e
+sui telefoni veri il testo spariva sotto il bordo. Con il file nel repo il
+ripiego non esiste piu' — e il gioco funziona anche offline e nella build in
+file unico.
+
+**Chi misura qualcosa che dipende dal testo deve aspettare `document.fonts.ready`.**
+Il terminale del Mac e il nome sul badge lo fanno: rimisurano quando il font e'
+pronto, perche' la prima misura arriva quasi sempre prima.
+
 ### Il box del dialogo ha un'altezza fissa
 
-Tre righe, sempre, in tutto il gioco. Prima il box si allargava mentre la frase
-si scriveva — una riga, poi due, a volte tre — e il personaggio dietro sembrava
-spostarsi a ogni battuta. Adesso e' un pezzo fisso dell'interfaccia: cambia il
-testo dentro, non la cornice.
+Cinque righe, sempre, in tutto il gioco. Prima il box si allargava mentre la
+frase si scriveva e il personaggio dietro sembrava spostarsi a ogni battuta.
+Adesso e' un pezzo fisso dell'interfaccia: cambia il testo dentro, non la
+cornice. Il testo e' centrato in verticale e l'altezza che occupera' viene
+riservata *prima* di cominciare a scrivere, altrimenti il blocco si sposta in su
+ogni volta che compare una riga nuova — cioe' lo stesso scatto da togliere.
 
-Tre e' il massimo che serve davvero: misurate tutte le battute del gioco
-(dialoghi, opzioni, domande di pronostico e quiz) alla larghezza del box, ne
-vengono 223 da una riga, 57 da due e le altre da tre. Le tre righe sono quasi
-tutte i commenti dello stile "Ingegnere", che e' prolisso per come e' scritto:
-accorciarle vorrebbe dire snaturarlo.
+Cinque e' il massimo che serve davvero: misurate nel browser, **col font vero**,
+tutte le 595 battute del gioco (dialoghi, opzioni, domande di pronostico e
+quiz), ne vengono 170 da una riga, 201 da due, 120 da tre, 82 da quattro e 22 da
+cinque. Cinque righe occupano il 18% dello schermo sull'iPhone piu' piccolo,
+quindi non serve rimpicciolire il testo per farcele stare.
 
-**Una battuta piu' lunga di tre righe non manda a capo il box: sparisce sotto
+**Una battuta piu' lunga di cinque righe non manda a capo il box: sparisce sotto
 `overflow:hidden`.** E' un difetto che non si vede finche' qualcuno non gioca
 proprio quella scena, quindi `npm test` lo rifiuta e dice quale battuta
-accorciare. Il conto e' a caratteri (56 per riga) e non a pixel: il corpo del
-testo e' in `vw` e il box e' una percentuale della larghezza, quindi i caratteri
-per riga restano circa gli stessi su qualunque telefono.
+accorciare. Il conto e' a caratteri (34 per riga, misurati 36 e tenuti stretti
+per margine) e non a pixel: il corpo del testo e' in `vw` e il box e' una
+percentuale della larghezza, quindi i caratteri per riga restano gli stessi su
+qualunque telefono — verificato identici su iPhone SE, 13 e 14 Pro Max.
 
 Il gioco e' pensato per **iPhone in verticale** (390x844 pt): il fondale occupa
 tutto lo schermo, il terzo inferiore e' area dialogo. Su schermi larghi (Safari sul

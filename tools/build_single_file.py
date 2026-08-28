@@ -76,9 +76,20 @@ def main():
     # i riferimenti portano un ?v=NN che cambia a ogni pubblicazione: la
     # sostituzione deve tollerarlo, altrimenti la build esce con i tag intatti
     # e il file "single" continua a chiedere i file esterni
+    css = read("game", "engine.css")
+    # Il font va incorporato: se resta un url() relativo, il file unico non lo
+    # trova e il browser ripiega su un monospace di sistema, largo circa la meta'
+    # di questo. Con quel ripiego le battute occupano il doppio delle righe e
+    # sbordano dal box del dialogo, che ha altezza fissa. Prima la build toglieva
+    # e basta il riferimento al font: era esattamente il caso rotto.
+    css, nf = re.subn(
+        r"url\('\.\./assets/font/([^']+)'\)",
+        lambda m: "url('%s')" % data_uri("assets/font/" + m.group(1)), css)
+    if nf != 1:
+        sys.exit("non trovo il font da incorporare in engine.css")
     html, n = re.subn(
         r'<link rel="stylesheet" href="\./game/engine\.css[^"]*">',
-        lambda m: "<style>\n%s\n</style>" % read("game", "engine.css"), html)
+        lambda m: "<style>\n%s\n</style>" % css, html)
     if n != 1:
         sys.exit("non trovo il link a engine.css in index.html")
     html, n = re.subn(
@@ -92,9 +103,7 @@ def main():
         json.dumps(backend, ensure_ascii=False, separators=(",", ":")),
     )
     html = html.replace("<script>\n(function () {", inline + "\n<script>\n(function () {", 1)
-    # niente font remoti nella build offline: fallback su monospace di sistema
-    html = re.sub(r'<link rel="preconnect"[^>]*>\s*', "", html)
-    html = re.sub(r'<link href="https://fonts\.googleapis[^>]*>\s*', "", html)
+    # (il font non arriva piu' dalla rete: sta nel CSS come data: URI, sopra)
 
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
