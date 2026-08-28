@@ -283,8 +283,8 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
 [S2.04] SUSAN — dialogo IN DUE TAP
   Asset: bg_backstage_corridoio + chr_susan_indica_camerino
   Tap 1: "Ottimo, hai detto sì."
-  Tap 2: "Camerino, ultima porta a destra. Hai quattro minuti e ne hai
-          già persi due."
+  Tap 2: "Ora vai in camerino, ultima porta a destra. Hai quattro minuti e ne
+          hai già persi due."
   Tap 3: "Vai. Io intanto provo a evitare che crolli il resto."
   → [S3.01]
 ```
