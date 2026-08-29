@@ -2637,12 +2637,23 @@
       var primaVolta = !visti[z.id];
       visti[z.id] = true;
 
+      // Dal secondo passaggio in poi la guida non ripete cos'e' la zona: o la
+      // zona dichiara una battuta di ritorno (la tenda: "sei pronto?"), oppure
+      // resta muta e il personaggio sparisce del tutto, per lasciare girare in
+      // pace chi ha gia' fatto il giro.
+      var ritorno = primaVolta ? null : (z.ritorno || null);
+      var muta = !primaVolta && !ritorno;
+
       if (z.bg) setBg(z.bg, z.bgFx);
       // Nell'hub il protagonista e' l'ambiente: il personaggio commenta da
       // bordo scena e non deve coprire quello che c'e' da toccare. Percio' qui
       // vale "scalaHub" del cast (piu' contenuta) invece di "scala".
-      if (z.who) showChar(perHub(z));
-      else { el.npc.classList.remove('in', 'pop'); el.npc.classList.add('out'); current.who = null; }
+      var chiInScena = muta ? null : (ritorno ? (ritorno.who || z.who) : z.who);
+      if (chiInScena) {
+        showChar(perHub(ritorno
+          ? { who: chiInScena, body: ritorno.body || z.body, height: z.height, bottom: z.bottom, right: z.right }
+          : z));
+      } else { el.npc.classList.remove('in', 'pop'); el.npc.classList.add('out'); current.who = null; }
 
       if (dir) {
         var verso = dir > 0 ? 'vaiSx' : 'vaiDx';
@@ -2656,13 +2667,23 @@
       // finche' non ha scorso, parla il tutorial; poi ogni zona ha la sua battuta.
       // "dice" separa chi parla da chi si vede: nella zona del quiz si vede Peter
       // che dorme, ma a commentare e' Francesca.
-      var battuta = (!scorso && st.tutorial && st.tutorial.text) || z.say;
-      var chi = (!scorso && st.tutorial && st.tutorial.who) || z.dice || z.who;
+      var battuta = (!scorso && st.tutorial && st.tutorial.text)
+        || (ritorno ? ritorno.say : (muta ? null : z.say));
+      var chi = (!scorso && st.tutorial && st.tutorial.who)
+        || (ritorno ? (ritorno.dice || ritorno.who || z.who) : (z.dice || z.who));
+      stopTyping();
+      typing = false;
+      pending = null;
+      el.arrow.style.opacity = 0;
       if (battuta) {
+        el.boxwrap.classList.add('in');
         setSpeaker(chi);
-        // gia' vista: si rimette a schermo intera, senza rifarla scrivere
-        if (primaVolta) typeKeep(fmt(battuta));
-        else { stopTyping(); typing = false; el.txt.textContent = fmt(battuta); }
+        typeKeep(fmt(battuta));
+      } else {
+        // niente da dire: via anche il box, cosi' la lobby resta pulita
+        el.txt.textContent = '';
+        el.boxwrap.classList.remove('in');
+        setSpeaker(null);
       }
       if (!scorso && st.tutorial && st.tutorial.body) {
         showChar(perHub({ who: chi, body: st.tutorial.body }));
@@ -2707,7 +2728,10 @@
     function tocca(h, bloccato) {
       if (uscito) return;
       if (bloccato) {
-        setSpeaker(h.who || zones[cur].who);
+        var bw = h.who || zones[cur].who;
+        el.boxwrap.classList.add('in');
+        if (bw && current.who !== bw) showChar(perHub(bw === zones[cur].who ? zones[cur] : { who: bw }));
+        setSpeaker(bw);
         typeKeep(fmt(h.bloccato || 'Non ancora: prima guardati intorno.'));
         return;
       }
@@ -2723,7 +2747,16 @@
           var k = 0;
           var parla = function () {
             var r = righe[k++];
-            setSpeaker(r.who || h.who || zones[cur].who);
+            var rw = r.who || h.who || zones[cur].who;
+            el.boxwrap.classList.add('in');
+            // nelle zone gia' viste il personaggio non e' in scena: se e' lui a
+            // rispondere al tocco, rientra invece di parlare da fuori campo
+            if (rw && current.who !== rw) {
+              showChar(perHub(rw === zones[cur].who
+                ? zones[cur]
+                : { who: rw }));
+            }
+            setSpeaker(rw);
             typeKeep(fmt(r.text || ''));
             pending = k < righe.length ? parla : null;
             el.arrow.style.opacity = k < righe.length ? 1 : 0;

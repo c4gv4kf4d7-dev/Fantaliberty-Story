@@ -123,6 +123,19 @@ Attenzione al piano dei layer: `#carosello` sta a `z-index:1`, **sotto**
 `#boxwrap` (2). Alzandolo, il bottone "Sono io" smette di essere premibile
 in silenzio — il test in jsdom non se ne accorge.
 
+## La lobby si presenta una volta sola
+
+Nell'hub la battuta di una zona vale solo al **primo** passaggio. Tornandoci,
+il personaggio esce di scena e il box del dialogo sparisce del tutto: chi ha
+gia' fatto il giro deve poter girare in silenzio. L'unica zona con una
+battuta di ritorno e' la tenda (`"ritorno"` nella zona di `story.json`), dove
+Francesca ricompare dal secondo passaggio per dire che di la' comincia lo
+show. Se si aggiunge un `ritorno` a un'altra zona, si torna al vecchio
+difetto ("mi rispiega cos'e' la Hall of Fame ogni volta").
+
+Toccare un hotspot in una zona muta fa **rientrare** chi risponde: senza
+quello, Francesca parlerebbe fuori campo e sembrerebbe la regia in cuffia.
+
 ## Animazioni CSS: due classi sullo stesso nodo si combattono
 
 Regola (violata due volte con lo stesso sintomo — il personaggio sparisce
