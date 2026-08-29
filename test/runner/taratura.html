@@ -23,11 +23,16 @@
     border:1px solid #3a3d45; border-radius:9px; background:#2c2f36; color:#e8e8e6;
   }
   button.acceso{ background:#f0b722; border-color:#f0b722; color:#1b1c20; }
+  button.annulla{ background:#4a2f34; border-color:#7a4c53; }
   button.via{ background:#2f7d4f; border-color:#2f7d4f; }
   #aiuto{ flex:1 1 100%; font-size:12px; color:#9a9da5; line-height:1.4; }
 
-  #area{ flex:1; position:relative; display:flex; align-items:center; justify-content:center; min-height:0; }
-  canvas{ display:block; touch-action:none; }
+  #area{ flex:1; position:relative; min-height:0; overflow:hidden; }
+  /* posizionato a mano: lo spostamento parte dall'angolo dell'area,
+     non da un centraggio del flex, altrimenti zoom e trascinamento
+     si spostano di quel tanto */
+  canvas{ position:absolute; left:0; top:0; display:block;
+          touch-action:none; transform-origin:0 0; }
 
   #uscita{
     position:absolute; inset:0; background:#15161a; padding:16px;
@@ -49,13 +54,18 @@
   <div id="barra">
     <button id="bSx" class="acceso">Bordo sinistro</button>
     <button id="bDx">Bordo destro</button>
-    <button id="bIndietro">Annulla punto</button>
+    <button id="bIndietro" class="annulla">↩︎ Annulla punto</button>
     <button id="bPulisci">Pulisci</button>
     <button id="bProva">Prova corsie</button>
     <button id="bFatto" class="via">Fatto</button>
+    <button id="bMeno">−</button>
+    <button id="bPiu">+</button>
+    <button id="bAdatta">Adatta</button>
     <div id="aiuto">
       Tocca lungo il <b>bordo sinistro</b> della pista, dal fondo del corridoio fino
-      in basso. Poi passa al <b>bordo destro</b> e fai lo stesso. Bastano 5–6 punti per lato.
+      in basso. Poi passa al <b>bordo destro</b> e fai lo stesso. Bastano 5–6 punti per lato.<br>
+      <b>Due dita</b> per ingrandire e spostare. Un dito solo trascinando sposta; un tocco
+      secco lascia un punto.
     </div>
   </div>
 
@@ -87,12 +97,38 @@ const cv = document.getElementById('cv');
 const ctx = cv.getContext('2d');
 cv.width = W; cv.height = H;
 
-let scala = 1;
+/* La vista: zoom e spostamento. Il canvas resta 720x1280, cambia
+   solo come lo si guarda — cosi' i punti restano nelle coordinate
+   del gioco qualunque sia l'ingrandimento. */
+let base = 1, zoom = 1, spX = 0, spY = 0;
+
 function adatta(){
   const area = document.getElementById('area');
-  scala = Math.min(area.clientWidth / W, area.clientHeight / H);
-  cv.style.width  = Math.round(W * scala) + 'px';
-  cv.style.height = Math.round(H * scala) + 'px';
+  base = Math.min(area.clientWidth / W, area.clientHeight / H);
+  cv.style.width  = Math.round(W * base) + 'px';
+  cv.style.height = Math.round(H * base) + 'px';
+  zoom = 1; spX = 0; spY = 0;
+  applica();
+}
+function applica(){
+  zoom = Math.max(1, Math.min(6, zoom));
+  const area = document.getElementById('area');
+  const lw = W * base * zoom, lh = H * base * zoom;
+  // non si scappa oltre i bordi
+  spX = Math.min(0, Math.max(area.clientWidth  - lw, spX));
+  spY = Math.min(0, Math.max(area.clientHeight - lh, spY));
+  if (lw <= area.clientWidth)  spX = (area.clientWidth  - lw) / 2;
+  if (lh <= area.clientHeight) spY = (area.clientHeight - lh) / 2;
+  cv.style.transform = `translate(${spX}px, ${spY}px) scale(${zoom})`;
+}
+function ingrandisci(k, cx, cy){
+  const area = document.getElementById('area').getBoundingClientRect();
+  const px = (cx - area.left - spX) / zoom, py = (cy - area.top - spY) / zoom;
+  zoom *= k;
+  zoom = Math.max(1, Math.min(6, zoom));
+  spX = cx - area.left - px * zoom;
+  spY = cy - area.top - py * zoom;
+  applica();
 }
 addEventListener('resize', adatta);
 
@@ -172,12 +208,57 @@ function ridisegna(){
 /* ---------- tocco ---------- */
 function aggiungi(clientX, clientY){
   const r = cv.getBoundingClientRect();
-  const x = (clientX - r.left) / scala, y = (clientY - r.top) / scala;
+  const k = r.width / W;                    // vale a qualunque ingrandimento
+  const x = (clientX - r.left) / k, y = (clientY - r.top) / k;
   if (x < 0 || y < 0 || x > W || y > H) return;
   punti[lato].push([Math.round(x), Math.round(y)]);
   ridisegna();
 }
-cv.addEventListener('pointerdown', e => { e.preventDefault(); aggiungi(e.clientX, e.clientY); });
+const giu = new Map();
+let mosso = false, distIniziale = 0, zoomIniziale = 1;
+
+cv.addEventListener('pointerdown', e => {
+  e.preventDefault(); cv.setPointerCapture(e.pointerId);
+  giu.set(e.pointerId, { x:e.clientX, y:e.clientY, x0:e.clientX, y0:e.clientY });
+  if (giu.size === 2){
+    const [a,b] = [...giu.values()];
+    distIniziale = Math.hypot(a.x-b.x, a.y-b.y); zoomIniziale = zoom; mosso = true;
+  }
+});
+
+cv.addEventListener('pointermove', e => {
+  const p = giu.get(e.pointerId); if (!p) return;
+  const dx = e.clientX - p.x, dy = e.clientY - p.y;
+  p.x = e.clientX; p.y = e.clientY;
+  if (Math.hypot(e.clientX - p.x0, e.clientY - p.y0) > 8) mosso = true;
+
+  if (giu.size >= 2){
+    const [a,b] = [...giu.values()];
+    const d = Math.hypot(a.x-b.x, a.y-b.y);
+    if (distIniziale > 0){
+      const cx = (a.x+b.x)/2, cy = (a.y+b.y)/2;
+      const voluto = Math.max(1, Math.min(6, zoomIniziale * d / distIniziale));
+      ingrandisci(voluto / zoom, cx, cy);
+    }
+  } else {
+    spX += dx; spY += dy; applica();      // un dito: si sposta
+  }
+});
+
+function su(e){
+  const p = giu.get(e.pointerId); if (!p) return;
+  const fermo = Math.hypot(e.clientX - p.x0, e.clientY - p.y0) <= 8;
+  giu.delete(e.pointerId);
+  if (fermo && !mosso && giu.size === 0) aggiungi(e.clientX, e.clientY);
+  if (giu.size === 0) mosso = false;
+}
+cv.addEventListener('pointerup', su);
+cv.addEventListener('pointercancel', e => { giu.delete(e.pointerId); if (!giu.size) mosso = false; });
+
+// rotellina del mouse
+document.getElementById('area').addEventListener('wheel', e => {
+  e.preventDefault(); ingrandisci(e.deltaY < 0 ? 1.15 : 1/1.15, e.clientX, e.clientY);
+}, { passive:false });
 
 /* ---------- bottoni ---------- */
 const bSx = document.getElementById('bSx'), bDx = document.getElementById('bDx');
@@ -197,6 +278,14 @@ document.getElementById('bFatto').onclick = () => {
     'destro:   ' + f(punti.dx) + '\n';
   document.getElementById('uscita').hidden = false;
 };
+function centro(){
+  const r = document.getElementById('area').getBoundingClientRect();
+  return [r.left + r.width/2, r.top + r.height/2];
+}
+document.getElementById('bPiu').onclick    = () => ingrandisci(1.4, ...centro());
+document.getElementById('bMeno').onclick   = () => ingrandisci(1/1.4, ...centro());
+document.getElementById('bAdatta').onclick = () => adatta();
+
 document.getElementById('bTorna').onclick = () => { document.getElementById('uscita').hidden = true; };
 document.getElementById('bCopia').onclick = async e => {
   const t = document.getElementById('testo');
