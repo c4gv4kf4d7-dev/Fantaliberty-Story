@@ -69,7 +69,9 @@
   <div class="velo" id="veloStart">
     <h1>Corsa nel corridoio</h1>
     <p>Scorri il dito a <b>destra</b> o <b>sinistra</b> per cambiare corsia.<br>
-       Prendi le monete, evita i carrelli.</p>
+       Prendi gli anelli, evita i carrelli.<br>
+       <b style="color:#79c245">Verde 10</b> · <b style="color:#4aa8cc">Blu 25</b> ·
+       <b style="color:#c0453f">Rosso 50</b> — vale di piu' quello piu' difficile.</p>
     <button id="btnVia">Via</button>
     <small>prototipo — non è il gioco vero</small>
   </div>
@@ -195,7 +197,9 @@ const PRONTI = Promise.all([
   carica('costola',   'run_parete_costola.webp'),
   carica('corsa',     'run_pg_corsa.webp'),
   carica('carrello',  'run_ost_carrello.webp'),
-  carica('moneta',    'run_moneta.webp')
+  carica('rosso',     'run_anello_rosso.webp'),
+  carica('verde',     'run_anello_verde.webp'),
+  carica('blu',       'run_anello_blu.webp')
 ]);
 
 /* ---------- stato ---------- */
@@ -208,7 +212,8 @@ const S = {
   punti:0,
   passo:0,            // fase del ciclo di corsa
   scorri:0,           // scorrimento del pavimento
-  cose:[],            // { tipo:'moneta'|'ostacolo', z, corsia, presa }
+  cose:[],            // { tipo:'anello'|'ostacolo', z, corsia, anello, presa }
+  raccolti:0,         // punti dagli anelli, separati da quelli della corsa
   prossimo:0,         // fra quanta distanza generare il prossimo gruppo
   scossa:0
 };
@@ -217,29 +222,62 @@ const RECORD = 'fl_runner_record';
 let record = 0;
 try { record = +(localStorage.getItem(RECORD) || 0) || 0; } catch(e){}
 
-/* ---------- generazione del percorso ---------- */
+/* ---------- generazione del percorso ----------
+   Gli anelli sono quelli dell'attivita' dell'orologio, e non sono
+   intercambiabili: ognuno vale quanto e' difficile prenderlo.
+
+     VERDE  in fila sulla stessa corsia — si prende correndo dritti
+     BLU    alterna le corsie — costringe a zigzagare
+     ROSSO  attaccato a un ostacolo — lo prendi e devi schivare subito
+
+   Il colore dice il rischio prima ancora del punteggio: si impara a
+   vedere il rosso e prepararsi, che e' esattamente il punto. */
 const NASCE = 1.6;   // a che distanza compaiono le cose: e' il tempo di reazione
+const ANELLI = {
+  verde: { valore: 10 },
+  blu:   { valore: 25 },
+  rosso: { valore: 50 }
+};
+
+function anello(colore, z, corsia){
+  S.cose.push({ tipo:'anello', anello:colore, z, corsia });
+}
+function corsiaDiversa(da){
+  return [-1,0,1].filter(x => x !== da)[Math.random()*2 | 0];
+}
+
 function genera(){
   const r = Math.random();
   const c = (Math.random()*3 | 0) - 1;
 
-  if (r < 0.42){
-    // una fila di monete sulla stessa corsia
-    const n = 4 + (Math.random()*3 | 0);
-    for (let i=0; i<n; i++) S.cose.push({ tipo:'moneta', z: NASCE + i*0.055, corsia:c });
-    S.prossimo = 0.55;
-  } else if (r < 0.78){
-    // un ostacolo, con qualche moneta su una corsia libera
-    S.cose.push({ tipo:'ostacolo', z:NASCE, corsia:c });
-    const libera = [-1,0,1].filter(x => x !== c)[Math.random()*2 | 0];
-    for (let i=0; i<3; i++) S.cose.push({ tipo:'moneta', z: NASCE + i*0.055, corsia:libera });
-    S.prossimo = 0.6;
+  if (r < 0.38){
+    // FILA VERDE: nessun ostacolo, si corre dritti e si incassa
+    const n = 5 + (Math.random()*3 | 0);
+    for (let i=0; i<n; i++) anello('verde', NASCE + i*0.055, c);
+    S.prossimo = 0.62;
+
+  } else if (r < 0.68){
+    // ZIGZAG BLU: due terzetti su corsie diverse, obbligano a spostarsi
+    const d = corsiaDiversa(c);
+    for (let i=0; i<3; i++) anello('blu', NASCE + i*0.05, c);
+    for (let i=0; i<3; i++) anello('blu', NASCE + 0.28 + i*0.05, d);
+    S.prossimo = 0.75;
+
+  } else if (r < 0.88){
+    // ROSSI DAVANTI ALL'OSTACOLO: si prendono e si schiva all'ultimo
+    for (let i=0; i<2; i++) anello('rosso', NASCE + 0.16 + i*0.05, c);
+    S.cose.push({ tipo:'ostacolo', z: NASCE, corsia: c });
+    for (let i=0; i<3; i++) anello('verde', NASCE + i*0.055, corsiaDiversa(c));
+    S.prossimo = 0.7;
+
   } else {
-    // due ostacoli: resta una corsia sola
-    const a = c, b = [-1,0,1].filter(x => x !== a)[Math.random()*2 | 0];
+    // due ostacoli: resta una corsia sola, e li' ci sono dei blu
+    const a = c, b = corsiaDiversa(a);
     S.cose.push({ tipo:'ostacolo', z:NASCE, corsia:a });
     S.cose.push({ tipo:'ostacolo', z:NASCE, corsia:b });
-    S.prossimo = 0.8;
+    const sola = [-1,0,1].find(x => x !== a && x !== b);
+    for (let i=0; i<3; i++) anello('blu', NASCE + i*0.05, sola);
+    S.prossimo = 0.85;
   }
 }
 
@@ -408,9 +446,9 @@ function aggiorna(dt){
     c.z -= avanti;
     if (c.presa) continue;
     if (c.z < 0.10 && c.z > -0.02 && Math.abs(c.corsia - S.corsiaVista) < 0.55){
-      if (c.tipo === 'moneta'){
-        c.presa = true; S.punti += 10;
-        document.getElementById('punti').textContent = S.punti;
+      if (c.tipo === 'anello'){
+        c.presa = true;
+        S.raccolti += ANELLI[c.anello].valore;
       } else {
         finisci(); return;
       }
@@ -418,8 +456,8 @@ function aggiorna(dt){
   }
   S.cose = S.cose.filter(c => c.z > -0.02);   // superato = fuori scena
 
-  // un punto ogni tanto solo per correre
-  S.punti = Math.max(S.punti, (S.distanza * 6) | 0);
+  // gli anelli valgono, ma anche il solo restare in piedi
+  S.punti = S.raccolti + ((S.distanza * 4) | 0);
   document.getElementById('punti').textContent = S.punti;
 }
 
@@ -441,18 +479,22 @@ function disegna(){
   for (const c of ord){
     if (c.presa || c.z > NASCE + 0.1 || c.z < -0.02) continue;
     const q = proietta(c.z, c.corsia);
-    if (c.tipo === 'moneta'){
-      const s = 132 * q.scala;
-      const gira = Math.abs(Math.cos(S.distanza * 5 + c.z * 9));   // rotazione finta
+    if (c.tipo === 'anello'){
+      const s = 152 * q.scala;
+      /* Niente rotazione schiacciata: un anello schiacciato di lato
+         sembra rotto, non in movimento. Galleggia appena. */
+      const su = s * (1.25 + 0.06 * Math.sin(S.distanza * 5 + c.z * 7));
       ombra(q.x, q.y, s * 0.30, 0.16);
-      if (A.moneta){
-        const im = A.moneta, w = s * (im.width / im.height) * gira;
-        ctx.drawImage(im, q.x - w/2, q.y - s*1.15, w, s);
+      const im = A[c.anello];
+      if (im){
+        const w = s * (im.width / im.height);
+        ctx.drawImage(im, q.x - w/2, q.y - su, w, s);
       } else {
-        ctx.fillStyle = '#f0b722';
+        ctx.strokeStyle = { rosso:'#c0453f', verde:'#79c245', blu:'#4aa8cc' }[c.anello];
+        ctx.lineWidth = Math.max(2, s*0.16);
         ctx.beginPath();
-        ctx.ellipse(q.x, q.y - s*0.7, Math.max(1, s*0.4*gira), s*0.4, 0, 0, 7);
-        ctx.fill();
+        ctx.ellipse(q.x, q.y - su*0.6, s*0.33, s*0.33, 0, 0, 7);
+        ctx.stroke();
       }
     } else {
       const s = 320 * q.scala;
@@ -473,7 +515,7 @@ function disegna(){
 /* ---------- inizio e fine ---------- */
 function via(){
   S.fase = 'corsa'; S.corsia = 0; S.corsiaVista = 0;
-  S.velocita = 0.55; S.distanza = 0; S.punti = 0;
+  S.velocita = 0.55; S.distanza = 0; S.punti = 0; S.raccolti = 0;
   S.cose = []; S.prossimo = 0.4; S.scossa = 0;
   document.getElementById('veloStart').hidden = true;
   document.getElementById('veloFine').hidden  = true;
