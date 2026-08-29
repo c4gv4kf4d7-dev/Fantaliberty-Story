@@ -126,6 +126,16 @@ const PISTA_SX = [[705,198],[724,209],[739,215],[753,213],[772,206],[788,197],
 const PISTA_DX = [[682,199],[686,240],[688,293],[709,332],[741,390],[788,449],
                   [856,531],[924,601],[1023,693]];
 
+/* Dove FINISCONO in alto le cose appoggiate ai due lati: il bordo del
+   soffitto, misurato sul fondale. Coppie [x, y]. La conferma e' che
+   questi valori coincidono con la cima dei montanti dipinti nel
+   corridoio originale, prima che li togliessimo. */
+const CIMA_VETRO  = [[200,605],[240,599],[280,588],[320,572],[360,551],[400,513],
+                     [440,463],[480,411],[520,352],[560,290],[600,225],[640,160],
+                     [680,95],[700,64]];
+const CIMA_PARETE = [[0,372],[30,398],[60,424],[90,451],[120,477],[150,507],
+                     [170,527],[190,567],[200,605]];
+
 const Y_FONDO = 690;        // dove i due bordi si chiudono, in fondo alla curva
 const K       = 7;          // quanto "stringe" la profondita'
 const LARGO   = 0.26;       // distanza fra le corsie, in frazione di pista
@@ -306,19 +316,27 @@ const PASSO_MONTANTE = 0.17;    // ogni quanta profondita' passa un montante
 const PASSO_COSTOLA  = 0.55;    // le costole sono molto piu' rade
 const FONDO_VISTA    = 1.9;     // fin dove si disegnano
 
-/* La larghezza NON viene dalle proporzioni del file: il montante e' stato
-   disegnato largo per essere leggibile da solo, in scena e' una stecca. */
-function fila(img, passo, altezza, spessore, pista, scarto){
+/* Un montante non e' alto "tanto quanto e' vicino": parte dal pavimento
+   e ARRIVA AL SOFFITTO. L'altezza viene dalla differenza fra i due bordi
+   misurati, non da un moltiplicatore — e' quello che li faceva crescere
+   all'infinito come pali della luce.
+
+   La larghezza invece non viene dalle proporzioni del file: montante e
+   costola erano disegnati larghi per leggersi da soli, in scena sono
+   stecche. */
+function fila(img, passo, cima, spessore, pista, scarto){
   if (!img) return;
   const n = Math.ceil(FONDO_VISTA / passo);
   for (let i = n; i >= 0; i--){
     const z = i * passo - (S.scorri % passo);
     if (z < 0.015 || z > FONDO_VISTA) continue;
     const q = proietta(z, 0);
-    const alt = altezza * q.scala;
-    const largo = Math.max(1.2, alt * spessore);
     const x = bordo(pista, q.y) + scarto * q.scala;
-    ctx.drawImage(img, x - largo/2, q.y - alt, largo, alt);
+    const su = bordo(cima, x);
+    const alt = q.y - su;
+    if (alt < 6) continue;
+    const largo = Math.max(1.2, alt * spessore);
+    ctx.drawImage(img, x - largo/2, su, largo, alt);
   }
 }
 
@@ -438,8 +456,8 @@ function disegna(){
   else fondaleFinto();
 
   parco();
-  fila(A.montante, PASSO_MONTANTE, 2600, 0.011, PISTA_DX,  55);
-  fila(A.costola,  PASSO_COSTOLA,  2400, 0.024, PISTA_SX, -25);
+  fila(A.montante, PASSO_MONTANTE, CIMA_VETRO,  0.014, PISTA_DX, -20);
+  fila(A.costola,  PASSO_COSTOLA,  CIMA_PARETE, 0.030, PISTA_SX, -25);
   pavimentoFinto();
 
   // le cose lontane per prime, così le vicine coprono
