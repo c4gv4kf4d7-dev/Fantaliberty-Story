@@ -190,10 +190,9 @@ function carica(nome, file){
   });
 }
 const PRONTI = Promise.all([
-  carica('fondale',   'run_corridoio_vuoto.webp'),
+  carica('fondale',   'run_corridoio_scena.webp'),
   carica('montante',  'run_montante.webp'),
   carica('costola',   'run_parete_costola.webp'),
-  carica('parco',     'run_parco_striscia.webp'),
   carica('corsa',     'run_pg_corsa.webp'),
   carica('carrello',  'run_ost_carrello.webp'),
   carica('moneta',    'run_moneta.webp')
@@ -315,10 +314,12 @@ function ombra(x, y, raggio, forza){
 }
 
 /* ---------- quello che scorre ai lati ----------
-   Il fondale e' un guscio fermo: montanti, costole e parco sono pezzi
-   separati disegnati sopra, con la stessa prospettiva delle corsie.
-   Montanti e costole viaggiano alla velocita' della corsa; il parco no
-   — e' lontano, e alla stessa velocita' sembrerebbe incollato al vetro. */
+   Il fondale e' un guscio fermo: montanti e costole sono pezzi separati
+   disegnati sopra, con la stessa prospettiva delle corsie.
+
+   Il parco NON si muove: e' dipinto nel fondale. Una striscia che
+   scorreva oltre il vetro e' stata provata e tolta — tagliava gli alberi
+   e la giuntura col prato dipinto si vedeva. */
 const PASSO_MONTANTE = 0.17;    // ogni quanta profondita' passa un montante
 const PASSO_COSTOLA  = 0.55;    // le costole sono molto piu' rade
 const FONDO_VISTA    = 1.9;     // fin dove si disegnano
@@ -343,41 +344,9 @@ function fila(img, passo, cima, base, spessore, pista, scarto){
     const su = bordo(cima, x);
     const alt = giu - su;
     if (alt < 6) continue;
-    const largo = Math.max(1.2, alt * spessore);
+    const largo = Math.max(2.2, alt * spessore);   // in fondo restano visibili
     ctx.drawImage(img, x - largo/2, su, largo, alt);
   }
-}
-
-/* Il parco oltre il vetro: scorre lento, ritagliato nella fascia di
-   verde. Il ritaglio segue il bordo del vetro piu' la ghiaia, che si
-   allarga avvicinandosi come ogni altra cosa. */
-const ORIZZONTE_PARCO = 700;
-const GHIAIA = 150;
-
-function parco(){
-  const im = A.parco; if (!im) return;
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(W, ORIZZONTE_PARCO);
-  for (let i=0; i<=24; i++){
-    const y = ORIZZONTE_PARCO + (H - ORIZZONTE_PARCO) * (i/24);
-    const q = { y }, sc = (bordo(PISTA_DX,y) - bordo(PISTA_SX,y)) / BANDA_SOTTO;
-    ctx.lineTo(bordo(PISTA_DX, y) + GHIAIA * sc, y);
-  }
-  ctx.lineTo(W, H); ctx.closePath(); ctx.clip();
-
-  /* Il prato della striscia e' stato reso trasparente: restano vialetto,
-     alberi e cespugli, che si posano sul verde gia' dipinto nel fondale.
-     Disegnarci sopra un secondo prato lasciava la giuntura in vista. */
-  const alt = 330, cima = ORIZZONTE_PARCO - 90;
-  const largo = im.width * (alt / im.height) * 0.62;
-  const sposta = (S.distanza * 130) % largo;
-  ctx.globalAlpha = 0.85;
-  for (let k = -1; k <= Math.ceil(W / largo) + 1; k++){
-    ctx.drawImage(im, k * largo - sposta, cima, largo, alt);
-  }
-  ctx.globalAlpha = 1;
-  ctx.restore();
 }
 
 function sagoma(x, y, s, colore){
@@ -390,7 +359,7 @@ function sagoma(x, y, s, colore){
 /* ---------- disegno: personaggio ---------- */
 function personaggio(){
   const q = proietta(0.06, S.corsiaVista);
-  const alt = 300 * q.scala * 1.16;
+  const alt = 300 * q.scala * 2.32;
   const x = q.x, y = q.y + 10;
   ombra(x, y, alt * 0.20, 0.20);
 
@@ -463,7 +432,6 @@ function disegna(){
   if (A.fondale) ctx.drawImage(A.fondale, 0, 0, W, H);
   else fondaleFinto();
 
-  parco();
   fila(A.montante, PASSO_MONTANTE, CIMA_VETRO,  BASE_VETRO, 0.014, PISTA_DX, -20);
   fila(A.costola,  PASSO_COSTOLA,  CIMA_PARETE, null,       0.030, PISTA_SX, -25);
   pavimentoFinto();
