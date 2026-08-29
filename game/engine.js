@@ -502,6 +502,7 @@
     var sc = VN.story.scenes[save.scene];
     VN.scene = sc; VN.sceneId = save.scene;
     if (sc.bg) setBg(sc.bg, sc.bgFx);
+    precaricaScena(sc);
     atmosfera(sc);
     if (sc.terminal) { buildTerminal(sc.terminal); sc.terminal.forEach(function (r) { termSet(r.var); }); }
     var upto = Math.min(save.i || 0, (sc.steps || []).length);
@@ -549,9 +550,21 @@
     // Il box del dialogo restava acceso con l'ultima battuta della scena
     // precedente finche' non ne arrivava una nuova: si vedeva la vecchia frase
     // sopra il fondale nuovo.
-    if (!silent) { el.boxwrap.classList.remove('in'); el.txt.textContent = ''; el.arrow.style.opacity = 0; }
+    // Va spento di netto: con la sua transizione di mezzo secondo, la vecchia
+    // battuta sfumava *sopra* il fondale nuovo.
+    if (!silent) {
+      el.boxwrap.style.transition = 'none';
+      el.boxwrap.classList.remove('in');
+      void el.boxwrap.offsetWidth;
+      el.boxwrap.style.transition = '';
+      el.txt.textContent = '';
+      el.arrow.style.opacity = 0;
+    }
     VN.scene = sc; VN.sceneId = id; VN.i = 0;
     if (sc.bg) setBg(sc.bg, sc.bgFx, sc.dissolvenza);
+    // gli asset della scena nuova si chiedono subito: se questa si apre al
+    // buio, arrivano mentre non si vede niente
+    precaricaScena(sc);
     atmosfera(sc);
     if (sc.terminal) buildTerminal(sc.terminal);
     // il leggio del keynote: fisso per tutta la scena, non uno step. La src si
@@ -659,7 +672,9 @@
         return velaNero(true, st.ms, next);
 
       case 'luce':
-        return velaNero(false, st.ms, next);
+        // la luce si alza su una scena gia' pronta: e' qui che si evita il
+        // fotogramma con il personaggio (o il fondale) di prima
+        return quandoPronti(function () { velaNero(false, st.ms, next); });
 
       // la figura del giocatore: entra, cambia posa, esce
       case 'io':
@@ -863,6 +878,10 @@
     el.npcBody.onerror = function () { el.npc.classList.add('broken'); };
     el.npc.classList.remove('broken');
     el.npcBody.src = bodySrc;
+    // Finche' lo sprite nuovo non e' decodificato, l'<img> disegna ancora
+    // quello di prima: il riquadro resta invisibile fino ad allora, altrimenti
+    // si vede per un fotogramma il personaggio della scena precedente.
+    mostraQuandoPronto();
     setHead(head);
     if (c && c.neck) {                         // ancoraggio del collo, in % del riquadro corpo
       el.npcHead.style.left = c.neck.x || '50%';
@@ -896,6 +915,27 @@
     el.npc.classList.remove('out', 'micro');
     if (st.pop) { el.npc.classList.remove('in'); void el.npc.offsetWidth; el.npc.classList.add('pop'); }
     else { el.npc.classList.remove('pop'); void el.npc.offsetWidth; el.npc.classList.add('in'); }
+  }
+
+  /* Il riquadro del personaggio resta nascosto (visibility, non opacity: cosi'
+     l'animazione d'ingresso parte lo stesso) finche' lo sprite chiesto non e'
+     pronto. Il tetto di tempo e' una rete di sicurezza: se il file non arriva,
+     meglio mostrarlo comunque che lasciare la scena vuota. */
+  var attesaNpc = 0;
+  function mostraQuandoPronto() {
+    var mio = ++attesaNpc;
+    var scopri = function () { if (mio === attesaNpc) el.npc.classList.remove('attesa'); };
+    if (!VN.speed || decodificata(el.npcBody)) return scopri();
+    el.npc.classList.add('attesa');
+    var img = el.npcBody;
+    var prima = img.onload;
+    img.onload = function (e) {
+      if (typeof prima === 'function') prima.call(img, e);
+      scopri();
+    };
+    // rete di sicurezza: se il file non arriva, meglio mostrare il personaggio
+    // che lasciare la scena vuota per sempre
+    global.setTimeout(scopri, ATTESA_MAX);
   }
 
   /* Inquadratura sul volto.
@@ -3165,6 +3205,118 @@
     return ((VN.story.meta && VN.story.meta.assetBase) || '') + rel;
   }
 
+  /* ---------------- precaricamento ----------------
+     Un <img> a cui si cambia "src" continua a disegnare l'immagine VECCHIA
+     finche' la nuova non e' decodificata. Per questo, entrando in lobby, si
+     vedeva per un attimo Lucas dentro il riquadro del personaggio: lo sprite
+     era gia' quello di Francesca, ma il fotogramma a schermo era ancora il
+     suo. Stessa cosa per il fondale. Non e' un problema di cache del browser:
+     e' il momento in cui l'immagine viene chiesta.
+
+     La cura e' chiedere gli asset della scena nuova *mentre il buio copre*, e
+     alzare la luce solo quando sono pronti (con un tetto di tempo, cosi' una
+     rete lenta rallenta ma non blocca). */
+  var caricati = {};                 // src gia' pronte: niente doppio giro
+  var critici = {};                  // quelle che la luce deve aspettare
+  var inCorso = 0;                   // quante ne stiamo aspettando
+  var attese = [];                   // chi aspetta che finiscano
+  var ATTESA_MAX = 2500;             // oltre questo si va avanti comunque
+
+  // "critico" = quello che si vede appena la luce si alza. Il resto (gli altri
+  // fondali dell'hub, le pose che arriveranno dopo) si scarica lo stesso, ma
+  // nessuno lo aspetta: aspettarlo vorrebbe dire tenere il buio per secondi.
+  function precarica(src, critico) {
+    if (!src) return;
+    if (caricati[src]) {
+      // gia' partita come non critica e adesso serve subito: da qui in poi
+      // qualcuno la aspetta, quindi va contata (senza contarla, il contatore
+      // finiva sotto zero e la luce si alzava lo stesso).
+      if (critico && caricati[src] !== true && !critici[src]) { critici[src] = true; inCorso++; }
+      return;
+    }
+    if (typeof global.Image !== 'function') { caricati[src] = true; return; }
+    caricati[src] = 'in corso';
+    if (critico) { critici[src] = true; inCorso++; }
+    var img = new global.Image();
+    var fine = function () {
+      if (caricati[src] === true) return;
+      caricati[src] = true;
+      if (critici[src]) {
+        delete critici[src];
+        inCorso--;
+        if (inCorso <= 0) { inCorso = 0; var q = attese; attese = []; q.forEach(function (f) { f(); }); }
+      }
+    };
+    img.onload = fine;
+    img.onerror = fine;                       // un asset mancante non deve bloccare la scena
+    img.src = src;
+  }
+
+  function pronta(src) { return !src || caricati[src] === true; }
+
+  // Chiama done() quando la scena e' davvero pronta, o allo scadere del tetto.
+  //
+  // Non basta sapere che il precaricamento e' finito: se il server non manda
+  // header di cache, l'<img> vero rifa' la richiesta da capo e resta indietro.
+  // Quindi la condizione guarda l'elemento a schermo, che e' l'unica fonte
+  // attendibile su cosa il browser sta per disegnare.
+  function decodificata(img) { return !!(img && img.complete && img.naturalWidth > 0); }
+
+  function quandoPronti(done) {
+    if (!VN.speed) return done();
+    var scaduto = false;
+    var fatto = false;
+    var una = function () { if (fatto) return; fatto = true; done(); };
+    var controlla = function () {
+      if (fatto) return;
+      if (scaduto || (!inCorso && (!el.bg || !el.bg.getAttribute('src') || decodificata(el.bg)))) return una();
+      global.setTimeout(controlla, 60);
+    };
+    global.setTimeout(function () { scaduto = true; controlla(); }, ATTESA_MAX);
+    controlla();
+  }
+
+  /* Tutti gli asset che una scena mostrera': fondale, personaggi con la posa
+     che lo step chiede, zone dell'hub, prop. Si scorrono gli step in
+     profondita' perche' hub e carosello annidano zone e figure. */
+  function precaricaScena(sc) {
+    if (!sc) return;
+    if (sc.bg) precarica(assetUrl('bg', sc.bg), true);
+    // il primo personaggio che entra e' l'altra cosa che si vede subito
+    var steps = sc.steps || [];
+    for (var i = 0; i < steps.length; i++) {
+      var st = steps[i];
+      if (!st || (st.t !== 'show' && st.t !== 'io')) continue;
+      var chi = st.who || st.char;
+      if (chi) {
+        var c = cast(chi);
+        precarica(partUrl(chi, 'bodies', st.body || (c && c.defaultBody) || 'neutro')
+          || assetUrl('chars', chi), true);
+        precarica(partUrl(chi, 'heads', st.head || (c && c.defaultHead) || 'neutro'), true);
+      }
+      break;
+    }
+    raccogli(steps);
+  }
+
+  function raccogli(nodi) {
+    (nodi || []).forEach(function (n) {
+      if (!n || typeof n !== 'object') return;
+      if (Array.isArray(n)) return raccogli(n);
+      if (n.bg) precarica(assetUrl('bg', n.bg));
+      var chi = n.who || n.char;
+      if (chi) {
+        var c = cast(chi);
+        var corpo = n.body || (c && c.defaultBody) || 'neutro';
+        precarica(partUrl(chi, 'bodies', corpo) || assetUrl('chars', chi));
+        var testa = n.head || (c && c.defaultHead) || 'neutro';
+        precarica(partUrl(chi, 'heads', testa));
+      }
+      ['steps', 'zones', 'hotspots', 'after', 'options', 'tutorial', 'ritorno', 'react']
+        .forEach(function (k) { if (n[k]) raccogli(Array.isArray(n[k]) ? n[k] : [n[k]]); });
+    });
+  }
+
   function assetUrl(kind, id) {
     var a = VN.story.assets && VN.story.assets[kind] && VN.story.assets[kind][id];
     return a ? withBase(a) : '';
@@ -3221,7 +3373,7 @@
     // Stessa cosa per il personaggio, con in piu' che "out" e' un @keyframes
     // che parte da opacity:1: aggiungerlo a uno gia' invisibile lo riaccende.
     // Qui si azzera l'animazione, non se ne mette un'altra.
-    el.npc.classList.remove('in', 'pop', 'micro', 'out');
+    el.npc.classList.remove('in', 'pop', 'micro', 'out', 'attesa');
     el.npc.style.animation = 'none';
     el.npc.style.opacity = '0';
     current.who = null;

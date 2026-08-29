@@ -119,6 +119,9 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #npc.pop{animation:pop .5s ease forwards}
 @keyframes pop{0%{opacity:1;transform:scale(1)}45%{opacity:1;transform:scale(1.06)}100%{opacity:1;transform:scale(1)}}
 #npc.broken{display:none}
+/* sprite chiesto ma non ancora decodificato: l'immagine a schermo sarebbe
+   ancora quella di prima (il personaggio della scena precedente). */
+#npc.attesa{visibility:hidden}
 #npc.out{animation:leave .45s ease forwards}
 @keyframes leave{from{opacity:1}to{opacity:0;transform:translateX(40px)}}
 /* reazione livello 1: movimento minimo, nessun asset nuovo */

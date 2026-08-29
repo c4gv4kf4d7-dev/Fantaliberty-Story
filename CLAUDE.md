@@ -136,6 +136,33 @@ difetto ("mi rispiega cos'e' la Hall of Fame ogni volta").
 Toccare un hotspot in una zona muta fa **rientrare** chi risponde: senza
 quello, Francesca parlerebbe fuori campo e sembrerebbe la regia in cuffia.
 
+## Un cambio di scena non si scopre prima di essere pronto
+
+Un `<img>` a cui si cambia `src` **continua a disegnare l'immagine vecchia**
+finche' la nuova non e' decodificata. E' questo — non la cache del browser —
+che faceva comparire per un attimo il fondale dell'ingresso, o Lucas, appena
+la luce si alzava sulla lobby. Saltuario perche' dipende da quanto ci mette
+il file ad arrivare.
+
+Tre pezzi, da non togliere:
+1. **`precaricaScena()`** in `goScene`/`restore` chiede gli asset della scena
+   nuova *mentre il buio copre*. Sono critici solo il fondale e il primo
+   personaggio: aspettare anche i quattro fondali dell'hub vorrebbe dire
+   tenere il nero per secondi.
+2. **lo step `luce` passa da `quandoPronti()`**, che aspetta il fondale
+   davvero decodificato (`img.complete && naturalWidth`), non la fine del
+   precaricamento: senza header di cache l'`<img>` vero rifa' la richiesta e
+   resta indietro. C'e' un tetto (`ATTESA_MAX`) perche' una rete lenta possa
+   rallentare ma mai bloccare.
+3. **`#npc.attesa`** tiene il riquadro del personaggio a `visibility:hidden`
+   finche' lo sprite chiesto non e' pronto, agganciandosi all'`onload`
+   dell'immagine vera.
+
+`npm test` gira in jsdom e non carica immagini: **questo non lo vede**. Il
+controllo e' `npm run transizioni` (browser vero, asset rallentati apposta):
+sul codice prima del fix segnala decine di fotogrammi con l'intruso, dopo
+zero. Se si tocca una di quelle tre cose, rilanciarlo.
+
 ## Animazioni CSS: due classi sullo stesso nodo si combattono
 
 Regola (violata due volte con lo stesso sintomo — il personaggio sparisce
