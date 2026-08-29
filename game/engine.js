@@ -31,7 +31,7 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '18',
+    engine: '19',
     story: null,
     banca: null,    // game/domande.json: domande, battute per stile, eventi, intermezzi
     quiz: null,     // game/quiz.json: i tre livelli del quiz di Peter [S8]
@@ -554,6 +554,12 @@
     if (sc.bg) setBg(sc.bg, sc.bgFx, sc.dissolvenza);
     atmosfera(sc);
     if (sc.terminal) buildTerminal(sc.terminal);
+    // il leggio del keynote: fisso per tutta la scena, non uno step. La src si
+    // imposta una sola volta, non serve rifarlo a ogni cambio scena.
+    if (el.podiumwrap) {
+      if (sc.podio && el.podiumImg && !el.podiumImg.src) el.podiumImg.src = assetUrl('props', 'podio');
+      el.podiumwrap.classList.toggle('on', !!sc.podio);
+    }
     run();
   }
 
@@ -1530,8 +1536,11 @@
     if (e.asset && e.asset.indexOf('stili/') === 0) mostraIo({ posa: 'evento' });
     else mostraIo({ posa: 'imbarazzo' });
     // un oggetto (il clicker che si inceppa, la slide sbagliata) va nello slot
-    // dei prop; un secondo personaggio (il rider) nello slot degli ospiti
+    // dei prop; un secondo personaggio (il rider) nello slot degli ospiti.
+    // "prop" e' per l'evento personale che ha GIA' un asset stili/ per la posa
+    // e in piu' un oggetto separato (l'ukulele accanto alla posa di ballo).
     if (e.asset && e.asset.indexOf('props/') === 0) mostraPropEvento(e.asset);
+    if (e.prop) mostraPropEvento(e.prop);
     if (e.extra_asset) mostraOspite(e.extra_asset);
     platea(e.platea);
 
@@ -3485,6 +3494,7 @@
       nero: $('nero'),
       boot: $('boot'), bootbar: $('bootbar'), logo: $('logo'), logoImg: $('logoImg'),
       avatar: $('avatar'), propwrap: $('propwrap'), prop: $('prop'), screen: $('screen'),
+      podiumwrap: $('podiumwrap'), podiumImg: $('podiumImg'),
       boxwrap: $('boxwrap'), name: $('name'), nametxt: $('nametxt'), voce: $('voce'),
       txt: $('txt'), arrow: $('arrow'),
       choices: $('choices'), inputform: $('inputform'), ti: $('ti'), tok: $('tok'),

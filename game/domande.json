@@ -1303,6 +1303,7 @@
       "titolo": "L'ukulele",
       "testo": "«Un ukulele??? Non era previsto…»",
       "asset": "stili/stile_hawaiano_evento_stacchetto.webp",
+      "prop": "props/prop_ukulele@3x.webp",
       "opzioni": [
         {
           "label": "«Finalmente una colonna sonora decente.»",
