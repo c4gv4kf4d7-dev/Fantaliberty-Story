@@ -136,32 +136,60 @@ difetto ("mi rispiega cos'e' la Hall of Fame ogni volta").
 Toccare un hotspot in una zona muta fa **rientrare** chi risponde: senza
 quello, Francesca parlerebbe fuori campo e sembrerebbe la regia in cuffia.
 
-## Un cambio di scena non si scopre prima di essere pronto
+## Mai un fotogramma della scena di prima
 
 Un `<img>` a cui si cambia `src` **continua a disegnare l'immagine vecchia**
-finche' la nuova non e' decodificata. E' questo — non la cache del browser —
-che faceva comparire per un attimo il fondale dell'ingresso, o Lucas, appena
-la luce si alzava sulla lobby. Saltuario perche' dipende da quanto ci mette
-il file ad arrivare.
+finche' la nuova non e' decodificata. Da qui nascono tutti gli "intrusi": il
+fondale dell'ingresso sotto Francesca, la posa precedente per un fotogramma,
+la slide sbagliata dentro il riquadro. Non e' la cache del browser, ed e'
+saltuario perche' dipende da quanto ci mette il file ad arrivare.
 
-Tre pezzi, da non togliere:
-1. **`precaricaScena()`** in `goScene`/`restore` chiede gli asset della scena
-   nuova *mentre il buio copre*. Sono critici solo il fondale e il primo
-   personaggio: aspettare anche i quattro fondali dell'hub vorrebbe dire
-   tenere il nero per secondi.
-2. **lo step `luce` passa da `quandoPronti()`**, che aspetta il fondale
-   davvero decodificato (`img.complete && naturalWidth`), non la fine del
-   precaricamento: senza header di cache l'`<img>` vero rifa' la richiesta e
-   resta indietro. C'e' un tetto (`ATTESA_MAX`) perche' una rete lenta possa
-   rallentare ma mai bloccare.
-3. **`#npc.attesa`** tiene il riquadro del personaggio a `visibility:hidden`
-   finche' lo sprite chiesto non e' pronto, agganciandosi all'`onload`
-   dell'immagine vera.
+**Non si assegna `src` a mano su un elemento che si vede.** Ci sono due modi,
+e non sono intercambiabili (`engine.js`, sezione "immagini"):
 
-`npm test` gira in jsdom e non carica immagini: **questo non lo vede**. Il
-controllo e' `npm run transizioni` (browser vero, asset rallentati apposta):
-sul codice prima del fix segnala decine di fotogrammi con l'intruso, dopo
-zero. Se si tocca una di quelle tre cose, rilanciarlo.
+- **`scambia(nodo, src)`** — l'elemento e' gia' a schermo e cambia contenuto
+  (posa, espressione, slide, figura del carosello). L'immagine vecchia e'
+  ancora quella giusta finche' non arriva la nuova, quindi si tiene: il `src`
+  si assegna solo quando l'immagine e' pronta. Nessun buco.
+- **`apparira(nodo, src, contenitore)`** — l'elemento deve *comparire*, e
+  quello che ha addosso e' roba della scena di prima. Si assegna subito ma
+  resta invisibile (`.attesa`) finche' non e' pronta. Nessun intruso.
+
+`showChar()` sceglie da solo fra i due: stesso personaggio gia' in scena =
+cambio di posa (`scambia`), altrimenti sta entrando (`apparira`).
+
+Tre regole che reggono il resto:
+
+1. **`img.complete` da solo mente.** Subito dopo aver assegnato un `src`
+   nuovo risponde ancora per l'immagine vecchia. La domanda giusta la fa
+   `mostrata(img, src)`, che confronta `currentSrc`. Lo stesso vale per il
+   precaricamento: **non basta sapere che il precaricatore ha finito**, perche'
+   senza header di cache l'`<img>` vero rifa' la richiesta e resta indietro —
+   si aspetta sempre l'elemento a schermo.
+2. **Niente "dopo tot lo mostro comunque".** Mostrarlo comunque vuol dire
+   mostrare l'immagine di prima, cioe' proprio la cosa da non fare. Se un file
+   non arriva, l'elemento resta vuoto e la scena va avanti lo stesso. L'unico
+   ripiego a tempo e' il fondale: se tarda, la scena **si copre di nero**
+   (che e' il linguaggio del gioco) invece di far entrare i personaggi nuovi
+   sopra il fondale vecchio.
+3. **Anche i tempi sono intrusi.** Uno step che finisce piu' tardi (attesa,
+   dissolvenza, transizione) tiene in mano un "poi fai questo": se intanto la
+   scena e' cambiata, quel seguito e' della scena di prima e farebbe partire da
+   sola quella nuova. Per questo ogni seguito differito passa da
+   `perScena(next)`, che lo annulla al cambio di scena.
+
+`precaricaScena()` (la scena nuova, mentre il buio copre) e
+`precaricaProssime()` (le scene in cui si puo' finire dopo, mentre si gioca)
+servono a far si' che quelle attese, in pratica, siano gia' finite.
+
+`npm test` gira in jsdom e non carica immagini: **questa famiglia di bug non
+la vede proprio** (per questo il motore si accorge da solo di essere in jsdom,
+`siDecodifica()`, e li' non aspetta nessuno). Il controllo vero e'
+`npm run transizioni`: browser vero, asset rallentati apposta, tutte le
+transizioni che la storia puo' fare, e conta i fotogrammi in cui si vede
+qualcosa che non e' ancora pronto. Si puo' stringere la vite con
+`CHARS=4000 BG=4000 npm run transizioni`. Se si tocca una di queste cose,
+rilanciarlo.
 
 ## Animazioni CSS: due classi sullo stesso nodo si combattono
 
