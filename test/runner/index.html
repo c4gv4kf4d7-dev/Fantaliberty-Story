@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>FantaLiberty — Runner (prototipo)</title>
+<style>
+  :root{ color-scheme: light; }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; height:100%; overflow:hidden; overflow:clip;
+    background:#111; touch-action:none; overscroll-behavior:none;
+    -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  #wrap{
+    position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  }
+  #stage{
+    position:relative; background:#e9e9e4;
+    box-shadow:0 0 40px rgba(0,0,0,.6);
+  }
+  canvas{ display:block; width:100%; height:100%; }
+
+  /* ---- interfaccia sopra il canvas ---- */
+  .ui{
+    position:absolute; inset:0; pointer-events:none;
+    display:flex; flex-direction:column;
+  }
+  #hud{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    padding:14px 16px; font-weight:700; color:#2a2a28;
+    text-shadow:0 1px 0 rgba(255,255,255,.7);
+  }
+  #punti{ font-size:26px; letter-spacing:.5px; }
+  #record{ font-size:13px; opacity:.65; font-weight:600; }
+  #fps{
+    position:absolute; left:16px; bottom:12px; font-size:11px;
+    color:#2a2a28; opacity:.45; font-weight:600;
+  }
+
+  .velo{
+    position:absolute; inset:0; pointer-events:auto;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px; text-align:center; padding:24px;
+    background:rgba(238,238,233,.86); backdrop-filter:blur(3px);
+  }
+  .velo[hidden]{ display:none !important; }
+  .velo h1{ margin:0; font-size:30px; color:#1d1d1b; letter-spacing:-.5px; }
+  .velo p{ margin:0; font-size:15px; line-height:1.5; color:#4a4a46; max-width:19em; }
+  .velo .big{ font-size:52px; font-weight:800; color:#1d1d1b; margin:4px 0; }
+  .velo button{
+    margin-top:10px; padding:14px 30px; font-size:17px; font-weight:700;
+    border:0; border-radius:999px; background:#1d1d1b; color:#fff; cursor:pointer;
+    font-family:inherit;
+  }
+  .velo small{ font-size:12px; color:#8a8a84; }
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <canvas id="cv"></canvas>
+
+  <div class="ui">
+    <div id="hud"><div id="punti">0</div><div id="record">record 0</div></div>
+    <div id="fps"></div>
+  </div>
+
+  <div class="velo" id="veloStart">
+    <h1>Corsa nel corridoio</h1>
+    <p>Scorri il dito a <b>destra</b> o <b>sinistra</b> per cambiare corsia.<br>
+       Prendi le monete, evita i carrelli.</p>
+    <button id="btnVia">Via</button>
+    <small>prototipo — non è il gioco vero</small>
+  </div>
+
+  <div class="velo" id="veloFine" hidden>
+    <h1>Sbam.</h1>
+    <div class="big" id="finePunti">0</div>
+    <p id="fineNota"></p>
+    <button id="btnAncora">Ancora</button>
+  </div>
+</div></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ══════════════════════════════════════════════════════════════
+   PROTOTIPO RUNNER — test di fattibilità, non collegato al gioco.
+
+   Il personaggio non si muove mai davvero: scorre il mondo.
+   La profondità è una z fra 0 (addosso a noi) e 1 (in fondo);
+   la prospettiva è una sola formula, projetta(), usata da tutti.
+
+   Gli asset veri vengono caricati da ../../assets/in_app_game/ se ci sono,
+   altrimenti il gioco disegna dei segnaposto e gira lo stesso.
+   ══════════════════════════════════════════════════════════════ */
+
+const cv  = document.getElementById('cv');
+const ctx = cv.getContext('2d', { alpha:false });
+
+/* ---------- misure: 9:16 dentro qualunque finestra ---------- */
+const W = 720, H = 1280;           // risoluzione logica del gioco
+cv.width = W; cv.height = H;
+
+function adatta(){
+  const box = document.getElementById('stage');
+  const k = Math.min(innerWidth / W, innerHeight / H);
+  box.style.width  = Math.round(W * k) + 'px';
+  box.style.height = Math.round(H * k) + 'px';
+}
+addEventListener('resize', adatta); adatta();
+
+/* ---------- geometria del corridoio ----------
+   L'orizzonte e la fuga sono presi dal fondale disegnato:
+   il corridoio piega a sinistra, quindi il punto di fuga
+   non sta al centro ma a circa un terzo della larghezza. */
+const ORIZZONTE = H * 0.56;
+const FUGA_X    = W * 0.28;
+const CORSIA    = W * 0.30;   // distanza fra due corsie, vicino a noi
+const K         = 7;          // quanto "stringe" la prospettiva
+
+// z=0 → davanti a noi, z=1 → in fondo. Restituisce dove e quanto grande.
+function proietta(z, corsia){
+  const p = Math.min(1.15, 1 / (1 + z * K));      // 1 vicino, ~0 lontano
+  const cx = FUGA_X + (W * 0.5 - FUGA_X) * p;     // il centro slitta con la curva
+  return {
+    p,
+    x: cx + corsia * CORSIA * p,
+    y: ORIZZONTE + (H - ORIZZONTE) * p
+  };
+}
+
+/* ---------- asset: se ci sono si usano, se no segnaposto ---------- */
+const A = {};
+function carica(nome, file){
+  return new Promise(ok => {
+    const im = new Image();
+    im.onload  = () => { A[nome] = im; ok(); };
+    im.onerror = () => { A[nome] = null; ok(); };   // manca: si va di segnaposto
+    im.src = '../../assets/in_app_game/' + file;
+  });
+}
+const PRONTI = Promise.all([
+  carica('fondale',   'run_corridoio_base.webp'),
+  carica('corsa',     'run_pg_corsa.webp'),
+  carica('carrello',  'run_ost_carrello.webp'),
+  carica('moneta',    'run_moneta.webp')
+]);
+
+/* ---------- stato ---------- */
+const S = {
+  fase:'attesa',      // attesa | corsa | fine
+  corsia:0,           // -1, 0, +1
+  corsiaVista:0,      // posizione morbida, insegue corsia
+  velocita:0.55,      // z al secondo
+  distanza:0,
+  punti:0,
+  passo:0,            // fase del ciclo di corsa
+  scorri:0,           // scorrimento del pavimento
+  cose:[],            // { tipo:'moneta'|'ostacolo', z, corsia, presa }
+  prossimo:0,         // fra quanta distanza generare il prossimo gruppo
+  scossa:0
+};
+window.RUN = S;   // esposto per il collaudo automatico
+const RECORD = 'fl_runner_record';
+let record = 0;
+try { record = +(localStorage.getItem(RECORD) || 0) || 0; } catch(e){}
+
+/* ---------- generazione del percorso ---------- */
+const NASCE = 1.6;   // a che distanza compaiono le cose: e' il tempo di reazione
+function genera(){
+  const r = Math.random();
+  const c = (Math.random()*3 | 0) - 1;
+
+  if (r < 0.42){
+    // una fila di monete sulla stessa corsia
+    const n = 4 + (Math.random()*3 | 0);
+    for (let i=0; i<n; i++) S.cose.push({ tipo:'moneta', z: NASCE + i*0.055, corsia:c });
+    S.prossimo = 0.55;
+  } else if (r < 0.78){
+    // un ostacolo, con qualche moneta su una corsia libera
+    S.cose.push({ tipo:'ostacolo', z:NASCE, corsia:c });
+    const libera = [-1,0,1].filter(x => x !== c)[Math.random()*2 | 0];
+    for (let i=0; i<3; i++) S.cose.push({ tipo:'moneta', z: NASCE + i*0.055, corsia:libera });
+    S.prossimo = 0.6;
+  } else {
+    // due ostacoli: resta una corsia sola
+    const a = c, b = [-1,0,1].filter(x => x !== a)[Math.random()*2 | 0];
+    S.cose.push({ tipo:'ostacolo', z:NASCE, corsia:a });
+    S.cose.push({ tipo:'ostacolo', z:NASCE, corsia:b });
+    S.prossimo = 0.8;
+  }
+}
+
+/* ---------- comandi ---------- */
+function muovi(d){
+  if (S.fase !== 'corsa') return;
+  S.corsia = Math.max(-1, Math.min(1, S.corsia + d));
+}
+addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft')  { muovi(-1); e.preventDefault(); }
+  if (e.key === 'ArrowRight') { muovi(+1); e.preventDefault(); }
+});
+let tx = 0, ty = 0, tattivo = false;
+cv.addEventListener('touchstart', e => {
+  const t = e.changedTouches[0]; tx = t.clientX; ty = t.clientY; tattivo = true;
+}, { passive:true });
+cv.addEventListener('touchmove', e => {
+  if (!tattivo) return;
+  const t = e.changedTouches[0], dx = t.clientX - tx, dy = t.clientY - ty;
+  if (Math.abs(dx) > 26 && Math.abs(dx) > Math.abs(dy)){
+    muovi(dx > 0 ? +1 : -1); tattivo = false;
+  }
+}, { passive:true });
+cv.addEventListener('touchend', () => { tattivo = false; }, { passive:true });
+// col mouse: click sulla metà destra o sinistra
+cv.addEventListener('mousedown', e => {
+  const r = cv.getBoundingClientRect();
+  muovi(e.clientX - r.left < r.width/2 ? -1 : +1);
+});
+
+/* ---------- disegno: segnaposto ---------- */
+function fondaleFinto(){
+  // cielo/vetro a destra, parete a sinistra, pavimento
+  ctx.fillStyle = '#f2f2ee'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#dfe6dc';                       // verde oltre il vetro
+  ctx.beginPath(); ctx.moveTo(W, ORIZZONTE - 30); ctx.lineTo(W, H);
+  ctx.lineTo(W*0.52, H); ctx.lineTo(FUGA_X + 40, ORIZZONTE); ctx.fill();
+  ctx.fillStyle = '#e6e6e1';                       // pavimento
+  ctx.beginPath(); ctx.moveTo(0, H); ctx.lineTo(W*0.55, H);
+  ctx.lineTo(FUGA_X + 30, ORIZZONTE); ctx.lineTo(FUGA_X - 60, ORIZZONTE); ctx.fill();
+  ctx.fillStyle = '#fafaf7';                       // parete sinistra
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(FUGA_X - 60, ORIZZONTE);
+  ctx.lineTo(0, H); ctx.fill();
+  // montanti del vetro
+  ctx.strokeStyle = 'rgba(60,64,60,.5)'; ctx.lineWidth = 3;
+  for (let i=1; i<=9; i++){
+    const z = i*i*0.02, q = proietta(z, 3.2);
+    ctx.beginPath(); ctx.moveTo(q.x, q.y); ctx.lineTo(q.x, q.y - 640*q.p); ctx.stroke();
+  }
+}
+
+function pavimentoFinto(){
+  // righe trasversali che scorrono: bastano a dare la velocità
+  ctx.strokeStyle = 'rgba(120,124,120,.22)'; ctx.lineWidth = 2;
+  for (let i=0; i<26; i++){
+    const z = ((i * 0.09) - (S.scorri % 0.09) + 0.09) % 2.34;
+    if (z > 1.4) continue;
+    const a = proietta(z, -1.9), b = proietta(z, 1.9);
+    ctx.globalAlpha = Math.min(1, a.p * 2.4);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function sagoma(x, y, s, colore){
+  ctx.fillStyle = colore;
+  ctx.beginPath();
+  ctx.roundRect(x - s*0.28, y - s, s*0.56, s, s*0.14);
+  ctx.fill();
+}
+
+/* ---------- disegno: personaggio ---------- */
+function personaggio(){
+  const q = proietta(0.06, S.corsiaVista);
+  const alt = 300 * q.p * 1.35;
+  const x = q.x, y = q.y + 10;
+
+  if (A.corsa){
+    const im = A.corsa, fw = im.width / 4;
+    const f = (S.passo | 0) % 4;
+    const w = alt * (fw / im.height);
+    ctx.drawImage(im, f * fw, 0, fw, im.height, x - w/2, y - alt, w, alt);
+  } else {
+    const salto = Math.abs(Math.sin(S.passo * Math.PI / 2)) * alt * 0.06;
+    sagoma(x, y - salto, alt, '#3f6ea8');
+  }
+}
+
+/* ---------- ciclo ---------- */
+let ultimo = performance.now(), fpsAcc = 0, fpsN = 0;
+
+function passo(ora){
+  requestAnimationFrame(passo);
+  let dt = (ora - ultimo) / 1000; ultimo = ora;
+  if (dt > 0.05) dt = 0.05;                     // niente salti dopo un blocco
+
+  if (S.fase === 'corsa') aggiorna(dt);
+  disegna();
+
+  fpsAcc += dt; fpsN++;
+  if (fpsAcc > 0.5){
+    document.getElementById('fps').textContent = Math.round(fpsN / fpsAcc) + ' fps';
+    fpsAcc = 0; fpsN = 0;
+  }
+}
+
+function aggiorna(dt){
+  S.velocita = Math.min(1.35, S.velocita + dt * 0.022);
+  const avanti = S.velocita * dt;
+  S.distanza += avanti;
+  S.scorri   += avanti;
+  S.passo    += dt * (7 + S.velocita * 5);
+  S.corsiaVista += (S.corsia - S.corsiaVista) * Math.min(1, dt * 14);
+  if (S.scossa > 0) S.scossa -= dt;
+
+  S.prossimo -= avanti;
+  if (S.prossimo <= 0) genera();
+
+  for (const c of S.cose){
+    c.z -= avanti;
+    if (c.presa) continue;
+    if (c.z < 0.10 && c.z > -0.02 && Math.abs(c.corsia - S.corsiaVista) < 0.55){
+      if (c.tipo === 'moneta'){
+        c.presa = true; S.punti += 10;
+        document.getElementById('punti').textContent = S.punti;
+      } else {
+        finisci(); return;
+      }
+    }
+  }
+  S.cose = S.cose.filter(c => c.z > -0.02);   // superato = fuori scena
+
+  // un punto ogni tanto solo per correre
+  S.punti = Math.max(S.punti, (S.distanza * 6) | 0);
+  document.getElementById('punti').textContent = S.punti;
+}
+
+function disegna(){
+  ctx.save();
+  if (S.scossa > 0){
+    ctx.translate((Math.random()-.5) * 18 * S.scossa, (Math.random()-.5) * 18 * S.scossa);
+  }
+
+  if (A.fondale) ctx.drawImage(A.fondale, 0, 0, W, H);
+  else fondaleFinto();
+
+  pavimentoFinto();
+
+  // le cose lontane per prime, così le vicine coprono
+  const ord = S.cose.slice().sort((a,b) => b.z - a.z);
+  for (const c of ord){
+    if (c.presa || c.z > NASCE + 0.1 || c.z < -0.02) continue;
+    const q = proietta(c.z, c.corsia);
+    if (c.tipo === 'moneta'){
+      const s = 120 * q.p;
+      const gira = Math.abs(Math.cos(S.distanza * 5 + c.z * 9));   // rotazione finta
+      if (A.moneta){
+        const im = A.moneta, w = s * (im.width / im.height) * gira;
+        ctx.drawImage(im, q.x - w/2, q.y - s*1.15, w, s);
+      } else {
+        ctx.fillStyle = '#f0b722';
+        ctx.beginPath();
+        ctx.ellipse(q.x, q.y - s*0.7, Math.max(1, s*0.4*gira), s*0.4, 0, 0, 7);
+        ctx.fill();
+      }
+    } else {
+      const s = 300 * q.p;
+      if (A.carrello){
+        const im = A.carrello, w = s * (im.width / im.height);
+        ctx.drawImage(im, q.x - w/2, q.y - s, w, s);
+      } else {
+        sagoma(q.x, q.y, s, '#2f3540');
+      }
+    }
+  }
+
+  if (S.fase !== 'attesa') personaggio();
+  ctx.restore();
+}
+
+/* ---------- inizio e fine ---------- */
+function via(){
+  S.fase = 'corsa'; S.corsia = 0; S.corsiaVista = 0;
+  S.velocita = 0.55; S.distanza = 0; S.punti = 0;
+  S.cose = []; S.prossimo = 0.4; S.scossa = 0;
+  document.getElementById('veloStart').hidden = true;
+  document.getElementById('veloFine').hidden  = true;
+}
+function finisci(){
+  S.fase = 'fine'; S.scossa = 0.5;
+  if (S.punti > record){
+    record = S.punti;
+    try { localStorage.setItem(RECORD, record); } catch(e){}
+  }
+  document.getElementById('record').textContent = 'record ' + record;
+  document.getElementById('finePunti').textContent = S.punti;
+  document.getElementById('fineNota').textContent =
+    S.punti >= record ? 'Nuovo record.' : 'Il record resta ' + record + '.';
+  document.getElementById('veloFine').hidden = false;
+}
+document.getElementById('btnVia').onclick    = via;
+document.getElementById('btnAncora').onclick = via;
+document.getElementById('record').textContent = 'record ' + record;
+
+PRONTI.then(() => {
+  const mancanti = Object.keys(A).filter(k => !A[k]);
+  if (mancanti.length){
+    document.querySelector('#veloStart small').textContent =
+      'prototipo — grafica finta (' + mancanti.join(', ') + ')';
+  }
+  requestAnimationFrame(passo);
+});
+
+})();
+</script>
+</body>
+</html>
