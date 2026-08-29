@@ -113,44 +113,52 @@ function adatta(){
 addEventListener('resize', adatta); adatta();
 
 /* ---------- geometria del corridoio ----------
-   Il corridoio CURVA: non si puo' inventare una prospettiva dritta.
-   I due bordi del pavimento sono stati misurati sul fondale vero
-   (assets/in_app_game/run_corridoio_base) e le corsie ci si appoggiano
-   sopra, quindi curvano insieme al corridoio.
+   Il corridoio curva, e non di una curva regolare: il bordo sinistro
+   prima si allarga e poi rientra. Nessuna formula la indovina, quindi
+   i due bordi della pista sono stati TRACCIATI A MANO sul fondale con
+   test/runner/taratura.html, e qui sotto ci sono i punti misurati.
 
-   Nota: il fondale e' 768x1376, il gioco 720x1280 — le misure prese
-   sull'immagine vanno riportate in scala. */
-const Y_FONDO = 735;        // dove il pavimento sparisce dietro la curva
+   Coppie [y, x] in coordinate di gioco (720x1280), dall'alto in basso.
+   Se un giorno cambia il fondale, si rifa' la taratura e si sostituiscono
+   queste due tabelle: non c'e' altro da toccare. */
+const PISTA_SX = [[705,198],[724,209],[739,215],[753,213],[772,206],[788,197],
+                  [808,188],[824,177],[848,160],[920,113],[995,56],[1039,18]];
+const PISTA_DX = [[682,199],[686,240],[688,293],[709,332],[741,390],[788,449],
+                  [856,531],[924,601],[1023,693]];
+
+const Y_FONDO = 690;        // dove i due bordi si chiudono, in fondo alla curva
 const K       = 7;          // quanto "stringe" la profondita'
-const LARGO   = 0.26;       // quanto sono distanti le corsie, in frazione di pista
+const LARGO   = 0.26;       // distanza fra le corsie, in frazione di pista
 
-// bordo destro: base del vetro. Curva, quindi e' una parabola misurata.
-function bordoDestro(y){
-  const t = ((y / 0.93023) - 1000) / 200;
-  return (592.82 + 170.051 * t - 21.166 * t * t) * 0.9375;
+/* Dove passa un bordo all'altezza y. Fra due punti si va dritti; sopra
+   il primo e sotto l'ultimo si prosegue con la pendenza del tratto
+   d'estremita' (in basso la pista esce dallo schermo, ed e' giusto cosi'). */
+function bordo(t, y){
+  if (y <= t[0][0]) return t[0][1];
+  const u = t.length - 1;
+  if (y >= t[u][0]){
+    const [ya,xa] = t[u-1], [yb,xb] = t[u];
+    return xb + (xb - xa) * (y - yb) / (yb - ya);
+  }
+  for (let i=1; i<=u; i++){
+    if (y <= t[i][0]){
+      const [ya,xa] = t[i-1], [yb,xb] = t[i];
+      return xa + (xb - xa) * (y - ya) / (yb - ya || 1);
+    }
+  }
+  return t[u][1];
 }
-// bordo sinistro: la parete resta a ~82 finche' non esce dall'inquadratura
-function bordoSinistro(y){
-  if (y <= 851) return 82;
-  return Math.max(0, 82 * (1 - (y - 851) / 89));
-}
-const BANDA_SOTTO = bordoDestro(H) - bordoSinistro(H);
+const BANDA_SOTTO = bordo(PISTA_DX, H) - bordo(PISTA_SX, H);
 
 // z=0 → davanti a noi, z cresce andando in fondo.
 function proietta(z, corsia){
   const p = Math.min(1.15, 1 / (1 + z * K));
   const y = Y_FONDO + (H - Y_FONDO) * p;
-  const L = bordoSinistro(y), R = bordoDestro(y), banda = R - L;
+  const L = bordo(PISTA_SX, y), R = bordo(PISTA_DX, y), banda = R - L;
   return {
     p, y,
     x: L + banda * (0.5 + corsia * LARGO),
-    /* La posizione viene dalla geometria vera del corridoio; la
-       GRANDEZZA no. Il pavimento visibile copre pochi metri prima
-       della curva, quindi a rigore un oggetto in fondo sarebbe ancora
-       meta' della sua misura: a schermo sembra addosso. La curva qui
-       sotto lo rimpicciolisce piu' in fretta — e' un imbroglio, ma e'
-       cio' che restituisce il senso di profondita'. */
-    scala: Math.pow(banda / BANDA_SOTTO, 1.9)
+    scala: banda / BANDA_SOTTO       // la pista misurata da gia' la profondita' giusta
   };
 }
 
@@ -250,12 +258,12 @@ function fondaleFinto(){
   // pavimento: gli stessi due bordi misurati sul fondale vero
   ctx.fillStyle = '#e6e6e1';
   ctx.beginPath();
-  for (let i=0; i<=20; i++){ const y = Y_FONDO + (H-Y_FONDO)*(i/20); i?ctx.lineTo(bordoSinistro(y),y):ctx.moveTo(bordoSinistro(y),y); }
-  for (let i=20; i>=0; i--){ const y = Y_FONDO + (H-Y_FONDO)*(i/20); ctx.lineTo(bordoDestro(y), y); }
+  for (let i=0; i<=20; i++){ const y = Y_FONDO + (H-Y_FONDO)*(i/20); i?ctx.lineTo(bordo(PISTA_SX,y),y):ctx.moveTo(bordo(PISTA_SX,y),y); }
+  for (let i=20; i>=0; i--){ const y = Y_FONDO + (H-Y_FONDO)*(i/20); ctx.lineTo(bordo(PISTA_DX,y), y); }
   ctx.closePath(); ctx.fill();
   ctx.fillStyle = '#dfe6dc';                       // verde oltre il vetro
   ctx.beginPath(); ctx.moveTo(W, Y_FONDO - 30); ctx.lineTo(W, H);
-  for (let i=20; i>=0; i--){ const y = Y_FONDO + (H-Y_FONDO)*(i/20); ctx.lineTo(bordoDestro(y), y); }
+  for (let i=20; i>=0; i--){ const y = Y_FONDO + (H-Y_FONDO)*(i/20); ctx.lineTo(bordo(PISTA_DX,y), y); }
   ctx.closePath(); ctx.fill();
   // montanti del vetro
   ctx.strokeStyle = 'rgba(60,64,60,.5)'; ctx.lineWidth = 3;
@@ -332,7 +340,7 @@ function sagoma(x, y, s, colore){
 /* ---------- disegno: personaggio ---------- */
 function personaggio(){
   const q = proietta(0.06, S.corsiaVista);
-  const alt = 300 * q.scala * 1.12;
+  const alt = 300 * q.scala * 1.16;
   const x = q.x, y = q.y + 10;
   ombra(x, y, alt * 0.20, 0.20);
 
