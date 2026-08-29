@@ -1358,7 +1358,24 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   $('hnext').onclick({ stopPropagation() {} });
   assert.ok(dots()[0].classList.contains('sel'), 'l\'hub e\' circolare');
   assert.equal(spots()[0].classList.contains('chiuso'), false, 'dopo lo swipe ENTRA si accende');
-  assert.match(txt(), /La tenda e' quella/, 'ora parla la zona, non piu\' il tutorial');
+  // fatto il giro, Francesca non ripete cos'e' la tenda: dalla seconda volta in
+  // poi compare solo qui, e solo per dire che di la' comincia lo show
+  assert.match(txt(), /Dietro questa tenda/, 'al ritorno sulla tenda la battuta cambia');
+  assert.equal($('name').textContent, 'Francesca', 'ed e\' Francesca a dirla');
+  assert.ok($('npc').classList.contains('in'), 'Francesca ricompare davanti alla tenda');
+  assert.ok($('boxwrap').classList.contains('in'), 'con il box a schermo');
+
+  // le altre zone, rivedendole, restano mute: niente Francesca, niente box
+  $('hnext').onclick({ stopPropagation() {} });
+  assert.equal(txt(), '', 'la zona gia\' vista non ripete la presentazione');
+  assert.equal($('boxwrap').classList.contains('in'), false, 'e il box sparisce');
+  assert.equal($('npc').classList.contains('in'), false, 'Francesca non e\' piu\' in scena');
+  // ma se tocchi qualcosa, rientra e risponde
+  spots()[0].onclick({ stopPropagation() {} });
+  assert.ok($('npc').classList.contains('in'), 'al tocco il personaggio rientra');
+  assert.match(txt(), /albo d'oro/);
+  $('hprev').onclick({ stopPropagation() {} });
+  assert.match(txt(), /Dietro questa tenda/, 'e sulla tenda la battuta si ripete');
 
   // entrare e' irreversibile: prima la conferma
   spots()[0].onclick({ stopPropagation() {} });

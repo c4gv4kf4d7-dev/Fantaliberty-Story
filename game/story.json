@@ -1178,6 +1178,12 @@
               "who": "francesca",
               "body": "indica_tenda",
               "say": "La tenda e' quella. Di la' c'e' la sala, e non si torna indietro.",
+              "ritorno": {
+                "who": "francesca",
+                "body": "indica_tenda",
+                "say": "Sei {g:pronto|pronta}? Dietro questa tenda comincia lo show. Da qui in poi si gioca sul serio.",
+                "_nota": "Dalla seconda volta sulla zona tenda in poi. Nelle altre zone non c'e' 'ritorno': chi ha gia' fatto il giro le rivede in silenzio, senza Francesca e senza box."
+              },
               "hotspots": [
                 {
                   "label": "ENTRA",

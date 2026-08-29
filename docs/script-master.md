@@ -203,6 +203,15 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
   Vincolo tutorial: ENTRA in [S1.ZONA1] disabilitato finché il giocatore non ha
   fatto almeno 1 swipe.
 
+  Presentazione una volta sola: la battuta che spiega una zona si dice al primo
+  passaggio. Tornandoci, Francesca sparisce e il box non compare: chi ha già
+  fatto il giro gira in silenzio. Unica eccezione la tenda: dal secondo
+  passaggio in poi Francesca ricompare lì e basta —
+    FRANCESCA: "Sei pronto? Dietro questa tenda comincia lo show.
+                Da qui in poi si gioca sul serio."
+  Toccare un hotspot in una zona già vista fa comunque rientrare il personaggio
+  che risponde.
+
   [S1.ZONA1] Tenda d'ingresso
     Hotspot ENTRA (attivo solo dopo il tutorial)
       → MODALE "Entrare in sala? Sì / Non ancora"
