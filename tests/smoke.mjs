@@ -732,8 +732,13 @@ assert.equal(VN.state.sfacciato, false);
   VN.step();                                                   // -> scena quinte
 
   assert.equal(VN.sceneId, 'quinte', 'da S3 si passa a S4');
-  assert.ok($('ioImg').getAttribute('src').includes('stile_showman_idle_camerino'),
-    'il giocatore entra in scena con lo stile che ha scelto');
+  // Le due composizioni duo_* mostrano gia' Susan e il personaggio insieme:
+  // l'avatar separato resta spento per tutta questa sezione, altrimenti si
+  // vedrebbe una seconda copia del personaggio sovrapposta alla prima.
+  assert.equal($('avatar').classList.contains('on'), false,
+    'l\'avatar resta nascosto: e\' gia\' dentro la composizione duo_*');
+  assert.ok($('npcBody').getAttribute('src').includes('scene_showman_ready'),
+    'la posa "duo_pronto_{stile}" si risolve sullo stile scelto');
   assert.match(txt(), /Studiato, vero\?/);
   VN.step();
   const scelte = [...$('choices').querySelectorAll('.ch')];
@@ -743,12 +748,16 @@ assert.equal(VN.state.sfacciato, false);
   assert.match(txt(), /^Onesta\./, 'la risposta e\' declinata');
   VN.step();
 
-  assert.ok($('avatar').classList.contains('on'), 'il giocatore e\' in scena');
-  assert.ok($('ioImg').getAttribute('src').includes('stile_showman_idle_palco'),
-    'con lo sprite dello stile scelto, non uno generico');
-  assert.ok($('npcBody').getAttribute('src').includes('chr_susan_spinta_in_scena'));
+  assert.equal($('avatar').classList.contains('on'), false, 'ancora nascosto: siamo su duo_spinta');
+  assert.ok($('npcBody').getAttribute('src').includes('scene_showman_push'),
+    'la posa "duo_spinta_{stile}" si risolve sullo stile scelto');
   assert.match(txt(), /Non guardare in alto/);
   VN.step();
+
+  // Susan (nella coppia) esce di scena col push; l'avatar torna da solo,
+  // con lo sprite dello stile scelto e non uno generico
+  assert.ok($('avatar').classList.contains('on'), 'il giocatore e\' di nuovo in scena, da solo');
+  assert.ok($('ioImg').getAttribute('src').includes('stile_showman_idle_palco'));
 
   // il sipario del palco e' lo stesso effetto della tenda della lobby
   const sip = story.scenes.quinte.steps.find((s) => s.t === 'sipario');
@@ -859,14 +868,14 @@ assert.equal(VN.state.sfacciato, false);
    mai consegnato (il clicker, che esiste in due frame): a schermo non compariva
    niente e nessuno se ne accorgeva, perche' l'evento continuava lo stesso. */
 for (const e of banca.micro_eventi) {
-  for (const k of ['asset', 'extra_asset']) {
+  for (const k of ['asset', 'extra_asset', 'prop']) {
     if (e[k]) assert.ok(fs.existsSync(path.join(ROOT, base + e[k])),
       `micro-evento ${e.id}: "${e[k]}" non esiste`);
   }
 }
 for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.ok(story.stili[stile], `evento personale per lo stile "${stile}", che non esiste`);
-  for (const k of ['asset', 'extra_asset']) {
+  for (const k of ['asset', 'extra_asset', 'prop']) {
     if (e[k]) assert.ok(fs.existsSync(path.join(ROOT, base + e[k])),
       `evento personale ${e.id}: "${e[k]}" non esiste`);
   }
@@ -1047,6 +1056,48 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
     }
   }
   assert.ok(visto, 'il micro-evento del clicker non e\' comparso nemmeno a probabilita\' 1');
+}
+
+/* ---------- 5m-bis. l'evento personale di hawaiano mostra ANCHE l'ukulele ----------
+   E' il caso in cui "asset" (la posa stili/ del personaggio) e "prop" (l'oggetto
+   separato) sono dichiarati insieme: il primo va sull'avatar, il secondo nello
+   slot degli oggetti di scena, e sparisce con l'evento invece di restare in scena. */
+{
+  const ukulele = banca.eventi_personali.hawaiano;
+  assert.equal(ukulele.id, 'UKULELE');
+  assert.ok(ukulele.prop, 'l\'evento porta anche un oggetto separato dalla posa');
+
+  const storyEvento = JSON.parse(JSON.stringify(story));
+  storyEvento.regia.probabilitaEvento = 1;
+  let visto = false;
+  for (let tentativi = 0; tentativi < 5 && !visto; tentativi++) {
+    VN.clearSave();
+    VN.boot(storyEvento, { speed: 0, banca, quiz, scene: 'keynote' });
+    VN.state.genere = 'f'; VN.state.stile = 'hawaiano'; VN.state.nome = 'Franca';
+    VN.state.eventi_sacchetto = ['UKULELE'];
+    VN.state.categoria = 'watch';
+    for (let g = 0; g < 60; g++) {
+      if (txt().includes('Un ukulele')) {
+        assert.equal($('evpropwrap').classList.contains('on'), true, 'lo slot dell\'oggetto si accende');
+        assert.ok($('evprop').getAttribute('src').includes('prop_ukulele'), 'con l\'ukulele dentro');
+        assert.ok($('ioImg').getAttribute('src').includes('stile_hawaiano_evento_stacchetto'),
+          'e l\'avatar prende comunque la sua posa dedicata, non quella generica');
+        VN.step();                                             // -> la battuta della regia, poi le scelte
+        [...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });
+        assert.equal($('evpropwrap').classList.contains('on'), false,
+          'l\'ukulele sparisce con l\'evento, non resta in scena');
+        visto = true;
+        break;
+      }
+      if ($('griglia').classList.contains('on')) {
+        [...$('griglia').querySelectorAll('.gcell')].filter((c) => !c.classList.contains('fatta'))[0]
+          ?.onclick({ stopPropagation() {} });
+      } else if ($('choices').classList.contains('on')) {
+        [...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });
+      } else VN.step();
+    }
+  }
+  assert.ok(visto, 'l\'evento dell\'ukulele non e\' comparso nemmeno a probabilita\' 1');
 }
 
 /* ---------- 5n. Martha non esiste piu' da nessuna parte ----------

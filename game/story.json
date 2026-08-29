@@ -51,7 +51,8 @@
       "slide_watch": "props/prop_schermo_slide_categoria_watch.webp",
       "slide_altro": "props/prop_schermo_slide_categoria_altro.webp",
       "clicker": "props/prop_clicker_inceppato.webp",
-      "gobbo": "props/prop_gobbo_teleprompter.webp"
+      "gobbo": "props/prop_gobbo_teleprompter.webp",
+      "podio": "props/prop_podium@3x.webp"
     },
     "chars": {},
     "platea": {
@@ -84,17 +85,24 @@
         "mani_capelli": "chars/chr_susan_mani_capelli.webp",
         "indica_camerino": "chars/chr_susan_indica_camerino.webp",
         "guarda_orologio": "chars/chr_susan_guarda_orologio.webp",
-        "spinta_in_scena": "chars/chr_susan_spinta_in_scena.webp",
         "sollievo": "chars/chr_susan_sollievo.webp",
         "sguardo_in_alto": "chars/chr_susan_sguardo_in_alto.webp",
         "carponi": "chars/chr_susan_carponi.webp",
         "commento_drip": "chars/chr_susan_commento_stile_drip.webp",
         "commento_hawaiano": "chars/chr_susan_commento_stile_hawaiano.webp",
         "commento_showman": "chars/chr_susan_commento_stile_showman.webp",
-        "commento_ingegnere": "chars/chr_susan_commento_stile_ingegnere.webp"
+        "commento_ingegnere": "chars/chr_susan_commento_stile_ingegnere.webp",
+        "duo_pronto_drip": "chars/scene_drip_ready.webp",
+        "duo_pronto_hawaiano": "chars/scene_hawaiian_ready.webp",
+        "duo_pronto_showman": "chars/scene_showman_ready.webp",
+        "duo_pronto_ingegnere": "chars/scene_engineer_ready.webp",
+        "duo_spinta_drip": "chars/scene_drip_push.webp",
+        "duo_spinta_hawaiano": "chars/scene_hawaiian_push.webp",
+        "duo_spinta_showman": "chars/scene_showman_push.webp",
+        "duo_spinta_ingegnere": "chars/scene_engineer_push.webp"
       },
       "heads": {},
-      "_nota": "Sprite unico per posa (come lucas/francesca): niente head/neck. Le quattro pose commento_* vengono dal foglio chr_susan_commento_stile, tagliato in ordine drip, hawaiano, showman, ingegnere: in S3 si mostra quella che corrisponde a run.stile. Susan e' anche la regia: da S4 in poi parla in cuffia e li' non ha uno sprite in scena, ma l'icona dell'auricolare accanto al nome. Non e' un personaggio di sola voce — in S2, S3 e S7 e' li' davanti — quindi la cuffia la chiede il singolo step con \"incuffia\": true.",
+      "_nota": "Sprite unico per posa (come lucas/francesca): niente head/neck. Le quattro pose commento_* vengono dal foglio chr_susan_commento_stile, tagliato in ordine drip, hawaiano, showman, ingegnere: in S3 si mostra quella che corrisponde a run.stile. Susan e' anche la regia: da S4 in poi parla in cuffia e li' non ha uno sprite in scena, ma l'icona dell'auricolare accanto al nome. Non e' un personaggio di sola voce — in S2, S3 e S7 e' li' davanti — quindi la cuffia la chiede il singolo step con \"incuffia\": true. Le otto pose duo_* sono composizioni GIA' complete (Susan + il personaggio dello stile, proporzioni e posizione decise nel disegno): quando sono in scena l'avatar del giocatore va tenuto nascosto con {t:\"io\",\"hide\":true}, altrimenti si vedrebbe una seconda copia del personaggio sovrapposta.",
       "icona": [
         "chars/chr_indicatore_regia_1.webp",
         "chars/chr_indicatore_regia_2.webp"
@@ -850,13 +858,13 @@
         },
         {
           "t": "io",
-          "posa": "idle_camerino"
+          "hide": true,
+          "_nota": "Da qui l'avatar resta nascosto finche' non si passa a idle_palco piu' sotto: le pose duo_* mostrano gia' Susan e il personaggio insieme, un secondo sprite dell'avatar si sovrapporrebbe."
         },
         {
           "t": "show",
           "who": "susan",
-          "body": "indica_camerino",
-          "_nota": "Lo script segnala il buco: non esiste uno sprite 'Susan infila l'auricolare'. indica_camerino e' il segnaposto che indica lui stesso."
+          "body": "duo_pronto_{stile}"
         },
         {
           "t": "say",
@@ -889,13 +897,9 @@
           }
         },
         {
-          "t": "io",
-          "posa": "idle_palco"
-        },
-        {
           "t": "show",
           "who": "susan",
-          "body": "spinta_in_scena"
+          "body": "duo_spinta_{stile}"
         },
         {
           "t": "say",
@@ -904,6 +908,11 @@
         },
         {
           "t": "hide"
+        },
+        {
+          "t": "io",
+          "posa": "idle_palco",
+          "_nota": "Riaccende l'avatar, da solo: Susan (nella coppia duo_spinta_*) e' appena uscita di scena con l'hide sopra. Il cambio di fondale nello step subito dopo e' sincrono con questo, quindi non si vede l'avatar per un fotogramma su dietro_le_quinte."
         },
         {
           "t": "bg",
@@ -965,7 +974,8 @@
     "keynote": {
       "title": "S5 — Il keynote",
       "bg": "palco_platea_piena",
-      "_nota": "[S5]. Susan apre dalla regia (una battuta pescata da regia.apertura), poi [S5.INTERMEZZO.R1] e R2 mentre la sala si scalda.",
+      "podio": true,
+      "_nota": "[S5]. Susan apre dalla regia (una battuta pescata da regia.apertura), poi [S5.INTERMEZZO.R1] e R2 mentre la sala si scalda. Il leggio (\"podio\") resta acceso per tutto S5, si spegne da solo entrando in teleprompter perche' quella scena non lo dichiara.",
       "steps": [
         {
           "t": "io",
@@ -993,6 +1003,7 @@
     "argomenti": {
       "title": "S5 — I macroargomenti",
       "bg": "palco_schermo_categorie",
+      "podio": true,
       "_nota": "[S5.HUB]: tre pannelli, ordine libero. Lo stato di ognuno si ricava dalle risposte gia' date. Quando sono tutti completi la griglia cede il turno e si passa al recap. Le 9 icone obj_icone_categorie del manifest non sono state consegnate: i pannelli sono disegnati in CSS sopra il fondale, che li ha gia' vuoti.",
       "steps": [
         {
@@ -1015,6 +1026,7 @@
     "argomento": {
       "title": "S5 — Pronostici",
       "bg": "palco_platea_piena",
+      "podio": true,
       "_nota": "Un macroargomento: tutte le core in sequenza fissa, poi il bivio della regia che pesca 3 facoltative dal pool, poi un intermezzo e si torna alla griglia. Da qui in poi Susan parla sempre in cuffia: e' in regia, non sul palco.",
       "steps": [
         {

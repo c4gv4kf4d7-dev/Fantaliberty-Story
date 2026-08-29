@@ -344,16 +344,21 @@ più avanti in `[S5]`. Salvare in `run.flags.sfacciato_s2 = true/false`.
 
 ```
 [S4.01] SUSAN infila l'auricolare
-  Asset: bg_dietro_le_quinte + stile_X_idle_camerino
-  ⚠️ GAP: non esiste un asset "Susan infila l'auricolare" — usare
-  chr_susan_indica_camerino come placeholder, o generare una posa dedicata.
+  Asset: bg_dietro_le_quinte + chr_susan.duo_pronto_X (X = stile scelto)
+  Risolto: non e' piu' un placeholder. Il gap era "Susan e il personaggio come
+  due sprite separati da riallineare a mano" — le composizioni scene_X_ready
+  (una per stile) arrivano gia' complete, Susan e il giocatore insieme, e
+  sostituiscono sia stile_X_idle_camerino sia il vecchio placeholder
+  chr_susan_indica_camerino (rimasto nel cast, usato ancora in [S2]).
   "Studiato, vero?"
   A: "Certo." → "Che bugiardo/a. Adoro, sei già nel personaggio."
   B: "No."    → "Onesto/a. Sarà un problema tuo, non mio. Vai."
   → [S4.02]
 
 [S4.02] SUSAN spinge in scena
-  Asset: bg_dietro_le_quinte + chr_susan_spinta_in_scena + stile_X_idle_palco
+  Asset: bg_dietro_le_quinte + chr_susan.duo_spinta_X (X = stile scelto)
+  Stessa composizione della coppia scene_X_push: sostituisce
+  chr_susan_spinta_in_scena (rimosso dal cast, non piu' usato da nessuna scena).
   "Le luci sono calde. Non guardare in alto. Vai."
   → effetto sipario (split animato di bg_palco_sipario_chiuso) → [S4.03]
 

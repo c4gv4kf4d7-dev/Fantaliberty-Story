@@ -145,6 +145,16 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #propwrap.in{opacity:1;transform:translate(-50%,0) scale(1)}
 #propwrap.out{opacity:0;transform:translate(-50%,-40px) scale(.8)}
 #prop{width:100%;display:block;image-rendering:pixelated;filter:drop-shadow(0 16px 30px rgba(0,0,0,.65))}
+
+/* ---------- leggio del keynote ----------
+   Fisso per tutta S5: davanti a #npc/#avatar (z-index 1, ma dopo di loro nel
+   DOM), dietro #boxwrap (2). Acceso/spento dalla scena (sc.podio in goScene),
+   non da uno step: non e' un oggetto che entra ed esce a comando come i prop
+   di un evento. */
+#podiumwrap{position:absolute;left:50%;bottom:5%;width:70%;max-width:340px;
+ transform:translateX(-50%);z-index:1;opacity:0;display:none;pointer-events:none}
+#podiumwrap.on{opacity:1;display:block}
+#podiumImg{width:100%;display:block;image-rendering:pixelated}
 /* Il riquadro dello schermo verde, misurato sull'immagine del Mac (il verde
    chiaro occupa left 26.5%, width 46.9%, top 11%, height 30%): qui e' rientrato
    di poco, giusto per non far toccare il testo alla cornice. La versione
