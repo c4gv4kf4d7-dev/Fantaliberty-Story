@@ -45,6 +45,8 @@ npm run indice     # rigenera docs/indice-domande.md dalla banca domande
 npm run serve      # http://localhost:8080  (serve un web server: story.json via fetch)
 npm install        # solo per i test
 npm test           # smoke test del flusso: input -> variabili -> scene
+npm run transizioni # (serve `npm run serve` attivo) controlla che un cambio di
+                   # scena non scopra fondale o personaggio prima che siano pronti
 npm run build      # dist/nexus_game.html, singolo file offline
 ```
 
