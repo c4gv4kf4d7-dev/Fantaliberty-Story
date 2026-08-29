@@ -255,6 +255,50 @@ function pavimentoFinto(){
   ctx.globalAlpha = 1;
 }
 
+/* ---------- le corsie ----------
+   Senza queste non si capisce ne' dove sei tu ne' dove sta la roba.
+   Sono disegnate seguendo la stessa prospettiva di tutto il resto,
+   quindi curvano insieme al corridoio. */
+function stradaCorsie(){
+  const FONDO = 1.35;                       // fin dove si spingono le righe
+
+  function linea(corsia){
+    ctx.beginPath();
+    for (let i=0; i<=24; i++){
+      const q = proietta((i/24) * FONDO, corsia);
+      i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y);
+    }
+  }
+  function fascia(a, b){
+    ctx.beginPath();
+    for (let i=0; i<=24; i++){ const q = proietta((i/24)*FONDO, a); i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y); }
+    for (let i=24; i>=0; i--){ const q = proietta((i/24)*FONDO, b); ctx.lineTo(q.x, q.y); }
+    ctx.closePath();
+  }
+
+  // la corsia dove sei tu, illuminata: e' l'informazione piu' importante
+  ctx.fillStyle = 'rgba(255,209,96,.17)';
+  fascia(S.corsiaVista - 0.5, S.corsiaVista + 0.5); ctx.fill();
+
+  // bordi esterni della pista, marcati
+  ctx.strokeStyle = 'rgba(70,78,86,.34)'; ctx.lineWidth = 5;
+  linea(-1.5); ctx.stroke(); linea(1.5); ctx.stroke();
+
+  // le due righe che separano le corsie, tratteggiate e in movimento
+  ctx.strokeStyle = 'rgba(70,78,86,.30)'; ctx.lineWidth = 4;
+  ctx.setLineDash([26, 20]); ctx.lineDashOffset = -S.scorri * 150;
+  linea(-0.5); ctx.stroke(); linea(0.5); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+// macchia a terra sotto un oggetto: dice a colpo d'occhio su che corsia sta
+function ombra(x, y, raggio, forza){
+  ctx.fillStyle = 'rgba(40,46,52,' + forza + ')';
+  ctx.beginPath();
+  ctx.ellipse(x, y, raggio, raggio * 0.30, 0, 0, 7);
+  ctx.fill();
+}
+
 function sagoma(x, y, s, colore){
   ctx.fillStyle = colore;
   ctx.beginPath();
@@ -267,6 +311,7 @@ function personaggio(){
   const q = proietta(0.06, S.corsiaVista);
   const alt = 300 * q.p * 1.35;
   const x = q.x, y = q.y + 10;
+  ombra(x, y, alt * 0.20, 0.20);
 
   if (A.corsa){
     const im = A.corsa, fw = im.width / 4;
@@ -338,6 +383,7 @@ function disegna(){
   else fondaleFinto();
 
   pavimentoFinto();
+  stradaCorsie();
 
   // le cose lontane per prime, così le vicine coprono
   const ord = S.cose.slice().sort((a,b) => b.z - a.z);
@@ -347,6 +393,7 @@ function disegna(){
     if (c.tipo === 'moneta'){
       const s = 120 * q.p;
       const gira = Math.abs(Math.cos(S.distanza * 5 + c.z * 9));   // rotazione finta
+      ombra(q.x, q.y, s * 0.30, 0.16);
       if (A.moneta){
         const im = A.moneta, w = s * (im.width / im.height) * gira;
         ctx.drawImage(im, q.x - w/2, q.y - s*1.15, w, s);
@@ -358,6 +405,7 @@ function disegna(){
       }
     } else {
       const s = 300 * q.p;
+      ombra(q.x, q.y, s * 0.34, 0.22);
       if (A.carrello){
         const im = A.carrello, w = s * (im.width / im.height);
         ctx.drawImage(im, q.x - w/2, q.y - s, w, s);
