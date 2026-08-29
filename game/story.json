@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "FantaLiberty — Nexus",
-    "version": "0.11.0",
+    "version": "0.13.1",
     "start": "arrivo",
     "assetBase": "assets/",
     "genderVar": "genere",
@@ -30,7 +30,7 @@
       "lobby": "bg/bg_lobby.webp",
       "lobby_z1_tenda": "bg/bg_lobby_z1_tenda.webp",
       "lobby_z2_hall_of_fame": "bg/bg_lobby_z2_hall_of_fame.webp",
-      "lobby_z3_premi": "bg/bg_lobby_z3_premi.webp",
+      "lobby_z3_regolamento": "bg/bg_lobby_z3_regolamento.webp",
       "lobby_z4_quiz_bloccata": "bg/bg_lobby_z4_quiz_bloccata.webp",
       "lobby_z4_quiz_aperta": "bg/bg_lobby_z4_quiz_aperta.webp",
       "sala_teatro": "bg/bg_sala_teatro.webp",
@@ -94,7 +94,11 @@
         "commento_ingegnere": "chars/chr_susan_commento_stile_ingegnere.webp"
       },
       "heads": {},
-      "_nota": "Sprite unico per posa (come lucas/francesca): niente head/neck. Le quattro pose commento_* vengono dal foglio chr_susan_commento_stile, tagliato in ordine drip, hawaiano, showman, ingegnere: in S3 si mostra quella che corrisponde a run.stile."
+      "_nota": "Sprite unico per posa (come lucas/francesca): niente head/neck. Le quattro pose commento_* vengono dal foglio chr_susan_commento_stile, tagliato in ordine drip, hawaiano, showman, ingegnere: in S3 si mostra quella che corrisponde a run.stile. Susan e' anche la regia: da S4 in poi parla in cuffia e li' non ha uno sprite in scena, ma l'icona dell'auricolare accanto al nome. Non e' un personaggio di sola voce — in S2, S3 e S7 e' li' davanti — quindi la cuffia la chiede il singolo step con \"incuffia\": true.",
+      "icona": [
+        "chars/chr_indicatore_regia_1.webp",
+        "chars/chr_indicatore_regia_2.webp"
+      ]
     },
     "francesca": {
       "name": "Francesca",
@@ -115,51 +119,47 @@
         "idle": {
           "h": 0.252,
           "cx": 0.518,
-          "cy": 0.255
+          "cy": 0.255,
+          "ar": 1.1432
         },
         "benvenuto": {
           "h": 0.304,
           "cx": 0.515,
-          "cy": 0.266
+          "cy": 0.266,
+          "ar": 1.5
         },
         "gesto_swipe": {
-          "h": 0.271,
+          "h": 0.27,
           "cx": 0.446,
-          "cy": 0.249
+          "cy": 0.249,
+          "ar": 1.2496
         },
         "indica_tenda": {
           "h": 0.262,
           "cx": 0.376,
-          "cy": 0.259
+          "cy": 0.259,
+          "ar": 1.5
         },
         "orgogliosa": {
           "h": 0.267,
           "cx": 0.418,
-          "cy": 0.236
+          "cy": 0.236,
+          "ar": 1.5
         },
         "ride": {
           "h": 0.562,
           "cx": 0.576,
-          "cy": 0.452
+          "cy": 0.452,
+          "ar": 1.1524
         },
         "scettica": {
           "h": 0.516,
           "cx": 0.577,
-          "cy": 0.443
+          "cy": 0.443,
+          "ar": 1.0942
         }
       },
-      "_notaVolti": "Misura del viso in ogni posa: altezza, centro orizzontale e verticale, in frazione dell'immagine. Il motore ci calcola sopra il riquadro (vedi inquadra()), cosi' il viso viene sempre grande come quello di Lucas e nello stesso punto dell'inquadratura. Serve perche' le pose non sono tutte dello stesso taglio: cinque sono mezzibusti, 'ride' e 'scettica' sono primi piani di sola testa. Ricavate con il riconoscimento dell'incarnato (vedi il commento nel motore): se arriva una posa nuova, misurarla allo stesso modo invece di stimarla a occhio."
-    },
-    "martha": {
-      "name": "Martha",
-      "voce": true,
-      "icona": [
-        "chars/chr_martha_indicatore_regia_1.webp",
-        "chars/chr_martha_indicatore_regia_2.webp"
-      ],
-      "bodies": {},
-      "heads": {},
-      "_nota": "Nel manifest: 'nessun corpo, solo icona'. Parla dalla regia, quindi niente sprite in scena — accanto al nome lampeggia l'auricolare a due frame e il box cambia colore. chr_martha_ritratto_regia serve solo al finale (S7), in un riquadro stile monitor."
+      "_notaVolti": "Misura del viso in ogni posa: altezza, centro orizzontale e verticale, e proporzione dell'immagine (ar = larghezza/altezza), tutto in frazione dell'immagine. Il motore ci calcola sopra il riquadro (vedi inquadra()), cosi' il viso viene sempre grande come quello di Lucas e nello stesso punto dell'inquadratura. Serve perche' le pose non sono tutte dello stesso taglio: cinque sono mezzibusti, 'ride' e 'scettica' sono primi piani di sola testa. 'ar' e' quella che permette di calcolare il riquadro SUBITO, senza aspettare che l'immagine sia caricata: aspettarla faceva vedere per un fotogramma la figura alla misura di default, piccola. Ricavate col riconoscimento dell'incarnato (vedi il commento nel motore): se arriva una posa nuova, misurarla allo stesso modo invece di stimarla a occhio."
     },
     "peter": {
       "name": "Peter",
@@ -174,7 +174,7 @@
         "guarda_orologio": "chars/chr_peter_guarda_orologio.webp"
       },
       "heads": {},
-      "_nota": "Sprite unico per posa. Nel manifest e' 'addormentato' (occhi_bassi) finche' run.locked e' false, si sveglia (alza_occhi) solo in S8: la scena 'quiz' qui sotto e' ancora la vecchia placeholder e non modella quello stato.",
+      "_nota": "Sprite unico per posa. Dorme (occhi_bassi) finche' run.locked e' false, si sveglia (alza_occhi) quando i pronostici sono chiusi: la lobby modella i due stati con 'when' sulla zona 4. Le altre quattro pose sono il quiz di S8. Tutte vanno mostrate a height 44%: e' seduto a un tavolino in primo piano, non e' una figura intera.",
       "scala": 1.35,
       "_notaScala": "Come Francesca: ritagli quasi quadrati, alla misura base restavano piccoli accanto a Lucas.",
       "scalaHub": 1.15
@@ -197,7 +197,12 @@
     "pescate": null,
     "categoria": null,
     "eventi_sacchetto": null,
-    "intermezzi": 0
+    "intermezzi": 0,
+    "quiz_visto": false,
+    "livello": null,
+    "quiz": null,
+    "mult_bank": 0,
+    "moltiplicatori": null
   },
   "scenes": {
     "arrivo": {
@@ -328,7 +333,8 @@
           "who": "lucas",
           "var": "nome",
           "max": 14,
-          "text": "Registriamoti al terminale. Come ti chiami?"
+          "text": "Registriamoti al terminale. Come ti chiamiamo? Nome vero o soprannome, decidi tu.",
+          "_nota": "Il nome vero non serve: e' l'etichetta con cui il gioco si rivolge al giocatore e con cui compare in classifica. Il regolamento (zona 3 della lobby) lo chiama nickname, e deve restare coerente con quello che si chiede qui."
         },
         {
           "t": "choice",
@@ -642,7 +648,7 @@
           "t": "say",
           "sistema": true,
           "attesa": 2000,
-          "text": "# Attendi: il badge e' in stampa #"
+          "text": "### stampa in corso ###"
         },
         {
           "t": "prop",
@@ -684,7 +690,7 @@
         {
           "t": "say",
           "who": "susan",
-          "text": "Ehi TU! Si', tu! Scendi!"
+          "text": "Ehi, tu! Si', proprio tu. Vieni qui."
         },
         {
           "t": "carrellata",
@@ -709,12 +715,22 @@
         {
           "t": "say",
           "who": "susan",
-          "text": "Tra quaranta minuti c'e' la prova generale. Con la regia, le luci, i grafici, tutto. Se non la facciamo, stasera non si va in onda."
+          "text": "Tra quaranta minuti abbiamo la prova generale: regia, luci, grafici, tutto. E senza di lui non si fa niente."
         },
         {
           "t": "say",
           "who": "susan",
-          "text": "Tu sei l'unico essere umano in questa sala. Congratulazioni: fai l'host tu."
+          "text": "Quindi abbiamo un piccolo problema."
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "text": "Tu sei l'unico essere umano qui dentro..."
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "text": "Congratulazioni: fai l'host."
         },
         {
           "t": "choice",
@@ -758,7 +774,12 @@
         {
           "t": "say",
           "who": "susan",
-          "text": "Camerino, ultima porta a destra. Hai quattro minuti e ne hai gia' persi due."
+          "text": "Ora vai in camerino, ultima porta a destra. Hai quattro minuti e ne hai gia' persi due."
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "text": "Vai. Io intanto provo a evitare che crolli il resto."
         }
       ],
       "next": "camerino"
@@ -779,7 +800,7 @@
         {
           "t": "say",
           "who": "susan",
-          "text": "Scegli il tuo stile e cambiati. Veloce, la platea perdona tutto tranne l'esitazione."
+          "text": "Scegli il tuo stile e cambiati. Veloce. Ho una prova generale da salvare e tu sei ufficialmente il mio problema numero due."
         },
         {
           "t": "carosello",
@@ -809,10 +830,10 @@
           "who": "susan",
           "by": "stile",
           "text": {
-            "hawaiano": "...{g:coraggioso|coraggiosa}. Speriamo tu sia {g:sveglio|sveglia} quanto sei {g:rilassato|rilassata}.",
-            "showman": "Wow... sembri essere {g:nato|nata} per questo...",
-            "drip": "Capisco la meta' di quello che dici, ma sono certa che andra' bene.",
-            "ingegnere": "{g:Uno|Una} che sembra sapere quello che dice. Basta e avanza.",
+            "hawaiano": "Ok. Relax. Ottimo. Proprio quello che mi serviva in una situazione del genere.",
+            "showman": "Perfetto. Uno che non avra' problemi a parlare. Il problema sara' farlo smettere.",
+            "drip": "Va bene. Non ho idea di cosa significhi, ma evidentemente tu si'.",
+            "ingegnere": "Ingegnere. Perfetto. Finalmente qualcuno che puo' spiegarmi perche' tutto sta andando storto.",
             "*": "Bene. Adesso muoviti, che ci aspettano."
           }
         }
@@ -904,18 +925,39 @@
         },
         {
           "t": "say",
-          "who": "martha",
-          "text": "Ciao, sono Martha, regia. Ti sento bene, tu senti me."
+          "who": "susan",
+          "incuffia": true,
+          "text": "Ok. Tra trenta secondi andiamo."
         },
         {
           "t": "say",
-          "who": "martha",
-          "text": "Non esistono risposte sbagliate. Esistono solo risposte che qualcuno ha raccontato con poca sicurezza."
+          "who": "susan",
+          "incuffia": true,
+          "text": "Se senti qualcuno parlare nell'auricolare, sono io.\nSe senti qualcun altro, probabilmente e' un problema."
         },
         {
           "t": "say",
-          "who": "martha",
-          "text": "Quando sei {g:pronto|pronta} tu."
+          "who": "susan",
+          "incuffia": true,
+          "text": "Le luci sono calde. Non guardare in alto.\nE soprattutto, se qualcosa va storto... continua a parlare."
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "incuffia": true,
+          "text": "Ricordati una cosa: nessuno sa che sei il sostituto."
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "incuffia": true,
+          "text": "Quindi, tecnicamente, non puoi deludere nessuno."
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "incuffia": true,
+          "text": "Vai. Io intanto provo a evitare che crolli il resto."
         }
       ],
       "next": "keynote"
@@ -923,19 +965,27 @@
     "keynote": {
       "title": "S5 — Il keynote",
       "bg": "palco_platea_piena",
-      "_nota": "[S5.INTERMEZZO.R1] e R2 prima del primo macroargomento: Martha scommette con te mentre la sala si scalda.",
+      "_nota": "[S5]. Susan apre dalla regia (una battuta pescata da regia.apertura), poi [S5.INTERMEZZO.R1] e R2 mentre la sala si scalda.",
       "steps": [
         {
           "t": "io",
           "posa": "idle_palco"
         },
         {
-          "t": "intermezzo",
-          "who": "martha"
+          "t": "say",
+          "who": "susan",
+          "incuffia": true,
+          "pool": "apertura"
         },
         {
           "t": "intermezzo",
-          "who": "martha"
+          "who": "susan",
+          "incuffia": true
+        },
+        {
+          "t": "intermezzo",
+          "who": "susan",
+          "incuffia": true
         }
       ],
       "next": "argomenti"
@@ -954,9 +1004,10 @@
           "var": "categoria",
           "da": "argomenti",
           "goto": "argomento",
-          "who": "martha",
+          "who": "susan",
           "text": "Tre blocchi. Scegli tu da dove partire, io ti seguo.",
-          "etichettaFatta": "fatto"
+          "etichettaFatta": "fatto",
+          "incuffia": true
         }
       ],
       "next": "teleprompter"
@@ -964,7 +1015,7 @@
     "argomento": {
       "title": "S5 — Pronostici",
       "bg": "palco_platea_piena",
-      "_nota": "Un macroargomento: tutte le core in sequenza fissa, poi il bivio di Martha che pesca 3 facoltative dal pool, poi un intermezzo e si torna alla griglia.",
+      "_nota": "Un macroargomento: tutte le core in sequenza fissa, poi il bivio della regia che pesca 3 facoltative dal pool, poi un intermezzo e si torna alla griglia. Da qui in poi Susan parla sempre in cuffia: e' in regia, non sul palco.",
       "steps": [
         {
           "t": "io",
@@ -981,23 +1032,29 @@
         {
           "t": "domande",
           "set": "core",
-          "who": "martha"
+          "who": "susan",
+          "incuffia": true
         },
         {
           "t": "bivio",
-          "who": "martha",
-          "text": "Siamo in tempo. Vuoi entrare nel dettaglio o passiamo al prossimo?",
+          "who": "susan",
+          "text": "Siamo in tempo. Vuoi entrare nel dettaglio o passiamo al prossimo argomento?",
           "approfondisci": "Entriamo nel dettaglio",
-          "passa": "Passiamo al prossimo"
+          "passa": "Passiamo al prossimo",
+          "incuffia": true,
+          "dopoApprofondisci": "Certo. Perche' fermarsi quando stava andando tutto bene.",
+          "dopoPassa": "Ottima scelta. Una cosa in meno da gestire."
         },
         {
           "t": "domande",
           "set": "extra",
-          "who": "martha"
+          "who": "susan",
+          "incuffia": true
         },
         {
           "t": "intermezzo",
-          "who": "martha"
+          "who": "susan",
+          "incuffia": true
         },
         {
           "t": "prop",
@@ -1021,17 +1078,19 @@
         },
         {
           "t": "say",
-          "who": "martha",
-          "text": "Ultimo giro. Da adesso non si torna indietro. Prenditi il tempo che vuoi, nessuno ha fretta."
+          "who": "susan",
+          "incuffia": true,
+          "text": "Ultimo giro. Da adesso non si torna indietro. Prenditi il tempo che vuoi.\nNessuno ha fretta."
         },
         {
           "t": "say",
-          "who": "martha",
-          "text": "Susan ha fretta. Ma nessun altro."
+          "who": "susan",
+          "incuffia": true,
+          "text": "Io si'. Ma fai con calma."
         },
         {
           "t": "recap",
-          "who": "martha",
+          "who": "susan",
           "da": "argomenti",
           "text": "Rileggi tutto. Tocca una riga per cambiarla.",
           "daFare": "Facoltativa non giocata",
@@ -1041,7 +1100,8 @@
             "si": "Si', blocco tutto",
             "no": "Fammi rileggere"
           },
-          "goto": "finale"
+          "goto": "finale",
+          "incuffia": true
         }
       ]
     },
@@ -1143,23 +1203,20 @@
               ]
             },
             {
-              "id": "premi",
-              "bg": "lobby_z3_premi",
+              "id": "regolamento",
+              "bg": "lobby_z3_regolamento",
               "who": "francesca",
-              "body": "orgogliosa",
-              "say": "E questa e' la teca dei premi.",
+              "body": "idle",
+              "say": "Prima di entrare puoi dare un'occhiata alle regole. Non sono molte. Anche perche' abbiamo preferito lasciarti qualche possibilita' di sbagliare.",
               "hotspots": [
                 {
-                  "label": "LA TECA",
-                  "x": "38%",
-                  "y": "38%",
-                  "w": "38%",
-                  "h": "50%",
-                  "who": "francesca",
-                  "say": "Il nuovo iPhone? Una macchina nuova? Un viaggio? Naa, non credo, siamo in spending review.",
-                  "react": {
-                    "level": "micro"
-                  }
+                  "label": "IL REGOLAMENTO",
+                  "x": "30%",
+                  "y": "16%",
+                  "w": "60%",
+                  "h": "42%",
+                  "apre": "regolamento",
+                  "_nota": "Il riquadro illuminato del cartellone, misurato sul fondale."
                 }
               ]
             },
@@ -1174,7 +1231,7 @@
               "who": "peter",
               "body": "occhi_bassi",
               "dice": "francesca",
-              "say": "Quello e' Peter. Non farci caso: prima del keynote riesce a dormire ovunque.",
+              "say": "E quello è Peter. Gestisce il quiz finale.\nNon svegliarlo: è l'unico momento della giornata in cui non può farti una domanda.",
               "hotspots": [
                 {
                   "label": "IL TAVOLINO",
@@ -1187,7 +1244,13 @@
                     "level": "pose",
                     "body": "alza_occhi"
                   },
-                  "say": "Prima segui il keynote. Poi le domande difficili."
+                  "say": "Ti ho sentito.",
+                  "after": [
+                    {
+                      "who": "francesca",
+                      "text": "Perfetto. È ancora vivo."
+                    }
+                  ]
                 }
               ]
             },
@@ -1200,7 +1263,7 @@
               "bg": "lobby_z4_quiz_aperta",
               "who": "peter",
               "body": "alza_occhi",
-              "say": "Adesso si': i pronostici sono chiusi, il tavolo e' aperto.",
+              "say": "Il keynote è andato. Adesso arriva la parte difficile.\nLe domande le faccio io.",
               "hotspots": [
                 {
                   "label": "IL QUIZ",
@@ -1221,33 +1284,98 @@
         }
       ]
     },
-    "backstage": {
-      "title": "Atto 4 — Backstage / regia",
-      "bg": "sala_teatro",
+    "quiz": {
+      "title": "S8 — Il quiz di Peter",
+      "bg": "lobby_z4_quiz_aperta",
+      "_nota": "[S8.01] e [S8.HUB]. Le tre battute di presentazione hanno \"se\": si dicono solo la prima volta, non a ogni ritorno dalla griglia dei livelli.",
       "steps": [
         {
           "t": "hide"
         },
         {
           "t": "show",
-          "who": "martha"
+          "who": "peter",
+          "body": "alza_occhi",
+          "height": "44%",
+          "bottom": "34%"
         },
         {
           "t": "say",
-          "who": "martha",
-          "text": "[BOZZA] Cuffie, microfono, tre minuti. Qui si decide come va lo show: le tue previsioni sul keynote."
+          "who": "peter",
+          "se": {
+            "var": "quiz_visto",
+            "is": false
+          },
+          "text": "Hai fatto un keynote intero, ma conosci quelli passati? Vediamo."
         },
         {
           "t": "say",
-          "who": "martha",
-          "text": "[BOZZA] (qui va il blocco previsioni FantaLiberty. Regola: le reazioni degli NPC e della platea seguono il TONO della risposta, mai il contenuto del pronostico.)"
+          "who": "peter",
+          "se": {
+            "var": "quiz_visto",
+            "is": false
+          },
+          "text": "Tre livelli. Due tentativi a testa, e al secondo giro le domande non sono quelle del primo: non provare a impararle sbagliando apposta."
+        },
+        {
+          "t": "say",
+          "who": "peter",
+          "se": {
+            "var": "quiz_visto",
+            "is": false
+          },
+          "text": "E non ti do punti: quelli li hai gia' chiusi. Ti do moltiplicatori. Dove metterli lo decidi tu, il giorno del keynote."
+        },
+        {
+          "t": "set",
+          "var": "quiz_visto",
+          "value": true
+        },
+        {
+          "t": "quizhub",
+          "who": "peter",
+          "text": "Da dove vuoi cominciare?",
+          "goto": "quiz_livello",
+          "gotoMult": "moltiplicatori",
+          "etichettaChiuso": "prima l'altro",
+          "etichettaBruciato": "finito",
+          "assegna": "Assegna i moltiplicatori (+{banca})",
+          "assegnaPresto": "I moltiplicatori si assegnano il giorno del keynote",
+          "assegnati": "Rivedi i moltiplicatori",
+          "esci": {
+            "label": "Basta cosi', torno in lobby",
+            "goto": "lobby"
+          }
+        }
+      ]
+    },
+    "quiz_livello": {
+      "title": "S8 — Un livello del quiz",
+      "bg": "lobby_z4_quiz_aperta",
+      "_nota": "[S8.LOOP]. Il timer parte quando la domanda compare, quindi il testo non passa dal typewriter. Finito il livello si torna alla griglia: 'next' rientra nella scena quiz, dove le battute di presentazione sono gia' state dette.",
+      "steps": [
+        {
+          "t": "quizlivello",
+          "who": "peter",
+          "height": "44%",
+          "giuste": "giuste",
+          "cinquanta": "50:50 — Peter toglie due risposte",
+          "giusta": "Esatto.",
+          "sbagliata": "No. Era: {r}.",
+          "scaduta": "Tempo scaduto. Era: {r}.",
+          "passato": "Passato: {giuste} su {n}. Vale +{mult} di moltiplicatore.",
+          "ritenta": "{giuste} su {n}. Ne servivano {soglia}. Ti resta un tentativo, e domande diverse.",
+          "bruciato": "{giuste} su {n}. Basta cosi': questo livello per te e' chiuso.",
+          "assorbito": "{giuste} su {n}. Guarda, facciamo che questo giro non l'ho visto. Rifallo.",
+          "bottom": "34%"
         }
       ],
-      "next": "finale"
+      "next": "quiz"
     },
-    "quiz": {
-      "title": "Atto 4 — Quiz storico",
-      "bg": "lobby",
+    "moltiplicatori": {
+      "title": "S8 — I moltiplicatori",
+      "bg": "lobby_z4_quiz_aperta",
+      "_nota": "[S8.FINALE]. Ci si arriva solo dalla griglia, che apre la voce nelle 24 ore prima del keynote. Confermare e' irreversibile come il lock di S6, e come quello fa partire un invio al server.",
       "steps": [
         {
           "t": "hide"
@@ -1255,41 +1383,51 @@
         {
           "t": "show",
           "who": "peter",
-          "body": "alza_occhi"
+          "body": "alza_occhi",
+          "height": "44%",
+          "bottom": "34%"
         },
         {
           "t": "say",
           "who": "peter",
-          "text": "[BOZZA] Io c'ero nel 2007. Vediamo se te la cavi."
-        },
-        {
-          "t": "choice",
-          "who": "peter",
-          "var": "quiz1",
-          "text": "[BOZZA] In che anno e' stato presentato il primo iPhone?",
-          "options": [
-            {
-              "label": "2005",
-              "value": "no"
-            },
-            {
-              "label": "2007",
-              "value": "si",
-              "react": {
-                "level": "pose",
-                "body": "annuisce"
-              }
-            },
-            {
-              "label": "2009",
-              "value": "no"
-            }
-          ]
+          "text": "Hai fatto punti per giorni e ora devi decidere dove metterli."
         },
         {
           "t": "say",
           "who": "peter",
-          "text": "[BOZZA] (qui la valutazione della risposta e l'assegnazione dei punti)"
+          "text": "Il moltiplicatore vale su tutto quello che hai pronosticato in quel macroargomento. Puoi anche darlo tutto a uno solo: sono affari tuoi."
+        },
+        {
+          "t": "quizmult",
+          "who": "peter",
+          "height": "44%",
+          "text": "Distribuisci quello che hai vinto. Poi non si tocca piu'.",
+          "resto": "Ancora da distribuire:",
+          "restoFatto": "Assegnati. E non si tornano indietro.",
+          "bottone": "CONFERMA",
+          "gia": "Chiudi",
+          "conferma": {
+            "text": "Confermi questa distribuzione? Dopo non si cambia piu'.",
+            "si": "Si', confermo",
+            "no": "Fammi ripensare"
+          }
+        },
+        {
+          "t": "show",
+          "who": "peter",
+          "body": "applauso_ironico",
+          "height": "44%",
+          "bottom": "34%"
+        },
+        {
+          "t": "say",
+          "who": "peter",
+          "text": "Interessante: hai puntato tutto sulla categoria di cui eri meno {g:sicuro|sicura}."
+        },
+        {
+          "t": "say",
+          "who": "peter",
+          "text": "Adesso non resta che guardarlo, il keynote. Buona fortuna, {NOME}."
         }
       ],
       "next": "countdown"
@@ -1363,14 +1501,98 @@
         },
         {
           "t": "say",
-          "who": "martha",
-          "text": "Regia a host: bella prova. Ci vediamo tra poco per quella vera."
+          "who": "susan",
+          "text": "Bella prova. Ci vediamo tra poco per quella vera.",
+          "incuffia": true
         },
         {
           "t": "hide"
         },
         {
           "t": "nero"
+        },
+        {
+          "t": "title",
+          "_nota": "[S7.04b] I titoli di coda: dopo il pollice in su del CEO e prima del countdown. Cinque blocchi che compaiono, restano e sfumano uno nell'altro — non si accumulano come il cartello d'apertura. Vanno da soli, un tocco li salta tutti. Totale ~15 secondi. Il tono e' asciutto: i primi crediti seri, poi due assurdi, e la chiusa sui 30 Newton.",
+          "dissolvenza": 400,
+          "blocchi": [
+            {
+              "righe": [
+                {
+                  "text": "FANTALIBERTY",
+                  "small": true,
+                  "pausa": 150
+                },
+                {
+                  "text": "STORY",
+                  "big": true,
+                  "pausa": 240
+                }
+              ],
+              "tieni": 800
+            },
+            {
+              "righe": [
+                {
+                  "text": "CREATO DA",
+                  "small": true,
+                  "pausa": 180
+                },
+                {
+                  "text": "Lorenzo",
+                  "pausa": 180
+                },
+                {
+                  "text": "Michael",
+                  "pausa": 240
+                }
+              ],
+              "tieni": 800
+            },
+            {
+              "righe": [
+                {
+                  "text": "TEST",
+                  "small": true,
+                  "pausa": 180
+                },
+                {
+                  "text": "Qualcuno, probabilmente",
+                  "pausa": 240
+                }
+              ],
+              "tieni": 800
+            },
+            {
+              "righe": [
+                {
+                  "text": "SUPPORTO PSICOLOGICO",
+                  "small": true,
+                  "pausa": 180
+                },
+                {
+                  "text": "Assente",
+                  "pausa": 240
+                }
+              ],
+              "tieni": 800
+            },
+            {
+              "righe": [
+                {
+                  "text": "BUDGET",
+                  "small": true,
+                  "pausa": 180
+                },
+                {
+                  "text": "30 Newton",
+                  "big": true,
+                  "pausa": 240
+                }
+              ],
+              "tieni": 1100
+            }
+          ]
         }
       ],
       "next": "countdown"
@@ -1491,7 +1713,7 @@
       "shots": [
         {
           "img": "bg/bg_sala_discesa_palco_layer1_sfondo.webp",
-          "da": 1.0,
+          "da": 1,
           "a": 1.5,
           "origine": "50% 40%"
         },
@@ -1620,7 +1842,13 @@
     }
   },
   "regia": {
+    "_nota": "La regia e' Susan. Durante il keynote non e' in scena: parla in cuffia, quindi gli step che la fanno parlare da qui chiedono \"incuffia\". Le battute stanno in pool per situazione e non in fila nello script: cosi' non dice sempre le stesse cose, e soprattutto non parla dopo ogni singola scelta — i pool situazionali escono solo sui micro-eventi.",
+    "chi": "susan",
     "probabilitaEvento": 0.3,
+    "apertura": [
+      "Ok. Ci siamo.",
+      "Respira. Non troppo, pero'. Abbiamo tempi stretti."
+    ],
     "introDomanda": [
       "Tocca a te.",
       "Vai.",
@@ -1629,6 +1857,214 @@
       "Questa la sentono tutti.",
       "Quando vuoi.",
       "Slide su."
+    ],
+    "_nota_esiti": "I tre pool qui sotto sono la conseguenza di un micro-evento, uno per esito. Il giocatore non vede numeri: capisce come e' andata solo da come gliela racconta Susan. Non aggiungere qui niente che dica quanto vale.",
+    "improvvisazione": [
+      "Bravissimo. Hai appena improvvisato e nessuno se n'e' accorto.\nCredo.",
+      "Ok...\nSta funzionando.\nNon dirlo ad alta voce. Porta sfortuna."
+    ],
+    "caos": [
+      "Ok. Perfetto.\nNon era perfetto. Ma andiamo avanti.",
+      "Piccolo problema.\nQuando dico piccolo, intendo che per ora non lo vedono da casa."
+    ],
+    "critica": [
+      "Non preoccuparti. E' tutto sotto controllo.\nNon il mio controllo, ma qualcuno lo controlla.",
+      "Va bene. Va bene.\nSto gia' pensando a come sistemarla. Tu intanto continua a parlare."
+    ],
+    "scarica": [
+      "Vai. Gestiscila tu. Io sto gia' gestendo il resto.",
+      "Questa te la lascio. Ho le mani occupate."
     ]
+  },
+  "regolamento": {
+    "_nota": "[S1.ZONA3]. Si apre dal cartellone della lobby e si chiude con HO CAPITO: non tocca niente della partita — ne' punti, ne' picks, ne' locked, ne' stile. E' solo da leggere. Due gruppi: le regole del gioco e le informazioni sul progetto (partecipazione, privacy, indipendenza da Apple, contatti). Sono tutte qui e non in una voce di menu a parte, cosi' chi cerca le regole trova anche il resto. Il testo sta nei dati e non nel motore perche' e' contenuto: cambiarlo non deve voler dire toccare il codice. Una riga puo' essere una stringa (paragrafo), {h} (sottotitolo), {lista} (elenco) o {mail}.",
+    "titolo": "REGOLAMENTO",
+    "sezioni": [
+      {
+        "id": "come_si_gioca",
+        "titolo": "COME SI GIOCA",
+        "righe": [
+          {
+            "h": "L'obiettivo"
+          },
+          "Prevedi il keynote.",
+          "Fai piu' punti possibile.",
+          "Cerca di non pentirti delle tue scelte.",
+          {
+            "h": "Le previsioni"
+          },
+          "Durante il keynote ti verranno proposte diverse previsioni.",
+          "Scegli quella che pensi sia piu' probabile. Alcune valgono piu' punti di altre.",
+          {
+            "h": "Le tre risposte"
+          },
+          "CONSENSO — la risposta che molti si aspettano.",
+          "PLAUSIBILE — non e' la piu' ovvia, ma potrebbe succedere.",
+          "CONTROCORRENTE — improbabile, ma se ci prendi... hai fatto centro."
+        ]
+      },
+      {
+        "id": "punteggi",
+        "titolo": "PUNTEGGI",
+        "righe": [
+          {
+            "h": "I micro-eventi"
+          },
+          "Durante il keynote puo' succedere di tutto.",
+          "Quando succede, dovrai reagire.",
+          "La tua scelta puo' valere +3, 0 oppure -3 punti.",
+          "Non saprai quale.",
+          {
+            "h": "Il finale"
+          },
+          "Alla fine del keynote arriva Peter.",
+          "E arrivano le domande vere.",
+          "Il quiz finale puo' cambiare tutto."
+        ]
+      }
+    ],
+    "gruppo": "INFORMAZIONI SUL PROGETTO",
+    "informazioni": [
+      {
+        "id": "partecipazione",
+        "titolo": "PARTECIPAZIONE",
+        "righe": [
+          "La partecipazione a FantaLiberty Story e' completamente volontaria e gratuita.",
+          "Il gioco e' un'attivita' ricreativa e non costituisce una competizione professionale ne' una forma di valutazione delle prestazioni lavorative.",
+          "Le classifiche, i punteggi e i risultati hanno esclusivamente finalita' di intrattenimento.",
+          "La partecipazione o il risultato ottenuto nel gioco non comportano conseguenze sull'attivita' lavorativa dei partecipanti."
+        ]
+      },
+      {
+        "id": "progetto",
+        "titolo": "IL PROGETTO",
+        "righe": [
+          {
+            "h": "Perche' esiste FantaLiberty Story"
+          },
+          "FantaLiberty Story e' un progetto ludico, indipendente e senza scopo di lucro.",
+          "E' stato creato con un obiettivo semplice: trasformare un evento di interesse comune in un'occasione per stare insieme, divertirsi e creare una sana competizione tra colleghi.",
+          "L'iniziativa e' pensata per favorire l'aggregazione, il rapporto tra i partecipanti e un momento informale condiviso al di fuori delle normali attivita' lavorative.",
+          "Attraverso previsioni e quiz, il gioco vuole anche stimolare la curiosita' e l'interesse verso prodotti, servizi e novita' dell'azienda in un contesto esclusivamente ludico e non formativo ufficiale.",
+          "FantaLiberty Story non ha finalita' commerciali.",
+          "Non sono previste quote di partecipazione, scommesse, premi in denaro, raccolte di denaro o altre attivita' economiche.",
+          "Nessun organizzatore o partecipante ottiene un vantaggio economico dalla partecipazione."
+        ]
+      },
+      {
+        "id": "privacy",
+        "titolo": "PRIVACY E DATI",
+        "righe": [
+          {
+            "h": "Quali dati vengono raccolti"
+          },
+          "Per consentire il funzionamento del gioco e delle classifiche possono essere raccolti:",
+          {
+            "lista": [
+              "il nickname scelto dal giocatore",
+              "il genere selezionato, per personalizzare alcune parti narrative",
+              "lo store",
+              "il reparto",
+              "gli anni di esperienza in Apple",
+              "il dispositivo utilizzato",
+              "lo stile scelto",
+              "le previsioni effettuate",
+              "le risposte ai quiz",
+              "i punteggi",
+              "bonus e moltiplicatori",
+              "i risultati della partita"
+            ]
+          },
+          {
+            "h": "Perche' raccogliamo questi dati"
+          },
+          "I dati vengono utilizzati esclusivamente per:",
+          {
+            "lista": [
+              "personalizzare alcune parti dell'esperienza di gioco",
+              "registrare la schedina del partecipante",
+              "gestire il corretto funzionamento della partita",
+              "calcolare punteggi, bonus e risultati",
+              "creare classifiche generali e per categoria",
+              "determinare i risultati finali dell'iniziativa"
+            ]
+          },
+          "I dati non vengono utilizzati per pubblicita', marketing, profilazione o altre finalita' commerciali.",
+          "Non vengono venduti o ceduti a terzi per finalita' commerciali.",
+          {
+            "h": "Dove vengono conservati"
+          },
+          "I dati della partita vengono inviati e conservati su un database gestito tramite Supabase, con infrastruttura ospitata nell'Unione Europea.",
+          "Il gioco utilizza inoltre la memoria locale del browser per salvare temporaneamente lo stato della partita e consentirne il corretto funzionamento.",
+          {
+            "h": "Chi puo' accedere ai dati"
+          },
+          "I dati completi raccolti attraverso FantaLiberty Story sono accessibili esclusivamente agli organizzatori del progetto, Lorenzo e Michael, per la gestione tecnica dell'iniziativa, delle schedine e delle classifiche.",
+          "Gli altri partecipanti non possono accedere ai dati completi degli altri giocatori.",
+          {
+            "h": "Per quanto tempo"
+          },
+          "I dati vengono conservati fino alla conclusione dell'iniziativa e cancellati entro 30 giorni dalla sua conclusione.",
+          {
+            "h": "I tuoi diritti"
+          },
+          "In qualsiasi momento e' possibile richiedere informazioni sui propri dati, chiederne la correzione o richiederne la cancellazione anticipata.",
+          "Per qualsiasi richiesta relativa ai dati raccolti:",
+          {
+            "mail": "hello@fantaliberty.com"
+          }
+        ]
+      },
+      {
+        "id": "sicurezza",
+        "titolo": "SICUREZZA",
+        "righe": [
+          "I dati vengono gestiti tramite servizi protetti da autenticazione e sono accessibili esclusivamente agli organizzatori autorizzati alla gestione dell'iniziativa.",
+          "Vengono adottate misure ragionevoli per limitare l'accesso ai dati e proteggerli da accessi non autorizzati."
+        ]
+      },
+      {
+        "id": "indipendenza",
+        "titolo": "INDIPENDENZA",
+        "righe": [
+          {
+            "h": "Il rapporto con Apple"
+          },
+          "FantaLiberty Story e' un progetto ludico indipendente.",
+          "Non e' un prodotto ufficiale Apple e non e' affiliato, sponsorizzato o approvato da Apple Inc.",
+          "Il progetto e' stato realizzato autonomamente dagli organizzatori come iniziativa ricreativa senza finalita' commerciali.",
+          "Le previsioni, i quiz, i dialoghi e le situazioni presenti nel gioco sono creati esclusivamente a scopo narrativo e di intrattenimento.",
+          "Eventuali riferimenti a persone, prodotti, eventi o comunicazioni reali non costituiscono dichiarazioni ufficiali, anticipazioni o comunicazioni attribuibili ad Apple Inc. o alle persone eventualmente citate."
+        ]
+      },
+      {
+        "id": "marchi",
+        "titolo": "MARCHI E CONTENUTI",
+        "righe": [
+          "Apple, iPhone, Mac, iPad, Apple Watch, AirPods, HomePod, Apple TV, Apple Vision Pro e altri nomi di prodotti o servizi eventualmente citati all'interno del gioco sono marchi di Apple Inc., registrati negli Stati Uniti e in altri Paesi e regioni.",
+          "I riferimenti a tali nomi sono utilizzati esclusivamente a scopo descrittivo, narrativo e di intrattenimento.",
+          "FantaLiberty Story non intende rappresentare o sostituire comunicazioni, prodotti, servizi o contenuti ufficiali di Apple."
+        ]
+      },
+      {
+        "id": "contatti",
+        "titolo": "CONTATTI",
+        "righe": [
+          {
+            "h": "Organizzatori"
+          },
+          "Lorenzo & Michael",
+          "Per informazioni sul progetto o richieste relative ai dati personali:",
+          {
+            "mail": "hello@fantaliberty.com"
+          }
+        ]
+      }
+    ],
+    "chiusa": {
+      "titolo": "REGOLA NON SCRITTA",
+      "testo": "Se sei {g:sicuro|sicura} al 100%, probabilmente hai gia' perso."
+    },
+    "bottone": "HO CAPITO"
   }
 }

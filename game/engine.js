@@ -16,7 +16,8 @@
 
    Step supportati:
      logo | boot | title | say | choice | input | list | badge | hub | carosello |
-     griglia | domande | bivio | intermezzo | recap | countdown | show | hide |
+     griglia | domande | bivio | intermezzo | recap | countdown |
+     quizhub | quizlivello | quizmult | show | hide |
      io | react | prop | bg | fx | carrellata | sipario | nero | luce | wait |
      set | goto | end
 */
@@ -30,9 +31,10 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '12',
+    engine: '18',
     story: null,
     banca: null,    // game/domande.json: domande, battute per stile, eventi, intermezzi
+    quiz: null,     // game/quiz.json: i tre livelli del quiz di Peter [S8]
     backend: null,  // game/backend.json: dove spedire la schedina chiusa
     state: {},      // variabili di gioco (nome, genere, stile, ...)
     scene: null,
@@ -79,6 +81,10 @@
   // il nome della variabile e "text" come oggetto valore -> frase ("*" e' il
   // ripiego). Serve per far dire a Lucas cose diverse a seconda delle risposte.
   function testoDi(st) {
+    // "pool": la battuta si pesca da un elenco di story.regia invece di essere
+    // scritta nello step. Serve alle battute di Susan durante il keynote, che
+    // lo script vuole variabili e non sempre le stesse.
+    if (st.pool) return aCaso((VN.story.regia || {})[st.pool]) || '';
     if (typeof st.text === 'string') return st.text;
     if (!st.text) return '';
     var v = st.by ? VN.state[st.by] : null;
@@ -104,6 +110,8 @@
   // Le transizioni durano piu' di un tap: se si cambia scena mentre una e' in
   // corso, quello che resta a schermo va tolto o copre la scena nuova.
   function chiudiTransizioni() {
+    if (codaId) { clearTimeout(codaId); codaId = null; }
+    if (el.curtainTxt) el.curtainTxt.classList.remove('sfumato');
     if (el.prlx) { el.prlx.classList.remove('on'); el.prlx.innerHTML = ''; }
     if (el.tende) el.tende.classList.remove('on', 'apri');
     if (el.platea) el.platea.classList.remove('on');
@@ -118,6 +126,7 @@
     el.arrow.style.opacity = 0;
     hideUI();
     curLine = line; typing = true; pending = null; typeTarget = el.txt;
+    riservaAltezza(line);
     if (!VN.speed) { el.txt.textContent = line; typing = false; return after(); }
     var shown = 0, t0 = 0;
     el.txt.textContent = '';
@@ -130,6 +139,22 @@
       tId = global.requestAnimationFrame(tick);
     };
     tId = global.requestAnimationFrame(tick);
+  }
+
+  /* Il testo e' centrato nel box, che ha altezza fissa: senza questo, mentre
+     si scrive, il blocco parte alto una riga e si sposta ogni volta che ne
+     compare un'altra — cioe' lo stesso scatto che l'altezza fissa doveva
+     togliere. Qui si scrive la frase intera un attimo, si misura quanto sara'
+     alta, e si tiene quello spazio da subito: il testo appare dentro un blocco
+     gia' della misura giusta e non si muove piu'. */
+  function riservaAltezza(line) {
+    if (!el.txt) return;
+    el.txt.style.minHeight = '';
+    var prima = el.txt.textContent;
+    el.txt.textContent = line;
+    var h = el.txt.offsetHeight;
+    el.txt.textContent = prima;
+    if (h) el.txt.style.minHeight = h + 'px';
   }
 
   // come type(), ma non chiude la UI aperta: serve a chi resta a schermo mentre
@@ -258,7 +283,109 @@
   /* ---------------- cartello d'apertura ----------------
      Schermo nero, righe a macchina da scrivere una dopo l'altra; al tap la scena
      si accende (il nero sfuma via e sotto c'e' gia' il fondale). */
-  function typeLines(lines, done) {
+  function righeTitolo(lines) {
+    return (lines || []).map(function (l) {
+      return typeof l === 'string' ? { text: fmt(l) }
+        : { text: fmt(l.text), small: l.small, big: l.big, pausa: l.pausa };
+    });
+  }
+
+  /* ---------------- titoli di coda ----------------
+     Stessa schermata del cartello d'apertura ("-1 / ORA: CUPERTINO"): nero,
+     testo centrato, scritto a macchina. La differenza e' che qui i blocchi non
+     si sommano — ognuno compare, resta, sfuma, e lascia il posto al prossimo.
+     Va avanti da solo: e' una sequenza da guardare, non da tappare. Un tocco
+     solo la salta tutta. */
+  var codaId = null;
+  function titoliDiCoda(st, done) {
+    var blocchi = st.blocchi || [];
+    var sfuma = st.dissolvenza != null ? st.dissolvenza : 600;
+    var i = 0, chiuso = false, veloce = false;
+
+    // Quanto resta a schermo un blocco, e quanto dura la dissolvenza, una volta
+    // che il giocatore ha toccato: abbastanza per leggere, non abbastanza per
+    // annoiarsi.
+    var TIENI_VELOCE = st.tieniVeloce != null ? st.tieniVeloce : 380;
+    var SFUMA_VELOCE = 150;
+
+    function stop() { if (codaId) { clearTimeout(codaId); codaId = null; } }
+
+    /* Il tocco NON salta i titoli: li accelera. Da qui in avanti ogni blocco
+       compare gia' scritto e resta meno, ma compare — si legge tutto fino alla
+       fine. E' la differenza fra "accelera" e "vai via", e la prima versione
+       faceva la seconda: un tocco per sbaglio e i titoli sparivano. */
+    function avanti() {
+      if (chiuso) return;
+      veloce = true;
+      stop();
+      el.curtainTxt.classList.add('sfumato');
+      codaId = setTimeout(prossimo, SFUMA_VELOCE);
+    }
+
+    // Dopo l'ultimo blocco la sequenza si ferma e aspetta: il countdown arriva
+    // con un tocco, non da solo. Cosi' l'ultima riga si puo' guardare quanto si
+    // vuole.
+    function attendiUltimo() {
+      revealUI = null;
+      pending = chiudi;
+      el.curtainArrow.style.opacity = 1;
+    }
+
+    function chiudi() {
+      if (chiuso) return;
+      chiuso = true;
+      stop();
+      stopTyping();
+      typing = false;
+      el.curtainTxt.classList.remove('sfumato');
+      el.curtainTxt.innerHTML = '';
+      revealUI = null;
+      pending = null;
+      el.curtainArrow.style.opacity = 0;
+      done();
+    }
+
+    function prossimo() {
+      if (chiuso) return;
+      if (i >= blocchi.length) return attendiUltimo();
+      var b = blocchi[i++];
+      el.curtainTxt.classList.remove('sfumato');
+      el.curtainTxt.innerHTML = '';
+
+      // finito di scrivere: si tiene a schermo, poi si sfuma e si passa oltre
+      var dopo = function () {
+        if (chiuso) return;
+        revealUI = null;
+        el.curtainArrow.style.opacity = 0;
+        pending = avanti;                 // un tocco qui va al blocco dopo
+        codaId = setTimeout(function () {
+          if (chiuso) return;
+          pending = null;
+          // l'ultimo blocco non sfuma: resta a schermo con la freccia, cosi'
+          // si guarda quanto si vuole invece di sparire nel nero
+          if (i >= blocchi.length) return attendiUltimo();
+          el.curtainTxt.classList.add('sfumato');
+          codaId = setTimeout(prossimo, veloce ? SFUMA_VELOCE : sfuma);
+        }, veloce ? TIENI_VELOCE : (b.tieni != null ? b.tieni : 1200));
+      };
+
+      typeLines(righeTitolo(b.righe), dopo, true);
+
+      /* typeLines lascia in revealUI la sua "scrivi tutto adesso": la si tiene,
+         perche' e' esattamente quello che deve fare un tocco mentre scrive.
+         Ci si aggiunge solo il passaggio in modalita' veloce. */
+      var completa = revealUI;
+      revealUI = function () { veloce = true; if (completa) completa(); };
+      if (veloce && !chiuso) { var r = revealUI; revealUI = null; r(); }
+    }
+
+    if (!VN.speed) return chiudi();         // test/skip: niente sequenza a tempo
+    prossimo();
+  }
+
+  /* "subito": a fine sequenza chiama done() invece di aspettare un tocco. Il
+     cartello d'apertura aspetta il giocatore; i titoli di coda vanno da soli. */
+  function typeLines(lines, done, subito) {
     el.curtainTxt.innerHTML = '';
     el.curtainArrow.style.opacity = 0;
     var i = 0, nodi = [];
@@ -290,6 +417,7 @@
 
     function fine() {
       revealUI = null;
+      if (subito) { pending = null; el.curtainArrow.style.opacity = 0; return done(); }
       pending = done;
       el.curtainArrow.style.opacity = 1;
     }
@@ -388,6 +516,23 @@
   var silent = false;   // true durante il ripristino
   function next() { if (silent) return; VN.i++; run(); }
 
+  /* Una scena che COMINCIA su un cartello nero (sigla, barra di caricamento,
+     titolo) si tiene addosso il sipario nero. Una che ce l'ha in mezzo o in
+     fondo no: i titoli di coda stanno alla fine del finale, e cercando un
+     "title" in qualunque punto della scena il nero restava su per tutta la
+     sequenza della porta — che quindi non si vedeva. Gli step che non mostrano
+     niente (hide, wait, set, nero, luce) si saltano: possono stare prima senza
+     voler dire che la scena parte illuminata. */
+  var INVISIBILI = { hide: 1, wait: 1, set: 1, nero: 1, luce: 1 };
+  function apreSulNero(sc) {
+    var steps = sc.steps || [];
+    for (var i = 0; i < steps.length; i++) {
+      if (INVISIBILI[steps[i].t]) continue;
+      return steps[i].t === 'title' || steps[i].t === 'boot' || steps[i].t === 'logo';
+    }
+    return false;
+  }
+
   function goScene(id) {
     var sc = VN.story.scenes[id];
     if (!sc) throw new Error('scena inesistente: ' + id);
@@ -396,11 +541,11 @@
     chiudiGriglia();
     chiudiRecap();
     chiudiCountdown();
+    chiudiQuiz();
+    chiudiRegole();
     chiudiTransizioni();
     if (el.modal) el.modal.classList.remove('on');
-    if (!(sc.steps || []).some(function (s) { return s.t === 'title' || s.t === 'boot' || s.t === 'logo'; })) {
-      el.curtain.classList.remove('on', 'lights');
-    }
+    if (!apreSulNero(sc)) el.curtain.classList.remove('on', 'lights');
     // Il box del dialogo restava acceso con l'ultima battuta della scena
     // precedente finche' non ne arrivava una nuova: si vedeva la vecchia frase
     // sopra il fondale nuovo.
@@ -429,17 +574,22 @@
   }
 
   function exec(st) {
+    // Uno step con "se" viene saltato quando la condizione e' falsa. Serve alle
+    // battute che si dicono una volta sola: Peter presenta il quiz al primo
+    // ingresso, non tutte le sere che si torna a giocare un livello.
+    if (st.se && !condizioneOk(st.se)) return next();
+
     if (!silent && (st.t === 'say' || st.t === 'choice' || st.t === 'input' ||
                     st.t === 'list' || st.t === 'badge' ||
                     st.t === 'carosello' || st.t === 'hub' || st.t === 'griglia' ||
                     st.t === 'domande' || st.t === 'bivio' || st.t === 'intermezzo' ||
-                    st.t === 'recap')) VN.saveNow();
+                    st.t === 'recap' || st.t === 'quizhub' || st.t === 'quizmult')) VN.saveNow();
 
     switch (st.t) {
 
       case 'say':
         el.boxwrap.classList.add('in');
-        setSpeaker(st.who);
+        setSpeaker(st.who, st.incuffia);
         // revealUI duplica il completamento di type(): se il tap arriva PRIMA che
         // il typewriter finisca da solo, skip() cancella il tick in corso e la sua
         // callback (quella su type()) non parte mai. Senza questa copia, "pending"
@@ -460,7 +610,7 @@
       case 'choice':
         el.boxwrap.classList.remove('sistema');
         el.boxwrap.classList.add('in');
-        setSpeaker(st.who);
+        setSpeaker(st.who, st.incuffia);
         type(fmt(st.text), function () { showChoices(st); });
         revealUI = function () { showChoices(st); };
         return;
@@ -468,7 +618,7 @@
       case 'input':
         el.boxwrap.classList.remove('sistema');
         el.boxwrap.classList.add('in');
-        setSpeaker(st.who);
+        setSpeaker(st.who, st.incuffia);
         type(fmt(st.text), function () { showInput(st); });
         revealUI = function () { showInput(st); };
         return;
@@ -476,7 +626,7 @@
       case 'list':
         el.boxwrap.classList.remove('sistema');
         el.boxwrap.classList.add('in');
-        setSpeaker(st.who);
+        setSpeaker(st.who, st.incuffia);
         type(fmt(st.text), function () { showList(st); });
         revealUI = function () { showList(st); };
         return;
@@ -487,7 +637,7 @@
         // aspettava che finisse di scrivere e poi un altro tap. Adesso la
         // tessera entra subito, e il tap serve solo ad andare avanti.
         el.boxwrap.classList.add('in');
-        if (st.who) setSpeaker(st.who);
+        if (st.who) setSpeaker(st.who, st.incuffia);
         mostraBadge(st);
         if (st.text) {
           var avanzaBadge = function () { pending = chiudiBadge; el.arrow.style.opacity = 1; };
@@ -534,6 +684,16 @@
       case 'recap':
         return showRecap(st);
 
+      // S8: il quiz di Peter — scelta del livello, un livello, i moltiplicatori
+      case 'quizhub':
+        return showQuizHub(st);
+
+      case 'quizlivello':
+        return showQuizLivello(st);
+
+      case 'quizmult':
+        return showMult(st);
+
       // S7: il countdown al keynote vero, ultima schermata del gioco
       case 'countdown':
         return showCountdown(st);
@@ -551,24 +711,28 @@
       case 'logo':
         el.boxwrap.classList.remove('in');
         el.hint.style.opacity = 0;
+        scopriCartello();
         sigla(st, next);
         return;
 
       case 'boot':
         el.boxwrap.classList.remove('in');
         el.hint.style.opacity = 0;
+        scopriCartello();
         boot(st, next);
         return;
 
       case 'title':
         el.boxwrap.classList.remove('in');
         el.hint.style.opacity = 0;
+        scopriCartello();
         el.curtain.classList.remove('lights');
         el.curtain.classList.add('on');
-        typeLines((st.lines || []).map(function (l) {
-          return typeof l === 'string' ? { text: fmt(l) }
-            : { text: fmt(l.text), small: l.small, big: l.big, pausa: l.pausa };
-        }), next);
+        // "blocchi": i titoli di coda. Le righe non si accumulano come nel
+        // cartello d'apertura — ogni blocco compare, resta, sfuma, e arriva il
+        // prossimo. Va da solo, un tocco salta tutto.
+        if (st.blocchi) return titoliDiCoda(st, next);
+        typeLines(righeTitolo(st.lines), next);
         return;
 
       case 'show':
@@ -710,9 +874,15 @@
     // primi o minuscoli i secondi. Per lei il cast dichiara "volti", la misura
     // del viso in ogni posa, e ci pensa inquadra() a renderli tutti uguali.
     var scala = st.scala != null ? st.scala : ((c && c.scala) || 1);
-    el.npc.style.height = st.height || (scala === 1 ? '' : (NPC_H * scala).toFixed(1) + '%');
-    el.npc.style.bottom = st.bottom || '';
-    el.npc.style.right = st.right || '';
+    // Se la posa e' fra quelle inquadrate sul viso, NON si passa dalla misura di
+    // default: la si sostituisce direttamente con quella giusta, piu' sotto.
+    // Rimettere il default in mezzo faceva vedere per un fotogramma la figura
+    // piccola, a ogni cambio di battuta.
+    if (!inquadrata(c, body, st)) {
+      el.npc.style.height = st.height || (scala === 1 ? '' : (NPC_H * scala).toFixed(1) + '%');
+      el.npc.style.bottom = st.bottom || '';
+      el.npc.style.right = st.right || '';
+    }
     inquadra(c, body, st);
 
     el.npc.style.opacity = '';
@@ -741,17 +911,27 @@
   var VOLTO_Y = 0.620;      // centro del viso, in frazione dell'altezza
   var NPC_AR = 0.6;         // proporzione del riquadro #npc (3/5), come nel CSS
 
+  // La posa e' fra quelle con il viso misurato?
+  function inquadrata(c, posa, st) {
+    return !!(c && c.volti && c.volti[posa] && !st.height && st.scala == null);
+  }
+
   function inquadra(c, posa, st) {
     var v = c && c.volti && c.volti[posa];
     if (!v || st.height || st.scala != null) return;   // la scena comanda: non si tocca
     var img = el.npcBody;
     var applica = function () {
       el.npc.classList.add('fisso');       // niente transizione: il salto si vedrebbe
-      var w = img.naturalWidth, h = img.naturalHeight;
-      if (!w || !h) return;
+      // La proporzione arriva dal cast, non dall'immagine: aspettare che
+      // l'immagine sia caricata per sapere quanto e' larga voleva dire lasciare
+      // il riquadro alla misura di default per almeno un fotogramma — ed e'
+      // quello il lampo in cui la figura si vedeva piccola. naturalWidth resta
+      // come ripiego per una posa non ancora misurata.
+      var a = v.ar || (img.naturalWidth && img.naturalHeight
+        ? img.naturalWidth / img.naturalHeight : 0);
+      if (!a) return;
       var sh = el.stage.clientHeight, sw = el.stage.clientWidth;
       if (!sh || !sw) return;
-      var a = w / h;
       var altezzaImg = (VOLTO_H * sh) / v.h;           // quanto deve venire alta l'immagine
       var boxW = a > NPC_AR ? altezzaImg * a : altezzaImg * NPC_AR;
       var boxH = a > NPC_AR ? boxW / NPC_AR : altezzaImg;
@@ -767,6 +947,10 @@
         el.npc.style.bottom = (sh - (VOLTO_Y * sh + (1 - v.cy) * altezzaImg)).toFixed(1) + 'px';
       }
     };
+    // Con "ar" nel cast si puo' fare subito, nello stesso giro in cui cambia lo
+    // sprite: il browser non disegna niente in mezzo, quindi non c'e' nessun
+    // fotogramma con la misura sbagliata.
+    if (v.ar) return applica();
     if (img.complete && img.naturalWidth) applica();
     else img.addEventListener('load', applica, { once: true });
   }
@@ -1070,6 +1254,7 @@
 
     hubTasti = function (k) {
       if (uscito) return false;
+      if (el.regole && el.regole.classList.contains('on')) return false;
       if (k === 'ArrowLeft') { mostra(cur - 1, -1); return true; }
       if (k === 'ArrowRight') { mostra(cur + 1, 1); return true; }
       return false;
@@ -1099,7 +1284,7 @@
 
   /* ================ S5: il keynote ================
      Tre macroargomenti in ordine libero; dentro ognuno le domande core in
-     sequenza fissa, poi il bivio di Martha che puo' pescare tre facoltative dal
+     sequenza fissa, poi il bivio della regia che puo' pescare tre facoltative dal
      pool. Le domande, le battute per stile, gli eventi e gli intermezzi stanno
      in game/domande.json (VN.banca), non in story.json: sono contenuto che
      cambia per conto suo, e messi insieme pesano quanto tutto il resto. */
@@ -1198,7 +1383,7 @@
     });
 
     el.boxwrap.classList.add('in');
-    setSpeaker(st.who);
+    setSpeaker(st.who, st.incuffia);
     el.griglia.classList.add('on');
     pending = null;
     if (st.text) typeKeep(fmt(st.text));
@@ -1206,6 +1391,7 @@
 
   function chiudiGriglia() {
     if (el.griglia) { el.griglia.classList.remove('on'); el.griglia.innerHTML = ''; }
+    if (el.boxwrap) el.boxwrap.classList.remove('quizhub');
   }
 
   function chiudiRecap() {
@@ -1216,7 +1402,7 @@
   }
 
   /* ---------------- il giro di una domanda [S5.DOMANDA] ----------------
-     Martha introduce, il giocatore sceglie, il personaggio annuncia alla platea
+     La regia introduce, il giocatore sceglie, il personaggio annuncia alla platea
      con la battuta del suo stile, e ogni tanto succede qualcosa.
 
      Regola d'oro dello script: la reazione della platea e' SEMPRE casuale, mai
@@ -1240,7 +1426,7 @@
       var d = lista[i];
       el.boxwrap.classList.add('in');
       mostraIo({ posa: 'idle_palco' });
-      setSpeaker(st.who || 'martha');
+      setSpeaker(st.who || 'susan', st.incuffia !== false);
       var apri = function () { opzioni(d); };
       type(fmt(aCaso(VN.story.regia && VN.story.regia.introDomanda) || 'Tocca a te.') + ' ' + fmt(d.q), apri);
       revealUI = apri;
@@ -1320,6 +1506,25 @@
     return trovaEvento(v.shift());
   }
 
+  /* I tre esiti di un micro-evento sono sempre +3, 0 e -3 — uno per opzione — ma
+     l'abbinamento si rimescola a ogni attivazione. I valori "editoriale" scritti
+     nella banca dicono soltanto che tono ha ciascuna risposta: NON sono il
+     mapping del gioco. Cosi' chi rigioca non puo' imparare "la B e' quella
+     buona", e deve scegliere la risposta che gli sembra giusta. */
+  function esitiMicroEvento(e) {
+    var valori = e.valori || [3, 0, -3];
+    return mescola(valori.slice());
+  }
+
+  /* Come e' andata lo dice Susan, e lo dice a parole: niente numeri, niente
+     "bonus", nessun segnale che riveli il punteggio. Le tre battute vengono da
+     tre pool diversi di story.regia, uno per esito. */
+  function conseguenzaMicroEvento(punti) {
+    var r = VN.story.regia || {};
+    var pool = punti > 0 ? r.improvvisazione : punti < 0 ? r.critica : r.caos;
+    return aCaso(pool) || '';
+  }
+
   function mostraEvento(e, done) {
     // l'evento personale dello stile ha una posa dedicata, i micro-eventi no
     if (e.asset && e.asset.indexOf('stili/') === 0) mostraIo({ posa: 'evento' });
@@ -1333,22 +1538,61 @@
     el.boxwrap.classList.add('in');
     setSpeaker(null);
     el.name.classList.add('hidden');
-    var poi = function () {
-      pending = function () {
-        nascondiOspite();
-        el.evpropwrap.classList.remove('on');
-        if (e.martha) return battutaMartha(e.martha, done);
-        done();
-      };
-      el.arrow.style.opacity = 1;
-    };
+    var opzioni = e.opzioni || [];
+    // Dopo la narrazione parla Susan, dalla regia: la battuta scritta
+    // sull'evento se ce l'ha, altrimenti una di quelle con cui ti scarica addosso
+    // il problema. E' l'unico modo in cui la regia si fa sentire durante il
+    // keynote, e succede solo sugli eventi — non a ogni domanda.
+    var suo = e.regia || aCaso((VN.story.regia || {}).scarica);
+
+    // le risposte compaiono sotto l'ultima riga, senza un tocco in mezzo
+    var apri = opzioni.length
+      ? function () { scelteEvento(e, opzioni, done); }
+      : function () { pending = function () { chiudiEvento(); done(); }; el.arrow.style.opacity = 1; };
+
+    // La narrazione va letta: senza questo tocco in mezzo la battuta della regia
+    // ci scriveva sopra nello stesso istante e il giocatore non vedeva mai
+    // cos'era successo.
+    var poi = suo
+      ? function () { pending = function () { battutaRegia(suo, apri); }; el.arrow.style.opacity = 1; }
+      : apri;
+
     type(fmt(e.testo), poi);
     revealUI = poi;
   }
 
-  function battutaMartha(testo, done) {
-    setSpeaker('martha');
-    var poi = function () { pending = done; el.arrow.style.opacity = 1; };
+  function chiudiEvento() {
+    nascondiOspite();
+    el.evpropwrap.classList.remove('on');
+  }
+
+  function scelteEvento(e, opzioni, done) {
+    var esiti = esitiMicroEvento(e);
+    showChoices({
+      options: opzioni.map(function (o, idx) {
+        var punti = esiti[idx % esiti.length] || 0;
+        return { label: o.label, value: idx, _do: function () {
+          segna('micro_eventi', 'r', e.id, o.label, punti);
+          VN.progressed = true;
+          VN.saveNow();
+          chiudiEvento();
+          // la conseguenza la racconta Susan in cuffia: e' l'unico ritorno che
+          // il giocatore riceve, e non dice mai quanto vale
+          battutaRegia(o.esito || conseguenzaMicroEvento(punti), function () {
+            pending = done; el.arrow.style.opacity = 1;
+          });
+        } };
+      })
+    });
+  }
+
+  /* Una battuta della regia: Susan, in cuffia, senza sprite in scena. "poi" viene
+     chiamata quando la riga e' tutta a schermo — sta a chi chiama decidere se
+     mostrare subito qualcosa sotto (le risposte di un evento) o aspettare un
+     tocco. */
+  function battutaRegia(testo, poi) {
+    if (!testo) return poi();           // pool vuoto: niente box muto da toccare
+    setSpeaker((VN.story.regia && VN.story.regia.chi) || 'susan', true);
     type(fmt(testo), poi);
     revealUI = poi;
   }
@@ -1391,7 +1635,18 @@
     var cat = catCorrente();
     if (!cat) return next();
     el.boxwrap.classList.add('in');
-    setSpeaker(st.who || 'martha');
+    setSpeaker(st.who || 'susan', st.incuffia !== false);
+    // La regia commenta la scelta prima di andare avanti: e' una risposta, non
+    // un giudizio sul pronostico, quindi qui la battuta puo' dipendere da cosa
+    // hai scelto senza infrangere la regola d'oro.
+    var commenta = function (testo) {
+      hideUI();
+      if (!testo) return next();
+      var poi = function () { pending = next; el.arrow.style.opacity = 1; };
+      type(fmt(testo), poi);
+      revealUI = poi;
+    };
+
     var apri = function () {
       showChoices({
         options: [
@@ -1399,14 +1654,12 @@
               var pool = (cat.extra || []).map(function (d) { return d.id; });
               VN.state.pescate = mescola(pool).slice(0, cat.n_extra_da_pescare || 3);
               VN.progressed = true;
-              hideUI();
-              next();
+              commenta(st.dopoApprofondisci);
             } },
           { label: st.passa || 'Passiamo al prossimo', value: 0, _do: function () {
               VN.state.pescate = [];
               VN.progressed = true;
-              hideUI();
-              next();
+              commenta(st.dopoPassa);
             } }
         ]
       });
@@ -1427,7 +1680,7 @@
     VN.state.intermezzi = n + 1;
 
     el.boxwrap.classList.add('in');
-    setSpeaker(st.who || 'martha');
+    setSpeaker(st.who || 'susan', st.incuffia !== false);
     var apri = function () {
       showChoices({
         options: (q.opzioni || []).map(function (o) {
@@ -1529,7 +1782,7 @@
     function chiedi(cat, tipo, d) {
       el.recap.classList.remove('on');
       el.boxwrap.classList.remove('recap');
-      setSpeaker(st.who);
+      setSpeaker(st.who, st.incuffia);
       var apri = function () {
         el.choices.innerHTML = '';
         (d.opzioni || []).forEach(function (o) {
@@ -1555,7 +1808,7 @@
     function apriRecap() {
       hideUI();
       righe();
-      setSpeaker(st.who);
+      setSpeaker(st.who, st.incuffia);
       el.txt.textContent = fmt(st.text || '');
       el.arrow.style.opacity = 0;
       el.boxwrap.classList.add('in', 'recap');
@@ -1600,6 +1853,7 @@
       anni: s.anni, device: s.device, stile: s.stile,
       punti: totale(), picks: s.picks || {},
       flags: { sfacciato: !!s.sfacciato, studiato: s.studiato },
+      quiz: { livelli: s.quiz || {}, banca: bancaMult(), moltiplicatori: s.moltiplicatori || null },
       versione: (VN.story.meta && VN.story.meta.version) || ''
     };
   }
@@ -1622,8 +1876,19 @@
       body: JSON.stringify(corpo)
     }).then(function (r) {
       if (r.ok) return svuotaCoda();
+      // Un rifiuto va in coda e si riprova al prossimo avvio, ma resta muto per
+      // il giocatore: se e' un problema di schema (una colonna che manca nella
+      // tabella) nessuno se ne accorgerebbe mai. Il motivo finisce almeno in
+      // console, cosi' e' diagnosticabile.
       accoda(corpo);
-    }).catch(function () { accoda(corpo); });
+      if (global.console && r.text) {
+        r.text().then(function (t) { global.console.warn('schedina non accettata:', r.status, t); },
+                      function () {});
+      }
+    }).catch(function (e) {
+      accoda(corpo);
+      if (global.console) global.console.warn('schedina non spedita:', e);
+    });
   }
 
   function accoda(corpo) {
@@ -1775,6 +2040,567 @@
     im.src = withBase(posa);
   }
 
+  /* ================ S8: il quiz di Peter ================
+
+     Tre livelli, due tentativi ciascuno, e domande a risposta secca sul passato
+     di Apple. E' l'unico punto del gioco in cui il feedback dice se hai
+     azzeccato o no: la regola d'oro di S5 (la platea non correla mai con la
+     risposta) vale per i pronostici, che sono opinioni sul futuro. Qui le
+     risposte sono verificabili, quindi Peter puo' annuire o scuotere la testa.
+
+     Quello che si vince non sono punti: sono MOLTIPLICATORI, che in [S8.FINALE]
+     si distribuiscono sui tre macroargomenti dei pronostici gia' chiusi. */
+
+  var qId = null;          // il tick del timer della domanda
+
+  // Il testo di una domanda a tempo compare tutto insieme: il typewriter
+  // mangerebbe secondi al cronometro.
+  function scriviSubito(riga) {
+    stopTyping();
+    typing = false; curLine = riga; typeTarget = el.txt;
+    pending = null; revealUI = null;
+    el.txt.textContent = riga;
+    el.arrow.style.opacity = 0;
+  }
+
+  function cfgQuiz() { return VN.quiz || {}; }
+
+  function livelliQuiz() { return cfgQuiz().livelli || {}; }
+
+  // Lo stato per livello vive in VN.state, quindi entra nel salvataggio e
+  // sopravvive alla chiusura dell'app: il quiz si gioca nei giorni fra il lock
+  // e il keynote, non in una sessione sola.
+  function statoQuiz(liv) {
+    var q = VN.state.quiz || (VN.state.quiz = {});
+    return q[liv] || (q[liv] = { passato: false, tentativi: 0, pool: null, seconda: false });
+  }
+
+  function perkStile() {
+    var s = (VN.story.stili || {})[VN.state.stile];
+    return (s && s.perk && s.perk.id) || null;
+  }
+
+  // Il perk dello showman e' proprio questo: niente scaletta imposta, i tre
+  // livelli sono aperti da subito. Per tutti gli altri si sale un gradino alla
+  // volta, come chiede lo script.
+  function livelloAperto(liv, ordine) {
+    if (perkStile() === 'tutto_sbloccato') return true;
+    var i = ordine.indexOf(liv);
+    if (i <= 0) return true;
+    return statoQuiz(ordine[i - 1]).passato;
+  }
+
+  // Chiuso = non ci si puo' piu' entrare: o e' gia' passato, o i due tentativi
+  // sono finiti.
+  function livelloChiuso(liv) {
+    var s = statoQuiz(liv);
+    return s.passato || s.tentativi >= 2;
+  }
+
+  function secondiQuiz() {
+    var c = cfgQuiz();
+    return perkStile() === 'tempo' ? (c.timer_s_ingegnere || c.timer_s || 10) : (c.timer_s || 10);
+  }
+
+  function bancaMult() { return Number(VN.state.mult_bank || 0); }
+
+  /* ---------------- [S8.HUB] scelta del livello ----------------
+     Tre pannelli come la griglia di S5, piu' le azioni sotto: assegnare i
+     moltiplicatori (solo nelle 24 ore prima del keynote) e tornare indietro. */
+  function showQuizHub(st) {
+    var livelli = livelliQuiz();
+    var ordine = st.ordine || Object.keys(livelli);
+    if (!ordine.length) return next();
+
+    var uscito = false;
+
+    el.griglia.innerHTML = '';
+    ordine.forEach(function (liv) {
+      var cfg = livelli[liv] || {};
+      var s = statoQuiz(liv);
+      var aperto = livelloAperto(liv, ordine);
+      var chiuso = livelloChiuso(liv);
+      var b = global.document.createElement('button');
+      b.className = 'gcell' + (chiuso || !aperto ? ' fatta' : '');
+      b.dataset.livello = liv;
+      b.innerHTML = '<span class="gnome"></span><span class="gstato"></span>';
+      b.querySelector('.gnome').textContent = fmt(cfg.nome || liv);
+      b.querySelector('.gstato').textContent = !aperto
+        ? (st.etichettaChiuso || 'chiuso')
+        : s.passato ? '+' + mult(s.vinto || 0)
+        : s.tentativi >= 2 ? (st.etichettaBruciato || 'finito')
+        : cfg.domande + ' dom · ' + secondiQuiz() + 's';
+      b.onclick = function (ev) {
+        if (ev && ev.stopPropagation) ev.stopPropagation();
+        if (uscito || chiuso || !aperto) return;
+        uscito = true;
+        VN.progressed = true;
+        VN.state.livello = liv;
+        chiudiGriglia();
+        hideUI();
+        goScene(st.goto);
+      };
+      el.griglia.appendChild(b);
+    });
+
+    // le azioni sotto la griglia: i moltiplicatori e l'uscita
+    var azioni = [];
+    if (bancaMult() > 0) {
+      var pronto = finestraMult() || !!VN.state.moltiplicatori;
+      azioni.push({
+        label: VN.state.moltiplicatori
+          ? (st.assegnati || 'Rivedi i moltiplicatori')
+          : pronto
+          ? (st.assegna || 'Assegna i moltiplicatori (+{banca})').replace('{banca}', mult(bancaMult()))
+          : (st.assegnaPresto || 'Moltiplicatori: si assegnano il giorno del keynote'),
+        spento: !pronto,
+        _do: function () {
+          if (!pronto) return;
+          uscito = true;
+          chiudiGriglia();
+          hideUI();
+          if (st.gotoMult) return goScene(st.gotoMult);
+          next();
+        }
+      });
+    }
+    if (st.esci) {
+      azioni.push({ label: st.esci.label || 'Torna in lobby', _do: function () {
+        uscito = true;
+        chiudiGriglia();
+        hideUI();
+        goScene(st.esci.goto);
+      } });
+    }
+
+    el.boxwrap.classList.add('in', 'quizhub');
+    setSpeaker(st.who || 'peter');
+    el.griglia.classList.add('on');
+    pending = null;
+    if (st.text) typeKeep(fmt(testoDi(st) || st.text));
+    if (azioni.length) showChoices({ options: azioni, colonne: false });
+  }
+
+  // I moltiplicatori si scrivono come "+0.30": due decimali, mai la notazione
+  // di JavaScript (0.30000000000000004 dopo due somme).
+  function mult(n) { return Number(n || 0).toFixed(2); }
+
+  // [S8.FINALE] si apre solo nelle 24 ore prima del keynote. Senza una data
+  // valida in meta.keynote non si blocca niente: meglio un gioco giocabile che
+  // una schermata irraggiungibile.
+  function finestraMult() {
+    var q = quandoKeynote();
+    if (!q) return true;
+    var ore = (VN.quiz && VN.quiz.finestra_ore) || 24;
+    return Date.now() >= q - ore * 3600000;
+  }
+
+  /* ---------------- [S8.LOOP] un livello ----------------
+     Si pescano le domande da uno dei due pool: mai quello del tentativo
+     precedente, cosi' sbagliare apposta per memorizzare le risposte non serve a
+     niente. Il timer parte al render della domanda, non alla fine della
+     scrittura: per questo il testo compare tutto insieme. */
+  function showQuizLivello(st) {
+    var liv = VN.state.livello;
+    var cfg = livelliQuiz()[liv];
+    var pools = (cfgQuiz().pool || {})[liv];
+    if (!cfg || !pools || !pools.length) return next();
+
+    var s = statoQuiz(liv);
+    // primo tentativo: pool a caso. Secondo: l'altro.
+    var iPool = s.pool == null ? Math.floor(Math.random() * pools.length)
+                               : (s.pool + 1) % pools.length;
+    s.pool = iPool;
+    var lista = mescola(pools[iPool] || []);
+    if (!lista.length) return next();
+
+    var i = 0, giuste = 0;
+    var cinquantaUsato = false;
+    var msTotali = secondiQuiz() * 1000;
+    var rimasti = msTotali;
+
+    function chiudiTimer() {
+      if (qId) { clearInterval(qId); qId = null; }
+      VN.quizScadenza = null;
+      el.quizbar.classList.remove('on');
+      el.qtimer.classList.remove('poco');
+    }
+
+    function disegnaTimer() {
+      var frazione = Math.max(0, rimasti / msTotali);
+      el.qbar.style.width = (frazione * 100).toFixed(1) + '%';
+      el.qsec.textContent = Math.ceil(rimasti / 1000) + 's';
+      // sotto i tre secondi Peter guarda l'orologio: lo chiede lo script, ed e'
+      // l'unico avviso oltre alla barra che si sta per scadere
+      var poco = rimasti <= 3000;
+      el.qtimer.classList.toggle('poco', poco);
+      if (poco && current.body !== 'guarda_orologio') showChar({ who: 'peter', body: 'guarda_orologio', height: st.height, bottom: st.bottom });
+    }
+
+    function domanda() {
+      chiudiTimer();
+      if (i >= lista.length) return fine();
+      var d = lista[i];
+      rimasti = msTotali;
+
+      el.boxwrap.classList.add('in');
+      setSpeaker(st.who || 'peter');
+      showChar({ who: 'peter', body: 'alza_occhi', height: st.height, bottom: st.bottom });
+      // niente typewriter: il tempo scorre gia', e leggere in ritardo sarebbe
+      // una penalita' invisibile
+      scriviSubito(fmt(d.q));
+
+      el.qinfo.textContent = fmt(cfg.nome || liv) + ' · ' + (i + 1) + '/' + lista.length +
+        ' · ' + fmt(st.giuste || 'giuste') + ' ' + giuste + '/' + cfg.soglia;
+      el.quizbar.classList.add('on');
+      disegnaTimer();
+
+      opzioni(d, d.opzioni.map(function (_, k) { return k; }));
+
+      VN.quizScadenza = function () { rispondi(d, -1); };
+      if (VN.speed) {
+        qId = global.setInterval(function () {
+          rimasti -= 100;
+          disegnaTimer();
+          if (rimasti <= 0) { var f = VN.quizScadenza; chiudiTimer(); if (f) f(); }
+        }, 100);
+      }
+    }
+
+    // "visibili" sono gli indici ancora in gioco: il 50/50 del drip ne toglie
+    // due sbagliati e ridisegna la stessa domanda.
+    function opzioni(d, visibili) {
+      el.choices.innerHTML = '';
+      el.choices.classList.toggle('due', visibili.length >= 4);
+      visibili.forEach(function (k) {
+        var b = global.document.createElement('button');
+        b.className = 'ch';
+        b.textContent = fmt(d.opzioni[k]);
+        b.onclick = function (ev) {
+          if (ev && ev.stopPropagation) ev.stopPropagation();
+          rispondi(d, k);
+        };
+        el.choices.appendChild(b);
+      });
+      // il perk del drip: una volta per livello, e non ferma il tempo
+      if (perkStile() === 'cinquanta' && !cinquantaUsato && visibili.length > 2) {
+        var p = global.document.createElement('button');
+        p.className = 'ch perk';
+        p.textContent = fmt(st.cinquanta || '50:50 — togli le risposte sbagliate');
+        p.onclick = function (ev) {
+          if (ev && ev.stopPropagation) ev.stopPropagation();
+          cinquantaUsato = true;
+          // ne resta una sbagliata sola, accanto a quella giusta
+          var salva = mescola(visibili.filter(function (k) { return k !== d.ok; })).slice(0, 1);
+          opzioni(d, visibili.filter(function (k) { return k === d.ok || salva.indexOf(k) >= 0; }));
+        };
+        el.choices.appendChild(p);
+      }
+      el.choices.classList.add('on');
+    }
+
+    function rispondi(d, scelto) {
+      chiudiTimer();
+      hideUI();
+      VN.progressed = true;
+      var giusta = scelto === d.ok;
+      if (giusta) giuste++;
+      showChar({ who: 'peter', body: giusta ? 'annuisce' : 'scuote_testa', height: st.height, bottom: st.bottom });
+      setSpeaker(st.who || 'peter');
+      var testo = giusta ? (st.giusta || 'Esatto.')
+        : scelto < 0 ? (st.scaduta || 'Tempo. Era: {r}.')
+        : (st.sbagliata || 'No. Era: {r}.');
+      i++;
+      var poi = function () { pending = function () { domanda(); }; el.arrow.style.opacity = 1; };
+      type(fmt(testo).replace('{r}', fmt(d.opzioni[d.ok])), poi);
+      revealUI = poi;
+    }
+
+    /* Fine livello: passato o no, e quanto vale. Il perk dell'hawaiano assorbe
+       il PRIMO fallimento di ogni livello — il tentativo non si consuma, quindi
+       gliene restano comunque due veri. */
+    function fine() {
+      chiudiTimer();
+      hideUI();
+      var passato = giuste >= cfg.soglia;
+      var primo = s.tentativi === 0;
+      var assorbito = false;
+
+      if (passato) {
+        s.passato = true;
+        s.vinto = primo ? cfg.mult1 : cfg.mult2;
+        VN.state.mult_bank = Number((bancaMult() + s.vinto).toFixed(2));
+      } else if (perkStile() === 'seconda_chance' && !s.seconda) {
+        s.seconda = true;
+        assorbito = true;
+      } else {
+        s.tentativi = s.tentativi + 1;
+      }
+      VN.progressed = true;
+      VN.saveNow();
+
+      showChar({ who: 'peter', body: passato ? 'applauso_ironico' : 'scuote_testa', height: st.height, bottom: st.bottom });
+      setSpeaker(st.who || 'peter');
+      var testo = passato
+        ? (st.passato || 'Passato: {giuste} su {n}. Vale +{mult}.')
+        : assorbito ? (st.assorbito || '{giuste} su {n}. Questo giro non lo conto: rifallo.')
+        : livelloChiuso(liv) ? (st.bruciato || '{giuste} su {n}. Basta cosi\', questo livello e\' chiuso.')
+        : (st.ritenta || '{giuste} su {n}. Ne serviva {soglia}. Hai ancora un tentativo.');
+      var riga = fmt(testo)
+        .replace('{giuste}', giuste).replace('{n}', lista.length)
+        .replace('{soglia}', cfg.soglia).replace('{mult}', mult(s.vinto || 0));
+      var poi = function () { pending = function () { hideUI(); next(); }; el.arrow.style.opacity = 1; };
+      type(riga, poi);
+      revealUI = poi;
+    }
+
+    domanda();
+  }
+
+  function chiudiQuiz() {
+    if (qId) { clearInterval(qId); qId = null; }
+    VN.quizScadenza = null;
+    if (el.quizbar) el.quizbar.classList.remove('on');
+    if (el.multwrap) el.multwrap.classList.remove('on');
+    if (el.boxwrap) el.boxwrap.classList.remove('mult');
+  }
+
+  /* ---------------- [S8.FINALE] i moltiplicatori ----------------
+     Quello che si e' vinto al quiz si spalma sui tre macroargomenti dei
+     pronostici, che a questo punto sono chiusi da giorni. Nessun tetto per
+     categoria: si puo' anche mettere tutto su una sola. Conferma irreversibile,
+     come il lock di S6. */
+  function showMult(st) {
+    var argomenti = VN.story[st.da || 'argomenti'] || {};
+    var chiavi = Object.keys(argomenti);
+    var banca = bancaMult();
+    var passo = st.passo || 0.05;
+
+    // gia' assegnati: si guarda e basta
+    var fatti = VN.state.moltiplicatori;
+    var quote = {};
+    chiavi.forEach(function (k) { quote[k] = fatti ? Number(fatti[k] || 0) : 0; });
+
+    function speso() {
+      var t = 0;
+      chiavi.forEach(function (k) { t += quote[k]; });
+      return Number(t.toFixed(2));
+    }
+
+    function righe() {
+      el.multrighe.innerHTML = '';
+      chiavi.forEach(function (k) {
+        var r = global.document.createElement('div');
+        r.className = 'mriga';
+        r.innerHTML = '<span class="mnome"></span><button class="mmeno">−</button>' +
+                      '<span class="mval"></span><button class="mpiu">+</button>';
+        r.querySelector('.mnome').textContent = fmt(argomenti[k].nome || k);
+        r.querySelector('.mval').textContent = '×' + (1 + quote[k]).toFixed(2);
+        var meno = r.querySelector('.mmeno'), piu = r.querySelector('.mpiu');
+        if (fatti) { meno.disabled = true; piu.disabled = true; }
+        meno.onclick = function (ev) {
+          if (ev && ev.stopPropagation) ev.stopPropagation();
+          if (fatti || quote[k] < passo) return;
+          quote[k] = Number((quote[k] - passo).toFixed(2));
+          righe();
+        };
+        piu.onclick = function (ev) {
+          if (ev && ev.stopPropagation) ev.stopPropagation();
+          if (fatti || speso() + passo > banca + 1e-9) return;
+          quote[k] = Number((quote[k] + passo).toFixed(2));
+          righe();
+        };
+        el.multrighe.appendChild(r);
+      });
+      var resta = Number((banca - speso()).toFixed(2));
+      el.multresto.textContent = fatti
+        ? fmt(st.restoFatto || 'Assegnati, e non si tornano indietro.')
+        : fmt(st.resto || 'Da distribuire:') + ' ' + mult(resta);
+      // gia' assegnati: la schermata resta consultabile, e il bottone e' l'uscita
+      el.multok.disabled = !fatti && resta > 1e-9;
+      el.multok.textContent = fmt(fatti ? (st.gia || 'Chiudi') : (st.bottone || 'CONFERMA'));
+    }
+
+    el.multok.onclick = function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      if (el.multok.disabled) return;
+      if (fatti) { chiudiQuiz(); hideUI(); return st.goto ? goScene(st.goto) : next(); }
+      mostraModale(st.conferma || { text: 'Confermi? I moltiplicatori non si cambiano piu\'.' }, function () {
+        VN.state.moltiplicatori = quote;
+        VN.progressed = true;
+        VN.saveNow();
+        // secondo salvataggio-specchio lato server: come il lock, e' un atto
+        // irreversibile, e vale solo se arriva
+        invia();
+        chiudiQuiz();
+        hideUI();
+        if (st.goto) return goScene(st.goto);
+        next();
+      }, null);
+    };
+
+    // punteggio pieno al quiz: Peter applaude, ironico
+    showChar({ who: st.who || 'peter', body: banca >= (cfgQuiz().tetto_mult || 0.6) - 1e-9
+      ? 'applauso_ironico' : 'alza_occhi', height: st.height, bottom: st.bottom });
+    setSpeaker(st.who || 'peter');
+    el.txt.textContent = fmt(st.text || '');
+    el.arrow.style.opacity = 0;
+    el.boxwrap.classList.add('in', 'mult');
+    el.multwrap.classList.add('on');
+    pending = null;
+    righe();
+  }
+
+  /* ---------------- il regolamento [S1.ZONA3] ----------------
+     Un pannello che si legge e si chiude. Non e' una scena: si apre sopra la
+     lobby, e alla chiusura il giocatore e' esattamente dov'era. Non tocca
+     NIENTE della partita — ne' punti, ne' picks, ne' locked, ne' stile, ne' le
+     domande gia' consumate: e' solo da leggere.
+
+     Il fondale va sfocato, come nel camerino: cosi' il pannello si stacca dal
+     cartellone invece di confondercisi dentro. */
+  function mostraRegole(id, done) {
+    var r = VN.story[id || 'regolamento'];
+    if (!r) return done && done();
+
+    el.regtit.textContent = fmt(r.titolo || 'REGOLAMENTO');
+    el.regcorpo.innerHTML = '';
+
+    (r.sezioni || []).forEach(function (s) { el.regcorpo.appendChild(sezioneRegole(s)); });
+
+    // Le informazioni sul progetto stanno nella stessa schermata delle regole,
+    // sotto un separatore: chi cerca come si gioca trova anche privacy,
+    // indipendenza e contatti, senza una voce di menu in piu'.
+    if ((r.informazioni || []).length) {
+      var sep = global.document.createElement('div');
+      sep.className = 'reggruppo';
+      sep.appendChild(global.document.createElement('i'));
+      var et = global.document.createElement('span');
+      et.textContent = fmt(r.gruppo || 'INFORMAZIONI SUL PROGETTO');
+      sep.appendChild(et);
+      sep.appendChild(global.document.createElement('i'));
+      el.regcorpo.appendChild(sep);
+      r.informazioni.forEach(function (s) { el.regcorpo.appendChild(sezioneRegole(s)); });
+    }
+
+    if (r.chiusa) {
+      var c = global.document.createElement('div');
+      c.className = 'regsez chiusa';
+      var t = global.document.createElement('div');
+      t.className = 'regnome';
+      t.textContent = fmt(r.chiusa.titolo || '');
+      var p2 = global.document.createElement('p');
+      p2.className = 'regriga';
+      p2.textContent = fmt(r.chiusa.testo || '');
+      c.appendChild(t); c.appendChild(p2);
+      el.regcorpo.appendChild(c);
+    }
+
+    el.regok.textContent = fmt(r.bottone || 'HO CAPITO');
+    el.regok.onclick = function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      chiudiRegole();
+      if (done) done();
+    };
+    el.regcorpo.scrollTop = 0;
+    // ripiego per i browser senza overflow:clip, dove il fuoco su un bottone
+    // puo' aver spostato di lato tutta la scena
+    if (el.stage) el.stage.scrollLeft = 0;
+    if (el.bg) el.bg.classList.add('sfoca');
+    el.regole.classList.add('on');
+  }
+
+  /* Una sezione richiudibile: la riga col titolo e il "+", e sotto il testo.
+     Si apre una alla volta al tocco, e si parte tutte chiuse — l'elenco delle
+     voci deve stare in una schermata sola, altrimenti non si capisce cosa c'e'.
+
+     Lo stato aperto/chiuso vive nel DOM e basta: NON va in VN.state. Leggere il
+     regolamento non deve toccare la partita, e il test lo controlla
+     confrontando lo stato prima e dopo. */
+  function sezioneRegole(s) {
+    var box = global.document.createElement('div');
+    box.className = 'regsez';
+    if (s.id) box.dataset.sez = s.id;
+
+    var testa = global.document.createElement('button');
+    testa.className = 'regtesta';
+    testa.type = 'button';
+    testa.setAttribute('aria-expanded', 'false');
+    var nome = global.document.createElement('span');
+    nome.className = 'regnome';
+    nome.textContent = fmt(s.titolo || '');
+    var segno = global.document.createElement('span');
+    segno.className = 'regsegno';
+    segno.textContent = '+';
+    testa.appendChild(nome); testa.appendChild(segno);
+
+    // due nodi: quello esterno si apre da 0fr a 1fr, quello interno tiene il
+    // testo. Senza il secondo il contenuto verrebbe schiacciato invece che
+    // tagliato mentre si apre.
+    var sotto = global.document.createElement('div');
+    sotto.className = 'regsotto';
+    var dentro = global.document.createElement('div');
+    dentro.className = 'regdentro';
+    sotto.appendChild(dentro);
+
+    (s.righe || []).forEach(function (riga) { dentro.appendChild(rigaRegole(riga)); });
+
+    testa.onclick = function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      var apri = !box.classList.contains('aperta');
+      box.classList.toggle('aperta', apri);
+      segno.textContent = apri ? '\u2212' : '+';       // meno vero, non un trattino
+      testa.setAttribute('aria-expanded', apri ? 'true' : 'false');
+    };
+
+    box.appendChild(testa);
+    box.appendChild(sotto);
+    return box;
+  }
+
+  /* Una riga del regolamento. Di solito e' un paragrafo, ma la parte legale ha
+     bisogno anche di sottotitoli, elenchi puntati e dell'indirizzo di posta. */
+  function rigaRegole(riga) {
+    var doc = global.document;
+    if (typeof riga === 'string') {
+      var p = doc.createElement('p');
+      p.className = 'regriga';
+      p.textContent = fmt(riga);
+      return p;
+    }
+    if (riga && riga.h) {
+      var h = doc.createElement('div');
+      h.className = 'regsotto-tit';
+      h.textContent = fmt(riga.h);
+      return h;
+    }
+    if (riga && riga.lista) {
+      var ul = doc.createElement('ul');
+      ul.className = 'reglista';
+      riga.lista.forEach(function (v) {
+        var li = doc.createElement('li');
+        li.textContent = fmt(v);
+        ul.appendChild(li);
+      });
+      return ul;
+    }
+    if (riga && riga.mail) {
+      var a = doc.createElement('a');
+      a.className = 'regmail';
+      a.href = 'mailto:' + riga.mail;
+      a.textContent = riga.mail;
+      return a;
+    }
+    return doc.createTextNode('');
+  }
+
+  function chiudiRegole() {
+    if (!el.regole) return;
+    el.regole.classList.remove('on');
+    el.regcorpo.innerHTML = '';
+    if (el.bg) el.bg.classList.remove('sfoca');
+  }
+
   /* ---------------- hub a zone ----------------
      La lobby dello script: quattro zone che si scorrono di lato, senza ordine
      imposto, ognuna con il suo fondale, il suo personaggio e le sue aree
@@ -1880,9 +2706,20 @@
       var vai = function () {
         if (uscito) return;
         if (h.set) { VN.state[h.set.var] = h.set.value; termSet(h.set.var); }
+        // un pannello da leggere (il regolamento): si apre sopra la lobby e si
+        // chiude da solo, senza cambiare scena e senza toccare la partita
+        if (h.apre) return mostraRegole(h.apre, null);
         if (h.say) {                      // commento e basta: si resta nell'hub
-          setSpeaker(h.who || zones[cur].who);
-          typeKeep(fmt(h.say));
+          var righe = [{ who: h.who || zones[cur].who, text: h.say }].concat(h.after || []);
+          var k = 0;
+          var parla = function () {
+            var r = righe[k++];
+            setSpeaker(r.who || h.who || zones[cur].who);
+            typeKeep(fmt(r.text || ''));
+            pending = k < righe.length ? parla : null;
+            el.arrow.style.opacity = k < righe.length ? 1 : 0;
+          };
+          parla();
           return;
         }
         uscito = true;
@@ -1904,6 +2741,7 @@
     el.hub.ontouchstart = function (e) { x0 = e.touches && e.touches[0] ? e.touches[0].clientX : null; };
     el.hub.ontouchend = function (e) {
       if (x0 == null) return;
+      if (el.regole && el.regole.classList.contains('on')) { x0 = null; return; }
       var t = e.changedTouches && e.changedTouches[0];
       var dx = t ? t.clientX - x0 : 0;
       x0 = null;
@@ -1933,19 +2771,24 @@
   }
 
   /* ---------------- UI ---------------- */
-  // Chi parla. Un personaggio dichiarato "voce" (Martha, dalla regia) non ha uno
-  // sprite in scena: al suo posto lampeggia l'icona dell'auricolare accanto al
-  // nome, e il box cambia colore. Serve a distinguere una voce in cuffia da
-  // qualcuno che ti sta davvero davanti.
+  // Chi parla. Chi parla in cuffia non ha uno sprite in scena: al suo posto
+  // lampeggia l'icona dell'auricolare accanto al nome, e il box cambia colore.
+  // Serve a distinguere una voce nell'auricolare da qualcuno che ti sta davvero
+  // davanti.
+  //
+  // Due modi per chiederlo. Un personaggio che esiste SOLO come voce lo dichiara
+  // nel cast (`voce: true`). Susan invece e' un personaggio vero — in S2, S3 e
+  // S7 e' li' in scena — ma dal keynote in poi parla dalla regia: la' la cuffia
+  // la chiede il singolo step con "incuffia": true.
   var vId = null;
-  function setSpeaker(who) {
+  function setSpeaker(who, incuffia) {
     var c = cast(who);
     var label = c ? (c.name || who) : who;
     el.nametxt.textContent = label || '';
     el.name.classList.toggle('hidden', !label);
 
     if (vId) { clearInterval(vId); vId = null; }
-    var frames = (c && c.voce && c.icona) || null;
+    var frames = (c && (c.voce || incuffia) && c.icona) || null;
     el.name.classList.toggle('incuffia', !!frames);
     el.boxwrap.classList.toggle('incuffia', !!frames);
     if (!frames) return;
@@ -1956,20 +2799,36 @@
     if (frames.length > 1 && VN.speed) vId = setInterval(batti, 520);
   }
 
+  // Caratteri che entrano in mezza riga: il box tiene ~36 caratteri col font
+  // vero, e un bottone a meta' larghezza ne tiene circa la meta' meno i suoi
+  // margini. Tenuto stretto: meglio una colonna sola che un'etichetta troncata.
+  var MEZZA_RIGA = 16;
+
   function showChoices(st) {
     el.choices.innerHTML = '';
-    // Da quattro voci in su si passa a due colonne, se le etichette sono corte:
-    // incolonnate tutte, l'ultima finiva fuori dallo schermo. Le frasi lunghe
-    // (le risposte a Susan) restano una per riga, dove hanno spazio per andare
-    // a capo.
-    var lunga = (st.options || []).some(function (o) { return fmt(o.label).length > 18; });
-    el.choices.classList.toggle('due', !!st.colonne || (!st.colonne && !lunga && (st.options || []).length >= 4));
+    /* Due colonne ogni volta che le etichette ci stanno, anche con due sole
+       voci: una colonna sola sprecava meta' larghezza e allungava il blocco
+       verso l'alto, coprendo il personaggio. "Maschile / Femminile" occupavano
+       due righe per due parole.
+       Il limite e' la larghezza, non il numero di voci: mezza riga tiene ~16
+       caratteri col font vero (36 per riga intera, meno il divisorio e i
+       margini del bottone). Le frasi lunghe — le risposte a Susan, i pronostici
+       — restano una per riga, dove hanno spazio per andare a capo invece di
+       essere spezzate a meta' in una colonnina. */
+    var opzioni = st.options || [];
+    var lunga = opzioni.some(function (o) { return fmt(o.label).length > MEZZA_RIGA; });
+    var due = st.colonne != null ? !!st.colonne : (!lunga && opzioni.length >= 2);
+    el.choices.classList.toggle('due', due);
     (st.options || []).forEach(function (o) {
       var b = global.document.createElement('button');
-      b.className = 'ch';
+      // "spento": la voce si vede ma non si tocca. Serve a dire perche' una
+      // strada e' chiusa, invece di non mostrarla e lasciare il dubbio.
+      b.className = 'ch' + (o.spento ? ' spento' : '');
+      b.disabled = !!o.spento;
       b.textContent = fmt(o.label);
       b.onclick = function (ev) {
         if (ev && ev.stopPropagation) ev.stopPropagation();
+        if (o.spento) return;
         hideUI();
         if (o._do) return o._do();
         VN.progressed = true;
@@ -1990,6 +2849,10 @@
 
   function showInput(st) {
     var max = st.max || 24;
+    // Il limite lo dichiara la scena (story.json), non l'HTML: due limiti
+    // diversi sullo stesso campo sono due verita' che prima o poi divergono.
+    // Passarlo anche al campo fa smettere di accettare invece di tagliare zitto.
+    el.ti.maxLength = max;
     var re = st.pattern ? new RegExp(st.pattern, 'g') : /[^A-Za-zÀ-ÿ0-9' ]/g;
     el.ti.value = '';
     el.tok.disabled = true;
@@ -2100,11 +2963,28 @@
   // l'altezza dall'immagine del Mac, quindi finche' il PNG non e' caricato lo
   // schermo e' alto quanto il suo solo padding. Misurare li' rimpicciolirebbe il
   // testo al minimo per sempre.
-  // La riga piu' larga sta dentro? scrollWidth del contenitore non basta: le
-  // righe sono blocchi larghi quanto lui, e' il loro contenuto che deborda.
+  /* La riga piu' larga sta dentro?
+     Non si puo' chiedere alla riga il suo scrollWidth: le righe hanno
+     overflow:hidden e in quel caso il browser risponde con la larghezza gia'
+     tagliata — cioe' dice sempre che ci sta. E' per questo che "MASSIMILIANO"
+     usciva dallo schermo del Mac senza che la misura se ne accorgesse.
+     Un Range sul contenuto della riga da' invece l'ingombro reale del testo
+     disegnato, tagliato o no. */
+  function larghezzaTesto(riga) {
+    try {
+      var r = global.document.createRange();
+      r.selectNodeContents(riga);
+      return r.getBoundingClientRect().width;
+    } catch (e) {
+      return riga.scrollWidth;
+    }
+  }
+
   function sfora(s) {
-    var righe = s.children, w = s.clientWidth;
-    for (var i = 0; i < righe.length; i++) if (righe[i].scrollWidth > w + 1) return true;
+    var righe = s.children;
+    for (var i = 0; i < righe.length; i++) {
+      if (larghezzaTesto(righe[i]) > righe[i].clientWidth + 1) return true;
+    }
     return false;
   }
 
@@ -2131,6 +3011,12 @@
   var termOsservatore = null;
   function osservaTerminale() {
     if (termOsservatore || !el || !el.screen) return;
+    // Il font vero e' largo quasi il doppio del monospace di ripiego: se la
+    // misura viene fatta prima che sia pronto, il testo "ci sta" e poi non ci
+    // sta piu'. Rimisurare a font caricato e' l'unico modo di non sbagliare.
+    if (global.document.fonts && global.document.fonts.ready) {
+      global.document.fonts.ready.then(function () { adattaTerminale(); adattaBadge(); });
+    }
     if (typeof global.ResizeObserver === 'function') {
       termOsservatore = new global.ResizeObserver(function () { adattaTerminale(); });
       termOsservatore.observe(el.screen);
@@ -2174,12 +3060,16 @@
     var src = st.img ? withBase(st.img) : (st.prop ? assetUrl('props', st.prop) : '');
     if (src) {
       el.badgeImg.onerror = function () { el.badgewrap.classList.add('senzaimg'); };
+      // il riquadro del nome e' in percentuale sull'immagine: finche' non e'
+      // caricata non ha una larghezza vera da misurare
+      el.badgeImg.onload = function () { adattaBadge(); };
       el.badgeImg.src = src;
     } else {
       el.badgewrap.classList.add('senzaimg');
     }
 
     el.badgewrap.classList.add('in');
+    adattaBadge();
     if (st.coriandoli) coriandoli(st.coriandoli === true ? 34 : st.coriandoli);
   }
 
@@ -2206,6 +3096,21 @@
     setTimeout(function () { if (el.coriandoli) el.coriandoli.innerHTML = ''; }, 2600);
   }
 
+  /* Il nome stampato sulla tessera: "MASSIMILIANO" col font vero e' quasi il
+     doppio piu' largo che col monospace di ripiego, e usciva dai bordi del
+     cartoncino. Qui si rimpicciolisce finche' non ci sta, come sul terminale
+     del Mac. */
+  function adattaBadge() {
+    var n = el && el.badgeName;
+    if (!n || !n.clientWidth) return;
+    n.style.fontSize = '';
+    var fs = parseFloat(global.getComputedStyle(n).fontSize) || 10;
+    for (var i = 0; i < 20 && n.scrollWidth > n.clientWidth + 1 && fs > 4; i++) {
+      fs = Math.max(4, fs * 0.92);
+      n.style.fontSize = fs.toFixed(2) + 'px';
+    }
+  }
+
   function chiudiBadge() {
     if (el.badgewrap) el.badgewrap.classList.remove('in');
     next();
@@ -2230,6 +3135,15 @@
      avanti solo quando il buio e' pieno, quindi fondale e personaggio nuovi
      vengono montati mentre non si vede niente. In modalita' test (speed 0)
      e' istantanea. */
+  /* Un cartello a schermo pieno (sigla, caricamento, titolo) arriva spesso dopo
+     una dissolvenza al nero — i titoli di coda vengono proprio da li'. Il velo
+     #nero pero' sta SOPRA il cartello, quindi lo coprirebbe: il testo c'e' nel
+     DOM ma lo schermo resta nero e sembra che non succeda niente. Toglierlo non
+     si vede, perche' il cartello e' nero a sua volta. */
+  function scopriCartello() {
+    if (el.nero) el.nero.classList.remove('on', 'sfuma');
+  }
+
   function velaNero(giu, ms, done) {
     if (!el.nero) return done();
     var d = ms == null ? 1000 : ms;
@@ -2441,6 +3355,20 @@
         Object.keys(st.picks[k].core).forEach(function (i) { somma += st.picks[k].core[i].p || 0; });
       });
       st.punti = somma;
+
+      // schedina chiusa = il quiz e' aperto: si finge anche un livello gia'
+      // passato, altrimenti saltare a [S8.FINALE] mostra una banca vuota, la
+      // conferma spenta e nessuna via d'uscita
+      if (st.locked) {
+        st.quiz_visto = true;
+        var primo = Object.keys((VN.quiz && VN.quiz.livelli) || {})[0];
+        if (primo) {
+          var cfg = VN.quiz.livelli[primo];
+          st.quiz = {};
+          st.quiz[primo] = { passato: true, tentativi: 0, pool: 0, seconda: false, vinto: cfg.mult1 };
+          st.mult_bank = cfg.mult1;
+        }
+      }
     }
     return st;
   }
@@ -2542,6 +3470,9 @@
     // la banca dei pronostici (game/domande.json): sta fuori da story.json
     // perche' e' contenuto grande e che cambia per conto suo
     if (opts.banca) VN.banca = opts.banca;
+    // le 44 domande del quiz di Peter (game/quiz.json): stesso motivo della
+    // banca, e' contenuto grande e cambia per conto suo
+    if (opts.quiz) VN.quiz = opts.quiz;
     // indirizzo e chiave del backend (game/backend.json). Senza, la partita si
     // chiude lo stesso e resta in coda per il prossimo avvio.
     if (opts.backend) VN.backend = opts.backend;
@@ -2569,6 +3500,9 @@
       ospitewrap: $('ospitewrap'), ospite: $('ospite'), griglia: $('griglia'),
       evpropwrap: $('evpropwrap'), evprop: $('evprop'),
       recap: $('recap'), blocca: $('blocca'),
+      quizbar: $('quizbar'), qinfo: $('qinfo'), qtimer: $('qtimer'), qbar: $('qbar'), qsec: $('qsec'),
+      multwrap: $('multwrap'), multrighe: $('multrighe'), multresto: $('multresto'), multok: $('multok'),
+      regole: $('regole'), regtit: $('regtit'), regcorpo: $('regcorpo'), regok: $('regok'),
       countdown: $('countdown'), cdnome: $('cdnome'), cdlabel: $('cdlabel'),
       cdtempo: $('cdtempo'), cdpunti: $('cdpunti'), cdbtn: $('cdbtn'),
       cardwrap: $('cardwrap'), cardImg: $('cardImg'), cardsalva: $('cardsalva'),
@@ -2588,6 +3522,8 @@
     chiudiGriglia();
     chiudiRecap();
     chiudiCountdown();
+    chiudiQuiz();
+    chiudiRegole();
     chiudiTransizioni();
     if (el.modal) el.modal.classList.remove('on');
     bgCorrente = null;
@@ -2600,6 +3536,7 @@
            e.target.closest('#carta') || e.target.closest('#carosello') ||
            e.target.closest('#griglia') || e.target.closest('#recapwrap') ||
            e.target.closest('#countdown') || e.target.closest('#cardwrap') ||
+           e.target.closest('#multwrap') || e.target.closest('#regole') ||
            e.target.closest('#propwrap'))) return;
       VN.step();
     };
@@ -2614,6 +3551,8 @@
           (el.griglia && el.griglia.classList.contains('on')) ||
           (el.recap && el.recap.classList.contains('on')) ||
           (el.countdown && el.countdown.classList.contains('on')) ||
+          (el.multwrap && el.multwrap.classList.contains('on')) ||
+          (el.regole && el.regole.classList.contains('on')) ||
           (el.modal && el.modal.classList.contains('on'))) return;
       VN.step();
     };

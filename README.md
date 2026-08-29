@@ -136,12 +136,16 @@ Tutto lo script vive in `game/story.json`. Ogni scena e' una lista di `steps`:
 | `griglia` | `{"t":"griglia","var":"categoria","da":"argomenti","goto":"argomento"}` | i macroargomenti del keynote: pannelli con stato. Vedi sotto |
 | `domande` | `{"t":"domande","set":"core"}` · `{"t":"domande","set":"extra"}` | il giro dei pronostici della categoria corrente |
 | `bivio` | `{"t":"bivio","text":"…","approfondisci":"…","passa":"…"}` | pesca 3 facoltative dal pool, oppure passa oltre |
-| `intermezzo` | `{"t":"intermezzo","who":"martha"}` | la prossima scommessa di regia, in ordine |
+| `intermezzo` | `{"t":"intermezzo","who":"susan","incuffia":true}` | la prossima scommessa di regia, in ordine |
 | `recap` | `{"t":"recap","da":"argomenti","lock":{…},"goto":"finale"}` | il teleprompter di S6: tutte le risposte, modificabili, e il blocco |
 | `countdown` | `{"t":"countdown","azioni":[{"label":"…","goto":"lobby"},{"label":"…","card":true}]}` | l'ultima schermata: quanto manca al keynote vero, e la card da salvare |
+| `quizhub` | `{"t":"quizhub","goto":"quiz_livello","gotoMult":"moltiplicatori","esci":{…}}` | i tre livelli del quiz di Peter, con lo stato di ognuno. Vedi sotto |
+| `quizlivello` | `{"t":"quizlivello","who":"peter","height":"44%"}` | un livello: N domande a tempo, perk dello stile, esito |
+| `quizmult` | `{"t":"quizmult","da":"argomenti","conferma":{…}}` | distribuzione dei moltiplicatori vinti, irreversibile |
 | `logo` | `{"t":"logo","img":"ui/logo_studio.png"}` | sigla che si accende come un neon |
 | `boot` | `{"t":"boot","ms":2200,"cursore":1600}` | barra LOADING, poi cursore sul nero |
-| `title` | `{"t":"title","lines":[…]}` | cartello nero a righe |
+| `title` | `{"t":"title","lines":[…]}` | cartello nero a righe che si accumulano |
+| `title` a blocchi | `{"t":"title","blocchi":[{"righe":[…],"tieni":1500}]}` | i titoli di coda: ogni blocco compare, resta, sfuma, e arriva il prossimo. Va da solo; il tocco **accelera**, non salta |
 | `prop` | `{"t":"prop","id":"mac_terminal","show":true}` | mostra/nasconde l'oggetto di scena |
 | `bg` | `{"t":"bg","id":"sjt_stage","fx":"zoom"}` | cambia sfondo / effetto |
 | `fx` | `{"t":"fx","name":"flash"}` | `flash`, `blur`, `unblur` |
@@ -150,6 +154,12 @@ Tutto lo script vive in `game/story.json`. Ogni scena e' una lista di `steps`:
 | `wait` | `{"t":"wait","ms":600}` | pausa |
 | `set` | `{"t":"set","var":"__ok","value":"OK"}` | scrive una variabile |
 | `goto` / `end` | `{"t":"goto","scene":"benvenuto"}` | salta di scena / fine |
+
+Qualsiasi step accetta **`se`**: con la condizione falsa lo step viene saltato,
+senza fermare la scena. La forma e' quella delle zone dell'hub
+(`{"var":"quiz_visto","is":false}`, oppure `non` / `almeno`). Serve alle battute
+che si dicono una volta sola — Peter presenta il quiz al primo ingresso, non a
+ogni ritorno dalla griglia dei livelli.
 
 Interpolazione nei testi:
 
@@ -184,8 +194,9 @@ posto da girare: quattro zone che si scorrono di lato, senza ordine imposto.
   ricompare gia' intera.
 * **hotspots**: rettangoli toccabili posizionati in percentuale sulla parte di
   schermo sopra il box dialogo. Un hotspot con `say` commenta e basta (si resta
-  nell'hub); con `goto` porta a un'altra scena; con `conferma` chiede prima
-  conferma in una modale. `react` fa reagire il personaggio.
+  nell'hub); con `goto` porta a un'altra scena; con `apre` mostra un pannello da
+  leggere sopra la lobby (vedi sotto); con `conferma` chiede prima conferma in
+  una modale. `react` fa reagire il personaggio.
 * **`richiede": "swipe"`**: l'hotspot resta spento finche' il giocatore non ha
   cambiato zona almeno una volta, e al tocco dice `bloccato`. Serve a non far
   entrare in sala chi non si e' accorto che la lobby era visitabile.
@@ -198,6 +209,67 @@ posto da girare: quattro zone che si scorrono di lato, senza ordine imposto.
 
 Si scorre con le frecce, con il dito (oltre 40px di trascinamento) o con le
 frecce della tastiera.
+
+### Il regolamento: un pannello che si legge e si chiude
+
+La zona 3 della lobby e' il cartellone del regolamento. L'hotspot non porta a
+una scena: apre un pannello **sopra** la lobby, che alla chiusura lascia tutto
+com'era.
+
+```json
+{ "label": "IL REGOLAMENTO", "x": "30%", "y": "16%", "w": "60%", "h": "42%",
+  "apre": "regolamento" }
+```
+
+`apre` nomina un blocco di `story.json` — oggi solo `regolamento`. Dentro ci
+sono due gruppi: le regole del gioco e le informazioni sul progetto (privacy,
+indipendenza da Apple, contatti). Stanno nella stessa schermata e non in una
+voce di menu a parte, cosi' chi cerca come si gioca trova anche il resto.
+
+```json
+"regolamento": {
+  "titolo": "REGOLAMENTO",
+  "sezioni":      [ { "id": "come_si_gioca", "titolo": "COME SI GIOCA", "righe": [...] } ],
+  "gruppo":       "INFORMAZIONI SUL PROGETTO",
+  "informazioni": [ { "id": "privacy", "titolo": "PRIVACY E DATI", "righe": [...] } ],
+  "chiusa": { "titolo": "REGOLA NON SCRITTA", "testo": "Se sei {g:sicuro|sicura}..." },
+  "bottone": "HO CAPITO"
+}
+```
+
+Ogni voce e' una **riga richiudibile**: titolo e `+`, e sotto il testo. Si parte
+tutte chiuse, cosi' l'elenco sta in una schermata sola. Lo stato aperto/chiuso
+vive nel DOM e basta — non entra in `VN.state`, perche' leggere il regolamento
+non deve toccare la partita.
+
+Una `riga` e' una stringa (paragrafo) oppure:
+
+| forma | cosa diventa |
+|---|---|
+| `{"h": "Quali dati raccogliamo"}` | sottotitolo in oro |
+| `{"lista": ["...", "..."]}` | elenco puntato |
+| `{"mail": "hello@fantaliberty.com"}` | indirizzo, come link `mailto:` |
+
+**La parte legale deve dire il vero.** Quello che c'e' scritto in PRIVACY E DATI
+e' anche quello che il gioco fa: i campi elencati sono esattamente quelli del
+payload (vedi `docs/backend.sql`), Supabase e la memoria locale del browser sono
+i due posti dove finiscono i dati, e i 30 giorni sono una cosa da fare a mano —
+la procedura sta in fondo a `backend.sql`. Se cambia il payload, va cambiato
+anche il testo. `npm test` controlla che le parole chiave ci siano ancora.
+
+Il testo sta nei dati e non nel motore perche' e' contenuto: cambiarlo non deve
+voler dire toccare il codice. Passa da `fmt()` come tutto il resto, quindi
+`{NOME}` e `{g:...}` funzionano anche qui.
+
+**La regola da non rompere: leggere il regolamento non tocca la partita.** Ne'
+punti, ne' `picks`, ne' `locked`, ne' lo stile, ne' le domande gia' consumate.
+`npm test` fotografa `VN.state` prima di aprirlo e lo confronta dopo averlo
+chiuso: se una riga cambia, il test fallisce.
+
+Il fondale va fuori fuoco mentre e' aperto (`#bg.sfoca`, la stessa classe del
+camerino): senza, il pannello si confondeva con il cartellone disegnato dietro.
+Titolo e bottone sono fissi e scorre solo il corpo — su uno schermo piccolo
+"HO CAPITO" deve restare raggiungibile senza scorrere fino in fondo.
 
 ### Lo step `carosello`: scegliere fra piu' schede
 
@@ -231,19 +303,32 @@ L'inquadratura ha due posti fissi: **il giocatore a sinistra** (step `io`, sprit
 dello stile scelto in S3) e **gli NPC a destra** (step `show`). Da S4 in poi i
 due condividono la scena.
 
-Un personaggio del cast puo' anche essere dichiarato **voce**, senza pose:
+### Parlare in cuffia
+
+Chi parla dalla regia non ha uno sprite in scena: al suo posto compare l'icona
+dell'auricolare accanto al nome — alternando i due frame, cosi' "trasmette" — e
+il box del dialogo cambia colore. Serve a distinguere una voce nell'orecchio da
+qualcuno che ti sta davvero davanti.
+
+Si chiede in due modi. Un personaggio che esiste **solo** come voce lo dichiara
+nel cast con `"voce": true` (e allora non deve avere pose: `npm test` lo
+controlla, e controlla che le sue icone esistano).
+
+**Susan invece e' un personaggio vero**: in S2, S3 e S7 e' li' in scena, dal
+keynote in poi parla dalla regia. Per lei la cuffia la chiede il singolo step:
 
 ```json
-"martha": { "name": "Martha", "voce": true,
-            "icona": ["chars/chr_martha_indicatore_regia_1.webp",
-                      "chars/chr_martha_indicatore_regia_2.webp"] }
+{ "t": "say", "who": "susan", "incuffia": true, "text": "Ok. Tra trenta secondi andiamo." }
 ```
 
-Quando parla, invece di uno sprite in scena compare l'icona accanto al nome —
-alternando i frame, cosi' "trasmette" — e il box del dialogo cambia colore.
-Serve a distinguere una voce in cuffia (Martha, dalla regia) da qualcuno che ti
-sta davvero davanti. `npm test` controlla che una voce non abbia pose e che le
-sue icone esistano.
+Funziona su `say`, `choice`, `griglia`, `domande`, `bivio`, `intermezzo` e
+`recap`. Il cast di Susan dichiara solo l'`icona`:
+
+```json
+"susan": { "name": "Susan", "bodies": { "...": "..." },
+           "icona": ["chars/chr_indicatore_regia_1.webp",
+                     "chars/chr_indicatore_regia_2.webp"] }
+```
 
 ### S5, il keynote: griglia, domande, bivio, intermezzi
 
@@ -276,8 +361,44 @@ Tre regole dello script che il codice deve rispettare:
 * **gli eventi non si ripetono**: si pescano da un sacchetto senza rimessa, con
   dentro i cinque micro-eventi piu' quello personale dello stile scelto.
 
-`story.regia` regola il contorno: `probabilitaEvento` e le righe generiche con
-cui Martha apre una domanda (`introDomanda`, scelte a caso).
+### Le battute della regia
+
+`story.regia` e' il blocco della regia: chi e' (`chi`), ogni quanto succede
+qualcosa (`probabilitaEvento`) e **i pool delle sue battute**.
+
+Susan non parla dopo ogni singola scelta — sarebbe rumore, e la farebbe sembrare
+una commentatrice invece che una che sta lavorando. Le battute stanno in pool per
+situazione, e ognuno esce nel suo punto:
+
+| pool | quando esce |
+|---|---|
+| `apertura` | una volta sola, a inizio S5 |
+| `introDomanda` | riga corta prima di ogni domanda |
+| `scarica` | quando parte un micro-evento senza una battuta sua |
+| `improvvisazione` / `caos` / `critica` | conseguenza di un micro-evento, per esito |
+
+Uno step `say` puo' pescare da un pool invece di avere il testo scritto:
+
+```json
+{ "t": "say", "who": "susan", "incuffia": true, "pool": "apertura" }
+```
+
+### I micro-eventi: tre risposte, e il punteggio non si vede
+
+Un micro-evento non e' una scenetta passiva: ha **tre risposte**, e vale
+`+3`, `0` o `-3`. Il valore `editoriale` scritto in `game/domande.json` dice
+soltanto che tono ha ciascuna risposta — **non e' il mapping del gioco**. A ogni
+attivazione il motore mescola i tre esiti e li riassegna alle tre opzioni, cosi'
+chi rigioca non puo' imparare "la B e' quella buona".
+
+Il giro e': narrazione dell'evento → un tocco → Susan dalla regia, con le tre
+risposte sotto → la conseguenza, sempre detta da Susan.
+
+**Il giocatore non deve mai vedere il valore.** Niente numeri, badge, popup,
+"bonus" o "malus": l'unico ritorno e' come Susan racconta com'e' andata. `npm
+test` controlla che ogni evento abbia esattamente un `+3`, uno `0` e un `-3`,
+che le etichette e i pool non contengano cifre, e che il mapping venga davvero
+mescolato a runtime.
 
 ### S6: il recap e l'invio
 
@@ -325,6 +446,62 @@ La card si compone su una `canvas` — figura dello stile, nome, store, punteggi
 — e si mostra come immagine. Su iPhone il salvataggio vero e' **tenere premuto**
 sull'immagine: il tocco su un link di download li' apre solo una scheda. Il link
 resta per chi gioca da computer.
+
+### S8: il quiz di Peter
+
+Tre file di dati, non due: oltre a `story.json` e `domande.json` il motore
+riceve **`game/quiz.json`** (`VN.quiz`). Chi aggiunge un boot in un test deve
+passare anche `quiz`, altrimenti gli step di S8 non fanno niente e passano in
+silenzio — come gia' succede con `banca`.
+
+```
+quiz            [S8.01] Peter + [S8.HUB] la griglia dei tre livelli
+  -> quiz_livello   [S8.LOOP] un livello, poi "next" riporta alla griglia
+  -> moltiplicatori [S8.FINALE] la distribuzione, poi il countdown
+```
+
+`quiz.json` porta i tre livelli (`domande`, `soglia`, `mult1`, `mult2`), il
+timer (`timer_s`, `timer_s_ingegnere`), il tetto dei moltiplicatori
+(`tetto_mult`) e **due pool per livello**: chi fallisce trova domande diverse al
+secondo tentativo, cosi' sbagliare apposta per memorizzarle non serve.
+
+Lo stato del quiz vive in `VN.state.quiz[livello]`
+(`passato`, `tentativi`, `pool`, `seconda`, `vinto`) e quindi entra nel
+salvataggio: il quiz si gioca nei giorni fra il lock e il keynote, non in una
+sessione sola. Quello che si vince si accumula in `VN.state.mult_bank`, e in
+`[S8.FINALE]` diventa `VN.state.moltiplicatori`.
+
+I quattro perk di `story.stili` cadono tutti qui:
+
+| perk | stile | effetto |
+|---|---|---|
+| `tutto_sbloccato` | showman | i tre livelli aperti da subito, ordine libero |
+| `tempo` | ingegnere | `timer_s_ingegnere` al posto di `timer_s` |
+| `cinquanta` | drip | un 50:50 per livello, sotto le risposte |
+| `seconda_chance` | hawaiano | il primo fallimento di ogni livello non consuma il tentativo |
+
+**Il quiz e' l'eccezione dichiarata alla regola d'oro di S5.** Li' la reazione
+della platea non correla mai con la risposta, perche' i pronostici sono opinioni
+sul futuro. Qui le risposte sono verificabili, quindi Peter annuisce o scuote la
+testa — ed e' giusto cosi'.
+
+Un livello **non si salva a meta'**: il salvataggio scatta sulla griglia e sulla
+schermata dei moltiplicatori, non dentro il giro delle domande. Chiudere l'app a
+meta' livello lo annulla senza consumare il tentativo — che e' il
+comportamento giusto per una prova a tempo.
+
+Peter va mostrato a `height 44%` **e `bottom 34%`**: e' un primo piano di un uomo
+seduto a un tavolino, e alla misura standard finisce quasi tutto dietro al box
+del dialogo, che e' alto cinque righe fisse.
+
+Il timer parte **quando la domanda compare**, non quando finisce di scriversi:
+per questo il testo di una domanda non passa dal typewriter. Sotto i tre secondi
+la barra diventa rossa e Peter guarda l'orologio.
+
+`[S8.FINALE]` si apre solo nelle **24 ore prima di `meta.keynote`**: prima la
+voce si vede nella griglia — cosi' si sa che esiste — ma non si tocca. La
+conferma e' irreversibile come il lock di S6, e come quello fa partire un invio
+al server.
 
 ### Le pose che dipendono da una variabile
 
@@ -385,25 +562,64 @@ motore disegna un ripiego al posto loro.
 
 ## Formato e layout
 
-### Il box del dialogo ha un'altezza fissa
+### Il font sta nel repo, non su Google Fonts
 
-Tre righe, sempre, in tutto il gioco. Prima il box si allargava mentre la frase
-si scriveva — una riga, poi due, a volte tre — e il personaggio dietro sembrava
-spostarsi a ogni battuta. Adesso e' un pezzo fisso dell'interfaccia: cambia il
-testo dentro, non la cornice.
+`assets/font/press-start-2p.woff2` (SIL OFL, licenza in `assets/font/OFL.txt`).
 
-Tre e' il massimo che serve davvero: misurate tutte le battute del gioco
-(dialoghi, opzioni, domande di pronostico e quiz) alla larghezza del box, ne
-vengono 223 da una riga, 57 da due e le altre da tre. Le tre righe sono quasi
-tutte i commenti dello stile "Ingegnere", che e' prolisso per come e' scritto:
-accorciarle vorrebbe dire snaturarlo.
+Non e' una preferenza: la richiesta a Google Fonts puo' fallire, e quando
+fallisce il browser ripiega su un monospace di sistema **largo circa la meta'**
+(0.6em per carattere contro 1em). La stessa frase passa da cinque righe a tre e
+tutte le misure dell'interfaccia diventano bugie. E' successo davvero: il box
+del dialogo era stato tarato su un ambiente dove Google Fonts non rispondeva, e
+sui telefoni veri il testo spariva sotto il bordo. Con il file nel repo il
+ripiego non esiste piu' — e il gioco funziona anche offline e nella build in
+file unico.
 
-**Una battuta piu' lunga di tre righe non manda a capo il box: sparisce sotto
+**Chi misura qualcosa che dipende dal testo deve aspettare `document.fonts.ready`.**
+Il terminale del Mac e il nome sul badge lo fanno: rimisurano quando il font e'
+pronto, perche' la prima misura arriva quasi sempre prima.
+
+### Il box del dialogo: due righe di base, cresce solo quando serve
+
+Cinque righe fisse coprivano il personaggio anche quando la battuta ne occupava
+una: 371 battute su 595 stanno in una o due righe, quindi per il 62% del gioco
+c'erano tre righe di scatolone vuoto davanti a Lucas. Adesso il box parte da due
+righe e cresce fino a cinque solo se la battuta le richiede.
+
+**Il salto mentre si scrive non torna** — era il difetto di partenza. `type()`
+misura la frase intera *prima* di cominciare e fissa subito l'altezza definitiva
+(`riservaAltezza()`): il box non si muove mai durante una battuta, cambia solo
+fra una battuta e l'altra, e per due volte su tre nemmeno quello.
+
+**Niente scorrimento del testo.** Era stato proposto di bloccare il box a due
+righe e far scorrere: con 425 battute su 595 che occupano tre righe o piu',
+vorrebbe dire far scorrere il 71% dei dialoghi, e una battuta che si legge solo
+scorrendo e' una battuta che qualcuno non legge.
+
+### Le scelte vanno su due colonne quando ci stanno
+
+Anche con due sole voci. Una colonna sola sprecava meta' larghezza e allungava
+il blocco verso l'alto, coprendo il personaggio: "Maschile / Femminile"
+occupavano due righe per due parole. Il limite e' la larghezza, non il numero di
+voci — mezza riga tiene ~16 caratteri col font vero. Le frasi lunghe (le risposte
+a Susan, i pronostici) restano una per riga, dove hanno spazio per andare a capo
+invece di essere spezzate in una colonnina.
+
+### Il tetto delle cinque righe
+
+Cinque e' il massimo che il box arriva a mostrare, ed e' il massimo che serve davvero: misurate nel browser, **col font vero**,
+tutte le 595 battute del gioco (dialoghi, opzioni, domande di pronostico e
+quiz), ne vengono 170 da una riga, 201 da due, 120 da tre, 82 da quattro e 22 da
+cinque. Cinque righe occupano il 18% dello schermo sull'iPhone piu' piccolo,
+quindi non serve rimpicciolire il testo per farcele stare.
+
+**Una battuta piu' lunga di cinque righe non manda a capo il box: sparisce sotto
 `overflow:hidden`.** E' un difetto che non si vede finche' qualcuno non gioca
 proprio quella scena, quindi `npm test` lo rifiuta e dice quale battuta
-accorciare. Il conto e' a caratteri (56 per riga) e non a pixel: il corpo del
-testo e' in `vw` e il box e' una percentuale della larghezza, quindi i caratteri
-per riga restano circa gli stessi su qualunque telefono.
+accorciare. Il conto e' a caratteri (34 per riga, misurati 36 e tenuti stretti
+per margine) e non a pixel: il corpo del testo e' in `vw` e il box e' una
+percentuale della larghezza, quindi i caratteri per riga restano gli stessi su
+qualunque telefono — verificato identici su iPhone SE, 13 e 14 Pro Max.
 
 Il gioco e' pensato per **iPhone in verticale** (390x844 pt): il fondale occupa
 tutto lo schermo, il terzo inferiore e' area dialogo. Su schermi larghi (Safari sul
@@ -442,10 +658,14 @@ sulle inquadrature aperte.
 
 ## Stato dello script
 
-Atto 1 (arrivo → registrazione → benvenuto) e' completo e corrisponde al database
-"Full Script / Onboarding Scene" su Notion. Atti 2-4 sono **segnaposto**: struttura,
-personaggi e sezioni sono quelli decisi nella pagina "Cast Personaggi", i testi sono
-marcati `[BOZZA]` e vanno riscritti.
+Tutte le scene dello script master v4.0, da S0 a S8, sono scritte e giocabili:
+registrazione, lobby a zone, l'aggancio, il camerino con i quattro stili, il
+dietro le quinte, il keynote con i tre macroargomenti, il teleprompter con il
+blocco della schedina, il finale con il countdown e la card, e il quiz di Peter
+con i moltiplicatori.
+
+Restano da consegnare sei layer della platea (`platea/pla_*`, elencati in
+`meta.assetiInArrivo`): il gioco gira lo stesso, senza il layer di reazione.
 
 ## Aggiungere asset
 
@@ -465,7 +685,7 @@ un colpo solo e ogni file finisce nella sua sottocartella:
 | prefisso | va in | cos'e' |
 |---|---|---|
 | `bg_` | `assets/bg/` | fondali |
-| `chr_` | `assets/chars/` | NPC (Lucas, Francesca, Peter, Susan, Martha) |
+| `chr_` | `assets/chars/` | NPC (Lucas, Francesca, Peter, Susan) e l'icona della regia |
 | `stile_` | `assets/stili/` | i 4 stili del personaggio giocante |
 | `prop_` (o `obj_`) | `assets/props/` | oggetti di scena |
 | `pla_` | `assets/platea/` | layer di reazione della platea |

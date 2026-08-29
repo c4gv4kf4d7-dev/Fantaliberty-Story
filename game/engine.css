@@ -1,3 +1,17 @@
+/* Il font sta nel repo, non su Google Fonts.
+   La richiesta esterna puo' fallire — e quando fallisce il browser ripiega su un
+   monospace di sistema, che e' largo circa 0.6em contro l'1em di questo: la
+   stessa frase passa da tre righe a cinque e sborda dal box. E' successo: tutte
+   le misure del box erano state prese su un ambiente dove Google Fonts non
+   rispondeva, quindi sul font sbagliato. Averlo nel repo toglie il problema alla
+   radice, vale anche offline e per la build in file unico.
+   Press Start 2P, SIL Open Font License 1.1 — vedi assets/font/OFL.txt */
+@font-face{
+  font-family:'Press Start 2P';
+  src:url('../assets/font/press-start-2p.woff2') format('woff2');
+  font-weight:400;font-style:normal;font-display:block;
+}
+
 /* FantaLiberty VN engine — CSS puro.
    Baseline: iPhone portrait 390x844 pt. Le animazioni sono @keyframes (piu'
    affidabili delle transition su mobile Safari). Il terzo inferiore dello
@@ -6,8 +20,15 @@
 html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:none;
  font-family:'Press Start 2P',ui-monospace,monospace;-webkit-text-size-adjust:100%}
 
-#stage{position:relative;width:100vw;height:100vh;height:100svh;overflow:hidden;cursor:pointer;
- -webkit-tap-highlight-color:transparent}
+/* "clip" e non solo "hidden": con hidden il riquadro resta comunque scorribile
+   dal browser, e quando il fuoco finisce su un bottone il browser lo porta in
+   vista scorrendo TUTTA la scena di lato (il personaggio sborda a destra, quindi
+   c'e' spazio dove scorrere). Il risultato e' l'inquadratura storta di qualche
+   decina di pixel, che non si spiega guardando il CSS. Con clip non esiste
+   proprio un contenitore scorribile. I browser che non conoscono clip tengono
+   hidden, che e' la riga prima. */
+#stage{position:relative;width:100vw;height:100vh;height:100svh;overflow:hidden;overflow:clip;
+ cursor:pointer;-webkit-tap-highlight-color:transparent}
 
 /* ---------- fondale ---------- */
 /* il fondale sta su un layer suo: cosi' il testo che si scrive non lo fa ridisegnare */
@@ -124,8 +145,14 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #propwrap.in{opacity:1;transform:translate(-50%,0) scale(1)}
 #propwrap.out{opacity:0;transform:translate(-50%,-40px) scale(.8)}
 #prop{width:100%;display:block;image-rendering:pixelated;filter:drop-shadow(0 16px 30px rgba(0,0,0,.65))}
-#screen{position:absolute;left:28.6%;top:12.6%;width:43%;height:27%;
- padding:.35em .7em;color:#0f3b34;font-size:clamp(5px,1.35vw,9px);line-height:1.25;overflow:hidden}
+/* Il riquadro dello schermo verde, misurato sull'immagine del Mac (il verde
+   chiaro occupa left 26.5%, width 46.9%, top 11%, height 30%): qui e' rientrato
+   di poco, giusto per non far toccare il testo alla cornice. La versione
+   precedente era stata stimata a occhio e teneva 43% di larghezza: quasi il 9%
+   di spazio buttato, che col font vero e' la differenza fra un nome lungo che
+   ci sta e uno tagliato a meta'. */
+#screen{position:absolute;left:27.2%;top:12%;width:45.5%;height:28.5%;
+ padding:.3em .35em;color:#0f3b34;font-size:clamp(5px,1.35vw,9px);line-height:1.25;overflow:hidden}
 /* padding in em, non in %: le percentuali si calcolano sulla LARGHEZZA del
    contenitore (il prop intero, ~250px), non su questo schermetto alto 74px —
    erano 15px di margine verticale, un quinto dello spazio utile. */
@@ -139,7 +166,7 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
    Lucas lo consegna a fine registrazione: l'immagine porta la mela, il nome
    del giocatore ci viene scritto sopra. Se l'immagine non c'e' ancora, la
    cornice viene disegnata in CSS: il nome resta leggibile lo stesso. */
-#badgewrap{position:absolute;left:50%;top:16%;width:46%;max-width:280px;z-index:3;
+#badgewrap{position:absolute;left:50%;top:16%;width:58%;max-width:320px;z-index:3;
  opacity:0;transform:translate(-50%,26px) scale(.9);pointer-events:none;
  transition:opacity .5s ease, transform .6s cubic-bezier(.2,.9,.3,1)}
 #badgewrap.in{opacity:1;transform:translate(-50%,0) scale(1)}
@@ -168,10 +195,12 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 /* Il nome va nella barra grigia che il template lascia vuota apposta: misurata
    sull'immagine, sta fra il 43% e il 49% dell'altezza e fra il 23% e il 78%
    della larghezza. Il riquadro grande sotto e' lo spazio per la foto. */
-/* Il template nuovo e' una tessera nera con la mela al centro: il nome va
-   subito sotto la mela, in bianco. Misure prese sull'immagine (1024x1536):
-   la tessera occupa il 40-94% dell'altezza, la mela sta al 62%. */
-#badgeName{position:absolute;left:14%;right:14%;top:74%;height:8%;
+/* Il nome va sotto la mela, in bianco, e deve stare DENTRO il cartoncino.
+   Misure prese sull'immagine, non a occhio: il cartoncino nero occupa dal 23.8%
+   al 77.0% della larghezza e la mela finisce al 73.8% dell'altezza. La versione
+   precedente teneva 14%..86%, cioe' piu' larga del cartoncino stesso: col font
+   vero il nome usciva dai bordi da tutte e due le parti. */
+#badgeName{position:absolute;left:27%;right:27%;top:77%;height:8%;
  display:flex;align-items:center;justify-content:center;
  color:#fff;font-size:clamp(7px,2.1vw,13px);line-height:1;
  text-shadow:0 2px 0 rgba(0,0,0,.65);
@@ -188,7 +217,12 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 /* ---------- dialogo (terzo inferiore) ---------- */
 #boxwrap{position:absolute;z-index:2;left:4%;right:4%;bottom:calc(3% + env(safe-area-inset-bottom,0px));
  opacity:0;transform:translateY(18px);transition:opacity .5s ease, transform .5s ease;
- max-height:46%;display:flex;flex-direction:column}
+ /* 62% e non 46%: da quando il box del dialogo ha altezza fissa a cinque righe
+    occupa quasi 100px, e sull'iPhone piu' piccolo l'ultima risposta finiva
+    tagliata sotto il bordo dello schermo. Le risposte scorrono (#choices ha
+    overflow-y:auto), ma una risposta che si vede solo scorrendo, senza che
+    niente lo suggerisca, e' una risposta che il giocatore non sa di avere. */
+ max-height:62%;display:flex;flex-direction:column}
 #boxwrap.in{opacity:1;transform:translateY(0)}
 /* Riga di sistema: non la dice nessuno, e' il gioco che avvisa ("il badge e'
    in stampa"). Cornice tratteggiata e testo centrato, perche' si distingua da
@@ -211,21 +245,45 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
    passava a due, a volte a tre, e il personaggio dietro sembrava spostarsi a
    ogni battuta. Adesso e' un pezzo fisso dell'interfaccia, come in una visual
    novel vera: cambia il testo dentro, non la cornice.
-   Tre righe perche' tre e' il massimo che serve: misurate tutte le 292 battute
-   del gioco (dialoghi, opzioni, domande e quiz) alla larghezza del box, ne
-   vengono 223 da una riga, 57 da due e 12 da tre. Il test rifiuta le battute
-   che sforerebbero, cosi' il numero resta vero anche quando lo script cresce.
+   Cinque righe, che e' il massimo che serve davvero: misurate nel browser tutte
+   le 595 battute del gioco (dialoghi, opzioni, domande e quiz) alla larghezza
+   del box, ne vengono 170 da una riga, 201 da due, 120 da tre, 82 da quattro e
+   22 da cinque. Il test rifiuta le battute che sforerebbero, cosi' il numero
+   resta vero anche quando lo script cresce.
+   ATTENZIONE: questo conto vale solo col font vero. Press Start 2P e' largo 1em
+   per carattere, un monospace di sistema circa 0.6em: con il ripiego ci stanno
+   60 caratteri per riga invece di 36 e la stessa frase sembra occupare la meta'
+   delle righe. La prima versione di questa misura era stata presa proprio cosi',
+   su un ambiente dove Google Fonts non rispondeva, e il box usciva tarato a tre
+   righe — sui telefoni veri il testo spariva sotto il bordo. Per questo ora il
+   font sta nel repo (vedi @font-face in cima).
+   MA cinque righe fisse coprivano il personaggio anche quando la battuta ne
+   occupava una: 371 battute su 595 stanno in una o due righe, quindi per il 62%
+   del gioco c'erano tre righe di scatolone vuoto davanti a Lucas.
+   Percio' l'altezza e' fissa da due righe in giu' e cresce solo quando serve
+   davvero, fino a cinque. Il salto mentre si scrive — che era il difetto di
+   partenza — non torna: type() misura la frase intera PRIMA di cominciare e
+   fissa subito l'altezza definitiva (vedi riservaAltezza nel motore). Quindi il
+   box non si muove mai durante la battuta; cambia solo fra una battuta e
+   l'altra, e per due volte su tre nemmeno quello.
+   Niente scorrimento del testo: con 425 battute su 595 che occupano tre righe o
+   piu', vorrebbe dire far scorrere il 71% dei dialoghi, e una battuta che si
+   legge solo scorrendo e' una battuta che qualcuno non legge.
    Il testo sta in alto: centrandolo, la prima riga si sposterebbe su nel
    momento in cui compare la seconda — cioe' proprio lo scatto da togliere. */
 #box{background:#1b1f33;border:3px solid #fff;border-radius:12px;padding:14px 16px;margin-top:-3px;
- color:#fff;font-size:clamp(8px,2.5vw,13px);line-height:1.85;
+ color:#fff;font-size:clamp(8px,2.5vw,13px);line-height:1.7;
  /* con box-sizing:border-box nell'altezza ci stanno anche padding e bordo,
-    quindi vanno sommati: 3 righe + 2x14 di padding + 2x3 di bordo */
- height:calc(3 * 1.85em + 2 * 14px + 2 * 3px);box-sizing:border-box;overflow:hidden;
+    quindi vanno sommati: righe + 2x14 di padding + 2x3 di bordo */
+ min-height:calc(2 * 1.7em + 2 * 14px + 2 * 3px);
+ max-height:calc(5 * 1.7em + 2 * 14px + 2 * 3px);
+ box-sizing:border-box;overflow:hidden;
+ display:flex;align-items:center;
  box-shadow:0 6px 0 rgba(0,0,0,.5)}
 /* La riga di sistema e' sempre corta e non la dice nessuno: la' in mezzo sta
    meglio che appesa in alto. */
-#boxwrap.sistema #box{display:flex;align-items:center;justify-content:center}
+#boxwrap.sistema #box{justify-content:center;text-align:center}
+#txt{display:block;width:100%}
 #arrow{text-align:center;color:#fff;font-size:12px;margin-top:5px;opacity:0;animation:bob 1s infinite}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
 
@@ -241,6 +299,9 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  font-family:inherit;font-size:clamp(8px,2.35vw,12px);cursor:pointer;text-align:left;
  box-shadow:0 3px 0 rgba(0,0,0,.5)}
 .ch:hover,.ch:focus{background:#3d466e;outline:none}
+/* voce visibile ma non toccabile: dice perche' quella strada e' chiusa */
+.ch.spento{opacity:.45;cursor:default;border-color:rgba(255,255,255,.35);box-shadow:none}
+.ch.spento:hover{background:#2a3050}
 
 #inputform{margin-top:10px;display:none;gap:7px}
 #inputform.on{display:flex}
@@ -420,6 +481,59 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #blocca:hover,#blocca:focus{background:#a83333;outline:none}
 #blocca:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.5)}
 
+/* ---------- quiz di Peter (S8) ----------
+   Sopra il box: a che punto sei del livello e la barra del tempo. Sotto i tre
+   secondi diventa rossa e pulsa — e' l'unico avviso oltre a Peter che guarda
+   l'orologio. */
+/* la griglia dei livelli convive con le azioni sotto: il box si stringe, come
+   nel recap, altrimenti la terza fila esce dallo schermo */
+#boxwrap.quizhub{max-height:62%}
+#boxwrap.quizhub #box{height:auto;overflow:visible;font-size:clamp(7px,2vw,11px);line-height:1.6}
+#quizbar{display:none;flex-direction:column;gap:5px;margin-bottom:7px}
+#quizbar.on{display:flex}
+/* sta sopra il fondale, non dentro il box: senza uno sfondo suo spariva sul
+   marmo chiaro della lobby */
+#qinfo{align-self:flex-start;background:rgba(10,12,22,.85);border-radius:6px;
+ padding:4px 8px;color:#9fb4d8;font-size:clamp(6px,1.7vw,9px);letter-spacing:.06em}
+#qtimer{position:relative;height:12px;background:#1b1f33;border:2px solid #fff;
+ border-radius:7px;overflow:hidden}
+#qbar{height:100%;background:#6fce7c;transition:width .1s linear}
+#qsec{position:absolute;right:6px;top:50%;transform:translateY(-50%);
+ color:#fff;font-size:clamp(5px,1.5vw,8px);text-shadow:0 0 3px #000}
+#qtimer.poco #qbar{background:#e8604c}
+#qtimer.poco{animation:qpulsa .5s infinite}
+@keyframes qpulsa{0%,100%{border-color:#fff}50%{border-color:#e8604c}}
+/* il perk del drip: si vede che e' un bottone diverso dalle risposte, e sta
+   sotto a tutta larghezza anche quando le risposte sono su due colonne */
+.ch.perk{background:#3a2a52;border-color:#c07be0;font-size:clamp(7px,2vw,10px)}
+#choices.due .ch.perk{grid-column:1/-1}
+.ch.perk:hover,.ch.perk:focus{background:#4c3769}
+
+/* ---------- assegnazione dei moltiplicatori [S8.FINALE] ----------
+   Una riga per macroargomento, meno e piu' a passi di 0.05. Si conferma solo
+   quando la banca e' distribuita tutta: nessun avanzo da buttare. */
+#multwrap{margin-top:10px;display:none;flex-direction:column;gap:8px}
+#multwrap.on{display:flex}
+#boxwrap.mult #box{height:auto;overflow:visible;font-size:clamp(7px,2vw,11px);line-height:1.6}
+#multrighe{display:flex;flex-direction:column;gap:6px}
+.mriga{display:flex;align-items:center;gap:8px;background:#2a3050;
+ border:2px solid rgba(255,255,255,.55);border-radius:7px;padding:7px 9px}
+.mnome{flex:1;color:#fff;font-size:clamp(7px,2vw,10px)}
+.mval{color:#ffd98a;font-size:clamp(8px,2.3vw,12px);min-width:4.2em;text-align:center}
+.mmeno,.mpiu{background:#1b1f33;border:2px solid #fff;border-radius:6px;color:#fff;
+ font-family:inherit;font-size:clamp(8px,2.3vw,12px);width:2.2em;height:2.2em;
+ cursor:pointer;line-height:1}
+.mmeno:hover,.mpiu:hover{background:#3d466e}
+.mmeno:disabled,.mpiu:disabled{opacity:.3;cursor:default}
+/* come #qinfo: sta sopra il fondale chiaro della lobby, gli serve uno sfondo suo */
+#multresto{align-self:center;background:rgba(10,12,22,.85);border-radius:6px;padding:4px 10px;
+ color:#9fb4d8;font-size:clamp(6px,1.8vw,9px);text-align:center;letter-spacing:.06em}
+#multok{background:#2a5a34;border:3px solid #9ae0a6;border-radius:8px;color:#fff;
+ font-family:inherit;font-size:clamp(8px,2.3vw,12px);padding:12px 13px;cursor:pointer;
+ box-shadow:0 3px 0 rgba(0,0,0,.5);letter-spacing:.04em}
+#multok:hover:enabled,#multok:focus:enabled{background:#357043;outline:none}
+#multok:disabled{opacity:.4;cursor:default;box-shadow:none}
+
 /* ---------- carosello di scelta (gli stili di S3) ----------
    Qui si sceglie chi sarai per tutta la partita: la figura e' il soggetto,
    tutto il resto le fa spazio. Tre regole tengono in piedi la sezione:
@@ -521,6 +635,79 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #cdpunti{color:#fff;font-size:clamp(7px,2.1vw,11px);opacity:.85}
 #cdbtn{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:6px}
 
+/* ---------- regolamento (S1, zona 3) ----------
+   Il cartellone della lobby, letto da vicino: il fondale va sfocato (stessa
+   classe del camerino) e il pannello prende la luce calda dell'insegna, ma con
+   i colori del gioco — niente tinte nuove.
+
+   Titolo e bottone sono fissi, scorre solo il corpo: su un iPhone piccolo il
+   "HO CAPITO" deve restare sotto il pollice senza dover scorrere fino in fondo. */
+/* flex e non grid: con "place-items:center" la riga della griglia si dimensiona
+   sul contenuto, quindi il "max-height:100%" del pannello si misurava su se
+   stesso e non limitava niente — il bottone finiva fuori dallo schermo. In un
+   contenitore flex l'altezza del genitore e' definita e la percentuale funziona. */
+#regole{position:absolute;inset:0;z-index:7;display:none;align-items:center;
+ justify-content:center;
+ background:rgba(4,5,10,.62);padding:6vw calc(5vw + env(safe-area-inset-left,0px))
+ calc(5vw + env(safe-area-inset-bottom,0px))}
+#regole.on{display:flex}
+#regbox{display:flex;flex-direction:column;width:100%;max-width:24em;max-height:100%;
+ background:#1b1f33;border:3px solid #fff;border-radius:14px;padding:16px 15px 14px;
+ box-shadow:0 10px 0 rgba(0,0,0,.5), 0 0 34px rgba(255,217,138,.18)}
+#regtit{flex:none;color:#ffd98a;font-size:clamp(10px,3vw,15px);letter-spacing:.12em;
+ text-align:center;padding-bottom:12px;border-bottom:2px solid rgba(255,217,138,.35);
+ text-shadow:0 0 16px rgba(255,217,138,.4)}
+#regcorpo{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+ padding:12px 2px 4px;display:flex;flex-direction:column;gap:14px}
+/* Ogni voce e' una riga richiudibile: titolo + "+", e sotto il testo. Tutte
+   chiuse all'apertura, cosi' l'elenco sta in una schermata sola e si capisce
+   subito cosa c'e' dentro. */
+/* flex:none e' obbligatorio: #regcorpo e' una colonna flex, e con una sezione
+   aperta il contenuto supera l'altezza disponibile. Senza questo le sezioni
+   chiuse si schiacciano fino a sparire — restano pillole vuote — invece di far
+   scorrere la lista. */
+.regsez{flex:none;background:#2a3050;border:2px solid rgba(255,255,255,.4);border-radius:9px;
+ overflow:hidden}
+.regtesta{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;
+ background:none;border:0;padding:12px 12px;cursor:pointer;text-align:left;font-family:inherit}
+.regtesta:hover,.regtesta:focus{background:rgba(255,255,255,.06);outline:none}
+.regnome{color:#fff;font-size:clamp(7px,2.1vw,11px);letter-spacing:.08em;line-height:1.5}
+/* il segno e' l'unico indizio che la riga si apre: sta in oro come i titoli */
+.regsegno{color:#ffd98a;font-size:clamp(10px,2.9vw,14px);line-height:1;flex:none}
+/* Apertura fluida senza misurare l'altezza in JS: la griglia passa da 0fr a
+   1fr. Dove non e' supportato la sezione si apre di scatto — funziona lo
+   stesso, e' solo meno morbido. */
+.regsotto{display:grid;grid-template-rows:0fr;transition:grid-template-rows .32s ease}
+.regsez.aperta .regsotto{grid-template-rows:1fr}
+.regdentro{overflow:hidden;min-height:0}
+.regsez.aperta .regdentro{padding:0 12px 12px}
+.regsotto-tit{color:#ffd98a;font-size:clamp(6.5px,1.9vw,10px);letter-spacing:.06em;
+ margin:10px 0 6px}
+.regdentro > .regsotto-tit:first-child{margin-top:0}
+.regriga{margin:0 0 6px;color:#cfdaef;font-size:clamp(6.5px,1.95vw,10px);line-height:1.85}
+.regriga:last-child{margin-bottom:0}
+.reglista{margin:0 0 6px;padding-left:1.1em;color:#cfdaef;
+ font-size:clamp(6.5px,1.95vw,10px);line-height:1.85}
+.reglista li{margin-bottom:3px}
+.reglista li::marker{color:#ffd98a}
+.regmail{display:inline-block;margin-top:4px;color:#ffd98a;text-decoration:none;
+ font-size:clamp(6.5px,1.95vw,10px);border-bottom:1px solid rgba(255,217,138,.5);
+ padding-bottom:2px;word-break:break-all}
+/* il separatore fra le regole e le informazioni sul progetto: distinto ma
+   discreto, due filetti e l'etichetta in mezzo */
+.reggruppo{flex:none;display:flex;align-items:center;gap:9px;margin:6px 0 2px;
+ color:#9fb4d8;font-size:clamp(5.5px,1.6vw,8px);letter-spacing:.12em}
+.reggruppo i{flex:1;height:1px;background:rgba(159,180,216,.35)}
+/* la regola non scritta: non si apre, cornice tratteggiata, sta a se' */
+.regsez.chiusa{background:rgba(0,0,0,.25);border-style:dashed;border-color:rgba(255,217,138,.45);
+ padding:11px 12px}
+.regsez.chiusa .regnome{color:#ffd98a;display:block;margin-bottom:7px}
+#regok{flex:none;margin-top:12px;background:#2a3050;border:3px solid #fff;border-radius:8px;
+ color:#fff;font-family:inherit;font-size:clamp(8px,2.3vw,12px);padding:12px 13px;
+ cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.5);letter-spacing:.06em}
+#regok:hover,#regok:focus{background:#3d466e;outline:none}
+#regok:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.5)}
+
 #cardwrap{position:absolute;inset:0;z-index:7;display:none;
  background:rgba(4,5,10,.9);padding:6vw;place-items:center}
 #cardwrap.on{display:grid}
@@ -603,6 +790,9 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 /* cursore che lampeggia mentre si scrive e durante le pause */
 .tcur{display:inline-block;width:.62em;height:1.05em;background:#fff;vertical-align:-.16em;
  margin-left:.16em;animation:bl .62s steps(1) infinite}
+/* i blocchi dei titoli di coda sfumano uno nell'altro invece di accumularsi */
+#curtainTxt{transition:opacity .6s ease}
+#curtainTxt.sfumato{opacity:0}
 #curtainArrow{color:#fff;font-size:12px;opacity:0;margin-top:1.4em;animation:bob 1s infinite}
 
 /* Dissolvenza al nero fra due scene. Sta sopra tutto tranne il messaggio

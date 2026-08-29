@@ -19,7 +19,7 @@ Uno sfondo intero per schermata, sempre presente sotto ogni altra cosa.
 | `bg_esterno_ingresso` | S0 | Dietro Lucas e il terminale durante la registrazione |
 | `bg_lobby_z1_tenda` | S1 | Zona 1 della lobby. Ha l'hotspot ENTRA al centro. **L'apertura si anima in codice** (fade o split delle due metà dell'immagine), non serve un secondo fondale "tenda aperta" |
 | `bg_lobby_z2_hall_of_fame` | S1 | Zona 2. Sopra ci vanno le targhe (`obj_targa_hall_of_fame`) come layer cliccabili |
-| `bg_lobby_z3_premi` | S1 | Zona 3. Sopra ci va la teca (`obj_teca_premi`) e lo sprite di Francesca |
+| `bg_lobby_z3_regolamento` | S1 | Zona 3. Il cartellone illuminato del regolamento: la lastra bianca è **vuota di proposito**, il testo è UI vera che si apre sopra (non va disegnato nell'immagine). Ha preso il posto di `bg_lobby_z3_premi`, la vecchia teca dei premi |
 | `bg_lobby_z4_quiz_bloccata` | S1 | Zona 4 prima del lock. Sopra: `obj_tavolino_buzzer_peter` + Peter addormentato |
 | `bg_lobby_z4_quiz_aperta` | S8 | Stessa zona, generata come derivato diretto della bloccata con le luci alzate — va usata al posto della precedente non appena `run.locked === true` |
 | `bg_sala_ingresso_superiore` | S2 | Appare subito dopo la transizione della tenda. Susan piccola sul palco in fondo |
@@ -50,7 +50,7 @@ a nickname/input buffi)
 (tutorial — **deve coincidere col gesto reale richiesto**, verificare
 l'animazione dello swipe implementata prima di finalizzare l'asset) ·
 `chr_francesca_indica_tenda` (tono neutro, no spoiler) ·
-`chr_francesca_orgogliosa` (zona premi) · `chr_francesca_ride` (P2, solo
+`chr_francesca_orgogliosa` (P2, non più collegata da quando la zona 3 è il regolamento) · `chr_francesca_ride` (P2, solo
 testa) · `chr_francesca_scettica` (P2, solo testa, se il giocatore ritocca
 lo stesso hotspot 3+ volte)
 
@@ -72,13 +72,18 @@ P2, solo se scelta sfacciata in S2)
 `chr_peter_applauso_ironico` (S8, P2, punteggio pieno) ·
 `chr_peter_guarda_orologio` (S8, timer sotto i 3 secondi)
 
-### Martha — nessun corpo, solo in Scene 4, 5, 8, 7
-`chr_martha_indicatore_regia` — **icona, non personaggio**: 2 frame di
-cuffia+onde sonore, mostrata accanto al box dialogo ogni volta che Martha
-parla (box con colore diverso dagli altri, per distinguere "voce" da
-"presenza fisica")
-`chr_martha_ritratto_regia` (P2, opzionale) — unica immagine con un volto,
-usata solo nel finale (S7) in un riquadro stile monitor
+### La regia — nessun corpo, solo un'icona (S4, S5, S6, S7)
+`chr_indicatore_regia` — **icona, non personaggio**: 2 frame di cuffia+onde
+sonore, mostrata accanto al box dialogo ogni volta che parla la regia (box con
+colore diverso dagli altri, per distinguere "voce" da "presenza fisica").
+Era `chr_martha_indicatore_regia`: rinominato quando Martha e' stata eliminata,
+perche' l'icona e' generica e ora serve a **Susan**, che dal keynote in poi
+parla dalla regia.
+
+`chr_martha_ritratto_regia` — **non piu' usato.** Era l'unica immagine con il
+volto di Martha, prevista per il finale in un riquadro stile monitor. Con Martha
+eliminata non ha piu' un posto nel gioco: il file e' ancora nel repo, da
+cancellare quando qualcuno conferma che non serve.
 
 ### CEO — solo Scena 7
 `chr_ceo_sagoma` (silhouette, immobile) → `chr_ceo_pollice_su` (2° frame,
@@ -115,7 +120,6 @@ all'inizio della S4 e non cambia più per tutta la sessione.
 | `obj_terminale_accrediti` | S0 | Il Macintosh vintage. **Lo schermo CRT è vuoto/generico nell'immagine** — il testo dei 6 campi del form è HTML/UI vera sovrapposta, non parte della grafica |
 | `obj_badge` | S0, S7 | Template riutilizzabile: nome e foto/avatar restano placeholder vuoti nell'immagine, riempiti via codice. Riusato identico nella card condivisibile finale |
 | `obj_targa_hall_of_fame` | S1 | Template unico, il testo per edizione (anno, vincitore) è overlay dinamico, non richiede una nuova immagine per ogni edizione |
-| `obj_teca_premi` | S1 | Il contenuto della teca (i premi dell'anno) va sovrapposto come layer separato/variabile, la teca stessa è fissa |
 | `obj_lucchetto_zona4` | S1, S8 | **2 frame** (chiuso/che si apre): mostrato sopra Peter finché `run.locked === false`, poi sostituito dal frame "aperto" con un piccolo effetto una tantum al momento dello sblocco |
 | `obj_tavolino_buzzer_peter` | S1, S8 | **2 frame** (non premuto/premuto), da tagliare a metà dal file consegnato — sono due immagini identiche affiancate, split orizzontale semplice |
 | `obj_clicker` | S5 | **2 frame** (integro/inceppato), usato durante il micro-evento "il clicker si inceppa" |
@@ -155,7 +159,7 @@ della risposta data.
 
 ## UI (nessun asset grafico — solo codice/CSS)
 
-box dialogo (variante colore per Martha) · bottone scelta · navigazione
+box dialogo (variante colore per la regia) · bottone scelta · navigazione
 lobby (frecce+dot) · hotspot pulsante · carosello scelta stile · card
 domanda · schermata recap · modale conferma · timer domanda (10s, +3s per
 l'Ingegnere) · badge/salvadanaio moltiplicatore quiz · banner notifica
