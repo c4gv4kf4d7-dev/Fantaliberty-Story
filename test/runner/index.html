@@ -133,6 +133,13 @@ const PISTA_DX = [[682,199],[686,240],[688,293],[709,332],[741,390],[788,449],
 const CIMA_VETRO  = [[200,605],[240,599],[280,588],[320,572],[360,551],[400,513],
                      [440,463],[480,411],[520,352],[560,290],[600,225],[640,160],
                      [680,95],[700,64]];
+/* Dove il vetro POGGIA: e' piu' in basso del bordo della pista, che
+   corre dentro la ghiaia. Misurata sulla base dei montanti dipinti
+   nel corridoio originale — riconoscibile perche' li' comincia il
+   loro riflesso sul pavimento a specchio. */
+const BASE_VETRO = [[273,695],[284,699],[295,703],[306,707],[318,713],[331,723],
+                    [422,793],[451,826],[494,872],[569,968]];
+
 const CIMA_PARETE = [[0,372],[30,398],[60,424],[90,451],[120,477],[150,507],
                      [170,527],[190,567],[200,605]];
 
@@ -324,7 +331,7 @@ const FONDO_VISTA    = 1.9;     // fin dove si disegnano
    La larghezza invece non viene dalle proporzioni del file: montante e
    costola erano disegnati larghi per leggersi da soli, in scena sono
    stecche. */
-function fila(img, passo, cima, spessore, pista, scarto){
+function fila(img, passo, cima, base, spessore, pista, scarto){
   if (!img) return;
   const n = Math.ceil(FONDO_VISTA / passo);
   for (let i = n; i >= 0; i--){
@@ -332,8 +339,9 @@ function fila(img, passo, cima, spessore, pista, scarto){
     if (z < 0.015 || z > FONDO_VISTA) continue;
     const q = proietta(z, 0);
     const x = bordo(pista, q.y) + scarto * q.scala;
+    const giu = base ? bordo(base, x) : q.y;
     const su = bordo(cima, x);
-    const alt = q.y - su;
+    const alt = giu - su;
     if (alt < 6) continue;
     const largo = Math.max(1.2, alt * spessore);
     ctx.drawImage(img, x - largo/2, su, largo, alt);
@@ -358,17 +366,17 @@ function parco(){
   }
   ctx.lineTo(W, H); ctx.closePath(); ctx.clip();
 
-  /* La fascia di verde visibile e' bassa: se la striscia si disegna
-     alta, se ne vede solo il bordo superiore e sembra un prato vuoto. */
-  const alt = 210, cima = ORIZZONTE_PARCO - 55;
-  const largo = im.width * (alt / im.height) * 0.55;
-  const sposta = (S.distanza * 120) % largo;
+  /* Il prato della striscia e' stato reso trasparente: restano vialetto,
+     alberi e cespugli, che si posano sul verde gia' dipinto nel fondale.
+     Disegnarci sopra un secondo prato lasciava la giuntura in vista. */
+  const alt = 330, cima = ORIZZONTE_PARCO - 90;
+  const largo = im.width * (alt / im.height) * 0.62;
+  const sposta = (S.distanza * 130) % largo;
+  ctx.globalAlpha = 0.85;
   for (let k = -1; k <= Math.ceil(W / largo) + 1; k++){
     ctx.drawImage(im, k * largo - sposta, cima, largo, alt);
   }
-  // il prato e' piu' saturo del resto della scena: un velo lo allontana
-  ctx.fillStyle = 'rgba(233,237,231,.30)';
-  ctx.fillRect(0, cima, W, alt);
+  ctx.globalAlpha = 1;
   ctx.restore();
 }
 
@@ -456,8 +464,8 @@ function disegna(){
   else fondaleFinto();
 
   parco();
-  fila(A.montante, PASSO_MONTANTE, CIMA_VETRO,  0.014, PISTA_DX, -20);
-  fila(A.costola,  PASSO_COSTOLA,  CIMA_PARETE, 0.030, PISTA_SX, -25);
+  fila(A.montante, PASSO_MONTANTE, CIMA_VETRO,  BASE_VETRO, 0.014, PISTA_DX, -20);
+  fila(A.costola,  PASSO_COSTOLA,  CIMA_PARETE, null,       0.030, PISTA_SX, -25);
   pavimentoFinto();
 
   // le cose lontane per prime, così le vicine coprono
