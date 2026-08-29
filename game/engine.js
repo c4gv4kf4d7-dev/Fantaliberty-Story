@@ -503,6 +503,8 @@
     VN.scene = sc; VN.sceneId = save.scene;
     if (sc.bg) setBg(sc.bg, sc.bgFx);
     precaricaScena(sc);
+    // mentre si gioca questa, si scaricano le scene in cui si puo' finire dopo
+    precaricaProssime(sc);
     atmosfera(sc);
     if (sc.terminal) { buildTerminal(sc.terminal); sc.terminal.forEach(function (r) { termSet(r.var); }); }
     var upto = Math.min(save.i || 0, (sc.steps || []).length);
@@ -515,6 +517,20 @@
 
   /* ---------------- step runner ---------------- */
   var silent = false;   // true durante il ripristino
+
+  /* Ogni scena ha il suo numero di giro. Serve perche' gli step che finiscono
+     PIU' TARDI (un'attesa, una dissolvenza, una transizione) tengono in mano un
+     "poi fai questo": se nel frattempo la scena e' cambiata, quel seguito
+     apparteneva alla scena di prima e non deve far avanzare quella nuova —
+     altrimenti la scena nuova parte da sola, saltando i suoi primi passi.
+     E' l'altra faccia degli intrusi: non un'immagine di prima, ma un tempo di
+     prima che continua a comandare. */
+  var gen = 0;
+  function perScena(fn) {
+    var mio = gen;
+    return function () { if (mio !== gen) return; return fn.apply(this, arguments); };
+  }
+
   function next() { if (silent) return; VN.i++; run(); }
 
   /* Una scena che COMINCIA su un cartello nero (sigla, barra di caricamento,
@@ -560,6 +576,8 @@
       el.txt.textContent = '';
       el.arrow.style.opacity = 0;
     }
+    gen++;              // da qui in poi i seguiti della scena di prima non contano piu'
+    pending = null;
     VN.scene = sc; VN.sceneId = id; VN.i = 0;
     if (sc.bg) setBg(sc.bg, sc.bgFx, sc.dissolvenza);
     // gli asset della scena nuova si chiedono subito: se questa si apre al
@@ -573,7 +591,50 @@
       if (sc.podio && el.podiumImg && !el.podiumImg.src) el.podiumImg.src = assetUrl('props', 'podio');
       el.podiumwrap.classList.toggle('on', !!sc.podio);
     }
-    run();
+    avviaQuandoPronta(id);
+  }
+
+  /* La scena non comincia finche' il suo fondale non e' pronto: altrimenti i
+     personaggi nuovi entrano sopra il fondale di quella di prima. Vale per
+     tutte, non solo per quelle che si aprono con lo step "luce" — la maggior
+     parte cambia scena senza un nero che copra.
+
+     Se il fondale tarda oltre il tetto non si fa entrare comunque la scena
+     sopra quello vecchio: si mette il nero (che e' il linguaggio del gioco per
+     un cambio di scena) e lo si toglie appena il fondale c'e'. Cosi' l'attesa
+     puo' allungarsi senza che si veda mai un fotogramma sbagliato.
+     Con il precaricamento, in pratica, non si aspetta mai. */
+  function avviaQuandoPronta(id) {
+    var mio = gen;
+    var partita = false;
+    var parti = function () {
+      if (partita || mio !== gen || VN.sceneId !== id) return;
+      partita = true;
+      run();
+    };
+    if (!VN.speed || !siDecodifica() || !el.bg || mostrata(el.bg, bgVoluto)) return parti();
+
+    var coperto = false;
+    var tetto = global.setTimeout(function () {
+      if (partita || mio !== gen || VN.sceneId !== id) return;
+      coperto = true;
+      el.nero.classList.remove('sfuma');      // di netto: e' un ripiego, non un effetto
+      el.nero.classList.add('on');
+      parti();
+    }, ATTESA_MAX);
+
+    quandoPronti(function () {
+      global.clearTimeout(tetto);
+      if (mio !== gen || VN.sceneId !== id) return;
+      parti();
+      // il nero si toglie solo quando sotto c'e' davvero il fondale nuovo: se
+      // tarda ancora, meglio restare al buio che scoprire quello vecchio
+      if (!coperto) return;
+      if (mostrata(el.bg, bgVoluto)) return el.nero.classList.remove('on');
+      el.bg.addEventListener('load', function () {
+        if (mio === gen) el.nero.classList.remove('on');
+      }, { once: true });
+    }, TETTO_FONDALE);
   }
 
   function run() {
@@ -619,7 +680,7 @@
         // tap. Serve per i momenti in cui il gioco sta facendo qualcosa (il
         // badge in stampa) e la battuta e' un'indicazione, non una replica.
         var avanzaSay = st.attesa && VN.speed
-          ? function () { el.arrow.style.opacity = 0; setTimeout(next, st.attesa); }
+          ? function () { el.arrow.style.opacity = 0; setTimeout(perScena(next), st.attesa); }
           : function () { pending = next; el.arrow.style.opacity = 1; };
         el.boxwrap.classList.toggle('sistema', !!st.sistema);
         type(fmt(testoDi(st)), avanzaSay);
@@ -669,12 +730,12 @@
 
       // dissolvenza al nero e ritorno: coprono un cambio di scena
       case 'nero':
-        return velaNero(true, st.ms, next);
+        return velaNero(true, st.ms, perScena(next));
 
       case 'luce':
         // la luce si alza su una scena gia' pronta: e' qui che si evita il
         // fotogramma con il personaggio (o il fondale) di prima
-        return quandoPronti(function () { velaNero(false, st.ms, next); });
+        return quandoPronti(perScena(function () { velaNero(false, st.ms, perScena(next)); }), TETTO_FONDALE);
 
       // la figura del giocatore: entra, cambia posa, esce
       case 'io':
@@ -723,24 +784,24 @@
       // viste), ma il fondale che lasciano dietro va rimesso a posto.
       case 'carrellata':
         if (silent) return next();
-        return carrellata(st, next);
+        return carrellata(st, perScena(next));
 
       case 'sipario':
         if (silent) { if (st.dietro) setBg(st.dietro, st.fx); return next(); }
-        return sipario(st, next);
+        return sipario(st, perScena(next));
 
       case 'logo':
         el.boxwrap.classList.remove('in');
         el.hint.style.opacity = 0;
         scopriCartello();
-        sigla(st, next);
+        sigla(st, perScena(next));
         return;
 
       case 'boot':
         el.boxwrap.classList.remove('in');
         el.hint.style.opacity = 0;
         scopriCartello();
-        boot(st, next);
+        boot(st, perScena(next));
         return;
 
       case 'title':
@@ -752,8 +813,8 @@
         // "blocchi": i titoli di coda. Le righe non si accumulano come nel
         // cartello d'apertura — ogni blocco compare, resta, sfuma, e arriva il
         // prossimo. Va da solo, un tocco salta tutto.
-        if (st.blocchi) return titoliDiCoda(st, next);
-        typeLines(righeTitolo(st.lines), next);
+        if (st.blocchi) return titoliDiCoda(st, perScena(next));
+        typeLines(righeTitolo(st.lines), perScena(next));
         return;
 
       case 'show':
@@ -778,7 +839,11 @@
       case 'prop':
         // l'id passa da fmt(): cosi' una scena puo' scrivere "slide_{categoria}"
         // e far scegliere l'oggetto alla variabile
-        if (st.id) el.prop.src = assetUrl('props', fmt(st.id));
+        if (st.id) {
+          var srcProp = assetUrl('props', fmt(st.id));
+          if (el.propwrap.classList.contains('in')) scambia(el.prop, srcProp);
+          else apparira(el.prop, srcProp, el.propwrap);
+        }
         el.propwrap.style.width = st.size || '';        // la scena puo' ridimensionare il prop
         el.propwrap.style.top = st.top || '';
         el.propwrap.classList.remove(st.show ? 'out' : 'in');
@@ -792,7 +857,7 @@
         // attesa lo "show" successivo cambiava posa e faccia subito, sopra il
         // fondale vecchio: si vedeva prima lo scatto del personaggio e poi il
         // fondale. Ora i due coincidono.
-        if (cambiato && VN.speed) return setTimeout(next, BG_FADE);
+        if (cambiato && VN.speed) return setTimeout(perScena(next), BG_FADE);
         return next();
 
       case 'fx':
@@ -810,7 +875,7 @@
 
       case 'wait':
         if (!VN.speed) return next();          // speed 0 = modalita' test/skip
-        return setTimeout(next, st.ms || 400);
+        return setTimeout(perScena(next), st.ms || 400);
 
       case 'set':
         VN.state[st.var] = st.value;
@@ -871,17 +936,27 @@
       current.who = null;
       return;
     }
+    var precedente = current.who;
     current.who = who; current.body = body; current.head = head;
 
     // file dichiarato ma non ancora consegnato: si nasconde il personaggio
     // invece di lasciare l'icona di immagine rotta in mezzo alla scena
     el.npcBody.onerror = function () { el.npc.classList.add('broken'); };
     el.npc.classList.remove('broken');
-    el.npcBody.src = bodySrc;
-    // Finche' lo sprite nuovo non e' decodificato, l'<img> disegna ancora
-    // quello di prima: il riquadro resta invisibile fino ad allora, altrimenti
-    // si vede per un fotogramma il personaggio della scena precedente.
-    mostraQuandoPronto();
+    // Due casi diversi. Se in scena c'e' gia' lo stesso personaggio, questo e'
+    // un cambio di posa: la posa vecchia resta finche' non arriva la nuova
+    // (sparire e ricomparire sarebbe peggio). Se invece entra adesso — altro
+    // personaggio, o riquadro vuoto — quello che ha addosso l'<img> e' il
+    // personaggio della scena precedente: si tiene invisibile finche' non e'
+    // pronto.
+    var giaInScena = precedente === who && el.npc.classList.contains('in')
+      && !el.npc.classList.contains('attesa');
+    // chi il motore INTENDE mostrare. Serve a tools/verifica-transizioni.mjs per
+    // distinguere una continuita' voluta (lo stesso personaggio che resta in
+    // scena) da un intruso (il personaggio di prima ancora disegnato).
+    el.npc.setAttribute('data-chi', who);
+    if (giaInScena) scambia(el.npcBody, bodySrc);
+    else apparira(el.npcBody, bodySrc, el.npc);
     setHead(head);
     if (c && c.neck) {                         // ancoraggio del collo, in % del riquadro corpo
       el.npcHead.style.left = c.neck.x || '50%';
@@ -921,23 +996,6 @@
      l'animazione d'ingresso parte lo stesso) finche' lo sprite chiesto non e'
      pronto. Il tetto di tempo e' una rete di sicurezza: se il file non arriva,
      meglio mostrarlo comunque che lasciare la scena vuota. */
-  var attesaNpc = 0;
-  function mostraQuandoPronto() {
-    var mio = ++attesaNpc;
-    var scopri = function () { if (mio === attesaNpc) el.npc.classList.remove('attesa'); };
-    if (!VN.speed || decodificata(el.npcBody)) return scopri();
-    el.npc.classList.add('attesa');
-    var img = el.npcBody;
-    var prima = img.onload;
-    img.onload = function (e) {
-      if (typeof prima === 'function') prima.call(img, e);
-      scopri();
-    };
-    // rete di sicurezza: se il file non arriva, meglio mostrare il personaggio
-    // che lasciare la scena vuota per sempre
-    global.setTimeout(scopri, ATTESA_MAX);
-  }
-
   /* Inquadratura sul volto.
      Il viso e' la cosa che l'occhio confronta fra un personaggio e l'altro:
      due pose "alte uguali" sembrano diverse se una e' un mezzobusto e l'altra
@@ -1006,7 +1064,9 @@
     el.npcHead.onerror = function () { el.npcHead.style.visibility = 'hidden'; };
     el.npcHead.style.visibility = '';
     el.npcHead.style.display = src ? '' : 'none';   // personaggi a sprite unico: nessuna testa separata
-    if (src) el.npcHead.src = src;
+    // La testa si scambia quando la nuova e' pronta: nasconderla nel frattempo
+    // vorrebbe dire un personaggio senza testa per mezzo secondo.
+    if (src) scambia(el.npcHead, src);
     current.head = head;
   }
 
@@ -1014,9 +1074,13 @@
     var level = st.level || 'micro';
     if (level === 'pose' && st.body) {
       var src = partUrl(current.who, 'bodies', st.body);
-      if (src) { el.npcBody.src = src; current.body = st.body; }
+      var scatta = function () {
+        el.npc.classList.remove('pop'); void el.npc.offsetWidth; el.npc.classList.add('pop');
+      };
       if (st.head) setHead(st.head);
-      el.npc.classList.remove('pop'); void el.npc.offsetWidth; el.npc.classList.add('pop');
+      // il sussulto parte quando la posa nuova c'e' davvero, non prima
+      if (src) { current.body = st.body; scambia(el.npcBody, src, scatta); }
+      else scatta();
       return;
     }
     if (level === 'expr' && st.head) { setHead(st.head); return; }
@@ -1241,7 +1305,7 @@
       cur = (i + opts.length) % opts.length;
       var o = opts[cur];
       visti[o.id] = true;
-      el.carImg.src = withBase(o.img);
+      scambia(el.carImg, withBase(o.img));
       if (dir) {
         el.carImg.classList.remove('entraSx', 'entraDx');
         void el.carImg.offsetWidth;
@@ -1648,8 +1712,8 @@
 
   // un secondo personaggio in scena solo per la durata di un evento (il rider)
   function mostraOspite(rel) {
-    el.ospite.src = withBase(rel);
     el.ospite.onerror = function () { el.ospitewrap.classList.remove('on'); };
+    apparira(el.ospite, withBase(rel), el.ospitewrap);
     el.ospitewrap.classList.add('on');
   }
   function nascondiOspite() { if (el.ospitewrap) el.ospitewrap.classList.remove('on'); }
@@ -1658,8 +1722,8 @@
   // la slide del macroargomento attivo, e sovrascriverla la farebbe sparire per
   // tutto il resto del blocco.
   function mostraPropEvento(rel) {
-    el.evprop.src = withBase(rel);
     el.evprop.onerror = function () { el.evpropwrap.classList.remove('on'); };
+    apparira(el.evprop, withBase(rel), el.evpropwrap);
     el.evpropwrap.classList.remove('on'); void el.evpropwrap.offsetWidth;
     el.evpropwrap.classList.add('on');
   }
@@ -1672,7 +1736,7 @@
     var src = id ? assetUrl('platea', id) : '';
     if (!src) { el.platea.classList.remove('on'); return; }
     el.plateaImg.onerror = function () { el.platea.classList.remove('on'); };
-    el.plateaImg.src = src;
+    apparira(el.plateaImg, src, el.platea);
     el.platea.classList.remove('on'); void el.platea.offsetWidth;
     el.platea.classList.add('on');
   }
@@ -3145,7 +3209,7 @@
       // il riquadro del nome e' in percentuale sull'immagine: finche' non e'
       // caricata non ha una larghezza vera da misurare
       el.badgeImg.onload = function () { adattaBadge(); };
-      el.badgeImg.src = src;
+      apparira(el.badgeImg, src, el.badgewrap);
     } else {
       el.badgewrap.classList.add('senzaimg');
     }
@@ -3205,86 +3269,174 @@
     return ((VN.story.meta && VN.story.meta.assetBase) || '') + rel;
   }
 
-  /* ---------------- precaricamento ----------------
+  /* ---------------- immagini: mai un fotogramma sbagliato ----------------
      Un <img> a cui si cambia "src" continua a disegnare l'immagine VECCHIA
-     finche' la nuova non e' decodificata. Per questo, entrando in lobby, si
-     vedeva per un attimo Lucas dentro il riquadro del personaggio: lo sprite
-     era gia' quello di Francesca, ma il fotogramma a schermo era ancora il
-     suo. Stessa cosa per il fondale. Non e' un problema di cache del browser:
-     e' il momento in cui l'immagine viene chiesta.
+     finche' la nuova non e' decodificata. Da qui nascono tutti gli "intrusi":
+     il fondale della scena di prima sotto i personaggi di quella nuova, la posa
+     precedente per un fotogramma, la slide sbagliata dentro il riquadro.
 
-     La cura e' chiedere gli asset della scena nuova *mentre il buio copre*, e
-     alzare la luce solo quando sono pronti (con un tetto di tempo, cosi' una
-     rete lenta rallenta ma non blocca). */
-  var caricati = {};                 // src gia' pronte: niente doppio giro
-  var critici = {};                  // quelle che la luce deve aspettare
-  var inCorso = 0;                   // quante ne stiamo aspettando
+     Due modi di cambiare un'immagine, e vanno tenuti distinti:
+
+       scambia()  - l'elemento e' GIA' a schermo e cambia contenuto (una posa,
+                    un'espressione, una slide). L'immagine vecchia e' ancora
+                    giusta finche' non arriva la nuova, quindi si tiene: si
+                    assegna il src solo quando e' pronta. Nessun buco.
+
+       apparira() - l'elemento deve COMPARIRE, e quello che ha addosso e' roba
+                    di prima che non c'entra niente. Si assegna subito ma si
+                    tiene invisibile finche' non e' pronta. Nessun intruso.
+
+     In piu' si precaricano gli asset della scena nuova mentre il buio copre, e
+     quelli della scena dopo mentre si gioca: cosi' le due attese sopra, nella
+     pratica, non si vedono mai. */
+  var caricati = {};                 // src -> true quando e' decodificata
+  var inAttesa = {};                 // src -> callback in coda
+  var critici = {};                  // src che qualcuno sta aspettando adesso
+  var inCorso = 0;                   // quante ne aspettiamo
   var attese = [];                   // chi aspetta che finiscano
   var ATTESA_MAX = 2500;             // oltre questo si va avanti comunque
+  var TETTO_FONDALE = 8000;          // quanto si puo' aspettare un fondale al coperto
 
-  // "critico" = quello che si vede appena la luce si alza. Il resto (gli altri
-  // fondali dell'hub, le pose che arriveranno dopo) si scarica lo stesso, ma
-  // nessuno lo aspetta: aspettarlo vorrebbe dire tenere il buio per secondi.
-  function precarica(src, critico) {
-    if (!src) return;
-    if (caricati[src]) {
-      // gia' partita come non critica e adesso serve subito: da qui in poi
-      // qualcuno la aspetta, quindi va contata (senza contarla, il contatore
-      // finiva sotto zero e la luce si alzava lo stesso).
-      if (critico && caricati[src] !== true && !critici[src]) { critici[src] = true; inCorso++; }
-      return;
+  /* C'e' davvero qualcuno che decodifica le immagini? In jsdom (i test) no: gli
+     <img> non caricano mai, e aspettarli vorrebbe dire aspettare per sempre.
+     La spia e' img.decode(), che i browser hanno e jsdom no — ed e' proprio la
+     capacita' su cui si basa tutta questa parte, quindi senza quella non c'e'
+     niente da aspettare. */
+  var decodifica = null;
+  function siDecodifica() {
+    if (decodifica === null) {
+      decodifica = typeof global.Image === 'function'
+        && typeof new global.Image().decode === 'function';
     }
-    if (typeof global.Image !== 'function') { caricati[src] = true; return; }
-    caricati[src] = 'in corso';
-    if (critico) { critici[src] = true; inCorso++; }
-    var img = new global.Image();
-    var fine = function () {
-      if (caricati[src] === true) return;
-      caricati[src] = true;
-      if (critici[src]) {
-        delete critici[src];
-        inCorso--;
-        if (inCorso <= 0) { inCorso = 0; var q = attese; attese = []; q.forEach(function (f) { f(); }); }
-      }
-    };
-    img.onload = fine;
-    img.onerror = fine;                       // un asset mancante non deve bloccare la scena
-    img.src = src;
+    return decodifica;
   }
 
+  /* ATTENZIONE: subito dopo aver assegnato un src nuovo, img.complete risponde
+     ancora per l'immagine VECCHIA (il browser avvia il caricamento dopo, non
+     nella stessa riga). Chiedere solo "complete" quindi da' via libera quando
+     non bisognerebbe. L'unica risposta affidabile e' currentSrc: si aggiorna
+     solo quando l'immagine e' davvero quella scelta. */
+  function stessoFile(a, b) {
+    if (!a || !b) return false;
+    var pulisci = function (u) { return String(u).replace(/^\.\//, ''); };
+    a = pulisci(a); b = pulisci(b);
+    return a === b || a.slice(-b.length) === b || b.slice(-a.length) === a;
+  }
+
+  function mostrata(img, src) {
+    if (!img) return true;
+    var voluta = src || img.getAttribute('src');
+    if (!voluta) return true;
+    if (!img.complete || !img.naturalWidth) return false;
+    return stessoFile(img.currentSrc || img.src, voluta);
+  }
+
+  function decodificata(img) { return mostrata(img, null); }
   function pronta(src) { return !src || caricati[src] === true; }
 
-  // Chiama done() quando la scena e' davvero pronta, o allo scadere del tetto.
-  //
-  // Non basta sapere che il precaricamento e' finito: se il server non manda
-  // header di cache, l'<img> vero rifa' la richiesta da capo e resta indietro.
-  // Quindi la condizione guarda l'elemento a schermo, che e' l'unica fonte
-  // attendibile su cosa il browser sta per disegnare.
-  function decodificata(img) { return !!(img && img.complete && img.naturalWidth > 0); }
+  // Scarica una src una volta sola. "critico" = la scena non parte senza.
+  function carica(src, cb, critico) {
+    if (!src) return cb && cb();
+    if (caricati[src] === true) return cb && cb();
+    if (!siDecodifica()) { caricati[src] = true; return cb && cb(); }
 
-  function quandoPronti(done) {
-    if (!VN.speed) return done();
-    var scaduto = false;
+    if (critico && !critici[src]) { critici[src] = true; inCorso++; }
+
+    if (!inAttesa[src]) {
+      inAttesa[src] = [];
+      var img = new global.Image();
+      var fine = function () {
+        if (caricati[src] === true) return;
+        caricati[src] = true;
+        var coda = inAttesa[src] || [];
+        delete inAttesa[src];
+        if (critici[src]) {
+          delete critici[src];
+          inCorso--;
+          if (inCorso <= 0) { inCorso = 0; var q = attese; attese = []; q.forEach(function (f) { f(); }); }
+        }
+        coda.forEach(function (f) { f(); });
+      };
+      img.onload = fine;
+      img.onerror = fine;              // un asset mancante non deve bloccare niente
+      img.src = src;
+    }
+    if (cb) inAttesa[src].push(cb);
+  }
+
+  function precarica(src, critico) { carica(src, null, critico); }
+
+  /* L'elemento e' gia' a schermo: si cambia il src solo quando la nuova immagine
+     e' pronta, cosi' resta la vecchia (che e' ancora quella giusta) invece di un
+     buco. Se ne arriva un'altra nel frattempo, questa viene abbandonata. */
+  function scambia(node, src, poi) {
+    if (!node || !src) return poi && poi();
+    if (node.getAttribute('src') === src) return poi && poi();
+    var mio = (node.__scambio = (node.__scambio || 0) + 1);
+    var metti = function () {
+      if (node.__scambio !== mio) return;
+      node.src = src;
+      if (poi) poi();
+    };
+    if (!VN.speed || !siDecodifica() || pronta(src)) return metti();
     var fatto = false;
+    var una = function () { if (fatto) return; fatto = true; metti(); };
+    carica(src, una);
+    global.setTimeout(una, ATTESA_MAX);
+  }
+
+  /* L'elemento deve comparire: il src si assegna subito (serve a chi misura),
+     ma resta invisibile finche' non c'e' niente di giusto da mostrare. */
+  function apparira(node, src, wrapper) {
+    if (!node) return;
+    var vestito = wrapper || node;
+    node.src = src;
+    if (!VN.speed || !siDecodifica() || mostrata(node, src)) { vestito.classList.remove('attesa'); return; }
+    var mio = (node.__attesa = (node.__attesa || 0) + 1);
+    var scopri = function () { if (node.__attesa === mio) vestito.classList.remove('attesa'); };
+    vestito.classList.add('attesa');
+    // Si aspetta il caricamento DELL'ELEMENTO, non quello del precaricatore: se
+    // il server non manda header di cache, l'<img> vero rifa' la richiesta e
+    // resta indietro. E' il precaricamento a rendere questa attesa quasi sempre
+    // gia' finita, ma la parola definitiva ce l'ha l'elemento a schermo.
+    node.addEventListener('load', scopri, { once: true });
+    // Niente "dopo tot lo mostro comunque": mostrarlo comunque vuol dire
+    // mostrare l'immagine di prima, che e' proprio la cosa da non fare mai. Se
+    // il file non arriva l'elemento resta vuoto — la scena va avanti lo stesso,
+    // e un file rotto lo intercetta gia' onerror.
+    node.addEventListener('error', scopri, { once: true });
+  }
+
+  // Chiama done() quando la scena e' davvero pronta, o allo scadere del tetto.
+  // Non basta la fine del precaricamento: senza header di cache l'<img> vero
+  // rifa' la richiesta e resta indietro, quindi si guarda l'elemento a schermo.
+  function quandoPronti(done, tetto) {
+    if (!VN.speed || !siDecodifica()) return done();
+    var scaduto = false, fatto = false;
     var una = function () { if (fatto) return; fatto = true; done(); };
+    var pronti = function () {
+      return !inCorso && (!el.bg || !el.bg.getAttribute('src') || mostrata(el.bg, bgVoluto));
+    };
     var controlla = function () {
       if (fatto) return;
-      if (scaduto || (!inCorso && (!el.bg || !el.bg.getAttribute('src') || decodificata(el.bg)))) return una();
-      global.setTimeout(controlla, 60);
+      if (scaduto || pronti()) return una();
+      global.setTimeout(controlla, 30);
     };
-    global.setTimeout(function () { scaduto = true; controlla(); }, ATTESA_MAX);
+    if (pronti()) return una();                     // gia' tutto in memoria: nessun ritardo
+    // sveglia appena il fondale arriva, senza aspettare il giro dell'orologio
+    if (el.bg && el.bg.addEventListener) el.bg.addEventListener('load', controlla, { once: true });
+    global.setTimeout(function () { scaduto = true; controlla(); }, tetto || ATTESA_MAX);
     controlla();
   }
 
-  /* Tutti gli asset che una scena mostrera': fondale, personaggi con la posa
-     che lo step chiede, zone dell'hub, prop. Si scorrono gli step in
-     profondita' perche' hub e carosello annidano zone e figure. */
-  function precaricaScena(sc) {
+  /* Tutti gli asset che una scena mostrera'. Critici solo il fondale e il primo
+     personaggio: aspettare anche i quattro fondali dell'hub vorrebbe dire tenere
+     il nero per secondi. */
+  function precaricaScena(sc, critico) {
     if (!sc) return;
-    if (sc.bg) precarica(assetUrl('bg', sc.bg), true);
-    // il primo personaggio che entra e' l'altra cosa che si vede subito
+    if (sc.bg) precarica(assetUrl('bg', sc.bg), critico !== false);
     var steps = sc.steps || [];
-    for (var i = 0; i < steps.length; i++) {
+    for (var i = 0; i < steps.length && critico !== false; i++) {
       var st = steps[i];
       if (!st || (st.t !== 'show' && st.t !== 'io')) continue;
       var chi = st.who || st.char;
@@ -3299,6 +3451,33 @@
     raccogli(steps);
   }
 
+  /* Le scene in cui si puo' finire da qui: quella dopo e quelle raggiunte da un
+     "goto". Si scaricano mentre il giocatore gioca questa, senza che nessuno le
+     aspetti: quando ci si arriva sono gia' in memoria. */
+  function precaricaProssime(sc) {
+    if (!sc || !VN.story.scenes) return;
+    var viste = {};
+    var metti = function (id) {
+      var altra = id && VN.story.scenes[id];
+      if (!altra || viste[id]) return;
+      viste[id] = true;
+      if (altra.bg) precarica(assetUrl('bg', altra.bg));
+      raccogli((altra.steps || []).slice(0, 6));
+    };
+    metti(sc.next);
+    cerca(sc.steps || [], metti);
+  }
+
+  function cerca(nodi, metti) {
+    (nodi || []).forEach(function (n) {
+      if (!n || typeof n !== 'object') return;
+      if (Array.isArray(n)) return cerca(n, metti);
+      if (n.goto) metti(n.goto);
+      ['steps', 'zones', 'hotspots', 'options', 'after', 'esci']
+        .forEach(function (k) { if (n[k]) cerca(Array.isArray(n[k]) ? n[k] : [n[k]], metti); });
+    });
+  }
+
   function raccogli(nodi) {
     (nodi || []).forEach(function (n) {
       if (!n || typeof n !== 'object') return;
@@ -3307,10 +3486,9 @@
       var chi = n.who || n.char;
       if (chi) {
         var c = cast(chi);
-        var corpo = n.body || (c && c.defaultBody) || 'neutro';
-        precarica(partUrl(chi, 'bodies', corpo) || assetUrl('chars', chi));
-        var testa = n.head || (c && c.defaultHead) || 'neutro';
-        precarica(partUrl(chi, 'heads', testa));
+        precarica(partUrl(chi, 'bodies', n.body || (c && c.defaultBody) || 'neutro')
+          || assetUrl('chars', chi));
+        precarica(partUrl(chi, 'heads', n.head || (c && c.defaultHead) || 'neutro'));
       }
       ['steps', 'zones', 'hotspots', 'after', 'options', 'tutorial', 'ritorno', 'react']
         .forEach(function (k) { if (n[k]) raccogli(Array.isArray(n[k]) ? n[k] : [n[k]]); });
@@ -3325,6 +3503,7 @@
   // Cambio fondale. Con "dissolvenza" il nuovo entra sopra il vecchio e prende
   // il suo posto a transizione finita, cosi' il passaggio non e' uno stacco secco.
   var bgCorrente = null;
+  var bgVoluto = null;      // il file che il fondale DEVE mostrare adesso
   /* Dissolvenza al nero. Serve a coprire un cambio di scena: il motore va
      avanti solo quando il buio e' pieno, quindi fondale e personaggio nuovi
      vengono montati mentre non si vede niente. In modalita' test (speed 0)
@@ -3403,7 +3582,7 @@
       applicaFx(el.bg, fx);
       el.bg2.className = '';
     }
-    if (id) bgCorrente = id;
+    if (id) { bgCorrente = id; bgVoluto = src; }
     return inDissolvenza;
   }
 
