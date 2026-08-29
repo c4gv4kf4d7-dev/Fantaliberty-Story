@@ -864,7 +864,9 @@
         {
           "t": "show",
           "who": "susan",
-          "body": "duo_pronto_{stile}"
+          "body": "duo_pronto_{stile}",
+          "bottom": "6%",
+          "_nota": "Piu' in basso del default (16%): sono in due nello stesso riquadro, l'inquadratura standard li lasciava troppo alti. I piedi possono finire dietro il box del dialogo, va bene."
         },
         {
           "t": "say",
@@ -899,7 +901,8 @@
         {
           "t": "show",
           "who": "susan",
-          "body": "duo_spinta_{stile}"
+          "body": "duo_spinta_{stile}",
+          "bottom": "6%"
         },
         {
           "t": "say",
