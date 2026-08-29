@@ -9,7 +9,7 @@
      il browser continua a chiedere la versione vecchia degli asset -->
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <meta name="description" content="FantaLiberty: visual novel interattiva. Steve Jobs Theater, WWDC 26.">
-<link rel="stylesheet" href="./game/engine.css?v=73">
+<link rel="stylesheet" href="./game/engine.css?v=74">
 </head>
 <body>
 <div id="stage">
@@ -111,10 +111,10 @@
     <div id="griglia"></div>
     <div id="choices"></div>
     <!-- il recap di S6: tutte le risposte, ancora modificabili, e il bottone
-         rosso che chiude la schedina -->
+         rosso che chiude le previsioni -->
     <div id="recapwrap">
       <div id="recap"></div>
-      <button id="blocca">BLOCCA LA SCALETTA</button>
+      <button id="blocca">CONFERMA LE PREVISIONI</button>
     </div>
     <!-- [S8.FINALE]: quello che si e' vinto al quiz si spalma sui tre
          macroargomenti. Nessun tetto per categoria, solo il totale. -->
@@ -161,8 +161,26 @@
     </div>
   </div>
 
+  <!-- [S7] la raccolta dell'email, dopo il teleprompter e prima dei titoli di
+       coda. E' facoltativa: si continua anche senza, e chi salta lo fa con un
+       bottone dichiarato, non con una X nascosta in un angolo. -->
+  <div id="emailwrap">
+    <div id="emailbox">
+      <div id="emailtit"></div>
+      <div id="emailtesto"></div>
+      <label id="emaillabel" for="emailin"></label>
+      <input id="emailin" type="email" inputmode="email" autocomplete="email"
+             autocapitalize="off" spellcheck="false">
+      <div id="emailerr"></div>
+      <div id="emailnota"></div>
+      <div id="emailprivacy"></div>
+      <button id="emailok" class="ch">CONTINUA</button>
+      <button id="emailsalta">Preferisco spezzare loro il cuore</button>
+    </div>
+  </div>
+
   <!-- il countdown al keynote vero: e' l'ultima schermata, e quella che il
-       giocatore rivede ogni volta che riapre dopo aver bloccato la scaletta -->
+       giocatore rivede ogni volta che riapre dopo aver confermato le previsioni -->
   <div id="countdown">
     <div id="cdinner">
       <div id="cdnome"></div>
@@ -209,7 +227,7 @@
   </div>
 </div>
 
-<script src="./game/engine.js?v=73"></script>
+<script src="./game/engine.js?v=74"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -220,7 +238,7 @@
   };
   if (params.get('reset')) { try { localStorage.removeItem('fl_nexus_save_v1'); } catch (e) {} }
 
-  var ENGINE_ATTESO = '19';   // deve combaciare con VN.engine in game/engine.js
+  var ENGINE_ATTESO = '20';   // deve combaciare con VN.engine in game/engine.js
   var partito = false;
 
   function mostraErrore(msg) {
@@ -278,7 +296,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=73', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=74', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e

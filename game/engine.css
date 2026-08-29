@@ -637,6 +637,39 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #carok:hover,#carok:focus{background:#3d466e;outline:none}
 #carok:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.5)}
 
+/* ---------- email facoltativa (S7, dopo il teleprompter) ----------
+   Stesso pannello del regolamento: flex e non grid, cosi' il bottone resta
+   dentro lo schermo anche sui telefoni piccoli (vedi la nota li' sotto). */
+#emailwrap{position:absolute;inset:0;z-index:7;display:none;align-items:center;
+ justify-content:center;background:rgba(4,5,10,.72);
+ padding:6vw calc(5vw + env(safe-area-inset-left,0px))
+ calc(5vw + env(safe-area-inset-bottom,0px))}
+#emailwrap.on{display:flex}
+#emailbox{flex:none;display:flex;flex-direction:column;gap:10px;width:100%;max-width:24em;
+ max-height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;
+ background:#1b1f33;border:3px solid #fff;border-radius:14px;padding:16px 15px 14px;
+ box-shadow:0 10px 0 rgba(0,0,0,.5), 0 0 34px rgba(255,217,138,.18)}
+#emailtit{color:#ffd98a;font-size:clamp(10px,3vw,15px);letter-spacing:.12em;text-align:center;
+ text-shadow:0 0 16px rgba(255,217,138,.4)}
+#emailtesto{color:#fff;font-size:clamp(7px,2.1vw,11px);line-height:1.9;text-align:center}
+#emaillabel{color:#9fb4d8;font-size:clamp(6px,1.9vw,10px);letter-spacing:.08em;margin-top:4px}
+#emailin{background:#0d1020;border:3px solid #fff;border-radius:8px;color:#fff;
+ font-family:inherit;font-size:clamp(7px,2.2vw,11px);padding:10px 9px;min-width:0}
+#emailin:focus{outline:none;border-color:#ffd98a}
+/* l'errore compare solo quando serve: uno spazio riservato a vuoto sembrerebbe
+   un pezzo di interfaccia rotto */
+#emailerr{display:none;color:#ff9a9a;font-size:clamp(6px,1.9vw,10px);line-height:1.6}
+#emailerr.on{display:block}
+#emailnota{color:#fff;opacity:.85;font-size:clamp(6px,1.9vw,10px);line-height:1.8}
+#emailprivacy{color:#9fb4d8;font-size:clamp(5px,1.6vw,9px);line-height:1.7}
+#emailok{margin-top:4px}
+/* il salto e' una scelta vera, non una scorciatoia da nascondere: si legge, ma
+   non compete con CONTINUA */
+#emailsalta{background:none;border:0;color:#9fb4d8;font-family:inherit;
+ font-size:clamp(6px,1.9vw,10px);line-height:1.7;text-decoration:underline;
+ cursor:pointer;padding:6px 2px}
+#emailsalta:hover,#emailsalta:focus{color:#fff;outline:none}
+
 /* ---------- countdown e card (S7) ---------- */
 #countdown{position:absolute;inset:0;z-index:6;display:none;place-items:center;
  background:rgba(4,5,10,.55);padding:10vw}

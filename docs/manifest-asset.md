@@ -150,9 +150,14 @@ chiavi italiane di `story.stili` (`hawaiano`→hawaiian, `ingegnere`→engineer)
 
 ---
 
-## PLATEA
-Layer sovrapposti a `bg_palco_platea_piena`, mai correlati al contenuto
-della risposta data.
+## PLATEA — non si fanno
+Erano layer da sovrapporre a `bg_palco_platea_piena`, mai correlati al
+contenuto della risposta. **Decisione presa: non si disegnano.** Il gioco è già
+lungo e le reazioni della platea aggiungerebbero un passaggio fra una scelta e
+l'altra; la priorità è rifinire quello che c'è. I file restano dichiarati in
+`story.json` (il motore sa mostrarli, se un giorno arrivassero) ma non sono più
+in lavorazione: senza di loro la scena va avanti uguale, senza layer di
+reazione. Le scene non vanno modificate per compensarne l'assenza.
 
 | File | Uso |
 |---|---|

@@ -244,6 +244,46 @@ Altre due cose di S8 che sembrano dettagli e non lo sono:
 - **la griglia dei livelli convive con `#choices`** — per questo `#griglia`
   sta prima nell'HTML e `#boxwrap` prende la classe `quizhub`.
 
+## Dopo le previsioni il gioco non finisce
+
+L'ordine e' vincolato e non va riordinato per comodita': conferma delle
+previsioni -> **email facoltativa** -> titoli di coda -> cartello "Hai
+completato una fase, non l'intera esperienza" -> **ritorno in lobby**, dove
+Francesca si congratula (POST-L01..L07, posa `orgogliosa`) e manda dal Peter
+dei quiz. Al countdown ci si arriva **dopo** il quiz, non prima.
+
+Tre cose da non rompere:
+
+1. **La sequenza del ritorno si vede una volta sola** (`post_lobby_visto`), e
+   le battute d'apertura della lobby ("io sono Francesca") valgono solo con
+   `locked` a false. Chi aggiunge uno step in `lobby` deve chiedersi in quale
+   dei due stati vive, e dichiararlo con `se`.
+2. **Dopo le previsioni la lobby non manda piu' dietro la tenda.** La zona 1 e'
+   scritta due volte (`tenda` / `tenda_dopo`, condizionate a `locked`), l'hub si
+   riapre da Peter (`startDopo`) e il tutorial dello swipe non si ripete
+   (`tutorialSe`). Chi rimette un `goto` verso la sala rimanda il giocatore a
+   rigiocare lo show.
+3. **L'email non e' obbligatoria e non deve diventarlo.** Campo vuoto +
+   CONTINUA vale come saltare, e il salto e' un bottone dichiarato. La partita
+   va in coda al momento della conferma e la spedisce la schermata dell'email:
+   una riga sola, con l'email dentro se c'e'. Se cambia il payload cambia anche
+   l'elenco nel regolamento (e la colonna in `docs/backend.sql`).
+
+## Il linguaggio: mai "schedina bloccata"
+
+Al giocatore non si dice mai "schedina bloccata", "la schedina e' chiusa",
+"previsioni bloccate". Si dice che le previsioni sono **fatte, confermate,
+registrate, concluse**. Le variabili interne restano `locked` e compagnia: la
+regola riguarda il testo che si legge a schermo (dialoghi, bottoni, modali,
+countdown, card, regolamento, HTML).
+
+## La platea non avra' mai i suoi layer
+
+`pla_*` (idle, applausi, risata, silenzio, coro) **non si disegnano**: e' una
+decisione presa, non un lavoro in sospeso. Il motore sa gia' mostrarli e le
+reazioni di S5 ci girano intorno: si lascia tutto com'e', senza compensare
+l'assenza con altro. Non rimetterli in `meta.assetiInArrivo`.
+
 ## Il regolamento (zona 3) contiene anche la parte legale
 
 Privacy, indipendenza da Apple, marchi e contatti stanno dentro il
