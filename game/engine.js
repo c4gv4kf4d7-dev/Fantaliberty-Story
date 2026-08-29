@@ -31,7 +31,7 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '19',
+    engine: '20',
     story: null,
     banca: null,    // game/domande.json: domande, battute per stile, eventi, intermezzi
     quiz: null,     // game/quiz.json: i tre livelli del quiz di Peter [S8]
@@ -560,6 +560,7 @@
     chiudiCountdown();
     chiudiQuiz();
     chiudiRegole();
+    chiudiEmail();
     chiudiTransizioni();
     if (el.modal) el.modal.classList.remove('on');
     if (!apreSulNero(sc)) el.curtain.classList.remove('on', 'lights');
@@ -663,7 +664,8 @@
                     st.t === 'list' || st.t === 'badge' ||
                     st.t === 'carosello' || st.t === 'hub' || st.t === 'griglia' ||
                     st.t === 'domande' || st.t === 'bivio' || st.t === 'intermezzo' ||
-                    st.t === 'recap' || st.t === 'quizhub' || st.t === 'quizmult')) VN.saveNow();
+                    st.t === 'recap' || st.t === 'quizhub' || st.t === 'quizmult' ||
+                    st.t === 'email')) VN.saveNow();
 
     switch (st.t) {
 
@@ -777,6 +779,9 @@
         return showMult(st);
 
       // S7: il countdown al keynote vero, ultima schermata del gioco
+      case 'email':
+        return showEmail(st);
+
       case 'countdown':
         return showCountdown(st);
 
@@ -1926,7 +1931,7 @@
       el.arrow.style.opacity = 0;
       el.boxwrap.classList.add('in', 'recap');
       el.recap.classList.add('on');
-      el.blocca.textContent = fmt(st.bottone || 'BLOCCA LA SCALETTA');
+      el.blocca.textContent = fmt(st.bottone || 'CONFERMA LE PREVISIONI');
       pending = null;
     }
 
@@ -1934,12 +1939,16 @@
     el.blocca.onclick = function (ev) {
       if (ev && ev.stopPropagation) ev.stopPropagation();
       if (uscito) return;
-      mostraModale(st.lock || { text: 'Sicuro? Dopo questo, la schedina e\' chiusa.' }, function () {
+      mostraModale(st.lock || { text: 'Sicuro? Dopo questo le tue previsioni sono definitive.' }, function () {
         uscito = true;
         VN.state.locked = true;
         VN.state.punti = totale();
         VN.progressed = true;
-        invia();                              // il POST non blocca il gioco
+        // Non si spedisce ancora: subito dopo c'e' la schermata dell'email, e
+        // una partita spedita due volte sarebbe due righe nella tabella. La
+        // partita va in coda, e la spedisce lo step 'email' (o il prossimo
+        // avvio, se il giocatore chiude li').
+        accoda(payload());
         el.recap.classList.remove('on');
         el.boxwrap.classList.remove('recap');
         hideUI();
@@ -1967,6 +1976,7 @@
       punti: totale(), picks: s.picks || {},
       flags: { sfacciato: !!s.sfacciato, studiato: s.studiato },
       quiz: { livelli: s.quiz || {}, banca: bancaMult(), moltiplicatori: s.moltiplicatori || null },
+      email: s.email || null,
       versione: (VN.story.meta && VN.story.meta.version) || ''
     };
   }
@@ -2020,6 +2030,78 @@
     if (d) invia(d);
   };
 
+  /* ---------------- l'email facoltativa [S7.03b] ----------------
+     Sta fra il blocco delle previsioni e i titoli di coda, e serve a una cosa
+     sola: mandare i risultati quando ci saranno. E' facoltativa davvero — si
+     continua anche saltandola, e saltarla e' un bottone dichiarato, non una X
+     nascosta.
+
+     Qui parte anche la spedizione della partita: al blocco e' finita in coda
+     apposta, cosi' quello che arriva al server e' una riga sola, con dentro
+     l'email se il giocatore l'ha lasciata. */
+  var RE_EMAIL = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
+
+  function showEmail(st) {
+    hideUI();
+    el.boxwrap.classList.remove('in');
+    el.emailtit.textContent = fmt(st.titolo || 'DOVE TI TROVIAMO?');
+    el.emailtesto.textContent = fmt(st.testo || '');
+    el.emaillabel.textContent = fmt(st.label || 'La tua email');
+    el.emailnota.textContent = fmt(st.nota || '');
+    el.emailprivacy.textContent = fmt(st.privacy || '');
+    el.emailok.textContent = fmt(st.ok || 'CONTINUA');
+    el.emailsalta.textContent = fmt(st.salta || 'Preferisco spezzare loro il cuore');
+    el.emailin.placeholder = st.placeholder || 'nome@esempio.com';
+    el.emailin.value = VN.state.email || '';
+    el.emailerr.textContent = '';
+    el.emailerr.classList.remove('on');
+
+    var uscito = false;
+    function esci() {
+      if (uscito) return;
+      uscito = true;
+      chiudiEmail();
+      invia();                       // il POST non blocca il gioco
+      VN.saveNow();
+      next();
+    }
+
+    el.emailin.oninput = function () { el.emailerr.classList.remove('on'); };
+    el.emailin.onkeydown = function (e) { if (e.key === 'Enter') el.emailok.click(); };
+
+    el.emailok.onclick = function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      var v = String(el.emailin.value || '').trim();
+      // campo vuoto e CONTINUA: e' un modo come un altro di saltare, non un
+      // errore da rinfacciare
+      if (!v) { VN.state.email = null; return esci(); }
+      if (!RE_EMAIL.test(v)) {
+        el.emailerr.textContent = fmt(st.errore || 'Manca qualcosa: controlla che ci siano la chiocciola e il punto.');
+        el.emailerr.classList.add('on');
+        try { el.emailin.focus(); } catch (e) {}
+        return;
+      }
+      VN.state.email = v;
+      VN.progressed = true;
+      esci();
+    };
+
+    el.emailsalta.onclick = function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      VN.state.email = null;
+      esci();
+    };
+
+    el.emailwrap.classList.add('on');
+    pending = null;
+    if (VN.speed) setTimeout(function () { try { el.emailin.focus(); } catch (e) {} }, 80);
+  }
+
+  function chiudiEmail() {
+    if (el.emailwrap) el.emailwrap.classList.remove('on');
+    if (el.emailerr) el.emailerr.classList.remove('on');
+  }
+
   /* ================ S7: countdown e card ================ */
 
   function quandoKeynote() {
@@ -2058,7 +2140,7 @@
       el.cdtempo.textContent = (m.g ? m.g + 'g ' : '') + due(m.h) + ':' + due(m.m) + ':' + due(m.s);
     }
 
-    el.cdnome.textContent = fmt(st.titolo || '{NOME} — SCALETTA BLOCCATA');
+    el.cdnome.textContent = fmt(st.titolo || '{NOME} — PREVISIONI COMPLETATE');
     el.cdlabel.textContent = fmt(st.label || 'Il keynote vero inizia tra');
     el.cdpunti.textContent = fmt(st.punti || 'Punti in gioco:') + ' ' + totale();
     aggiorna();
@@ -2124,7 +2206,7 @@
       if (s) { x.fillStyle = '#ffd98a'; font(30); x.fillText((s.nome || '').toUpperCase(), W / 2, 1520); }
 
       x.fillStyle = '#fff'; font(34);
-      x.fillText(fmt(st.cardTitolo || 'SCALETTA BLOCCATA'), W / 2, 1650);
+      x.fillText(fmt(st.cardTitolo || 'PREVISIONI COMPLETATE'), W / 2, 1650);
       x.fillStyle = '#ffd98a'; font(72);
       x.fillText(String(totale()), W / 2, 1760);
       x.fillStyle = '#9fb4d8'; font(22);
@@ -2727,6 +2809,12 @@
     var zones = (st.zones || []).filter(function (z) { return condizioneOk(z.when); });
     if (!zones.length) return next();
 
+    // Il tutorial ("scorri, le zone sono quattro") si dice una volta nella
+    // partita, non a ogni apertura dell'hub: tornando in lobby dopo le
+    // previsioni il giro della lobby e' gia' stato fatto. Lo dichiara la scena
+    // con "tutorialSe".
+    var tutorial = condizioneOk(st.tutorialSe) ? st.tutorial : null;
+
     var cur = -1;
     var visti = {};
     var scorso = false;                 // il giocatore ha gia' cambiato zona?
@@ -2771,9 +2859,9 @@
       // finche' non ha scorso, parla il tutorial; poi ogni zona ha la sua battuta.
       // "dice" separa chi parla da chi si vede: nella zona del quiz si vede Peter
       // che dorme, ma a commentare e' Francesca.
-      var battuta = (!scorso && st.tutorial && st.tutorial.text)
+      var battuta = (!scorso && tutorial && tutorial.text)
         || (ritorno ? ritorno.say : (muta ? null : z.say));
-      var chi = (!scorso && st.tutorial && st.tutorial.who)
+      var chi = (!scorso && tutorial && tutorial.who)
         || (ritorno ? (ritorno.dice || ritorno.who || z.who) : (z.dice || z.who));
       stopTyping();
       typing = false;
@@ -2789,8 +2877,8 @@
         el.boxwrap.classList.remove('in');
         setSpeaker(null);
       }
-      if (!scorso && st.tutorial && st.tutorial.body) {
-        showChar(perHub({ who: chi, body: st.tutorial.body }));
+      if (!scorso && tutorial && tutorial.body) {
+        showChar(perHub({ who: chi, body: tutorial.body }));
       }
       render();
     }
@@ -2911,8 +2999,13 @@
   }
 
   function indiceIniziale(st, zones) {
-    if (!st.start) return 0;
-    for (var i = 0; i < zones.length; i++) if (zones[i].id === st.start) return i;
+    // "startDopo": da quale zona si apre l'hub quando una condizione e' vera.
+    // Serve alla lobby dopo le previsioni: li' il contenuto nuovo e' Peter, e
+    // riaprire sulla tenda manderebbe il giocatore verso una porta chiusa.
+    var start = st.start;
+    if (st.startDopo && condizioneOk(st.startDopo.se)) start = st.startDopo.zona;
+    if (!start) return 0;
+    for (var i = 0; i < zones.length; i++) if (zones[i].id === start) return i;
     return 0;
   }
 
@@ -3877,6 +3970,10 @@
       quizbar: $('quizbar'), qinfo: $('qinfo'), qtimer: $('qtimer'), qbar: $('qbar'), qsec: $('qsec'),
       multwrap: $('multwrap'), multrighe: $('multrighe'), multresto: $('multresto'), multok: $('multok'),
       regole: $('regole'), regtit: $('regtit'), regcorpo: $('regcorpo'), regok: $('regok'),
+      emailwrap: $('emailwrap'), emailbox: $('emailbox'), emailtit: $('emailtit'),
+      emailtesto: $('emailtesto'), emaillabel: $('emaillabel'), emailin: $('emailin'),
+      emailerr: $('emailerr'), emailnota: $('emailnota'), emailprivacy: $('emailprivacy'),
+      emailok: $('emailok'), emailsalta: $('emailsalta'),
       countdown: $('countdown'), cdnome: $('cdnome'), cdlabel: $('cdlabel'),
       cdtempo: $('cdtempo'), cdpunti: $('cdpunti'), cdbtn: $('cdbtn'),
       cardwrap: $('cardwrap'), cardImg: $('cardImg'), cardsalva: $('cardsalva'),
@@ -3898,6 +3995,7 @@
     chiudiCountdown();
     chiudiQuiz();
     chiudiRegole();
+    chiudiEmail();
     chiudiTransizioni();
     if (el.modal) el.modal.classList.remove('on');
     bgCorrente = null;
@@ -3911,6 +4009,7 @@
            e.target.closest('#griglia') || e.target.closest('#recapwrap') ||
            e.target.closest('#countdown') || e.target.closest('#cardwrap') ||
            e.target.closest('#multwrap') || e.target.closest('#regole') ||
+           e.target.closest('#emailwrap') ||
            e.target.closest('#propwrap'))) return;
       VN.step();
     };
@@ -3927,6 +4026,7 @@
           (el.countdown && el.countdown.classList.contains('on')) ||
           (el.multwrap && el.multwrap.classList.contains('on')) ||
           (el.regole && el.regole.classList.contains('on')) ||
+          (el.emailwrap && el.emailwrap.classList.contains('on')) ||
           (el.modal && el.modal.classList.contains('on'))) return;
       VN.step();
     };

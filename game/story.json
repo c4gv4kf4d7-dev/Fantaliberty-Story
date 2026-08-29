@@ -10,14 +10,6 @@
       "f"
     ],
     "note": "Formato: iPhone portrait 390x844. Il terzo inferiore e' area dialogo.",
-    "assetiInArrivo": [
-      "platea/pla_platea_idle.webp",
-      "platea/pla_applauso_pieno.webp",
-      "platea/pla_applauso_tiepido.webp",
-      "platea/pla_risata.webp",
-      "platea/pla_silenzio_imbarazzato.webp",
-      "platea/pla_coro_nome.webp"
-    ],
     "keynote": "2026-09-09T19:00:00+02:00",
     "_nota_keynote": "Data e ora del keynote vero, ora locale italiana. Il countdown di S7 conta fin qui. DA CONFERMARE con l'utente: se Apple annuncia un'altra data, si cambia solo questa riga."
   },
@@ -210,7 +202,9 @@
     "livello": null,
     "quiz": null,
     "mult_bank": 0,
-    "moltiplicatori": null
+    "moltiplicatori": null,
+    "email": null,
+    "post_lobby_visto": false
   },
   "scenes": {
     "arrivo": {
@@ -1109,10 +1103,10 @@
           "da": "argomenti",
           "text": "Rileggi tutto. Tocca una riga per cambiarla.",
           "daFare": "Facoltativa non giocata",
-          "bottone": "BLOCCA LA SCALETTA",
+          "bottone": "CONFERMA LE PREVISIONI",
           "lock": {
-            "text": "Sicuro? Dopo questo, la schedina e' chiusa.",
-            "si": "Si', blocco tutto",
+            "text": "Sicuro? Dopo questo le tue previsioni sono definitive.",
+            "si": "Si', confermo",
             "no": "Fammi rileggere"
           },
           "goto": "finale",
@@ -1139,33 +1133,200 @@
         {
           "t": "show",
           "who": "francesca",
-          "body": "benvenuto"
+          "body": "benvenuto",
+          "se": {
+            "var": "locked",
+            "is": false
+          }
         },
         {
           "t": "say",
           "who": "francesca",
-          "text": "Eccoti, {NOME}. Io sono Francesca, e da qui in poi la lobby e' tua: girala tutta, tocca quello che ti incuriosisce."
+          "text": "Eccoti, {NOME}. Io sono Francesca, e da qui in poi la lobby e' tua: girala tutta, tocca quello che ti incuriosisce.",
+          "se": {
+            "var": "locked",
+            "is": false
+          }
         },
         {
           "t": "say",
           "who": "francesca",
-          "text": "Tanto di la' non si inizia senza di te."
+          "text": "Tanto di la' non si inizia senza di te.",
+          "se": {
+            "var": "locked",
+            "is": false
+          }
         },
         {
           "t": "show",
           "who": "francesca",
-          "body": "indica_tenda"
+          "body": "indica_tenda",
+          "se": {
+            "var": "locked",
+            "is": false
+          }
         },
         {
           "t": "say",
           "who": "francesca",
-          "text": "Quando sei {g:pronto|pronta} vai pure verso la tenda ed entra. Da quel momento... sei a teatro."
+          "text": "Quando sei {g:pronto|pronta} vai pure verso la tenda ed entra. Da quel momento... sei a teatro.",
+          "se": {
+            "var": "locked",
+            "is": false
+          }
+        },
+        {
+          "t": "show",
+          "who": "francesca",
+          "body": "orgogliosa",
+          "pop": true,
+          "se": [
+            {
+              "var": "locked",
+              "is": true
+            },
+            {
+              "var": "post_lobby_visto",
+              "is": false
+            }
+          ],
+          "_nota": "[POST-L01]-[POST-L07] Il ritorno in lobby dopo le previsioni: Francesca si congratula e passa la parola a Peter. Una volta sola (post_lobby_visto)."
+        },
+        {
+          "t": "say",
+          "who": "francesca",
+          "text": "Ah, eccoti. Allora, com'e' andata?",
+          "se": [
+            {
+              "var": "locked",
+              "is": true
+            },
+            {
+              "var": "post_lobby_visto",
+              "is": false
+            }
+          ]
+        },
+        {
+          "t": "say",
+          "who": "francesca",
+          "text": "Hai fatto le tue previsioni. Adesso non resta che aspettare il keynote e scoprire quanto eri lontan{g:o|a} dalla realta'.",
+          "se": [
+            {
+              "var": "locked",
+              "is": true
+            },
+            {
+              "var": "post_lobby_visto",
+              "is": false
+            }
+          ]
+        },
+        {
+          "t": "say",
+          "who": "francesca",
+          "text": "Ma non abbiamo finito.",
+          "se": [
+            {
+              "var": "locked",
+              "is": true
+            },
+            {
+              "var": "post_lobby_visto",
+              "is": false
+            }
+          ]
+        },
+        {
+          "t": "say",
+          "who": "francesca",
+          "text": "Puoi ancora mettere alla prova quello che sai sul mondo Apple.",
+          "se": [
+            {
+              "var": "locked",
+              "is": true
+            },
+            {
+              "var": "post_lobby_visto",
+              "is": false
+            }
+          ]
+        },
+        {
+          "t": "show",
+          "who": "francesca",
+          "body": "idle",
+          "se": [
+            {
+              "var": "locked",
+              "is": true
+            },
+            {
+              "var": "post_lobby_visto",
+              "is": false
+            }
+          ]
+        },
+        {
+          "t": "say",
+          "who": "francesca",
+          "text": "Vai da Peter e prova a rispondere ai suoi quiz.",
+          "se": [
+            {
+              "var": "locked",
+              "is": true
+            },
+            {
+              "var": "post_lobby_visto",
+              "is": false
+            }
+          ]
+        },
+        {
+          "t": "say",
+          "who": "francesca",
+          "text": "Ogni risposta giusta puo' aiutarti a moltiplicare i punti delle tue previsioni.",
+          "se": [
+            {
+              "var": "locked",
+              "is": true
+            },
+            {
+              "var": "post_lobby_visto",
+              "is": false
+            }
+          ]
+        },
+        {
+          "t": "say",
+          "who": "francesca",
+          "text": "Quindi si', conoscere tutti quei dettagli inutilmente specifici potrebbe finalmente tornarti utile.",
+          "se": [
+            {
+              "var": "locked",
+              "is": true
+            },
+            {
+              "var": "post_lobby_visto",
+              "is": false
+            }
+          ]
+        },
+        {
+          "t": "set",
+          "var": "post_lobby_visto",
+          "value": true,
+          "se": {
+            "var": "locked",
+            "is": true
+          },
+          "_nota": "La sequenza del ritorno si vede una volta sola. Il flag si alza anche se la sequenza e' gia' stata vista: e' idempotente, e cosi' non serve una seconda condizione."
         },
         {
           "t": "hub",
           "var": "zona",
           "start": "tenda",
-          "_nota": "S1.HUB: quattro zone, swipe libero, nessun ordine imposto. La zona 4 e' scritta due volte, una per stato di run.locked: il motore mostra solo quella la cui condizione e' vera.",
+          "_nota": "S1.HUB: quattro zone, swipe libero, nessun ordine imposto. La zona 1 e la zona 4 sono scritte due volte, una per stato di run.locked: il motore mostra solo quella la cui condizione e' vera. Dopo le previsioni l'hub si riapre da Peter, che e' quello che resta da fare.",
           "tutorial": {
             "who": "francesca",
             "body": "gesto_swipe",
@@ -1200,6 +1361,36 @@
                   },
                   "goto": "aggancio"
                 }
+              ],
+              "when": {
+                "var": "locked",
+                "is": false
+              }
+            },
+            {
+              "id": "tenda_dopo",
+              "when": {
+                "var": "locked",
+                "is": true
+              },
+              "_nota": "La stessa zona, a show finito: la tenda non porta piu' da nessuna parte, e la battuta non manda piu' nessuno di la'.",
+              "bg": "lobby_z1_tenda",
+              "who": "francesca",
+              "body": "idle",
+              "say": "Di la' hanno gia' cominciato a smontare le sedie. La tua parte sul palco e' andata.",
+              "hotspots": [
+                {
+                  "label": "LA TENDA",
+                  "x": "40%",
+                  "y": "44%",
+                  "w": "20%",
+                  "h": "42%",
+                  "who": "francesca",
+                  "say": "Non c'e' piu' niente da vedere, li' dietro. Il pezzo che ti manca e' dall'altra parte della lobby: Peter.",
+                  "react": {
+                    "level": "micro"
+                  }
+                }
               ]
             },
             {
@@ -1228,7 +1419,7 @@
               "bg": "lobby_z3_regolamento",
               "who": "francesca",
               "body": "idle",
-              "say": "Prima di entrare puoi dare un'occhiata alle regole. Non sono molte. Anche perche' abbiamo preferito lasciarti qualche possibilita' di sbagliare.",
+              "say": "Il regolamento e' li' sul cartellone, se ti serve. Non e' lungo: abbiamo preferito lasciarti qualche possibilita' di sbagliare.",
               "hotspots": [
                 {
                   "label": "IL REGOLAMENTO",
@@ -1284,7 +1475,7 @@
               "bg": "lobby_z4_quiz_aperta",
               "who": "peter",
               "body": "alza_occhi",
-              "say": "Il keynote è andato. Adesso arriva la parte difficile.\nLe domande le faccio io.",
+              "say": "Il keynote e' andato. Adesso arriva la parte difficile.\nLe domande le faccio io.",
               "hotspots": [
                 {
                   "label": "IL QUIZ",
@@ -1301,7 +1492,18 @@
                 }
               ]
             }
-          ]
+          ],
+          "tutorialSe": {
+            "var": "locked",
+            "is": false
+          },
+          "startDopo": {
+            "zona": "quiz_aperto",
+            "se": {
+              "var": "locked",
+              "is": true
+            }
+          }
         }
       ]
     },
@@ -1533,6 +1735,19 @@
           "t": "nero"
         },
         {
+          "t": "email",
+          "_nota": "[S7.03b] Facoltativa: si continua anche senza. Qui parte anche la spedizione della partita, messa in coda al momento del blocco.",
+          "titolo": "DOVE TI TROVIAMO?",
+          "testo": "Quando avremo i risultati finali, possiamo mandarteli via email.",
+          "label": "La tua email",
+          "placeholder": "nome@esempio.com",
+          "nota": "Non devi lasciarla per forza. Pero' Lorenzo e Michael ci hanno lavorato parecchio, quindi ecco. Pensaci.",
+          "privacy": "La useremo solo per inviarti i risultati di FantaLiberty Story.",
+          "ok": "CONTINUA",
+          "salta": "Preferisco spezzare loro il cuore",
+          "errore": "Manca qualcosa: controlla che ci siano la chiocciola e il punto."
+        },
+        {
           "t": "title",
           "_nota": "[S7.04b] I titoli di coda: dopo il pollice in su del CEO e prima del countdown. Cinque blocchi che compaiono, restano e sfumano uno nell'altro — non si accumulano come il cartello d'apertura. Vanno da soli, un tocco li salta tutti. Totale ~15 secondi. Il tono e' asciutto: i primi crediti seri, poi due assurdi, e la chiusa sui 30 Newton.",
           "dissolvenza": 400,
@@ -1614,9 +1829,27 @@
               "tieni": 1100
             }
           ]
+        },
+        {
+          "t": "title",
+          "_nota": "[S7.04c] Dopo i titoli di coda. Non lo dice Francesca: e' il gioco che parla al giocatore, e serve a far capire che l'esperienza non e' finita. Al tocco si torna in lobby.",
+          "lines": [
+            {
+              "text": "Hai completato una fase,",
+              "pausa": 150
+            },
+            {
+              "text": "non l'intera esperienza.",
+              "pausa": 420
+            },
+            {
+              "text": "Tocca lo schermo per continuare",
+              "small": true
+            }
+          ]
         }
       ],
-      "next": "countdown"
+      "next": "lobby"
     },
     "countdown": {
       "title": "S7 — Countdown",
@@ -1628,11 +1861,11 @@
         },
         {
           "t": "countdown",
-          "titolo": "{NOME} — SCALETTA BLOCCATA",
+          "titolo": "{NOME} — PREVISIONI COMPLETATE",
           "label": "Il keynote vero inizia tra",
           "punti": "Punti in gioco:",
           "arrivato": "E' iniziato. Buona visione.",
-          "cardTitolo": "SCALETTA BLOCCATA",
+          "cardTitolo": "PREVISIONI COMPLETATE",
           "cardPunti": "PUNTI IN GIOCO",
           "azioni": [
             {
@@ -1993,7 +2226,8 @@
               "le risposte ai quiz",
               "i punteggi",
               "bonus e moltiplicatori",
-              "i risultati della partita"
+              "i risultati della partita",
+              "l'indirizzo email, se il giocatore sceglie di lasciarlo a fine partita"
             ]
           },
           {
@@ -2003,11 +2237,12 @@
           {
             "lista": [
               "personalizzare alcune parti dell'esperienza di gioco",
-              "registrare la schedina del partecipante",
+              "registrare le previsioni del partecipante",
               "gestire il corretto funzionamento della partita",
               "calcolare punteggi, bonus e risultati",
               "creare classifiche generali e per categoria",
-              "determinare i risultati finali dell'iniziativa"
+              "determinare i risultati finali dell'iniziativa",
+              "inviare i risultati finali via email, a chi ha lasciato l'indirizzo"
             ]
           },
           "I dati non vengono utilizzati per pubblicita', marketing, profilazione o altre finalita' commerciali.",
