@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>FantaLiberty — Runner (prototipo)</title>
+<style>
+  :root{ color-scheme: light; }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; height:100%; overflow:hidden; overflow:clip;
+    background:#111; touch-action:none; overscroll-behavior:none;
+    -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  #wrap{
+    position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  }
+  #stage{
+    position:relative; background:#e9e9e4;
+    box-shadow:0 0 40px rgba(0,0,0,.6);
+  }
+  canvas{ display:block; width:100%; height:100%; }
+
+  /* ---- interfaccia sopra il canvas ---- */
+  .ui{
+    position:absolute; inset:0; pointer-events:none;
+    display:flex; flex-direction:column;
+  }
+  #hud{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    padding:14px 16px; font-weight:700; color:#2a2a28;
+    text-shadow:0 1px 0 rgba(255,255,255,.7);
+  }
+  #punti{ font-size:26px; letter-spacing:.5px; }
+  #record{ font-size:13px; opacity:.65; font-weight:600; }
+  #fps{
+    position:absolute; left:16px; bottom:12px; font-size:11px;
+    color:#2a2a28; opacity:.45; font-weight:600;
+  }
+
+  .velo{
+    position:absolute; inset:0; pointer-events:auto;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px; text-align:center; padding:24px;
+    background:rgba(238,238,233,.86); backdrop-filter:blur(3px);
+  }
+  .velo[hidden]{ display:none !important; }
+  .velo h1{ margin:0; font-size:30px; color:#1d1d1b; letter-spacing:-.5px; }
+  .velo p{ margin:0; font-size:15px; line-height:1.5; color:#4a4a46; max-width:19em; }
+  .velo .big{ font-size:52px; font-weight:800; color:#1d1d1b; margin:4px 0; }
+  .velo button{
+    margin-top:10px; padding:14px 30px; font-size:17px; font-weight:700;
+    border:0; border-radius:999px; background:#1d1d1b; color:#fff; cursor:pointer;
+    font-family:inherit;
+  }
+  .velo small{ font-size:12px; color:#8a8a84; }
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <canvas id="cv"></canvas>
+
+  <div class="ui">
+    <div id="hud"><div id="punti">0</div><div id="record">record 0</div></div>
+    <div id="fps"></div>
+  </div>
+
+  <div class="velo" id="veloStart">
+    <h1>Corsa nel corridoio</h1>
+    <p>Scorri il dito a <b>destra</b> o <b>sinistra</b> per cambiare corsia.<br>
+       Prendi gli anelli, evita i carrelli.<br>
+       <b style="color:#79c245">Verde 10</b> · <b style="color:#4aa8cc">Blu 25</b> ·
+       <b style="color:#c0453f">Rosso 50</b> — vale di piu' quello piu' difficile.</p>
+    <button id="btnVia">Via</button>
+    <small>prototipo — non è il gioco vero</small>
+  </div>
+
+  <div class="velo" id="veloFine" hidden>
+    <h1>Sbam.</h1>
+    <div class="big" id="finePunti">0</div>
+    <p id="fineNota"></p>
+    <button id="btnAncora">Ancora</button>
+  </div>
+</div></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ══════════════════════════════════════════════════════════════
+   PROTOTIPO RUNNER — test di fattibilità, non collegato al gioco.
+
+   Il personaggio non si muove mai davvero: scorre il mondo.
+   La profondità è una z fra 0 (addosso a noi) e 1 (in fondo);
+   la prospettiva è una sola formula, projetta(), usata da tutti.
+
+   Gli asset veri vengono caricati da ../../assets/in_app_game/ se ci sono,
+   altrimenti il gioco disegna dei segnaposto e gira lo stesso.
+   ══════════════════════════════════════════════════════════════ */
+
+const cv  = document.getElementById('cv');
+const ctx = cv.getContext('2d', { alpha:false });
+
+/* ---------- misure: 9:16 dentro qualunque finestra ---------- */
+const W = 720, H = 1280;           // risoluzione logica del gioco
+cv.width = W; cv.height = H;
+
+function adatta(){
+  const box = document.getElementById('stage');
+  const k = Math.min(innerWidth / W, innerHeight / H);
+  box.style.width  = Math.round(W * k) + 'px';
+  box.style.height = Math.round(H * k) + 'px';
+}
+addEventListener('resize', adatta); adatta();
+
+/* ---------- geometria del corridoio ----------
+   Il corridoio curva, e non di una curva regolare: il bordo sinistro
+   prima si allarga e poi rientra. Nessuna formula la indovina, quindi
+   i due bordi della pista sono stati TRACCIATI A MANO sul fondale con
+   test/runner/taratura.html, e qui sotto ci sono i punti misurati.
+
+   Coppie [y, x] in coordinate di gioco (720x1280), dall'alto in basso.
+   Se un giorno cambia il fondale, si rifa' la taratura e si sostituiscono
+   queste due tabelle: non c'e' altro da toccare. */
+const PISTA_SX = [[705,198],[724,209],[739,215],[753,213],[772,206],[788,197],
+                  [808,188],[824,177],[848,160],[920,113],[995,56],[1039,18]];
+const PISTA_DX = [[682,199],[686,240],[688,293],[709,332],[741,390],[788,449],
+                  [856,531],[924,601],[1023,693]];
+
+/* Dove FINISCONO in alto le cose appoggiate ai due lati: il bordo del
+   soffitto, misurato sul fondale. Coppie [x, y]. La conferma e' che
+   questi valori coincidono con la cima dei montanti dipinti nel
+   corridoio originale, prima che li togliessimo. */
+const CIMA_VETRO  = [[200,605],[240,599],[280,588],[320,572],[360,551],[400,513],
+                     [440,463],[480,411],[520,352],[560,290],[600,225],[640,160],
+                     [680,95],[700,64]];
+/* Dove il vetro POGGIA: e' piu' in basso del bordo della pista, che
+   corre dentro la ghiaia. Misurata sulla base dei montanti dipinti
+   nel corridoio originale — riconoscibile perche' li' comincia il
+   loro riflesso sul pavimento a specchio. */
+const BASE_VETRO = [[273,695],[284,699],[295,703],[306,707],[318,713],[331,723],
+                    [422,793],[451,826],[494,872],[569,968]];
+
+const CIMA_PARETE = [[0,372],[30,398],[60,424],[90,451],[120,477],[150,507],
+                     [170,527],[190,567],[200,605]];
+
+const Y_FONDO = 690;        // dove i due bordi si chiudono, in fondo alla curva
+const K       = 7;          // quanto "stringe" la profondita'
+const LARGO   = 0.26;       // distanza fra le corsie, in frazione di pista
+
+/* Dove passa un bordo all'altezza y. Fra due punti si va dritti; sopra
+   il primo e sotto l'ultimo si prosegue con la pendenza del tratto
+   d'estremita' (in basso la pista esce dallo schermo, ed e' giusto cosi'). */
+function bordo(t, y){
+  if (y <= t[0][0]) return t[0][1];
+  const u = t.length - 1;
+  if (y >= t[u][0]){
+    const [ya,xa] = t[u-1], [yb,xb] = t[u];
+    return xb + (xb - xa) * (y - yb) / (yb - ya);
+  }
+  for (let i=1; i<=u; i++){
+    if (y <= t[i][0]){
+      const [ya,xa] = t[i-1], [yb,xb] = t[i];
+      return xa + (xb - xa) * (y - ya) / (yb - ya || 1);
+    }
+  }
+  return t[u][1];
+}
+const BANDA_SOTTO = bordo(PISTA_DX, H) - bordo(PISTA_SX, H);
+
+// z=0 → davanti a noi, z cresce andando in fondo.
+function proietta(z, corsia){
+  const p = Math.min(1.15, 1 / (1 + z * K));
+  const y = Y_FONDO + (H - Y_FONDO) * p;
+  const L = bordo(PISTA_SX, y), R = bordo(PISTA_DX, y), banda = R - L;
+  return {
+    p, y,
+    x: L + banda * (0.5 + corsia * LARGO),
+    scala: banda / BANDA_SOTTO       // la pista misurata da gia' la profondita' giusta
+  };
+}
+
+/* ---------- asset: se ci sono si usano, se no segnaposto ---------- */
+const A = {};
+function carica(nome, file){
+  return new Promise(ok => {
+    const im = new Image();
+    im.onload  = () => { A[nome] = im; ok(); };
+    im.onerror = () => { A[nome] = null; ok(); };   // manca: si va di segnaposto
+    im.src = '../../assets/in_app_game/' + file;
+  });
+}
+const PRONTI = Promise.all([
+  carica('fondale',   'run_corridoio_scena.webp'),
+  carica('montante',  'run_montante.webp'),
+  carica('costola',   'run_parete_costola.webp'),
+  carica('corsa',     'run_pg_corsa.webp'),
+  carica('carrello',  'run_ost_carrello.webp'),
+  carica('rosso',     'run_anello_rosso.webp'),
+  carica('verde',     'run_anello_verde.webp'),
+  carica('blu',       'run_anello_blu.webp')
+]);
+
+/* ---------- stato ---------- */
+const S = {
+  fase:'attesa',      // attesa | corsa | fine
+  corsia:0,           // -1, 0, +1
+  corsiaVista:0,      // posizione morbida, insegue corsia
+  velocita:0.55,      // z al secondo
+  distanza:0,
+  punti:0,
+  passo:0,            // fase del ciclo di corsa
+  scorri:0,           // scorrimento del pavimento
+  cose:[],            // { tipo:'anello'|'ostacolo', z, corsia, anello, presa }
+  raccolti:0,         // punti dagli anelli, separati da quelli della corsa
+  prossimo:0,         // fra quanta distanza generare il prossimo gruppo
+  scossa:0
+};
+window.RUN = S;   // esposto per il collaudo automatico
+const RECORD = 'fl_runner_record';
+let record = 0;
+try { record = +(localStorage.getItem(RECORD) || 0) || 0; } catch(e){}
+
+/* ---------- generazione del percorso ----------
+   Gli anelli sono quelli dell'attivita' dell'orologio, e non sono
+   intercambiabili: ognuno vale quanto e' difficile prenderlo.
+
+     VERDE  in fila sulla stessa corsia — si prende correndo dritti
+     BLU    alterna le corsie — costringe a zigzagare
+     ROSSO  attaccato a un ostacolo — lo prendi e devi schivare subito
+
+   Il colore dice il rischio prima ancora del punteggio: si impara a
+   vedere il rosso e prepararsi, che e' esattamente il punto. */
+const NASCE = 1.6;   // a che distanza compaiono le cose: e' il tempo di reazione
+const ANELLI = {
+  verde: { valore: 10 },
+  blu:   { valore: 25 },
+  rosso: { valore: 50 }
+};
+
+function anello(colore, z, corsia){
+  S.cose.push({ tipo:'anello', anello:colore, z, corsia });
+}
+function corsiaDiversa(da){
+  return [-1,0,1].filter(x => x !== da)[Math.random()*2 | 0];
+}
+
+function genera(){
+  const r = Math.random();
+  const c = (Math.random()*3 | 0) - 1;
+
+  if (r < 0.38){
+    // FILA VERDE: nessun ostacolo, si corre dritti e si incassa
+    const n = 5 + (Math.random()*3 | 0);
+    for (let i=0; i<n; i++) anello('verde', NASCE + i*0.055, c);
+    S.prossimo = 0.62;
+
+  } else if (r < 0.68){
+    // ZIGZAG BLU: due terzetti su corsie diverse, obbligano a spostarsi
+    const d = corsiaDiversa(c);
+    for (let i=0; i<3; i++) anello('blu', NASCE + i*0.05, c);
+    for (let i=0; i<3; i++) anello('blu', NASCE + 0.28 + i*0.05, d);
+    S.prossimo = 0.75;
+
+  } else if (r < 0.88){
+    // ROSSI DAVANTI ALL'OSTACOLO: si prendono e si schiva all'ultimo
+    for (let i=0; i<2; i++) anello('rosso', NASCE + 0.16 + i*0.05, c);
+    S.cose.push({ tipo:'ostacolo', z: NASCE, corsia: c });
+    for (let i=0; i<3; i++) anello('verde', NASCE + i*0.055, corsiaDiversa(c));
+    S.prossimo = 0.7;
+
+  } else {
+    // due ostacoli: resta una corsia sola, e li' ci sono dei blu
+    const a = c, b = corsiaDiversa(a);
+    S.cose.push({ tipo:'ostacolo', z:NASCE, corsia:a });
+    S.cose.push({ tipo:'ostacolo', z:NASCE, corsia:b });
+    const sola = [-1,0,1].find(x => x !== a && x !== b);
+    for (let i=0; i<3; i++) anello('blu', NASCE + i*0.05, sola);
+    S.prossimo = 0.85;
+  }
+}
+
+/* ---------- comandi ---------- */
+function muovi(d){
+  if (S.fase !== 'corsa') return;
+  S.corsia = Math.max(-1, Math.min(1, S.corsia + d));
+}
+addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft')  { muovi(-1); e.preventDefault(); }
+  if (e.key === 'ArrowRight') { muovi(+1); e.preventDefault(); }
+});
+let tx = 0, ty = 0, tattivo = false;
+cv.addEventListener('touchstart', e => {
+  const t = e.changedTouches[0]; tx = t.clientX; ty = t.clientY; tattivo = true;
+}, { passive:true });
+cv.addEventListener('touchmove', e => {
+  if (!tattivo) return;
+  const t = e.changedTouches[0], dx = t.clientX - tx, dy = t.clientY - ty;
+  if (Math.abs(dx) > 26 && Math.abs(dx) > Math.abs(dy)){
+    muovi(dx > 0 ? +1 : -1); tattivo = false;
+  }
+}, { passive:true });
+cv.addEventListener('touchend', () => { tattivo = false; }, { passive:true });
+// col mouse: click sulla metà destra o sinistra
+cv.addEventListener('mousedown', e => {
+  const r = cv.getBoundingClientRect();
+  muovi(e.clientX - r.left < r.width/2 ? -1 : +1);
+});
+
+/* ---------- disegno: segnaposto ---------- */
+function fondaleFinto(){
+  // cielo/vetro a destra, parete a sinistra, pavimento
+  ctx.fillStyle = '#f2f2ee'; ctx.fillRect(0, 0, W, H);
+  // pavimento: gli stessi due bordi misurati sul fondale vero
+  ctx.fillStyle = '#e6e6e1';
+  ctx.beginPath();
+  for (let i=0; i<=20; i++){ const y = Y_FONDO + (H-Y_FONDO)*(i/20); i?ctx.lineTo(bordo(PISTA_SX,y),y):ctx.moveTo(bordo(PISTA_SX,y),y); }
+  for (let i=20; i>=0; i--){ const y = Y_FONDO + (H-Y_FONDO)*(i/20); ctx.lineTo(bordo(PISTA_DX,y), y); }
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#dfe6dc';                       // verde oltre il vetro
+  ctx.beginPath(); ctx.moveTo(W, Y_FONDO - 30); ctx.lineTo(W, H);
+  for (let i=20; i>=0; i--){ const y = Y_FONDO + (H-Y_FONDO)*(i/20); ctx.lineTo(bordo(PISTA_DX,y), y); }
+  ctx.closePath(); ctx.fill();
+  // montanti del vetro
+  ctx.strokeStyle = 'rgba(60,64,60,.5)'; ctx.lineWidth = 3;
+  for (let i=1; i<=9; i++){
+    const z = i*i*0.02, q = proietta(z, 1.6);
+    ctx.beginPath(); ctx.moveTo(q.x, q.y); ctx.lineTo(q.x, q.y - 640*q.scala); ctx.stroke();
+  }
+}
+
+function pavimentoFinto(){
+  // righe trasversali che scorrono: bastano a dare la velocità
+  ctx.strokeStyle = 'rgba(120,124,120,.22)'; ctx.lineWidth = 2;
+  for (let i=0; i<26; i++){
+    const z = ((i * 0.09) - (S.scorri % 0.09) + 0.09) % 2.34;
+    if (z > 1.4) continue;
+    const a = proietta(z, -1.9), b = proietta(z, 1.9);
+    ctx.globalAlpha = Math.min(1, a.scala * 1.6);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// macchia a terra sotto un oggetto: dice a colpo d'occhio su che corsia sta
+function ombra(x, y, raggio, forza){
+  ctx.fillStyle = 'rgba(40,46,52,' + forza + ')';
+  ctx.beginPath();
+  ctx.ellipse(x, y, raggio, raggio * 0.30, 0, 0, 7);
+  ctx.fill();
+}
+
+/* ---------- quello che scorre ai lati ----------
+   Il fondale e' un guscio fermo: montanti e costole sono pezzi separati
+   disegnati sopra, con la stessa prospettiva delle corsie.
+
+   Il parco NON si muove: e' dipinto nel fondale. Una striscia che
+   scorreva oltre il vetro e' stata provata e tolta — tagliava gli alberi
+   e la giuntura col prato dipinto si vedeva. */
+const PASSO_MONTANTE = 0.17;    // ogni quanta profondita' passa un montante
+const PASSO_COSTOLA  = 0.55;    // le costole sono molto piu' rade
+const FONDO_VISTA    = 1.9;     // fin dove si disegnano
+
+/* Un montante non e' alto "tanto quanto e' vicino": parte dal pavimento
+   e ARRIVA AL SOFFITTO. L'altezza viene dalla differenza fra i due bordi
+   misurati, non da un moltiplicatore — e' quello che li faceva crescere
+   all'infinito come pali della luce.
+
+   La larghezza invece non viene dalle proporzioni del file: montante e
+   costola erano disegnati larghi per leggersi da soli, in scena sono
+   stecche. */
+function fila(img, passo, cima, base, spessore, pista, scarto){
+  if (!img) return;
+  const n = Math.ceil(FONDO_VISTA / passo);
+  for (let i = n; i >= 0; i--){
+    const z = i * passo - (S.scorri % passo);
+    if (z < 0.015 || z > FONDO_VISTA) continue;
+    const q = proietta(z, 0);
+    const x = bordo(pista, q.y) + scarto * q.scala;
+    const giu = base ? bordo(base, x) : q.y;
+    const su = bordo(cima, x);
+    const alt = giu - su;
+    if (alt < 6) continue;
+    const largo = Math.max(2.2, alt * spessore);   // in fondo restano visibili
+    ctx.drawImage(img, x - largo/2, su, largo, alt);
+  }
+}
+
+function sagoma(x, y, s, colore){
+  ctx.fillStyle = colore;
+  ctx.beginPath();
+  ctx.roundRect(x - s*0.28, y - s, s*0.56, s, s*0.14);
+  ctx.fill();
+}
+
+/* ---------- disegno: personaggio ---------- */
+function personaggio(){
+  const q = proietta(0.06, S.corsiaVista);
+  const alt = 300 * q.scala * 1.74;
+  const x = q.x, y = q.y + 10;
+  ombra(x, y, alt * 0.20, 0.20);
+
+  if (A.corsa){
+    const im = A.corsa, fw = im.width / 4;
+    const f = (S.passo | 0) % 4;
+    const w = alt * (fw / im.height);
+    ctx.drawImage(im, f * fw, 0, fw, im.height, x - w/2, y - alt, w, alt);
+  } else {
+    const salto = Math.abs(Math.sin(S.passo * Math.PI / 2)) * alt * 0.06;
+    sagoma(x, y - salto, alt, '#3f6ea8');
+  }
+}
+
+/* ---------- ciclo ---------- */
+let ultimo = performance.now(), fpsAcc = 0, fpsN = 0;
+
+function passo(ora){
+  requestAnimationFrame(passo);
+  let dt = (ora - ultimo) / 1000; ultimo = ora;
+  if (dt > 0.05) dt = 0.05;                     // niente salti dopo un blocco
+
+  if (S.fase === 'corsa') aggiorna(dt);
+  disegna();
+
+  fpsAcc += dt; fpsN++;
+  if (fpsAcc > 0.5){
+    document.getElementById('fps').textContent = Math.round(fpsN / fpsAcc) + ' fps';
+    fpsAcc = 0; fpsN = 0;
+  }
+}
+
+function aggiorna(dt){
+  S.velocita = Math.min(1.35, S.velocita + dt * 0.022);
+  const avanti = S.velocita * dt;
+  S.distanza += avanti;
+  S.scorri   += avanti;
+  S.passo    += dt * (7 + S.velocita * 5);
+  S.corsiaVista += (S.corsia - S.corsiaVista) * Math.min(1, dt * 14);
+  if (S.scossa > 0) S.scossa -= dt;
+
+  S.prossimo -= avanti;
+  if (S.prossimo <= 0) genera();
+
+  for (const c of S.cose){
+    c.z -= avanti;
+    if (c.presa) continue;
+    if (c.z < 0.10 && c.z > -0.02 && Math.abs(c.corsia - S.corsiaVista) < 0.55){
+      if (c.tipo === 'anello'){
+        c.presa = true;
+        S.raccolti += ANELLI[c.anello].valore;
+      } else {
+        finisci(); return;
+      }
+    }
+  }
+  S.cose = S.cose.filter(c => c.z > -0.02);   // superato = fuori scena
+
+  // gli anelli valgono, ma anche il solo restare in piedi
+  S.punti = S.raccolti + ((S.distanza * 4) | 0);
+  document.getElementById('punti').textContent = S.punti;
+}
+
+function disegna(){
+  ctx.save();
+  if (S.scossa > 0){
+    ctx.translate((Math.random()-.5) * 18 * S.scossa, (Math.random()-.5) * 18 * S.scossa);
+  }
+
+  if (A.fondale) ctx.drawImage(A.fondale, 0, 0, W, H);
+  else fondaleFinto();
+
+  fila(A.montante, PASSO_MONTANTE, CIMA_VETRO,  BASE_VETRO, 0.014, PISTA_DX, -20);
+  fila(A.costola,  PASSO_COSTOLA,  CIMA_PARETE, null,       0.030, PISTA_SX, -25);
+  pavimentoFinto();
+
+  // le cose lontane per prime, così le vicine coprono
+  const ord = S.cose.slice().sort((a,b) => b.z - a.z);
+  for (const c of ord){
+    if (c.presa || c.z > NASCE + 0.1 || c.z < -0.02) continue;
+    const q = proietta(c.z, c.corsia);
+    if (c.tipo === 'anello'){
+      const s = 152 * q.scala;
+      /* Niente rotazione schiacciata: un anello schiacciato di lato
+         sembra rotto, non in movimento. Galleggia appena. */
+      const su = s * (1.25 + 0.06 * Math.sin(S.distanza * 5 + c.z * 7));
+      ombra(q.x, q.y, s * 0.30, 0.16);
+      const im = A[c.anello];
+      if (im){
+        const w = s * (im.width / im.height);
+        ctx.drawImage(im, q.x - w/2, q.y - su, w, s);
+      } else {
+        ctx.strokeStyle = { rosso:'#c0453f', verde:'#79c245', blu:'#4aa8cc' }[c.anello];
+        ctx.lineWidth = Math.max(2, s*0.16);
+        ctx.beginPath();
+        ctx.ellipse(q.x, q.y - su*0.6, s*0.33, s*0.33, 0, 0, 7);
+        ctx.stroke();
+      }
+    } else {
+      const s = 320 * q.scala;
+      ombra(q.x, q.y, s * 0.34, 0.22);
+      if (A.carrello){
+        const im = A.carrello, w = s * (im.width / im.height);
+        ctx.drawImage(im, q.x - w/2, q.y - s, w, s);
+      } else {
+        sagoma(q.x, q.y, s, '#2f3540');
+      }
+    }
+  }
+
+  if (S.fase !== 'attesa') personaggio();
+  ctx.restore();
+}
+
+/* ---------- inizio e fine ---------- */
+function via(){
+  S.fase = 'corsa'; S.corsia = 0; S.corsiaVista = 0;
+  S.velocita = 0.55; S.distanza = 0; S.punti = 0; S.raccolti = 0;
+  S.cose = []; S.prossimo = 0.4; S.scossa = 0;
+  document.getElementById('veloStart').hidden = true;
+  document.getElementById('veloFine').hidden  = true;
+}
+function finisci(){
+  S.fase = 'fine'; S.scossa = 0.5;
+  if (S.punti > record){
+    record = S.punti;
+    try { localStorage.setItem(RECORD, record); } catch(e){}
+  }
+  document.getElementById('record').textContent = 'record ' + record;
+  document.getElementById('finePunti').textContent = S.punti;
+  document.getElementById('fineNota').textContent =
+    S.punti >= record ? 'Nuovo record.' : 'Il record resta ' + record + '.';
+  document.getElementById('veloFine').hidden = false;
+}
+document.getElementById('btnVia').onclick    = via;
+document.getElementById('btnAncora').onclick = via;
+document.getElementById('record').textContent = 'record ' + record;
+
+PRONTI.then(() => {
+  const mancanti = Object.keys(A).filter(k => !A[k]);
+  if (mancanti.length){
+    document.querySelector('#veloStart small').textContent =
+      'prototipo — grafica finta (' + mancanti.join(', ') + ')';
+  }
+  requestAnimationFrame(passo);
+});
+
+})();
+</script>
+</body>
+</html>

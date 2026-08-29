@@ -60,7 +60,8 @@ lo stesso hotspot 3+ volte)
 il giocatore impiega troppo a scegliere lo stile) ·
 `chr_susan_commento_stile` (S3 — **sprite sheet con 4 teste**, una per
 stile: va tagliato in 4 file separati e mostrato in base a `run.style`) ·
-`chr_susan_spinta_in_scena` (S4, posa piena) · `chr_susan_sollievo` (S7) ·
+`chr_susan_spinta_in_scena` (non più collegata: sostituita dalle otto
+composizioni `scene_<stile>_push/ready` sotto) · `chr_susan_sollievo` (S7) ·
 `chr_susan_sguardo_in_alto` (S7, verso la porta) · `chr_susan_carponi` (S5,
 P2, solo se scelta sfacciata in S2)
 
@@ -129,12 +130,34 @@ all'inizio della S4 e non cambia più per tutta la sessione.
 | `obj_icone_categorie` | S5 | **9 file** (3 icone × 3 stati: attiva/completata/disabilitata) — sovrapposte sui 3 pannelli vuoti di `bg_palco_schermo_categorie`, lo stato cambia in base a `picks[categoria]` completo o no |
 | `obj_card_condivisibile` | S7 | Template finale: combina `stile_X_saluto_finale`, `obj_badge` compilato, nome e store — esportato client-side come immagine 1080×1920/1080×1350 |
 | `obj_zaino_rider` | S5 | **Ora è un personaggio pixel-art completo** (rider con zaino termico), non un oggetto isolato — appare solo nell'evento personale della Drip |
+| `prop_ukulele` | S5 | Oggetto separato dell'evento personale dell'Hawaiano (UKULELE): compare solo per la durata dell'evento, non resta in scena dopo |
+| `prop_podium` | S5 | Il leggio del keynote — **non è un prop a comparsa**: fisso per tutta la durata di S5 (`story.scenes[x].podio: true`), davanti alla figura del giocatore, dietro il box del dialogo |
+
+### Le otto composizioni Susan + personaggio (S4)
+Consegnate come **immagini già complete** (Susan e lo stile scelto insieme,
+proporzione e posizione decise nel disegno): non vanno più trattate come due
+sprite separati da riallineare a mano, sostituiscono `chr_susan_indica_camerino`
+(S4, ora usato solo in S2) e `chr_susan_spinta_in_scena` (non più collegato).
+Una coppia push/ready per stile, nomi in inglese nel file ma agganciati alle
+chiavi italiane di `story.stili` (`hawaiano`→hawaiian, `ingegnere`→engineer):
+
+| File | Stile | Momento |
+|---|---|---|
+| `scene_hawaiian_ready` / `scene_hawaiian_push` | Hawaiano | `duo_pronto`/`duo_spinta` |
+| `scene_drip_ready` / `scene_drip_push` | Drip | `duo_pronto`/`duo_spinta` |
+| `scene_showman_ready` / `scene_showman_push` | Showman | `duo_pronto`/`duo_spinta` |
+| `scene_engineer_ready` / `scene_engineer_push` | Ingegnere | `duo_pronto`/`duo_spinta` |
 
 ---
 
-## PLATEA
-Layer sovrapposti a `bg_palco_platea_piena`, mai correlati al contenuto
-della risposta data.
+## PLATEA — non si fanno
+Erano layer da sovrapporre a `bg_palco_platea_piena`, mai correlati al
+contenuto della risposta. **Decisione presa: non si disegnano.** Il gioco è già
+lungo e le reazioni della platea aggiungerebbero un passaggio fra una scelta e
+l'altra; la priorità è rifinire quello che c'è. I file restano dichiarati in
+`story.json` (il motore sa mostrarli, se un giorno arrivassero) ma non sono più
+in lavorazione: senza di loro la scena va avanti uguale, senza layer di
+reazione. Le scene non vanno modificate per compensarne l'assenza.
 
 | File | Uso |
 |---|---|

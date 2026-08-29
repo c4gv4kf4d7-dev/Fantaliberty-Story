@@ -31,7 +31,7 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '18',
+    engine: '20',
     story: null,
     banca: null,    // game/domande.json: domande, battute per stile, eventi, intermezzi
     quiz: null,     // game/quiz.json: i tre livelli del quiz di Peter [S8]
@@ -502,6 +502,9 @@
     var sc = VN.story.scenes[save.scene];
     VN.scene = sc; VN.sceneId = save.scene;
     if (sc.bg) setBg(sc.bg, sc.bgFx);
+    precaricaScena(sc);
+    // mentre si gioca questa, si scaricano le scene in cui si puo' finire dopo
+    precaricaProssime(sc);
     atmosfera(sc);
     if (sc.terminal) { buildTerminal(sc.terminal); sc.terminal.forEach(function (r) { termSet(r.var); }); }
     var upto = Math.min(save.i || 0, (sc.steps || []).length);
@@ -514,6 +517,20 @@
 
   /* ---------------- step runner ---------------- */
   var silent = false;   // true durante il ripristino
+
+  /* Ogni scena ha il suo numero di giro. Serve perche' gli step che finiscono
+     PIU' TARDI (un'attesa, una dissolvenza, una transizione) tengono in mano un
+     "poi fai questo": se nel frattempo la scena e' cambiata, quel seguito
+     apparteneva alla scena di prima e non deve far avanzare quella nuova —
+     altrimenti la scena nuova parte da sola, saltando i suoi primi passi.
+     E' l'altra faccia degli intrusi: non un'immagine di prima, ma un tempo di
+     prima che continua a comandare. */
+  var gen = 0;
+  function perScena(fn) {
+    var mio = gen;
+    return function () { if (mio !== gen) return; return fn.apply(this, arguments); };
+  }
+
   function next() { if (silent) return; VN.i++; run(); }
 
   /* Una scena che COMINCIA su un cartello nero (sigla, barra di caricamento,
@@ -543,18 +560,82 @@
     chiudiCountdown();
     chiudiQuiz();
     chiudiRegole();
+    chiudiEmail();
     chiudiTransizioni();
     if (el.modal) el.modal.classList.remove('on');
     if (!apreSulNero(sc)) el.curtain.classList.remove('on', 'lights');
     // Il box del dialogo restava acceso con l'ultima battuta della scena
     // precedente finche' non ne arrivava una nuova: si vedeva la vecchia frase
     // sopra il fondale nuovo.
-    if (!silent) { el.boxwrap.classList.remove('in'); el.txt.textContent = ''; el.arrow.style.opacity = 0; }
+    // Va spento di netto: con la sua transizione di mezzo secondo, la vecchia
+    // battuta sfumava *sopra* il fondale nuovo.
+    if (!silent) {
+      el.boxwrap.style.transition = 'none';
+      el.boxwrap.classList.remove('in');
+      void el.boxwrap.offsetWidth;
+      el.boxwrap.style.transition = '';
+      el.txt.textContent = '';
+      el.arrow.style.opacity = 0;
+    }
+    gen++;              // da qui in poi i seguiti della scena di prima non contano piu'
+    pending = null;
     VN.scene = sc; VN.sceneId = id; VN.i = 0;
     if (sc.bg) setBg(sc.bg, sc.bgFx, sc.dissolvenza);
+    // gli asset della scena nuova si chiedono subito: se questa si apre al
+    // buio, arrivano mentre non si vede niente
+    precaricaScena(sc);
     atmosfera(sc);
     if (sc.terminal) buildTerminal(sc.terminal);
-    run();
+    // il leggio del keynote: fisso per tutta la scena, non uno step. La src si
+    // imposta una sola volta, non serve rifarlo a ogni cambio scena.
+    if (el.podiumwrap) {
+      if (sc.podio && el.podiumImg && !el.podiumImg.src) el.podiumImg.src = assetUrl('props', 'podio');
+      el.podiumwrap.classList.toggle('on', !!sc.podio);
+    }
+    avviaQuandoPronta(id);
+  }
+
+  /* La scena non comincia finche' il suo fondale non e' pronto: altrimenti i
+     personaggi nuovi entrano sopra il fondale di quella di prima. Vale per
+     tutte, non solo per quelle che si aprono con lo step "luce" — la maggior
+     parte cambia scena senza un nero che copra.
+
+     Se il fondale tarda oltre il tetto non si fa entrare comunque la scena
+     sopra quello vecchio: si mette il nero (che e' il linguaggio del gioco per
+     un cambio di scena) e lo si toglie appena il fondale c'e'. Cosi' l'attesa
+     puo' allungarsi senza che si veda mai un fotogramma sbagliato.
+     Con il precaricamento, in pratica, non si aspetta mai. */
+  function avviaQuandoPronta(id) {
+    var mio = gen;
+    var partita = false;
+    var parti = function () {
+      if (partita || mio !== gen || VN.sceneId !== id) return;
+      partita = true;
+      run();
+    };
+    if (!VN.speed || !siDecodifica() || !el.bg || mostrata(el.bg, bgVoluto)) return parti();
+
+    var coperto = false;
+    var tetto = global.setTimeout(function () {
+      if (partita || mio !== gen || VN.sceneId !== id) return;
+      coperto = true;
+      el.nero.classList.remove('sfuma');      // di netto: e' un ripiego, non un effetto
+      el.nero.classList.add('on');
+      parti();
+    }, ATTESA_MAX);
+
+    quandoPronti(function () {
+      global.clearTimeout(tetto);
+      if (mio !== gen || VN.sceneId !== id) return;
+      parti();
+      // il nero si toglie solo quando sotto c'e' davvero il fondale nuovo: se
+      // tarda ancora, meglio restare al buio che scoprire quello vecchio
+      if (!coperto) return;
+      if (mostrata(el.bg, bgVoluto)) return el.nero.classList.remove('on');
+      el.bg.addEventListener('load', function () {
+        if (mio === gen) el.nero.classList.remove('on');
+      }, { once: true });
+    }, TETTO_FONDALE);
   }
 
   function run() {
@@ -583,7 +664,8 @@
                     st.t === 'list' || st.t === 'badge' ||
                     st.t === 'carosello' || st.t === 'hub' || st.t === 'griglia' ||
                     st.t === 'domande' || st.t === 'bivio' || st.t === 'intermezzo' ||
-                    st.t === 'recap' || st.t === 'quizhub' || st.t === 'quizmult')) VN.saveNow();
+                    st.t === 'recap' || st.t === 'quizhub' || st.t === 'quizmult' ||
+                    st.t === 'email')) VN.saveNow();
 
     switch (st.t) {
 
@@ -600,7 +682,7 @@
         // tap. Serve per i momenti in cui il gioco sta facendo qualcosa (il
         // badge in stampa) e la battuta e' un'indicazione, non una replica.
         var avanzaSay = st.attesa && VN.speed
-          ? function () { el.arrow.style.opacity = 0; setTimeout(next, st.attesa); }
+          ? function () { el.arrow.style.opacity = 0; setTimeout(perScena(next), st.attesa); }
           : function () { pending = next; el.arrow.style.opacity = 1; };
         el.boxwrap.classList.toggle('sistema', !!st.sistema);
         type(fmt(testoDi(st)), avanzaSay);
@@ -650,10 +732,12 @@
 
       // dissolvenza al nero e ritorno: coprono un cambio di scena
       case 'nero':
-        return velaNero(true, st.ms, next);
+        return velaNero(true, st.ms, perScena(next));
 
       case 'luce':
-        return velaNero(false, st.ms, next);
+        // la luce si alza su una scena gia' pronta: e' qui che si evita il
+        // fotogramma con il personaggio (o il fondale) di prima
+        return quandoPronti(perScena(function () { velaNero(false, st.ms, perScena(next)); }), TETTO_FONDALE);
 
       // la figura del giocatore: entra, cambia posa, esce
       case 'io':
@@ -695,6 +779,9 @@
         return showMult(st);
 
       // S7: il countdown al keynote vero, ultima schermata del gioco
+      case 'email':
+        return showEmail(st);
+
       case 'countdown':
         return showCountdown(st);
 
@@ -702,24 +789,24 @@
       // viste), ma il fondale che lasciano dietro va rimesso a posto.
       case 'carrellata':
         if (silent) return next();
-        return carrellata(st, next);
+        return carrellata(st, perScena(next));
 
       case 'sipario':
         if (silent) { if (st.dietro) setBg(st.dietro, st.fx); return next(); }
-        return sipario(st, next);
+        return sipario(st, perScena(next));
 
       case 'logo':
         el.boxwrap.classList.remove('in');
         el.hint.style.opacity = 0;
         scopriCartello();
-        sigla(st, next);
+        sigla(st, perScena(next));
         return;
 
       case 'boot':
         el.boxwrap.classList.remove('in');
         el.hint.style.opacity = 0;
         scopriCartello();
-        boot(st, next);
+        boot(st, perScena(next));
         return;
 
       case 'title':
@@ -731,8 +818,8 @@
         // "blocchi": i titoli di coda. Le righe non si accumulano come nel
         // cartello d'apertura — ogni blocco compare, resta, sfuma, e arriva il
         // prossimo. Va da solo, un tocco salta tutto.
-        if (st.blocchi) return titoliDiCoda(st, next);
-        typeLines(righeTitolo(st.lines), next);
+        if (st.blocchi) return titoliDiCoda(st, perScena(next));
+        typeLines(righeTitolo(st.lines), perScena(next));
         return;
 
       case 'show':
@@ -757,7 +844,11 @@
       case 'prop':
         // l'id passa da fmt(): cosi' una scena puo' scrivere "slide_{categoria}"
         // e far scegliere l'oggetto alla variabile
-        if (st.id) el.prop.src = assetUrl('props', fmt(st.id));
+        if (st.id) {
+          var srcProp = assetUrl('props', fmt(st.id));
+          if (el.propwrap.classList.contains('in')) scambia(el.prop, srcProp);
+          else apparira(el.prop, srcProp, el.propwrap);
+        }
         el.propwrap.style.width = st.size || '';        // la scena puo' ridimensionare il prop
         el.propwrap.style.top = st.top || '';
         el.propwrap.classList.remove(st.show ? 'out' : 'in');
@@ -771,7 +862,7 @@
         // attesa lo "show" successivo cambiava posa e faccia subito, sopra il
         // fondale vecchio: si vedeva prima lo scatto del personaggio e poi il
         // fondale. Ora i due coincidono.
-        if (cambiato && VN.speed) return setTimeout(next, BG_FADE);
+        if (cambiato && VN.speed) return setTimeout(perScena(next), BG_FADE);
         return next();
 
       case 'fx':
@@ -789,7 +880,7 @@
 
       case 'wait':
         if (!VN.speed) return next();          // speed 0 = modalita' test/skip
-        return setTimeout(next, st.ms || 400);
+        return setTimeout(perScena(next), st.ms || 400);
 
       case 'set':
         VN.state[st.var] = st.value;
@@ -850,13 +941,27 @@
       current.who = null;
       return;
     }
+    var precedente = current.who;
     current.who = who; current.body = body; current.head = head;
 
     // file dichiarato ma non ancora consegnato: si nasconde il personaggio
     // invece di lasciare l'icona di immagine rotta in mezzo alla scena
     el.npcBody.onerror = function () { el.npc.classList.add('broken'); };
     el.npc.classList.remove('broken');
-    el.npcBody.src = bodySrc;
+    // Due casi diversi. Se in scena c'e' gia' lo stesso personaggio, questo e'
+    // un cambio di posa: la posa vecchia resta finche' non arriva la nuova
+    // (sparire e ricomparire sarebbe peggio). Se invece entra adesso — altro
+    // personaggio, o riquadro vuoto — quello che ha addosso l'<img> e' il
+    // personaggio della scena precedente: si tiene invisibile finche' non e'
+    // pronto.
+    var giaInScena = precedente === who && el.npc.classList.contains('in')
+      && !el.npc.classList.contains('attesa');
+    // chi il motore INTENDE mostrare. Serve a tools/verifica-transizioni.mjs per
+    // distinguere una continuita' voluta (lo stesso personaggio che resta in
+    // scena) da un intruso (il personaggio di prima ancora disegnato).
+    el.npc.setAttribute('data-chi', who);
+    if (giaInScena) scambia(el.npcBody, bodySrc);
+    else apparira(el.npcBody, bodySrc, el.npc);
     setHead(head);
     if (c && c.neck) {                         // ancoraggio del collo, in % del riquadro corpo
       el.npcHead.style.left = c.neck.x || '50%';
@@ -892,6 +997,10 @@
     else { el.npc.classList.remove('pop'); void el.npc.offsetWidth; el.npc.classList.add('in'); }
   }
 
+  /* Il riquadro del personaggio resta nascosto (visibility, non opacity: cosi'
+     l'animazione d'ingresso parte lo stesso) finche' lo sprite chiesto non e'
+     pronto. Il tetto di tempo e' una rete di sicurezza: se il file non arriva,
+     meglio mostrarlo comunque che lasciare la scena vuota. */
   /* Inquadratura sul volto.
      Il viso e' la cosa che l'occhio confronta fra un personaggio e l'altro:
      due pose "alte uguali" sembrano diverse se una e' un mezzobusto e l'altra
@@ -960,7 +1069,9 @@
     el.npcHead.onerror = function () { el.npcHead.style.visibility = 'hidden'; };
     el.npcHead.style.visibility = '';
     el.npcHead.style.display = src ? '' : 'none';   // personaggi a sprite unico: nessuna testa separata
-    if (src) el.npcHead.src = src;
+    // La testa si scambia quando la nuova e' pronta: nasconderla nel frattempo
+    // vorrebbe dire un personaggio senza testa per mezzo secondo.
+    if (src) scambia(el.npcHead, src);
     current.head = head;
   }
 
@@ -968,9 +1079,13 @@
     var level = st.level || 'micro';
     if (level === 'pose' && st.body) {
       var src = partUrl(current.who, 'bodies', st.body);
-      if (src) { el.npcBody.src = src; current.body = st.body; }
+      var scatta = function () {
+        el.npc.classList.remove('pop'); void el.npc.offsetWidth; el.npc.classList.add('pop');
+      };
       if (st.head) setHead(st.head);
-      el.npc.classList.remove('pop'); void el.npc.offsetWidth; el.npc.classList.add('pop');
+      // il sussulto parte quando la posa nuova c'e' davvero, non prima
+      if (src) { current.body = st.body; scambia(el.npcBody, src, scatta); }
+      else scatta();
       return;
     }
     if (level === 'expr' && st.head) { setHead(st.head); return; }
@@ -1195,7 +1310,7 @@
       cur = (i + opts.length) % opts.length;
       var o = opts[cur];
       visti[o.id] = true;
-      el.carImg.src = withBase(o.img);
+      scambia(el.carImg, withBase(o.img));
       if (dir) {
         el.carImg.classList.remove('entraSx', 'entraDx');
         void el.carImg.offsetWidth;
@@ -1530,8 +1645,11 @@
     if (e.asset && e.asset.indexOf('stili/') === 0) mostraIo({ posa: 'evento' });
     else mostraIo({ posa: 'imbarazzo' });
     // un oggetto (il clicker che si inceppa, la slide sbagliata) va nello slot
-    // dei prop; un secondo personaggio (il rider) nello slot degli ospiti
+    // dei prop; un secondo personaggio (il rider) nello slot degli ospiti.
+    // "prop" e' per l'evento personale che ha GIA' un asset stili/ per la posa
+    // e in piu' un oggetto separato (l'ukulele accanto alla posa di ballo).
     if (e.asset && e.asset.indexOf('props/') === 0) mostraPropEvento(e.asset);
+    if (e.prop) mostraPropEvento(e.prop);
     if (e.extra_asset) mostraOspite(e.extra_asset);
     platea(e.platea);
 
@@ -1599,8 +1717,8 @@
 
   // un secondo personaggio in scena solo per la durata di un evento (il rider)
   function mostraOspite(rel) {
-    el.ospite.src = withBase(rel);
     el.ospite.onerror = function () { el.ospitewrap.classList.remove('on'); };
+    apparira(el.ospite, withBase(rel), el.ospitewrap);
     el.ospitewrap.classList.add('on');
   }
   function nascondiOspite() { if (el.ospitewrap) el.ospitewrap.classList.remove('on'); }
@@ -1609,8 +1727,8 @@
   // la slide del macroargomento attivo, e sovrascriverla la farebbe sparire per
   // tutto il resto del blocco.
   function mostraPropEvento(rel) {
-    el.evprop.src = withBase(rel);
     el.evprop.onerror = function () { el.evpropwrap.classList.remove('on'); };
+    apparira(el.evprop, withBase(rel), el.evpropwrap);
     el.evpropwrap.classList.remove('on'); void el.evpropwrap.offsetWidth;
     el.evpropwrap.classList.add('on');
   }
@@ -1623,7 +1741,7 @@
     var src = id ? assetUrl('platea', id) : '';
     if (!src) { el.platea.classList.remove('on'); return; }
     el.plateaImg.onerror = function () { el.platea.classList.remove('on'); };
-    el.plateaImg.src = src;
+    apparira(el.plateaImg, src, el.platea);
     el.platea.classList.remove('on'); void el.platea.offsetWidth;
     el.platea.classList.add('on');
   }
@@ -1813,7 +1931,7 @@
       el.arrow.style.opacity = 0;
       el.boxwrap.classList.add('in', 'recap');
       el.recap.classList.add('on');
-      el.blocca.textContent = fmt(st.bottone || 'BLOCCA LA SCALETTA');
+      el.blocca.textContent = fmt(st.bottone || 'CONFERMA LE PREVISIONI');
       pending = null;
     }
 
@@ -1821,12 +1939,16 @@
     el.blocca.onclick = function (ev) {
       if (ev && ev.stopPropagation) ev.stopPropagation();
       if (uscito) return;
-      mostraModale(st.lock || { text: 'Sicuro? Dopo questo, la schedina e\' chiusa.' }, function () {
+      mostraModale(st.lock || { text: 'Sicuro? Dopo questo le tue previsioni sono definitive.' }, function () {
         uscito = true;
         VN.state.locked = true;
         VN.state.punti = totale();
         VN.progressed = true;
-        invia();                              // il POST non blocca il gioco
+        // Non si spedisce ancora: subito dopo c'e' la schermata dell'email, e
+        // una partita spedita due volte sarebbe due righe nella tabella. La
+        // partita va in coda, e la spedisce lo step 'email' (o il prossimo
+        // avvio, se il giocatore chiude li').
+        accoda(payload());
         el.recap.classList.remove('on');
         el.boxwrap.classList.remove('recap');
         hideUI();
@@ -1854,6 +1976,7 @@
       punti: totale(), picks: s.picks || {},
       flags: { sfacciato: !!s.sfacciato, studiato: s.studiato },
       quiz: { livelli: s.quiz || {}, banca: bancaMult(), moltiplicatori: s.moltiplicatori || null },
+      email: s.email || null,
       versione: (VN.story.meta && VN.story.meta.version) || ''
     };
   }
@@ -1907,6 +2030,78 @@
     if (d) invia(d);
   };
 
+  /* ---------------- l'email facoltativa [S7.03b] ----------------
+     Sta fra il blocco delle previsioni e i titoli di coda, e serve a una cosa
+     sola: mandare i risultati quando ci saranno. E' facoltativa davvero — si
+     continua anche saltandola, e saltarla e' un bottone dichiarato, non una X
+     nascosta.
+
+     Qui parte anche la spedizione della partita: al blocco e' finita in coda
+     apposta, cosi' quello che arriva al server e' una riga sola, con dentro
+     l'email se il giocatore l'ha lasciata. */
+  var RE_EMAIL = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
+
+  function showEmail(st) {
+    hideUI();
+    el.boxwrap.classList.remove('in');
+    el.emailtit.textContent = fmt(st.titolo || 'DOVE TI TROVIAMO?');
+    el.emailtesto.textContent = fmt(st.testo || '');
+    el.emaillabel.textContent = fmt(st.label || 'La tua email');
+    el.emailnota.textContent = fmt(st.nota || '');
+    el.emailprivacy.textContent = fmt(st.privacy || '');
+    el.emailok.textContent = fmt(st.ok || 'CONTINUA');
+    el.emailsalta.textContent = fmt(st.salta || 'Preferisco spezzare loro il cuore');
+    el.emailin.placeholder = st.placeholder || 'nome@esempio.com';
+    el.emailin.value = VN.state.email || '';
+    el.emailerr.textContent = '';
+    el.emailerr.classList.remove('on');
+
+    var uscito = false;
+    function esci() {
+      if (uscito) return;
+      uscito = true;
+      chiudiEmail();
+      invia();                       // il POST non blocca il gioco
+      VN.saveNow();
+      next();
+    }
+
+    el.emailin.oninput = function () { el.emailerr.classList.remove('on'); };
+    el.emailin.onkeydown = function (e) { if (e.key === 'Enter') el.emailok.click(); };
+
+    el.emailok.onclick = function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      var v = String(el.emailin.value || '').trim();
+      // campo vuoto e CONTINUA: e' un modo come un altro di saltare, non un
+      // errore da rinfacciare
+      if (!v) { VN.state.email = null; return esci(); }
+      if (!RE_EMAIL.test(v)) {
+        el.emailerr.textContent = fmt(st.errore || 'Manca qualcosa: controlla che ci siano la chiocciola e il punto.');
+        el.emailerr.classList.add('on');
+        try { el.emailin.focus(); } catch (e) {}
+        return;
+      }
+      VN.state.email = v;
+      VN.progressed = true;
+      esci();
+    };
+
+    el.emailsalta.onclick = function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      VN.state.email = null;
+      esci();
+    };
+
+    el.emailwrap.classList.add('on');
+    pending = null;
+    if (VN.speed) setTimeout(function () { try { el.emailin.focus(); } catch (e) {} }, 80);
+  }
+
+  function chiudiEmail() {
+    if (el.emailwrap) el.emailwrap.classList.remove('on');
+    if (el.emailerr) el.emailerr.classList.remove('on');
+  }
+
   /* ================ S7: countdown e card ================ */
 
   function quandoKeynote() {
@@ -1945,7 +2140,7 @@
       el.cdtempo.textContent = (m.g ? m.g + 'g ' : '') + due(m.h) + ':' + due(m.m) + ':' + due(m.s);
     }
 
-    el.cdnome.textContent = fmt(st.titolo || '{NOME} — SCALETTA BLOCCATA');
+    el.cdnome.textContent = fmt(st.titolo || '{NOME} — PREVISIONI COMPLETATE');
     el.cdlabel.textContent = fmt(st.label || 'Il keynote vero inizia tra');
     el.cdpunti.textContent = fmt(st.punti || 'Punti in gioco:') + ' ' + totale();
     aggiorna();
@@ -2011,7 +2206,7 @@
       if (s) { x.fillStyle = '#ffd98a'; font(30); x.fillText((s.nome || '').toUpperCase(), W / 2, 1520); }
 
       x.fillStyle = '#fff'; font(34);
-      x.fillText(fmt(st.cardTitolo || 'SCALETTA BLOCCATA'), W / 2, 1650);
+      x.fillText(fmt(st.cardTitolo || 'PREVISIONI COMPLETATE'), W / 2, 1650);
       x.fillStyle = '#ffd98a'; font(72);
       x.fillText(String(totale()), W / 2, 1760);
       x.fillStyle = '#9fb4d8'; font(22);
@@ -2614,6 +2809,12 @@
     var zones = (st.zones || []).filter(function (z) { return condizioneOk(z.when); });
     if (!zones.length) return next();
 
+    // Il tutorial ("scorri, le zone sono quattro") si dice una volta nella
+    // partita, non a ogni apertura dell'hub: tornando in lobby dopo le
+    // previsioni il giro della lobby e' gia' stato fatto. Lo dichiara la scena
+    // con "tutorialSe".
+    var tutorial = condizioneOk(st.tutorialSe) ? st.tutorial : null;
+
     var cur = -1;
     var visti = {};
     var scorso = false;                 // il giocatore ha gia' cambiato zona?
@@ -2628,12 +2829,23 @@
       var primaVolta = !visti[z.id];
       visti[z.id] = true;
 
+      // Dal secondo passaggio in poi la guida non ripete cos'e' la zona: o la
+      // zona dichiara una battuta di ritorno (la tenda: "sei pronto?"), oppure
+      // resta muta e il personaggio sparisce del tutto, per lasciare girare in
+      // pace chi ha gia' fatto il giro.
+      var ritorno = primaVolta ? null : (z.ritorno || null);
+      var muta = !primaVolta && !ritorno;
+
       if (z.bg) setBg(z.bg, z.bgFx);
       // Nell'hub il protagonista e' l'ambiente: il personaggio commenta da
       // bordo scena e non deve coprire quello che c'e' da toccare. Percio' qui
       // vale "scalaHub" del cast (piu' contenuta) invece di "scala".
-      if (z.who) showChar(perHub(z));
-      else { el.npc.classList.remove('in', 'pop'); el.npc.classList.add('out'); current.who = null; }
+      var chiInScena = muta ? null : (ritorno ? (ritorno.who || z.who) : z.who);
+      if (chiInScena) {
+        showChar(perHub(ritorno
+          ? { who: chiInScena, body: ritorno.body || z.body, height: z.height, bottom: z.bottom, right: z.right }
+          : z));
+      } else { el.npc.classList.remove('in', 'pop'); el.npc.classList.add('out'); current.who = null; }
 
       if (dir) {
         var verso = dir > 0 ? 'vaiSx' : 'vaiDx';
@@ -2647,16 +2859,26 @@
       // finche' non ha scorso, parla il tutorial; poi ogni zona ha la sua battuta.
       // "dice" separa chi parla da chi si vede: nella zona del quiz si vede Peter
       // che dorme, ma a commentare e' Francesca.
-      var battuta = (!scorso && st.tutorial && st.tutorial.text) || z.say;
-      var chi = (!scorso && st.tutorial && st.tutorial.who) || z.dice || z.who;
+      var battuta = (!scorso && tutorial && tutorial.text)
+        || (ritorno ? ritorno.say : (muta ? null : z.say));
+      var chi = (!scorso && tutorial && tutorial.who)
+        || (ritorno ? (ritorno.dice || ritorno.who || z.who) : (z.dice || z.who));
+      stopTyping();
+      typing = false;
+      pending = null;
+      el.arrow.style.opacity = 0;
       if (battuta) {
+        el.boxwrap.classList.add('in');
         setSpeaker(chi);
-        // gia' vista: si rimette a schermo intera, senza rifarla scrivere
-        if (primaVolta) typeKeep(fmt(battuta));
-        else { stopTyping(); typing = false; el.txt.textContent = fmt(battuta); }
+        typeKeep(fmt(battuta));
+      } else {
+        // niente da dire: via anche il box, cosi' la lobby resta pulita
+        el.txt.textContent = '';
+        el.boxwrap.classList.remove('in');
+        setSpeaker(null);
       }
-      if (!scorso && st.tutorial && st.tutorial.body) {
-        showChar(perHub({ who: chi, body: st.tutorial.body }));
+      if (!scorso && tutorial && tutorial.body) {
+        showChar(perHub({ who: chi, body: tutorial.body }));
       }
       render();
     }
@@ -2698,7 +2920,10 @@
     function tocca(h, bloccato) {
       if (uscito) return;
       if (bloccato) {
-        setSpeaker(h.who || zones[cur].who);
+        var bw = h.who || zones[cur].who;
+        el.boxwrap.classList.add('in');
+        if (bw && current.who !== bw) showChar(perHub(bw === zones[cur].who ? zones[cur] : { who: bw }));
+        setSpeaker(bw);
         typeKeep(fmt(h.bloccato || 'Non ancora: prima guardati intorno.'));
         return;
       }
@@ -2714,7 +2939,16 @@
           var k = 0;
           var parla = function () {
             var r = righe[k++];
-            setSpeaker(r.who || h.who || zones[cur].who);
+            var rw = r.who || h.who || zones[cur].who;
+            el.boxwrap.classList.add('in');
+            // nelle zone gia' viste il personaggio non e' in scena: se e' lui a
+            // rispondere al tocco, rientra invece di parlare da fuori campo
+            if (rw && current.who !== rw) {
+              showChar(perHub(rw === zones[cur].who
+                ? zones[cur]
+                : { who: rw }));
+            }
+            setSpeaker(rw);
             typeKeep(fmt(r.text || ''));
             pending = k < righe.length ? parla : null;
             el.arrow.style.opacity = k < righe.length ? 1 : 0;
@@ -2765,8 +2999,13 @@
   }
 
   function indiceIniziale(st, zones) {
-    if (!st.start) return 0;
-    for (var i = 0; i < zones.length; i++) if (zones[i].id === st.start) return i;
+    // "startDopo": da quale zona si apre l'hub quando una condizione e' vera.
+    // Serve alla lobby dopo le previsioni: li' il contenuto nuovo e' Peter, e
+    // riaprire sulla tenda manderebbe il giocatore verso una porta chiusa.
+    var start = st.start;
+    if (st.startDopo && condizioneOk(st.startDopo.se)) start = st.startDopo.zona;
+    if (!start) return 0;
+    for (var i = 0; i < zones.length; i++) if (zones[i].id === start) return i;
     return 0;
   }
 
@@ -3063,7 +3302,7 @@
       // il riquadro del nome e' in percentuale sull'immagine: finche' non e'
       // caricata non ha una larghezza vera da misurare
       el.badgeImg.onload = function () { adattaBadge(); };
-      el.badgeImg.src = src;
+      apparira(el.badgeImg, src, el.badgewrap);
     } else {
       el.badgewrap.classList.add('senzaimg');
     }
@@ -3123,6 +3362,232 @@
     return ((VN.story.meta && VN.story.meta.assetBase) || '') + rel;
   }
 
+  /* ---------------- immagini: mai un fotogramma sbagliato ----------------
+     Un <img> a cui si cambia "src" continua a disegnare l'immagine VECCHIA
+     finche' la nuova non e' decodificata. Da qui nascono tutti gli "intrusi":
+     il fondale della scena di prima sotto i personaggi di quella nuova, la posa
+     precedente per un fotogramma, la slide sbagliata dentro il riquadro.
+
+     Due modi di cambiare un'immagine, e vanno tenuti distinti:
+
+       scambia()  - l'elemento e' GIA' a schermo e cambia contenuto (una posa,
+                    un'espressione, una slide). L'immagine vecchia e' ancora
+                    giusta finche' non arriva la nuova, quindi si tiene: si
+                    assegna il src solo quando e' pronta. Nessun buco.
+
+       apparira() - l'elemento deve COMPARIRE, e quello che ha addosso e' roba
+                    di prima che non c'entra niente. Si assegna subito ma si
+                    tiene invisibile finche' non e' pronta. Nessun intruso.
+
+     In piu' si precaricano gli asset della scena nuova mentre il buio copre, e
+     quelli della scena dopo mentre si gioca: cosi' le due attese sopra, nella
+     pratica, non si vedono mai. */
+  var caricati = {};                 // src -> true quando e' decodificata
+  var inAttesa = {};                 // src -> callback in coda
+  var critici = {};                  // src che qualcuno sta aspettando adesso
+  var inCorso = 0;                   // quante ne aspettiamo
+  var attese = [];                   // chi aspetta che finiscano
+  var ATTESA_MAX = 2500;             // oltre questo si va avanti comunque
+  var TETTO_FONDALE = 8000;          // quanto si puo' aspettare un fondale al coperto
+
+  /* C'e' davvero qualcuno che decodifica le immagini? In jsdom (i test) no: gli
+     <img> non caricano mai, e aspettarli vorrebbe dire aspettare per sempre.
+     La spia e' img.decode(), che i browser hanno e jsdom no — ed e' proprio la
+     capacita' su cui si basa tutta questa parte, quindi senza quella non c'e'
+     niente da aspettare. */
+  var decodifica = null;
+  function siDecodifica() {
+    if (decodifica === null) {
+      decodifica = typeof global.Image === 'function'
+        && typeof new global.Image().decode === 'function';
+    }
+    return decodifica;
+  }
+
+  /* ATTENZIONE: subito dopo aver assegnato un src nuovo, img.complete risponde
+     ancora per l'immagine VECCHIA (il browser avvia il caricamento dopo, non
+     nella stessa riga). Chiedere solo "complete" quindi da' via libera quando
+     non bisognerebbe. L'unica risposta affidabile e' currentSrc: si aggiorna
+     solo quando l'immagine e' davvero quella scelta. */
+  function stessoFile(a, b) {
+    if (!a || !b) return false;
+    var pulisci = function (u) { return String(u).replace(/^\.\//, ''); };
+    a = pulisci(a); b = pulisci(b);
+    return a === b || a.slice(-b.length) === b || b.slice(-a.length) === a;
+  }
+
+  function mostrata(img, src) {
+    if (!img) return true;
+    var voluta = src || img.getAttribute('src');
+    if (!voluta) return true;
+    if (!img.complete || !img.naturalWidth) return false;
+    return stessoFile(img.currentSrc || img.src, voluta);
+  }
+
+  function decodificata(img) { return mostrata(img, null); }
+  function pronta(src) { return !src || caricati[src] === true; }
+
+  // Scarica una src una volta sola. "critico" = la scena non parte senza.
+  function carica(src, cb, critico) {
+    if (!src) return cb && cb();
+    if (caricati[src] === true) return cb && cb();
+    if (!siDecodifica()) { caricati[src] = true; return cb && cb(); }
+
+    if (critico && !critici[src]) { critici[src] = true; inCorso++; }
+
+    if (!inAttesa[src]) {
+      inAttesa[src] = [];
+      var img = new global.Image();
+      var fine = function () {
+        if (caricati[src] === true) return;
+        caricati[src] = true;
+        var coda = inAttesa[src] || [];
+        delete inAttesa[src];
+        if (critici[src]) {
+          delete critici[src];
+          inCorso--;
+          if (inCorso <= 0) { inCorso = 0; var q = attese; attese = []; q.forEach(function (f) { f(); }); }
+        }
+        coda.forEach(function (f) { f(); });
+      };
+      img.onload = fine;
+      img.onerror = fine;              // un asset mancante non deve bloccare niente
+      img.src = src;
+    }
+    if (cb) inAttesa[src].push(cb);
+  }
+
+  function precarica(src, critico) { carica(src, null, critico); }
+
+  /* L'elemento e' gia' a schermo: si cambia il src solo quando la nuova immagine
+     e' pronta, cosi' resta la vecchia (che e' ancora quella giusta) invece di un
+     buco. Se ne arriva un'altra nel frattempo, questa viene abbandonata. */
+  function scambia(node, src, poi) {
+    if (!node || !src) return poi && poi();
+    if (node.getAttribute('src') === src) return poi && poi();
+    var mio = (node.__scambio = (node.__scambio || 0) + 1);
+    var metti = function () {
+      if (node.__scambio !== mio) return;
+      node.src = src;
+      if (poi) poi();
+    };
+    if (!VN.speed || !siDecodifica() || pronta(src)) return metti();
+    var fatto = false;
+    var una = function () { if (fatto) return; fatto = true; metti(); };
+    carica(src, una);
+    global.setTimeout(una, ATTESA_MAX);
+  }
+
+  /* L'elemento deve comparire: il src si assegna subito (serve a chi misura),
+     ma resta invisibile finche' non c'e' niente di giusto da mostrare. */
+  function apparira(node, src, wrapper) {
+    if (!node) return;
+    var vestito = wrapper || node;
+    node.src = src;
+    if (!VN.speed || !siDecodifica() || mostrata(node, src)) { vestito.classList.remove('attesa'); return; }
+    var mio = (node.__attesa = (node.__attesa || 0) + 1);
+    var scopri = function () { if (node.__attesa === mio) vestito.classList.remove('attesa'); };
+    vestito.classList.add('attesa');
+    // Si aspetta il caricamento DELL'ELEMENTO, non quello del precaricatore: se
+    // il server non manda header di cache, l'<img> vero rifa' la richiesta e
+    // resta indietro. E' il precaricamento a rendere questa attesa quasi sempre
+    // gia' finita, ma la parola definitiva ce l'ha l'elemento a schermo.
+    node.addEventListener('load', scopri, { once: true });
+    // Niente "dopo tot lo mostro comunque": mostrarlo comunque vuol dire
+    // mostrare l'immagine di prima, che e' proprio la cosa da non fare mai. Se
+    // il file non arriva l'elemento resta vuoto — la scena va avanti lo stesso,
+    // e un file rotto lo intercetta gia' onerror.
+    node.addEventListener('error', scopri, { once: true });
+  }
+
+  // Chiama done() quando la scena e' davvero pronta, o allo scadere del tetto.
+  // Non basta la fine del precaricamento: senza header di cache l'<img> vero
+  // rifa' la richiesta e resta indietro, quindi si guarda l'elemento a schermo.
+  function quandoPronti(done, tetto) {
+    if (!VN.speed || !siDecodifica()) return done();
+    var scaduto = false, fatto = false;
+    var una = function () { if (fatto) return; fatto = true; done(); };
+    var pronti = function () {
+      return !inCorso && (!el.bg || !el.bg.getAttribute('src') || mostrata(el.bg, bgVoluto));
+    };
+    var controlla = function () {
+      if (fatto) return;
+      if (scaduto || pronti()) return una();
+      global.setTimeout(controlla, 30);
+    };
+    if (pronti()) return una();                     // gia' tutto in memoria: nessun ritardo
+    // sveglia appena il fondale arriva, senza aspettare il giro dell'orologio
+    if (el.bg && el.bg.addEventListener) el.bg.addEventListener('load', controlla, { once: true });
+    global.setTimeout(function () { scaduto = true; controlla(); }, tetto || ATTESA_MAX);
+    controlla();
+  }
+
+  /* Tutti gli asset che una scena mostrera'. Critici solo il fondale e il primo
+     personaggio: aspettare anche i quattro fondali dell'hub vorrebbe dire tenere
+     il nero per secondi. */
+  function precaricaScena(sc, critico) {
+    if (!sc) return;
+    if (sc.bg) precarica(assetUrl('bg', sc.bg), critico !== false);
+    var steps = sc.steps || [];
+    for (var i = 0; i < steps.length && critico !== false; i++) {
+      var st = steps[i];
+      if (!st || (st.t !== 'show' && st.t !== 'io')) continue;
+      var chi = st.who || st.char;
+      if (chi) {
+        var c = cast(chi);
+        precarica(partUrl(chi, 'bodies', st.body || (c && c.defaultBody) || 'neutro')
+          || assetUrl('chars', chi), true);
+        precarica(partUrl(chi, 'heads', st.head || (c && c.defaultHead) || 'neutro'), true);
+      }
+      break;
+    }
+    raccogli(steps);
+  }
+
+  /* Le scene in cui si puo' finire da qui: quella dopo e quelle raggiunte da un
+     "goto". Si scaricano mentre il giocatore gioca questa, senza che nessuno le
+     aspetti: quando ci si arriva sono gia' in memoria. */
+  function precaricaProssime(sc) {
+    if (!sc || !VN.story.scenes) return;
+    var viste = {};
+    var metti = function (id) {
+      var altra = id && VN.story.scenes[id];
+      if (!altra || viste[id]) return;
+      viste[id] = true;
+      if (altra.bg) precarica(assetUrl('bg', altra.bg));
+      raccogli((altra.steps || []).slice(0, 6));
+    };
+    metti(sc.next);
+    cerca(sc.steps || [], metti);
+  }
+
+  function cerca(nodi, metti) {
+    (nodi || []).forEach(function (n) {
+      if (!n || typeof n !== 'object') return;
+      if (Array.isArray(n)) return cerca(n, metti);
+      if (n.goto) metti(n.goto);
+      ['steps', 'zones', 'hotspots', 'options', 'after', 'esci']
+        .forEach(function (k) { if (n[k]) cerca(Array.isArray(n[k]) ? n[k] : [n[k]], metti); });
+    });
+  }
+
+  function raccogli(nodi) {
+    (nodi || []).forEach(function (n) {
+      if (!n || typeof n !== 'object') return;
+      if (Array.isArray(n)) return raccogli(n);
+      if (n.bg) precarica(assetUrl('bg', n.bg));
+      var chi = n.who || n.char;
+      if (chi) {
+        var c = cast(chi);
+        precarica(partUrl(chi, 'bodies', n.body || (c && c.defaultBody) || 'neutro')
+          || assetUrl('chars', chi));
+        precarica(partUrl(chi, 'heads', n.head || (c && c.defaultHead) || 'neutro'));
+      }
+      ['steps', 'zones', 'hotspots', 'after', 'options', 'tutorial', 'ritorno', 'react']
+        .forEach(function (k) { if (n[k]) raccogli(Array.isArray(n[k]) ? n[k] : [n[k]]); });
+    });
+  }
+
   function assetUrl(kind, id) {
     var a = VN.story.assets && VN.story.assets[kind] && VN.story.assets[kind][id];
     return a ? withBase(a) : '';
@@ -3131,6 +3596,7 @@
   // Cambio fondale. Con "dissolvenza" il nuovo entra sopra il vecchio e prende
   // il suo posto a transizione finita, cosi' il passaggio non e' uno stacco secco.
   var bgCorrente = null;
+  var bgVoluto = null;      // il file che il fondale DEVE mostrare adesso
   /* Dissolvenza al nero. Serve a coprire un cambio di scena: il motore va
      avanti solo quando il buio e' pieno, quindi fondale e personaggio nuovi
      vengono montati mentre non si vede niente. In modalita' test (speed 0)
@@ -3179,7 +3645,7 @@
     // Stessa cosa per il personaggio, con in piu' che "out" e' un @keyframes
     // che parte da opacity:1: aggiungerlo a uno gia' invisibile lo riaccende.
     // Qui si azzera l'animazione, non se ne mette un'altra.
-    el.npc.classList.remove('in', 'pop', 'micro', 'out');
+    el.npc.classList.remove('in', 'pop', 'micro', 'out', 'attesa');
     el.npc.style.animation = 'none';
     el.npc.style.opacity = '0';
     current.who = null;
@@ -3209,7 +3675,7 @@
       applicaFx(el.bg, fx);
       el.bg2.className = '';
     }
-    if (id) bgCorrente = id;
+    if (id) { bgCorrente = id; bgVoluto = src; }
     return inDissolvenza;
   }
 
@@ -3485,6 +3951,7 @@
       nero: $('nero'),
       boot: $('boot'), bootbar: $('bootbar'), logo: $('logo'), logoImg: $('logoImg'),
       avatar: $('avatar'), propwrap: $('propwrap'), prop: $('prop'), screen: $('screen'),
+      podiumwrap: $('podiumwrap'), podiumImg: $('podiumImg'),
       boxwrap: $('boxwrap'), name: $('name'), nametxt: $('nametxt'), voce: $('voce'),
       txt: $('txt'), arrow: $('arrow'),
       choices: $('choices'), inputform: $('inputform'), ti: $('ti'), tok: $('tok'),
@@ -3503,6 +3970,10 @@
       quizbar: $('quizbar'), qinfo: $('qinfo'), qtimer: $('qtimer'), qbar: $('qbar'), qsec: $('qsec'),
       multwrap: $('multwrap'), multrighe: $('multrighe'), multresto: $('multresto'), multok: $('multok'),
       regole: $('regole'), regtit: $('regtit'), regcorpo: $('regcorpo'), regok: $('regok'),
+      emailwrap: $('emailwrap'), emailbox: $('emailbox'), emailtit: $('emailtit'),
+      emailtesto: $('emailtesto'), emaillabel: $('emaillabel'), emailin: $('emailin'),
+      emailerr: $('emailerr'), emailnota: $('emailnota'), emailprivacy: $('emailprivacy'),
+      emailok: $('emailok'), emailsalta: $('emailsalta'),
       countdown: $('countdown'), cdnome: $('cdnome'), cdlabel: $('cdlabel'),
       cdtempo: $('cdtempo'), cdpunti: $('cdpunti'), cdbtn: $('cdbtn'),
       cardwrap: $('cardwrap'), cardImg: $('cardImg'), cardsalva: $('cardsalva'),
@@ -3524,6 +3995,7 @@
     chiudiCountdown();
     chiudiQuiz();
     chiudiRegole();
+    chiudiEmail();
     chiudiTransizioni();
     if (el.modal) el.modal.classList.remove('on');
     bgCorrente = null;
@@ -3537,6 +4009,7 @@
            e.target.closest('#griglia') || e.target.closest('#recapwrap') ||
            e.target.closest('#countdown') || e.target.closest('#cardwrap') ||
            e.target.closest('#multwrap') || e.target.closest('#regole') ||
+           e.target.closest('#emailwrap') ||
            e.target.closest('#propwrap'))) return;
       VN.step();
     };
@@ -3553,6 +4026,7 @@
           (el.countdown && el.countdown.classList.contains('on')) ||
           (el.multwrap && el.multwrap.classList.contains('on')) ||
           (el.regole && el.regole.classList.contains('on')) ||
+          (el.emailwrap && el.emailwrap.classList.contains('on')) ||
           (el.modal && el.modal.classList.contains('on'))) return;
       VN.step();
     };

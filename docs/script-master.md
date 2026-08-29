@@ -190,6 +190,8 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
 
 [S1.HUB] HUB LOBBY — 4 zone, swipe orizzontale libero, nessun ordine forzato
   ZONA1 → bg_lobby_z1_tenda (nessun oggetto separato per la tenda)
+  ZONA1 dopo le previsioni → stesso fondale, senza hotspot ENTRA: lo show è
+                     andato, e la battuta non manda più nessuno di là
   ZONA2 → bg_lobby_z2_hall_of_fame + obj_targa_hall_of_fame + chr_francesca_idle
   ZONA3 → bg_lobby_z3_regolamento + chr_francesca_idle
   ZONA4 bloccata   → bg_lobby_z4_quiz_bloccata + obj_tavolino_buzzer_peter
@@ -203,6 +205,15 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
   Vincolo tutorial: ENTRA in [S1.ZONA1] disabilitato finché il giocatore non ha
   fatto almeno 1 swipe.
 
+  Presentazione una volta sola: la battuta che spiega una zona si dice al primo
+  passaggio. Tornandoci, Francesca sparisce e il box non compare: chi ha già
+  fatto il giro gira in silenzio. Unica eccezione la tenda: dal secondo
+  passaggio in poi Francesca ricompare lì e basta —
+    FRANCESCA: "Sei pronto? Dietro questa tenda comincia lo show.
+                Da qui in poi si gioca sul serio."
+  Toccare un hotspot in una zona già vista fa comunque rientrare il personaggio
+  che risponde.
+
   [S1.ZONA1] Tenda d'ingresso
     Hotspot ENTRA (attivo solo dopo il tutorial)
       → MODALE "Entrare in sala? Sì / Non ancora"
@@ -215,9 +226,9 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
 
   [S1.ZONA3] Regolamento
     FRANCESCA:
-      "Prima di entrare puoi dare un'occhiata alle regole.
-       Non sono molte. Anche perché abbiamo preferito lasciarti
-       qualche possibilità di sbagliare."
+      "Il regolamento è lì sul cartellone, se ti serve. Non è lungo:
+       abbiamo preferito lasciarti qualche possibilità di sbagliare."
+      (battuta valida sia prima sia dopo le previsioni: la lobby si rivisita)
 
     Hotspot sul cartellone: IL REGOLAMENTO
       → apre la UI Regolamento (pannello sopra la lobby, non una scena a parte:
@@ -344,16 +355,21 @@ più avanti in `[S5]`. Salvare in `run.flags.sfacciato_s2 = true/false`.
 
 ```
 [S4.01] SUSAN infila l'auricolare
-  Asset: bg_dietro_le_quinte + stile_X_idle_camerino
-  ⚠️ GAP: non esiste un asset "Susan infila l'auricolare" — usare
-  chr_susan_indica_camerino come placeholder, o generare una posa dedicata.
+  Asset: bg_dietro_le_quinte + chr_susan.duo_pronto_X (X = stile scelto)
+  Risolto: non e' piu' un placeholder. Il gap era "Susan e il personaggio come
+  due sprite separati da riallineare a mano" — le composizioni scene_X_ready
+  (una per stile) arrivano gia' complete, Susan e il giocatore insieme, e
+  sostituiscono sia stile_X_idle_camerino sia il vecchio placeholder
+  chr_susan_indica_camerino (rimasto nel cast, usato ancora in [S2]).
   "Studiato, vero?"
   A: "Certo." → "Che bugiardo/a. Adoro, sei già nel personaggio."
   B: "No."    → "Onesto/a. Sarà un problema tuo, non mio. Vai."
   → [S4.02]
 
 [S4.02] SUSAN spinge in scena
-  Asset: bg_dietro_le_quinte + chr_susan_spinta_in_scena + stile_X_idle_palco
+  Asset: bg_dietro_le_quinte + chr_susan.duo_spinta_X (X = stile scelto)
+  Stessa composizione della coppia scene_X_push: sostituisce
+  chr_susan_spinta_in_scena (rimosso dal cast, non piu' usato da nessuna scena).
   "Le luci sono calde. Non guardare in alto. Vai."
   → effetto sipario (split animato di bg_palco_sipario_chiuso) → [S4.03]
 
@@ -494,13 +510,18 @@ Indice degli id in `docs/indice-domande.md`.
   modificabile (torna alla card originale).
   Facoltative NON completate: riga vuota, cliccabile per completarle ORA
   (il pescaggio a caso vale anche qui, se non già fatto).
-  Bottone rosso fisso: BLOCCA LA SCALETTA → [S6.03]
+  Bottone rosso fisso: CONFERMA LE PREVISIONI → [S6.03]
 
-[S6.03] MODALE CONFERMA LOCK
-  "Sicuro? Dopo questo, la schedina è chiusa."
+[S6.03] MODALE CONFERMA
+  "Sicuro? Dopo questo le tue previsioni sono definitive."
   Sì → run.locked = true, run.submitted_at = TIMESTAMP SERVER,
-       POST della run al backend, sblocco [S1.ZONA4] → [S7.01]
+       la run va in coda (il POST parte da [S7.03b], così è una riga sola con
+       dentro l'email), sblocco [S1.ZONA4] → [S7.01]
   No → [S6.02]
+
+  Nota di lessico: al giocatore non si dice mai "schedina bloccata" (né "la
+  schedina è chiusa", "previsioni bloccate"). Si dice che le previsioni sono
+  fatte, confermate, registrate, concluse.
 ```
 
 ---
@@ -522,6 +543,23 @@ Indice degli id in `docs/indice-domande.md`.
 
 [S7.04] Nero
 
+[S7.03b] EMAIL FACOLTATIVA — dopo il teleprompter, prima dei titoli di coda
+  Pannello UI sopra il nero, nessun asset nuovo.
+    Titolo:      DOVE TI TROVIAMO?
+    Testo:       "Quando avremo i risultati finali, possiamo mandarteli via
+                  email."
+    Campo:       "La tua email"  (placeholder nome@esempio.com)
+    Nota:        "Non devi lasciarla per forza. Però Lorenzo e Michael ci hanno
+                  lavorato parecchio, quindi ecco. Pensaci."
+    Privacy:     "La useremo solo per inviarti i risultati di FantaLiberty
+                  Story."
+    Bottone:     CONTINUA
+    Salto:       "Preferisco spezzare loro il cuore"
+
+  È facoltativa davvero: si continua anche a campo vuoto. Se c'è, viene salvata
+  con la run (colonna `email`) e serve solo a mandare i risultati. Da qui parte
+  il POST della run messa in coda in [S6.03].
+
 [S7.04b] TITOLI DI CODA
   Stile del cartello d'apertura: nero, testo centrato, scritto a macchina.
   Cinque blocchi che compaiono, restano e sfumano uno nell'altro — non si
@@ -536,14 +574,41 @@ Indice degli id in `docs/indice-domande.md`.
   Il tocco ACCELERA, non salta: i blocchi restano tutti e cinque, solo piu'
   veloci (~6s con un tocco a meta', ~4s toccando di continuo). L'ultimo blocco
   NON sfuma: resta a schermo con la freccia, e un ultimo tocco porta al
-  countdown.
+  cartello [S7.04c].
 
   Tono asciutto: i primi crediti seri, poi due assurdi, chiusa sui 30 Newton.
   Non aggiungere altri ruoli o battute senza chiedere.
 
-[S7.05] COUNTDOWN — schermata persistente, riaperta ogni giorno
+[S7.04c] CARTELLO — subito dopo i titoli di coda
+  Stesso nero dei titoli. NON è una battuta di Francesca: è il gioco che parla.
+    "Hai completato una fase,
+     non l'intera esperienza."
+    "Tocca lo schermo per continuare"   (riga piccola)
+  Al tocco → [S1.HUB] in modalità post-previsioni, cioè [S1.POST].
+
+[S1.POST] RITORNO IN LOBBY — una volta sola (post_lobby_visto)
+  Asset: bg_lobby_z1_tenda + chr_francesca_orgogliosa → chr_francesca_idle
+  Tono gentile e incoraggiante, ironico senza pungere.
+
+    [POST-L01] "Ah, eccoti. Allora, com'è andata?"
+    [POST-L02] "Hai fatto le tue previsioni. Adesso non resta che aspettare il
+                keynote e scoprire quanto eri lontano dalla realtà."
+    [POST-L03] "Ma non abbiamo finito."
+    [POST-L04] "Puoi ancora mettere alla prova quello che sai sul mondo Apple."
+    [POST-L05] "Vai da Peter e prova a rispondere ai suoi quiz."
+    [POST-L06] "Ogni risposta giusta può aiutarti a moltiplicare i punti delle
+                tue previsioni."
+    [POST-L07] "Quindi sì, conoscere tutti quei dettagli inutilmente specifici
+                potrebbe finalmente tornarti utile."
+
+  Poi → [S1.HUB], che qui si apre direttamente sulla ZONA4 (Peter): è quello che
+  resta da fare. Niente tutorial dello swipe — la lobby è già stata girata — e
+  la ZONA1 diventa la variante a show finito: la tenda non porta più da nessuna
+  parte.
+
+[S7.05] COUNTDOWN — ci si arriva dopo il quiz, e a ogni riapertura
   Asset: bg_countdown_nero
-  "{nickname} — SCALETTA BLOCCATA
+  "{nickname} — PREVISIONI COMPLETATE
    Il keynote vero inizia tra [ 00:00:00 ]"
   A: TORNA IN LOBBY → [S1.HUB] (zona 4 ora sbloccata)
   B: LA TUA CARD → genera ed esporta obj_card_condivisibile client-side

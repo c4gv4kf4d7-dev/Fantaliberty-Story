@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Runner — taratura corsie</title>
+<style>
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; height:100%; overflow:hidden; background:#15161a;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    color:#e8e8e6; -webkit-user-select:none; user-select:none;
+    -webkit-tap-highlight-color:transparent; overscroll-behavior:none;
+  }
+  #tutto{ position:fixed; inset:0; display:flex; flex-direction:column; }
+
+  #barra{
+    flex:none; display:flex; gap:6px; padding:8px; align-items:center;
+    background:#22242a; flex-wrap:wrap;
+  }
+  button{
+    font:inherit; font-size:13px; font-weight:600; padding:9px 12px;
+    border:1px solid #3a3d45; border-radius:9px; background:#2c2f36; color:#e8e8e6;
+  }
+  button.acceso{ background:#f0b722; border-color:#f0b722; color:#1b1c20; }
+  button.annulla{ background:#4a2f34; border-color:#7a4c53; }
+  button.via{ background:#2f7d4f; border-color:#2f7d4f; }
+  #aiuto{ flex:1 1 100%; font-size:12px; color:#9a9da5; line-height:1.4; }
+
+  #area{ flex:1; position:relative; min-height:0; overflow:hidden; }
+  /* posizionato a mano: lo spostamento parte dall'angolo dell'area,
+     non da un centraggio del flex, altrimenti zoom e trascinamento
+     si spostano di quel tanto */
+  canvas{ position:absolute; left:0; top:0; display:block;
+          touch-action:none; transform-origin:0 0; }
+
+  #uscita{
+    position:absolute; inset:0; background:#15161a; padding:16px;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  #uscita[hidden]{ display:none !important; }
+  #uscita h2{ margin:0; font-size:17px; }
+  #uscita p{ margin:0; font-size:13px; color:#9a9da5; line-height:1.5; }
+  textarea{
+    flex:1; width:100%; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px;
+    background:#0e0f12; color:#8fd3a8; border:1px solid #3a3d45; border-radius:10px;
+    padding:10px; resize:none; -webkit-user-select:text; user-select:text;
+  }
+</style>
+</head>
+<body>
+<div id="tutto">
+
+  <div id="barra">
+    <button id="bSx" class="acceso">Bordo sinistro</button>
+    <button id="bDx">Bordo destro</button>
+    <button id="bIndietro" class="annulla">↩︎ Annulla punto</button>
+    <button id="bPulisci">Pulisci</button>
+    <button id="bProva">Prova corsie</button>
+    <button id="bFatto" class="via">Fatto</button>
+    <button id="bMeno">−</button>
+    <button id="bPiu">+</button>
+    <button id="bAdatta">Adatta</button>
+    <div id="aiuto">
+      Tocca lungo il <b>bordo sinistro</b> della pista, dal fondo del corridoio fino
+      in basso. Poi passa al <b>bordo destro</b> e fai lo stesso. Bastano 5–6 punti per lato.<br>
+      <b>Due dita</b> per ingrandire e spostare. Un dito solo trascinando sposta; un tocco
+      secco lascia un punto.
+    </div>
+  </div>
+
+  <div id="area">
+    <canvas id="cv"></canvas>
+
+    <div id="uscita" hidden>
+      <h2>Fatto — mandami questo</h2>
+      <p>Tienilo premuto, <b>Seleziona tutto</b>, <b>Copia</b>, e incollamelo in chat.
+         (Il bottone qui sotto prova a copiarlo da solo.)</p>
+      <textarea id="testo" readonly></textarea>
+      <button id="bCopia">Copia</button>
+      <button id="bTorna">Torna a disegnare</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* Strumento di taratura: si disegnano a mano i due bordi della pista
+   sopra il fondale vero. In uscita, i punti in coordinate del gioco
+   (720x1280), da riportare nel codice del runner. */
+
+const W = 720, H = 1280;
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+cv.width = W; cv.height = H;
+
+/* La vista: zoom e spostamento. Il canvas resta 720x1280, cambia
+   solo come lo si guarda — cosi' i punti restano nelle coordinate
+   del gioco qualunque sia l'ingrandimento. */
+let base = 1, zoom = 1, spX = 0, spY = 0;
+
+function adatta(){
+  const area = document.getElementById('area');
+  base = Math.min(area.clientWidth / W, area.clientHeight / H);
+  cv.style.width  = Math.round(W * base) + 'px';
+  cv.style.height = Math.round(H * base) + 'px';
+  zoom = 1; spX = 0; spY = 0;
+  applica();
+}
+function applica(){
+  zoom = Math.max(1, Math.min(6, zoom));
+  const area = document.getElementById('area');
+  const lw = W * base * zoom, lh = H * base * zoom;
+  // non si scappa oltre i bordi
+  spX = Math.min(0, Math.max(area.clientWidth  - lw, spX));
+  spY = Math.min(0, Math.max(area.clientHeight - lh, spY));
+  if (lw <= area.clientWidth)  spX = (area.clientWidth  - lw) / 2;
+  if (lh <= area.clientHeight) spY = (area.clientHeight - lh) / 2;
+  cv.style.transform = `translate(${spX}px, ${spY}px) scale(${zoom})`;
+}
+function ingrandisci(k, cx, cy){
+  const area = document.getElementById('area').getBoundingClientRect();
+  const px = (cx - area.left - spX) / zoom, py = (cy - area.top - spY) / zoom;
+  zoom *= k;
+  zoom = Math.max(1, Math.min(6, zoom));
+  spX = cx - area.left - px * zoom;
+  spY = cy - area.top - py * zoom;
+  applica();
+}
+addEventListener('resize', adatta);
+
+const sfondo = new Image();
+sfondo.src = '../../assets/in_app_game/run_corridoio_base.webp';
+
+const punti = { sx:[], dx:[] };
+let lato = 'sx', prova = false;
+
+/* ---------- disegno ---------- */
+function ordina(a){ return a.slice().sort((p,q) => p[1] - q[1]); }
+
+function curva(a, colore, spesso){
+  const p = ordina(a);
+  if (!p.length) return;
+  ctx.strokeStyle = colore; ctx.lineWidth = spesso; ctx.setLineDash([]);
+  ctx.beginPath();
+  p.forEach(([x,y],i) => i ? ctx.lineTo(x,y) : ctx.moveTo(x,y));
+  ctx.stroke();
+  ctx.fillStyle = colore;
+  for (const [x,y] of p){ ctx.beginPath(); ctx.arc(x, y, 9, 0, 7); ctx.fill(); }
+}
+
+// quanto vale il bordo all'altezza y (retta fra i due punti che lo circondano)
+function bordo(a, y){
+  const p = ordina(a);
+  if (p.length < 2) return null;
+  if (y <= p[0][1]) return p[0][0];
+  if (y >= p[p.length-1][1]) return p[p.length-1][0];
+  for (let i=1; i<p.length; i++){
+    if (y <= p[i][1]){
+      const [x0,y0] = p[i-1], [x1,y1] = p[i];
+      return x0 + (x1-x0) * (y-y0) / (y1-y0 || 1);
+    }
+  }
+  return p[p.length-1][0];
+}
+
+function corsieDiProva(){
+  const ys = ordina(punti.sx), yd = ordina(punti.dx);
+  if (ys.length < 2 || yd.length < 2) return;
+  const da = Math.max(ys[0][1], yd[0][1]);
+  const a  = Math.min(ys[ys.length-1][1], yd[yd.length-1][1]);
+
+  const LARGO = 0.26;
+  for (const [frazione, tratteggio] of [[0.5-1.5*LARGO,false],[0.5-0.5*LARGO,true],
+                                        [0.5+0.5*LARGO,true],[0.5+1.5*LARGO,false]]){
+    ctx.strokeStyle = tratteggio ? 'rgba(255,255,255,.85)' : 'rgba(70,190,255,.95)';
+    ctx.lineWidth = 4; ctx.setLineDash(tratteggio ? [22,16] : []);
+    ctx.beginPath();
+    for (let i=0; i<=40; i++){
+      const y = da + (a-da) * (i/40);
+      const L = bordo(punti.sx, y), R = bordo(punti.dx, y);
+      const x = L + (R-L) * frazione;
+      i ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
+    }
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+}
+
+function ridisegna(){
+  ctx.clearRect(0,0,W,H);
+  if (sfondo.complete && sfondo.naturalWidth) ctx.drawImage(sfondo, 0, 0, W, H);
+  else { ctx.fillStyle = '#3a3d45'; ctx.fillRect(0,0,W,H); }
+
+  if (prova) corsieDiProva();
+  curva(punti.sx, 'rgba(240,90,90,.95)', 4);
+  curva(punti.dx, 'rgba(90,220,140,.95)', 4);
+
+  // che lato stai disegnando
+  ctx.fillStyle = lato === 'sx' ? 'rgba(240,90,90,.95)' : 'rgba(90,220,140,.95)';
+  ctx.font = 'bold 30px system-ui, sans-serif';
+  ctx.fillText(lato === 'sx' ? 'BORDO SINISTRO' : 'BORDO DESTRO', 24, 46);
+}
+
+/* ---------- tocco ---------- */
+function aggiungi(clientX, clientY){
+  const r = cv.getBoundingClientRect();
+  const k = r.width / W;                    // vale a qualunque ingrandimento
+  const x = (clientX - r.left) / k, y = (clientY - r.top) / k;
+  if (x < 0 || y < 0 || x > W || y > H) return;
+  punti[lato].push([Math.round(x), Math.round(y)]);
+  ridisegna();
+}
+const giu = new Map();
+let mosso = false, distIniziale = 0, zoomIniziale = 1;
+
+cv.addEventListener('pointerdown', e => {
+  e.preventDefault(); cv.setPointerCapture(e.pointerId);
+  giu.set(e.pointerId, { x:e.clientX, y:e.clientY, x0:e.clientX, y0:e.clientY });
+  if (giu.size === 2){
+    const [a,b] = [...giu.values()];
+    distIniziale = Math.hypot(a.x-b.x, a.y-b.y); zoomIniziale = zoom; mosso = true;
+  }
+});
+
+cv.addEventListener('pointermove', e => {
+  const p = giu.get(e.pointerId); if (!p) return;
+  const dx = e.clientX - p.x, dy = e.clientY - p.y;
+  p.x = e.clientX; p.y = e.clientY;
+  if (Math.hypot(e.clientX - p.x0, e.clientY - p.y0) > 8) mosso = true;
+
+  if (giu.size >= 2){
+    const [a,b] = [...giu.values()];
+    const d = Math.hypot(a.x-b.x, a.y-b.y);
+    if (distIniziale > 0){
+      const cx = (a.x+b.x)/2, cy = (a.y+b.y)/2;
+      const voluto = Math.max(1, Math.min(6, zoomIniziale * d / distIniziale));
+      ingrandisci(voluto / zoom, cx, cy);
+    }
+  } else {
+    spX += dx; spY += dy; applica();      // un dito: si sposta
+  }
+});
+
+function su(e){
+  const p = giu.get(e.pointerId); if (!p) return;
+  const fermo = Math.hypot(e.clientX - p.x0, e.clientY - p.y0) <= 8;
+  giu.delete(e.pointerId);
+  if (fermo && !mosso && giu.size === 0) aggiungi(e.clientX, e.clientY);
+  if (giu.size === 0) mosso = false;
+}
+cv.addEventListener('pointerup', su);
+cv.addEventListener('pointercancel', e => { giu.delete(e.pointerId); if (!giu.size) mosso = false; });
+
+// rotellina del mouse
+document.getElementById('area').addEventListener('wheel', e => {
+  e.preventDefault(); ingrandisci(e.deltaY < 0 ? 1.15 : 1/1.15, e.clientX, e.clientY);
+}, { passive:false });
+
+/* ---------- bottoni ---------- */
+const bSx = document.getElementById('bSx'), bDx = document.getElementById('bDx');
+bSx.onclick = () => { lato='sx'; bSx.classList.add('acceso'); bDx.classList.remove('acceso'); ridisegna(); };
+bDx.onclick = () => { lato='dx'; bDx.classList.add('acceso'); bSx.classList.remove('acceso'); ridisegna(); };
+document.getElementById('bIndietro').onclick = () => { punti[lato].pop(); ridisegna(); };
+document.getElementById('bPulisci').onclick  = () => { punti.sx=[]; punti.dx=[]; ridisegna(); };
+document.getElementById('bProva').onclick    = e => {
+  prova = !prova; e.target.classList.toggle('acceso', prova); ridisegna();
+};
+
+document.getElementById('bFatto').onclick = () => {
+  const f = a => '[' + ordina(a).map(([x,y]) => `[${y},${x}]`).join(',') + ']';
+  document.getElementById('testo').value =
+    'TARATURA CORSIE (misure in 720x1280, coppie [y,x])\n\n' +
+    'sinistro: ' + f(punti.sx) + '\n\n' +
+    'destro:   ' + f(punti.dx) + '\n';
+  document.getElementById('uscita').hidden = false;
+};
+function centro(){
+  const r = document.getElementById('area').getBoundingClientRect();
+  return [r.left + r.width/2, r.top + r.height/2];
+}
+document.getElementById('bPiu').onclick    = () => ingrandisci(1.4, ...centro());
+document.getElementById('bMeno').onclick   = () => ingrandisci(1/1.4, ...centro());
+document.getElementById('bAdatta').onclick = () => adatta();
+
+document.getElementById('bTorna').onclick = () => { document.getElementById('uscita').hidden = true; };
+document.getElementById('bCopia').onclick = async e => {
+  const t = document.getElementById('testo');
+  try { await navigator.clipboard.writeText(t.value); e.target.textContent = 'Copiato'; }
+  catch(err){ t.select(); e.target.textContent = 'Copia a mano'; }
+};
+
+sfondo.onload = () => { adatta(); ridisegna(); };
+sfondo.onerror = () => { adatta(); ridisegna(); };
+adatta(); ridisegna();
+
+})();
+</script>
+</body>
+</html>

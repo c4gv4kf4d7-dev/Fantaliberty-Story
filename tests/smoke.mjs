@@ -33,7 +33,7 @@ function partOf(who, kind, id) {
   const c = story.cast?.[who];
   return c && id ? c[kind]?.[id] : undefined;
 }
-const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'hub', 'carosello', 'griglia', 'domande', 'bivio', 'intermezzo', 'recap', 'countdown', 'quizhub', 'quizlivello', 'quizmult', 'show', 'hide', 'io', 'prop', 'bg', 'react', 'fx', 'carrellata', 'sipario', 'nero', 'luce', 'wait', 'set', 'goto', 'end']);
+const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'hub', 'carosello', 'griglia', 'domande', 'bivio', 'intermezzo', 'recap', 'email', 'countdown', 'quizhub', 'quizlivello', 'quizmult', 'show', 'hide', 'io', 'prop', 'bg', 'react', 'fx', 'carrellata', 'sipario', 'nero', 'luce', 'wait', 'set', 'goto', 'end']);
 assert.ok(story.scenes[story.meta.start], 'meta.start punta a una scena esistente');
 
 // Tutti i valori che una variabile puo' assumere, raccolti da chi la scrive.
@@ -371,7 +371,13 @@ const onDisk = (rel) => fs.existsSync(path.join(ROOT, base + rel));
 // vengono elencati come "da caricare" invece di far fallire il test, e il motore
 // disegna un ripiego al posto loro.
 const inArrivo = new Set(story.meta.assetiInArrivo || []);
-for (const kind of ['bg', 'props', 'platea']) {
+// I layer della platea restano dichiarati (il motore sa mostrarli, e le reazioni
+// di S5 ci girano intorno) ma NON sono piu' in lavorazione: l'arte non si fa, e
+// la scena senza quei file va avanti uguale. Percio' non stanno fra i file che
+// devono esistere sul disco, e non stanno nemmeno in meta.assetiInArrivo.
+assert.equal(story.meta.assetiInArrivo?.length ?? 0, 0,
+  'niente piu\' layer della platea in roadmap: l\'arte della platea non si fa');
+for (const kind of ['bg', 'props']) {
   for (const rel of Object.values(story.assets[kind] || {})) {
     if (inArrivo.has(rel)) { if (!onDisk(rel)) todoAssets.add(rel + ' (da convertire)'); continue; }
     assert.ok(onDisk(rel), `asset mancante: ${base + rel}`);
@@ -732,8 +738,13 @@ assert.equal(VN.state.sfacciato, false);
   VN.step();                                                   // -> scena quinte
 
   assert.equal(VN.sceneId, 'quinte', 'da S3 si passa a S4');
-  assert.ok($('ioImg').getAttribute('src').includes('stile_showman_idle_camerino'),
-    'il giocatore entra in scena con lo stile che ha scelto');
+  // Le due composizioni duo_* mostrano gia' Susan e il personaggio insieme:
+  // l'avatar separato resta spento per tutta questa sezione, altrimenti si
+  // vedrebbe una seconda copia del personaggio sovrapposta alla prima.
+  assert.equal($('avatar').classList.contains('on'), false,
+    'l\'avatar resta nascosto: e\' gia\' dentro la composizione duo_*');
+  assert.ok($('npcBody').getAttribute('src').includes('scene_showman_ready'),
+    'la posa "duo_pronto_{stile}" si risolve sullo stile scelto');
   assert.match(txt(), /Studiato, vero\?/);
   VN.step();
   const scelte = [...$('choices').querySelectorAll('.ch')];
@@ -743,12 +754,16 @@ assert.equal(VN.state.sfacciato, false);
   assert.match(txt(), /^Onesta\./, 'la risposta e\' declinata');
   VN.step();
 
-  assert.ok($('avatar').classList.contains('on'), 'il giocatore e\' in scena');
-  assert.ok($('ioImg').getAttribute('src').includes('stile_showman_idle_palco'),
-    'con lo sprite dello stile scelto, non uno generico');
-  assert.ok($('npcBody').getAttribute('src').includes('chr_susan_spinta_in_scena'));
+  assert.equal($('avatar').classList.contains('on'), false, 'ancora nascosto: siamo su duo_spinta');
+  assert.ok($('npcBody').getAttribute('src').includes('scene_showman_push'),
+    'la posa "duo_spinta_{stile}" si risolve sullo stile scelto');
   assert.match(txt(), /Non guardare in alto/);
   VN.step();
+
+  // Susan (nella coppia) esce di scena col push; l'avatar torna da solo,
+  // con lo sprite dello stile scelto e non uno generico
+  assert.ok($('avatar').classList.contains('on'), 'il giocatore e\' di nuovo in scena, da solo');
+  assert.ok($('ioImg').getAttribute('src').includes('stile_showman_idle_palco'));
 
   // il sipario del palco e' lo stesso effetto della tenda della lobby
   const sip = story.scenes.quinte.steps.find((s) => s.t === 'sipario');
@@ -859,14 +874,14 @@ assert.equal(VN.state.sfacciato, false);
    mai consegnato (il clicker, che esiste in due frame): a schermo non compariva
    niente e nessuno se ne accorgeva, perche' l'evento continuava lo stesso. */
 for (const e of banca.micro_eventi) {
-  for (const k of ['asset', 'extra_asset']) {
+  for (const k of ['asset', 'extra_asset', 'prop']) {
     if (e[k]) assert.ok(fs.existsSync(path.join(ROOT, base + e[k])),
       `micro-evento ${e.id}: "${e[k]}" non esiste`);
   }
 }
 for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.ok(story.stili[stile], `evento personale per lo stile "${stile}", che non esiste`);
-  for (const k of ['asset', 'extra_asset']) {
+  for (const k of ['asset', 'extra_asset', 'prop']) {
     if (e[k]) assert.ok(fs.existsSync(path.join(ROOT, base + e[k])),
       `evento personale ${e.id}: "${e[k]}" non esiste`);
   }
@@ -1047,6 +1062,48 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
     }
   }
   assert.ok(visto, 'il micro-evento del clicker non e\' comparso nemmeno a probabilita\' 1');
+}
+
+/* ---------- 5m-bis. l'evento personale di hawaiano mostra ANCHE l'ukulele ----------
+   E' il caso in cui "asset" (la posa stili/ del personaggio) e "prop" (l'oggetto
+   separato) sono dichiarati insieme: il primo va sull'avatar, il secondo nello
+   slot degli oggetti di scena, e sparisce con l'evento invece di restare in scena. */
+{
+  const ukulele = banca.eventi_personali.hawaiano;
+  assert.equal(ukulele.id, 'UKULELE');
+  assert.ok(ukulele.prop, 'l\'evento porta anche un oggetto separato dalla posa');
+
+  const storyEvento = JSON.parse(JSON.stringify(story));
+  storyEvento.regia.probabilitaEvento = 1;
+  let visto = false;
+  for (let tentativi = 0; tentativi < 5 && !visto; tentativi++) {
+    VN.clearSave();
+    VN.boot(storyEvento, { speed: 0, banca, quiz, scene: 'keynote' });
+    VN.state.genere = 'f'; VN.state.stile = 'hawaiano'; VN.state.nome = 'Franca';
+    VN.state.eventi_sacchetto = ['UKULELE'];
+    VN.state.categoria = 'watch';
+    for (let g = 0; g < 60; g++) {
+      if (txt().includes('Un ukulele')) {
+        assert.equal($('evpropwrap').classList.contains('on'), true, 'lo slot dell\'oggetto si accende');
+        assert.ok($('evprop').getAttribute('src').includes('prop_ukulele'), 'con l\'ukulele dentro');
+        assert.ok($('ioImg').getAttribute('src').includes('stile_hawaiano_evento_stacchetto'),
+          'e l\'avatar prende comunque la sua posa dedicata, non quella generica');
+        VN.step();                                             // -> la battuta della regia, poi le scelte
+        [...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });
+        assert.equal($('evpropwrap').classList.contains('on'), false,
+          'l\'ukulele sparisce con l\'evento, non resta in scena');
+        visto = true;
+        break;
+      }
+      if ($('griglia').classList.contains('on')) {
+        [...$('griglia').querySelectorAll('.gcell')].filter((c) => !c.classList.contains('fatta'))[0]
+          ?.onclick({ stopPropagation() {} });
+      } else if ($('choices').classList.contains('on')) {
+        [...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });
+      } else VN.step();
+    }
+  }
+  assert.ok(visto, 'l\'evento dell\'ukulele non e\' comparso nemmeno a probabilita\' 1');
 }
 
 /* ---------- 5n. Martha non esiste piu' da nessuna parte ----------
@@ -1307,7 +1364,24 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   $('hnext').onclick({ stopPropagation() {} });
   assert.ok(dots()[0].classList.contains('sel'), 'l\'hub e\' circolare');
   assert.equal(spots()[0].classList.contains('chiuso'), false, 'dopo lo swipe ENTRA si accende');
-  assert.match(txt(), /La tenda e' quella/, 'ora parla la zona, non piu\' il tutorial');
+  // fatto il giro, Francesca non ripete cos'e' la tenda: dalla seconda volta in
+  // poi compare solo qui, e solo per dire che di la' comincia lo show
+  assert.match(txt(), /Dietro questa tenda/, 'al ritorno sulla tenda la battuta cambia');
+  assert.equal($('name').textContent, 'Francesca', 'ed e\' Francesca a dirla');
+  assert.ok($('npc').classList.contains('in'), 'Francesca ricompare davanti alla tenda');
+  assert.ok($('boxwrap').classList.contains('in'), 'con il box a schermo');
+
+  // le altre zone, rivedendole, restano mute: niente Francesca, niente box
+  $('hnext').onclick({ stopPropagation() {} });
+  assert.equal(txt(), '', 'la zona gia\' vista non ripete la presentazione');
+  assert.equal($('boxwrap').classList.contains('in'), false, 'e il box sparisce');
+  assert.equal($('npc').classList.contains('in'), false, 'Francesca non e\' piu\' in scena');
+  // ma se tocchi qualcosa, rientra e risponde
+  spots()[0].onclick({ stopPropagation() {} });
+  assert.ok($('npc').classList.contains('in'), 'al tocco il personaggio rientra');
+  assert.match(txt(), /albo d'oro/);
+  $('hprev').onclick({ stopPropagation() {} });
+  assert.match(txt(), /Dietro questa tenda/, 'e sulla tenda la battuta si ripete');
 
   // entrare e' irreversibile: prima la conferma
   spots()[0].onclick({ stopPropagation() {} });
@@ -1329,12 +1403,11 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   VN.clearSave();
   VN.boot(story, { speed: 0, banca, quiz, scene: 'lobby' });
   VN.state.locked = true;                       // come dopo il lock di S6
+  VN.state.post_lobby_visto = true;             // la sequenza del ritorno l'ha gia' vista
   VN.step(); VN.step(); VN.step();
   const dots = () => [...$('hdots').querySelectorAll('.hdot')];
   assert.equal(dots().length, 4, 'restano quattro zone anche dopo il lock');
-  $('hnext').onclick({ stopPropagation() {} });
-  $('hnext').onclick({ stopPropagation() {} });
-  $('hnext').onclick({ stopPropagation() {} });
+  // dopo le previsioni l'hub si apre gia' su Peter: e' quello che resta da fare
   assert.ok($('bg').getAttribute('src').includes('quiz_aperta'), 'zona 4 aperta');
   assert.ok($('npcBody').getAttribute('src').includes('chr_peter_alza_occhi'), 'Peter sveglio');
   const spot = $('hubspots').querySelector('.hspot');
@@ -1344,19 +1417,68 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
 }
 
 
+/* ---------- 5c-bis. il ritorno in lobby dopo le previsioni ----------
+   Chiuse le previsioni, il giocatore torna in lobby e Francesca gli dice che ha
+   finito una fase, non il gioco, e che il pezzo che resta e' Peter. Va detto una
+   volta sola: la seconda volta che si torna in lobby (dal countdown, o
+   riaprendo il gioco) la lobby e' muta e si riparte dall'hub. */
+{
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'lobby' });
+  VN.state.locked = true;
+  assert.equal(VN.state.post_lobby_visto, false, 'la sequenza non e\' ancora stata vista');
+  // le battute d'apertura ("io sono Francesca") valgono solo prima del keynote:
+  // sono dichiarate con "se locked = false", e con la partita chiusa non partono.
+  // (Qui il flag si alza a scena gia' avviata, quindi le prime tre si vedono
+  //  comunque: quello che si verifica e' la condizione nello script.)
+  const intro = story.scenes.lobby.steps.filter(
+    (st) => (st.t === 'say' || st.t === 'show') && /Io sono Francesca|non si inizia senza di te|verso la tenda/.test(String(st.text || '')));
+  assert.ok(intro.length >= 2 && intro.every((st) => st.se && st.se.var === 'locked' && st.se.is === false),
+    'le battute d\'apertura sono legate a "previsioni non ancora fatte"');
+  const dette = [];
+  for (let k = 0; k < 12 && !$('hub').classList.contains('on'); k++) {
+    if (txt()) dette.push(txt());
+    VN.step();
+  }
+  const tutto = dette.join(' | ');
+  assert.match(tutto, /com'e' andata/, 'POST-L01: si congratula');
+  assert.match(tutto, /Ma non abbiamo finito/, 'POST-L03: il gioco non e\' finito');
+  assert.match(tutto, /Vai da Peter/, 'POST-L05: indirizza al quiz');
+  assert.match(tutto, /moltiplicare i punti/, 'POST-L06: e spiega a cosa serve');
+  assert.ok($('hub').classList.contains('on'), 'e poi si torna a girare la lobby');
+  assert.equal(VN.state.post_lobby_visto, true, 'la sequenza si segna come vista');
+  // la posa "orgogliosa", che prima non usava nessuno, e' qui
+  const orgogliosa = story.scenes.lobby.steps.some(
+    (st) => st.t === 'show' && st.who === 'francesca' && st.body === 'orgogliosa');
+  assert.ok(orgogliosa, 'Francesca orgogliosa compare al ritorno in lobby');
+  assert.ok(story.cast.francesca.bodies.orgogliosa, 'e la posa e\' dichiarata nel cast');
+  // niente tutorial dello swipe: la lobby l'ha gia' girata tutta
+  assert.ok(!/Scorri per scoprire la lobby/.test(txt()), 'niente tutorial al ritorno');
+
+  // seconda volta: muta, si riparte direttamente dall'hub
+  const stato = VN.state;
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'lobby' });
+  VN.state = stato;
+  VN.step(); VN.step(); VN.step();
+  assert.ok($('hub').classList.contains('on'), 'la seconda volta si arriva subito all\'hub');
+  VN.clearSave();
+}
+
 /* ---------- 5o. la zona 3 e' il regolamento, non piu' la teca dei premi ----------
    E' una zona da leggere: si apre sopra la lobby, si chiude, e la partita deve
    trovarsi esattamente come prima. Se toccasse anche una sola variabile della
    run sarebbe un bug grosso — uno che legge le regole non sta giocando. */
 {
   const zone = story.scenes.lobby.steps.find((st) => st.t === 'hub').zones;
-  const z3 = zone[2];
-  assert.equal(z3.id, 'regolamento', 'la zona 3 ora e\' il regolamento');
+  // la zona 1 e' scritta due volte (prima e dopo le previsioni): il regolamento
+  // si cerca per id, non per posizione
+  const z3 = zone.find((z) => z.id === 'regolamento');
+  assert.ok(z3, 'la zona del regolamento c\'e\'');
   assert.equal(z3.bg, 'lobby_z3_regolamento');
   assert.ok(fs.existsSync(path.join(ROOT, base + story.assets.bg.lobby_z3_regolamento)),
     'il fondale nuovo del regolamento esiste su disco');
   assert.equal(story.assets.bg.lobby_z3_premi, undefined, 'la teca dei premi non e\' piu\' dichiarata');
-  assert.match(z3.say, /dare un'occhiata alle regole/, 'Francesca introduce la sezione');
+  assert.match(z3.say, /Il regolamento e' li'/, 'Francesca introduce la sezione');
   assert.equal(z3.hotspots.length, 1);
   assert.equal(z3.hotspots[0].apre, 'regolamento');
   assert.equal(z3.hotspots[0].goto, undefined, 'non porta a una scena separata: resta nella lobby');
@@ -1486,7 +1608,11 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   const iPollice = passi.findIndex((st) => st.t === 'bg' && st.id === 'finale_porta_pollice');
   assert.ok(iPollice >= 0, 'la porta col pollice in su c\'e\' ancora');
   assert.ok(iTitoli > iPollice, 'i titoli vengono DOPO la comparsa del CEO');
-  assert.equal(story.scenes.finale.next, 'countdown', 'e prima del countdown');
+  // Fine delle previsioni -> email facoltativa -> titoli -> cartello -> lobby.
+  // Il countdown non e' piu' la fine del gioco: ci si arriva dopo il quiz.
+  const iMail = passi.findIndex((st) => st.t === 'email');
+  assert.ok(iMail >= 0 && iMail < iTitoli, 'l\'email si chiede prima dei titoli di coda');
+  assert.equal(story.scenes.finale.next, 'lobby', 'e dopo i titoli si torna in lobby');
 
   const blocchi = passi[iTitoli].blocchi;
   assert.equal(blocchi.length, 5, 'cinque blocchi, come da specifica');
@@ -1529,8 +1655,12 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.ok(story.scenes.arrivo.steps.some((st) => ['title', 'boot', 'logo'].includes(st.t)));
 
   let giri = 0;
-  while (VN.sceneId !== 'countdown' && giri++ < 60) VN.step();
-  assert.equal(VN.sceneId, 'countdown', 'dai titoli si arriva al countdown');
+  while (!$('emailwrap').classList.contains('on') && giri++ < 60) VN.step();
+  assert.ok($('emailwrap').classList.contains('on'), 'prima dei titoli si chiede l\'email');
+  $('emailsalta').onclick({ stopPropagation() {} });        // "spezzare loro il cuore"
+  giri = 0;
+  while (VN.sceneId !== 'lobby' && giri++ < 60) VN.step();
+  assert.equal(VN.sceneId, 'lobby', 'dopo i titoli e il cartello si torna in lobby');
 
   /* Il tocco durante i titoli ACCELERA, non salta: ogni blocco compare comunque,
      solo piu' in fretta, e alla fine serve un ultimo tocco per il countdown. La
@@ -1553,6 +1683,60 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
     'l\'ultimo blocco resta a schermo invece di sfumare nel nero');
 }
 
+/* ---------- 5q-ter. l'email facoltativa ----------
+   Sta fra le previsioni e i titoli di coda, e deve restare facoltativa: si va
+   avanti anche saltandola. E' anche il momento in cui la partita parte davvero
+   verso il server — al blocco viene solo messa in coda, cosi' la riga spedita e'
+   una sola e, se l'email c'e', ce l'ha dentro. */
+{
+  const passo = story.scenes.finale.steps.find((st) => st.t === 'email');
+  assert.match(passo.titolo, /DOVE TI TROVIAMO/);
+  assert.match(passo.nota, /Lorenzo e Michael/, 'la nota ironica e\' quella concordata');
+  assert.match(passo.salta, /spezzare loro il cuore/, 'e il salto e\' dichiarato');
+
+  const apri = () => {
+    VN.clearSave();
+    dom.window.localStorage.removeItem('fl_nexus_da_inviare');
+    VN.boot(story, { speed: 0, banca, quiz, scene: 'finale' });
+    VN.state.nome = 'Franca'; VN.state.locked = true;
+    let giri = 0;
+    while (!$('emailwrap').classList.contains('on') && giri++ < 60) VN.step();
+    assert.ok($('emailwrap').classList.contains('on'), 'la schermata dell\'email si apre');
+  };
+  const coda = () => JSON.parse(dom.window.localStorage.getItem('fl_nexus_da_inviare') || 'null');
+
+  // indirizzo storto: si resta li' e si spiega cosa manca, invece di mandare via
+  // un indirizzo che non ricevera' mai niente
+  apri();
+  $('emailin').value = 'chiocciola dimenticata';
+  $('emailok').onclick({ stopPropagation() {} });
+  assert.ok($('emailwrap').classList.contains('on'), 'con un indirizzo storto non si va avanti');
+  assert.ok($('emailerr').classList.contains('on'), 'e si dice cosa non va');
+  assert.equal(VN.state.email, null);
+
+  // indirizzo buono: si continua, e la partita spedita se lo porta dietro
+  $('emailin').value = ' franca@esempio.com ';
+  $('emailin').oninput();
+  $('emailok').onclick({ stopPropagation() {} });
+  assert.equal($('emailwrap').classList.contains('on'), false, 'la schermata si chiude');
+  assert.equal(VN.state.email, 'franca@esempio.com', 'l\'indirizzo e\' salvato senza spazi');
+  assert.equal(coda()?.email, 'franca@esempio.com', 'e viaggia con la partita');
+
+  // saltare non blocca niente, e la partita parte lo stesso
+  apri();
+  $('emailsalta').onclick({ stopPropagation() {} });
+  assert.equal($('emailwrap').classList.contains('on'), false, 'saltando si va avanti');
+  assert.equal(VN.state.email, null, 'e non resta niente in memoria');
+  assert.equal(coda()?.email, null, 'la partita parte comunque, senza email');
+  assert.equal(coda()?.nome, 'Franca');
+
+  // campo vuoto + CONTINUA: e' un modo come un altro di saltare
+  apri();
+  $('emailok').onclick({ stopPropagation() {} });
+  assert.equal($('emailwrap').classList.contains('on'), false, 'il campo vuoto non e\' un errore');
+  VN.clearSave();
+}
+
 /* ---------- 5q-bis. un cartello a schermo pieno scopre il velo nero ----------
    #nero sta SOPRA #curtain: i titoli di coda arrivano subito dopo una
    dissolvenza al nero, e senza toglierla il testo c'era nel DOM ma lo schermo
@@ -1567,6 +1751,7 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
     const passo = (VN.scene?.steps || [])[VN.i];
     if (!passo) break;
     if (passo.t === 'title') { VN.step(); break; }
+    if (passo.t === 'email') { $('emailsalta').onclick({ stopPropagation() {} }); continue; }
     VN.step();
   }
   assert.equal($('nero').classList.contains('on'), false,

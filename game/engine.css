@@ -100,6 +100,13 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
   100%{transform:translate(var(--drift,4vw),-26vh);opacity:0}
 }
 
+/* Immagine chiesta ma non ancora decodificata: quello che il browser
+   disegnerebbe adesso e' ancora l'immagine di prima (il personaggio o lo
+   sfondo della scena precedente). Si tiene invisibile finche' non e' pronta —
+   visibility e non display, cosi' le animazioni d'ingresso partono lo stesso e
+   le misure restano calcolabili. Vedi apparira() nel motore. */
+.attesa{visibility:hidden!important}
+
 /* ---------- NPC: corpo + testa ----------
    #npc e' il riquadro del personaggio; la testa e' posizionata in percentuale
    su quel riquadro (punto di ancoraggio del collo, uguale per tutte le pose). */
@@ -145,6 +152,16 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #propwrap.in{opacity:1;transform:translate(-50%,0) scale(1)}
 #propwrap.out{opacity:0;transform:translate(-50%,-40px) scale(.8)}
 #prop{width:100%;display:block;image-rendering:pixelated;filter:drop-shadow(0 16px 30px rgba(0,0,0,.65))}
+
+/* ---------- leggio del keynote ----------
+   Fisso per tutta S5: davanti a #npc/#avatar (z-index 1, ma dopo di loro nel
+   DOM), dietro #boxwrap (2). Acceso/spento dalla scena (sc.podio in goScene),
+   non da uno step: non e' un oggetto che entra ed esce a comando come i prop
+   di un evento. */
+#podiumwrap{position:absolute;left:50%;bottom:5%;width:70%;max-width:340px;
+ transform:translateX(-50%);z-index:1;opacity:0;display:none;pointer-events:none}
+#podiumwrap.on{opacity:1;display:block}
+#podiumImg{width:100%;display:block;image-rendering:pixelated}
 /* Il riquadro dello schermo verde, misurato sull'immagine del Mac (il verde
    chiaro occupa left 26.5%, width 46.9%, top 11%, height 30%): qui e' rientrato
    di poco, giusto per non far toccare il testo alla cornice. La versione
@@ -619,6 +636,39 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  text-align:center;letter-spacing:.05em;box-shadow:0 3px 0 rgba(0,0,0,.5);margin-top:2px}
 #carok:hover,#carok:focus{background:#3d466e;outline:none}
 #carok:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.5)}
+
+/* ---------- email facoltativa (S7, dopo il teleprompter) ----------
+   Stesso pannello del regolamento: flex e non grid, cosi' il bottone resta
+   dentro lo schermo anche sui telefoni piccoli (vedi la nota li' sotto). */
+#emailwrap{position:absolute;inset:0;z-index:7;display:none;align-items:center;
+ justify-content:center;background:rgba(4,5,10,.72);
+ padding:6vw calc(5vw + env(safe-area-inset-left,0px))
+ calc(5vw + env(safe-area-inset-bottom,0px))}
+#emailwrap.on{display:flex}
+#emailbox{flex:none;display:flex;flex-direction:column;gap:10px;width:100%;max-width:24em;
+ max-height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;
+ background:#1b1f33;border:3px solid #fff;border-radius:14px;padding:16px 15px 14px;
+ box-shadow:0 10px 0 rgba(0,0,0,.5), 0 0 34px rgba(255,217,138,.18)}
+#emailtit{color:#ffd98a;font-size:clamp(10px,3vw,15px);letter-spacing:.12em;text-align:center;
+ text-shadow:0 0 16px rgba(255,217,138,.4)}
+#emailtesto{color:#fff;font-size:clamp(7px,2.1vw,11px);line-height:1.9;text-align:center}
+#emaillabel{color:#9fb4d8;font-size:clamp(6px,1.9vw,10px);letter-spacing:.08em;margin-top:4px}
+#emailin{background:#0d1020;border:3px solid #fff;border-radius:8px;color:#fff;
+ font-family:inherit;font-size:clamp(7px,2.2vw,11px);padding:10px 9px;min-width:0}
+#emailin:focus{outline:none;border-color:#ffd98a}
+/* l'errore compare solo quando serve: uno spazio riservato a vuoto sembrerebbe
+   un pezzo di interfaccia rotto */
+#emailerr{display:none;color:#ff9a9a;font-size:clamp(6px,1.9vw,10px);line-height:1.6}
+#emailerr.on{display:block}
+#emailnota{color:#fff;opacity:.85;font-size:clamp(6px,1.9vw,10px);line-height:1.8}
+#emailprivacy{color:#9fb4d8;font-size:clamp(5px,1.6vw,9px);line-height:1.7}
+#emailok{margin-top:4px}
+/* il salto e' una scelta vera, non una scorciatoia da nascondere: si legge, ma
+   non compete con CONTINUA */
+#emailsalta{background:none;border:0;color:#9fb4d8;font-family:inherit;
+ font-size:clamp(6px,1.9vw,10px);line-height:1.7;text-decoration:underline;
+ cursor:pointer;padding:6px 2px}
+#emailsalta:hover,#emailsalta:focus{color:#fff;outline:none}
 
 /* ---------- countdown e card (S7) ---------- */
 #countdown{position:absolute;inset:0;z-index:6;display:none;place-items:center;

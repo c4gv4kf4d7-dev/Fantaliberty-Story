@@ -14,7 +14,7 @@ game/
   story.json            SCRIPT DEL GIOCO: scene, battute, scelte, asset  <- si edita qui
   domande.json          banca pronostici [S5]: 29 domande, 316 battute (una per stile)
   quiz.json             quiz di Peter [S8]: 44 domande, due pool per livello
-  backend.json          dove spedire la schedina chiusa (url + chiave anon)
+  backend.json          dove spedire la partita conclusa (url + chiave anon)
 assets/
   bg/                   sfondi
   chars/                sprite personaggi (un file per espressione)
@@ -45,6 +45,8 @@ npm run indice     # rigenera docs/indice-domande.md dalla banca domande
 npm run serve      # http://localhost:8080  (serve un web server: story.json via fetch)
 npm install        # solo per i test
 npm test           # smoke test del flusso: input -> variabili -> scene
+npm run transizioni # (serve `npm run serve` attivo) controlla che un cambio di
+                   # scena non scopra fondale o personaggio prima che siano pronti
 npm run build      # dist/nexus_game.html, singolo file offline
 ```
 
@@ -411,7 +413,7 @@ Il punteggio **non e' accumulato ma derivato** dalle risposte: qui si possono
 cambiare, e un contatore accumulato andrebbe fuori sincrono alla prima
 correzione.
 
-Il bottone rosso chiude la schedina: `run.locked = true`, e da quel momento la
+Il bottone rosso conferma le previsioni: `run.locked = true`, e da quel momento la
 zona 4 della lobby si apre (e' gia' condizionata a `locked`, non serve altro).
 
 **L'invio.** `game/backend.json` dice dove spedire:
@@ -428,17 +430,39 @@ La chiave `service_role` non deve mai finire li' dentro.
 Il timestamp lo mette il server (`default now()` sulla colonna), non il client:
 un orologio del telefono spostato non deve poter cambiare l'ordine di arrivo.
 
-Il blocco e' locale e irreversibile, quindi se l'invio fallisce — rete assente,
-chiave non ancora configurata — la schedina **resta in coda** in `localStorage`
-e si riprova da sola al prossimo avvio, invece di perdersi.
+La partita **non parte subito**: al momento della conferma finisce in coda in
+`localStorage`, e la spedisce la schermata dell'email che arriva un attimo dopo
+(vedi S7). Cosi' quello che arriva al server e' una riga sola, con dentro
+l'email se il giocatore l'ha lasciata.
 
-### S7: il countdown e la card
+Il blocco e' locale e irreversibile, quindi se l'invio fallisce — rete assente,
+chiave non ancora configurata, o il giocatore che chiude il gioco sulla
+schermata dell'email — la partita **resta in coda** e si riprova da sola al
+prossimo avvio, invece di perdersi.
+
+### S7: l'email, i titoli di coda, il countdown
+
+Fra la conferma delle previsioni e i titoli di coda c'e' una schermata sola:
+l'email. E' **facoltativa** — si continua a campo vuoto, o con "Preferisco
+spezzare loro il cuore" — e serve solo a mandare i risultati finali quando ci
+saranno. Se c'e', viaggia con la partita (colonna `email` in `docs/backend.sql`:
+su una tabella creata prima va aggiunta, altrimenti l'invio viene rifiutato).
+Quello che il regolamento elenca fra i dati raccolti deve restare uguale al
+payload: se cambia uno, cambia l'altro.
+
+Dopo i titoli di coda arriva un cartello — "Hai completato una fase, non
+l'intera esperienza" — e al tocco si torna **in lobby**, non al countdown: li'
+Francesca si congratula, indirizza a Peter e la lobby prosegue in modalita'
+post-previsioni (`post_lobby_visto` fa si' che la sequenza si veda una volta
+sola). Al countdown ci si arriva dopo il quiz.
+
+### Il countdown e la card
 
 `meta.keynote` e' la data e ora verso cui conta il countdown (ISO, con fuso).
 E' l'unica riga da cambiare se Apple sposta l'evento; senza una data valida
 `npm test` si ferma, perche' un countdown senza traguardo non conta niente.
 
-Chi riapre il gioco con la schedina gia' bloccata **non trova "riprendi"**:
+Chi riapre il gioco con le previsioni gia' confermate **non trova "riprendi"**:
 torna qui, perche' non c'e' piu' storia da rigiocare. Da qui si va in lobby, e
 la zona 4 e' ormai aperta.
 
@@ -558,7 +582,8 @@ quando l'immagine del Mac finisce di caricarsi.
 
 `meta.assetiInArrivo` elenca i file gia' disegnati ma non ancora convertiti e
 caricati: `npm test` li segnala come "da convertire" invece di fallire, e il
-motore disegna un ripiego al posto loro.
+motore disegna un ripiego al posto loro. Al momento e' vuoto: non c'e' arte in
+attesa.
 
 ## Formato e layout
 
@@ -660,12 +685,14 @@ sulle inquadrature aperte.
 
 Tutte le scene dello script master v4.0, da S0 a S8, sono scritte e giocabili:
 registrazione, lobby a zone, l'aggancio, il camerino con i quattro stili, il
-dietro le quinte, il keynote con i tre macroargomenti, il teleprompter con il
-blocco della schedina, il finale con il countdown e la card, e il quiz di Peter
-con i moltiplicatori.
+dietro le quinte, il keynote con i tre macroargomenti, il teleprompter con la
+conferma delle previsioni, i titoli di coda con l'email facoltativa, il ritorno
+in lobby e il quiz di Peter con i moltiplicatori e il countdown.
 
-Restano da consegnare sei layer della platea (`platea/pla_*`, elencati in
-`meta.assetiInArrivo`): il gioco gira lo stesso, senza il layer di reazione.
+I sei layer della platea (`platea/pla_*`) **non si fanno**: allungherebbero il
+gioco fra una scelta e l'altra. Restano dichiarati in `story.json` — il motore
+saprebbe mostrarli — ma non sono piu' in lavorazione, e senza di loro la scena
+va avanti uguale.
 
 ## Aggiungere asset
 
