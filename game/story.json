@@ -1634,6 +1634,8 @@
           "gotoMult": "moltiplicatori",
           "etichettaChiuso": "prima l'altro",
           "etichettaBruciato": "finito",
+          "etichettaMai": "fuori portata",
+          "finito": "Con me hai finito: non ci sono altri livelli da fare.",
           "assegna": "Assegna i moltiplicatori (+{banca})",
           "assegnaPresto": "I moltiplicatori si assegnano il giorno del keynote",
           "assegnati": "Rivedi i moltiplicatori",
