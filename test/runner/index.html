@@ -270,7 +270,10 @@ const PRONTI = Promise.all([
   carica('cavi',      'run_malus_cavi.webp'),
   carica('traguardo', 'run_traguardo.webp'),
   carica('arcobaleno','run_ost_arcobaleno.webp'),
-  carica('scivolata', 'run_pg_scivolata.webp')
+  carica('scivolata', 'run_pg_scivolata.webp'),
+  carica('iphone',    'run_bonus_iphone.webp'),
+  carica('computer',  'run_bonus_computer.webp'),
+  carica('visore',    'run_bonus_visore.webp')
 ]);
 
 /* ---------- stato ---------- */
@@ -288,6 +291,7 @@ const S = {
   prossimo:0,         // fra quanta distanza generare il prossimo gruppo
   lezione:null,       // quale spiegazione e' aperta adesso
   imparate:{},        // quelle gia' viste in questa partita
+  collezione:{},      // quali dei tre prodotti sono gia' stati presi
   scivola:0,          // quanto manca alla fine della scivolata
   traguardo:0,        // l'ultimo migliaio gia' festeggiato
   vite:3,
@@ -334,13 +338,29 @@ const CHICCHE = {
   cubo:   { valore:  30, buona:true,  segnaposto:'#e8e4dc' },
   matita: { valore:  40, buona:true,  segnaposto:'#dff2f7' },
   dongle: { valore: -40, buona:false, segnaposto:'#9a9a94' },
-  cavi:   { valore: -60, buona:false, segnaposto:'#8d8d88' }
+  cavi:   { valore: -60, buona:false, segnaposto:'#8d8d88' },
+  /* I tre prodotti valgono molto e compaiono di rado: sono il premio
+     di chi resta in piedi a lungo. Prenderli tutti e tre nella stessa
+     partita vale un bonus a parte. */
+  iphone:   { valore: 100, buona:true, raro:true, segnaposto:'#2b2b2e' },
+  computer: { valore: 100, buona:true, raro:true, segnaposto:'#d8cfae' },
+  visore:   { valore: 100, buona:true, raro:true, segnaposto:'#cfd0e4' }
 };
+const COLLEZIONE = ['iphone','computer','visore'];
+const BONUS_COLLEZIONE = 300;
 const BUONE   = ['cubo','matita'];
 const CATTIVE = ['dongle','cavi'];
 
 function forseChicca(z, corsia){
   const r = Math.random();
+  // un prodotto ogni tanto, e mai due volte lo stesso nella partita
+  if (r < 0.06){
+    const restano = COLLEZIONE.filter(k => !S.collezione[k]);
+    if (restano.length){
+      S.cose.push({ tipo:'chicca', quale: restano[Math.random()*restano.length | 0], z, corsia });
+      return;
+    }
+  }
   if (r > 0.55) return;
   /* Le cattive stanno sulla corsia comoda, le buone su quella scomoda:
      se stessero dove capita, la scelta non ci sarebbe. */
@@ -806,6 +826,13 @@ function aggiorna(dt){
         S.raccolti += k.valore;
         segnale(c, (k.valore > 0 ? '+' : '') + k.valore, k.buona);
         if (!k.buona) S.scossa = 0.22;          // un sussulto piccolo: fastidio, non danno
+        if (k.raro){
+          S.collezione[c.quale] = true;
+          if (COLLEZIONE.every(x => S.collezione[x])){
+            S.raccolti += BONUS_COLLEZIONE;
+            segnale({ z:0.06, corsia:S.corsiaVista }, '+' + BONUS_COLLEZIONE, true);
+          }
+        }
       } else {
         c.presa = true;                          // un carrello colpisce una volta sola
         colpito(); if (S.fase !== 'corsa') return;
@@ -921,14 +948,15 @@ function disegna(){
       ctx.restore();
     } else if (c.tipo === 'chicca'){
       const k = CHICCHE[c.quale];
-      const s = (k.buona ? 130 : 150) * q.scala;
+      const s = (k.raro ? 170 : k.buona ? 130 : 150) * q.scala;
       // le buone galleggiano e brillano, le cattive stanno per terra
       const su = k.buona ? s * (1.25 + 0.07 * Math.sin(S.distanza*5 + c.z*7)) : s * 0.9;
       ombra(q.x, q.y, s * 0.30, k.buona ? 0.14 : 0.22);
       if (k.buona){
         ctx.save();
-        ctx.globalAlpha = 0.35;
-        ctx.fillStyle = c.quale === 'cubo' ? '#f0b722' : '#4ac6e8';
+        ctx.globalAlpha = k.raro ? 0.5 : 0.35;
+        ctx.fillStyle = { cubo:'#f0b722', matita:'#4ac6e8', iphone:'#4ac6e8',
+                          computer:'#f0b722', visore:'#b58ce8' }[c.quale] || '#f0b722';
         ctx.beginPath(); ctx.ellipse(q.x, q.y - su + s*0.4, s*0.55, s*0.55, 0, 0, 7);
         ctx.fill(); ctx.restore();
       }
@@ -1008,7 +1036,7 @@ function via(){
   S.velocita = 0.55; S.distanza = 0; S.punti = 0; S.raccolti = 0;
   S.cose = []; S.prossimo = 0.4; S.scossa = 0; SEGNALI.length = 0;
   S.vite = 3; S.intoccabile = 0; S.traguardo = 0; S.scivola = 0; mostraVite(null);
-  S.imparate = {}; riprendi();
+  S.imparate = {}; S.collezione = {}; riprendi();
   document.getElementById('veloStart').hidden = true;
   document.getElementById('veloFine').hidden  = true;
 }
