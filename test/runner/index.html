@@ -275,10 +275,6 @@ const PRONTI = Promise.all([
   carica('verde',     'run_anello_verde.webp'),
   carica('blu',       'run_anello_blu.webp'),
   carica('vita',      'run_vita.webp'),
-  carica('cubo',      'run_bonus_cubo.webp'),
-  carica('matita',    'run_bonus_matita.webp'),
-  carica('dongle',    'run_malus_dongle.webp'),
-  carica('cavi',      'run_malus_cavi.webp'),
   carica('traguardo', 'run_traguardo.webp'),
   carica('arcobaleno','run_ost_arcobaleno.webp'),
   carica('scivolata', 'run_pg_scivolata.webp'),
@@ -286,12 +282,7 @@ const PRONTI = Promise.all([
   carica('computer',  'run_bonus_computer.webp'),
   carica('visore',    'run_bonus_visore.webp'),
   carica('cartello',  'run_ost_cartello.webp'),
-  carica('salto',     'run_pg_salto.webp'),
-  carica('icona1',    'run_icona_1.webp'),
-  carica('icona2',    'run_icona_2.webp'),
-  carica('icona3',    'run_icona_3.webp'),
-  carica('icona4',    'run_icona_4.webp'),
-  carica('icona5',    'run_icona_5.webp')
+  carica('salto',     'run_pg_salto.webp')
 ]);
 
 /* ---------- stato ---------- */
@@ -354,47 +345,26 @@ function forseVita(z, corsia){
 }
 /* ---------- le chicche ----------
    Regola, e va tenuta: il carrello e' l'unica cosa che toglie un cuore.
-   Le chicche tolgono solo punti — sono dispetti, non trappole.
-   Buone luminose e colorate, cattive grigie e opache: si deve capire
-   da lontano, senza aver letto niente. */
-const CHICCHE = {
-  cubo:   { valore:  30, buona:true,  segnaposto:'#e8e4dc' },
-  matita: { valore:  40, buona:true,  segnaposto:'#dff2f7' },
-  dongle: { valore: -40, buona:false, segnaposto:'#9a9a94' },
-  cavi:   { valore: -60, buona:false, segnaposto:'#8d8d88' },
-  /* I tre prodotti valgono molto e compaiono di rado: sono il premio
-     di chi resta in piedi a lungo. Prenderli tutti e tre nella stessa
-     partita vale un bonus a parte. */
-  iphone:   { valore: 100, buona:true, raro:true, segnaposto:'#2b2b2e' },
-  computer: { valore: 100, buona:true, raro:true, segnaposto:'#d8cfae' },
-  visore:   { valore: 100, buona:true, raro:true, segnaposto:'#cfd0e4' }
-};
-/* Un'icona qualunque vale sempre uguale: sono cinque disegni diversi
-   della stessa cosa, non cinque oggetti da imparare a distinguere. */
-const ICONE = ['icona1','icona2','icona3','icona4','icona5'];
-const VALORE_ICONA = 20;
 
+   Sono rimasti solo gli oggetti che hanno un disegno vero. I segnaposto
+   grigi e colorati (cubo, matita, adattatore, cavi) sono stati tolti: un
+   quadratino anonimo che vale punti non insegna niente, e a schermo
+   sembrava un errore piu' che un oggetto. Cosi' nel percorso ci sono tre
+   cose sole da leggere — gli anelli, i prodotti nelle bolle, il cuore. */
+const CHICCHE = {
+  iphone:   { valore: 100, segnaposto:'#2b2b2e', alone:'#4ac6e8' },
+  computer: { valore: 100, segnaposto:'#d8cfae', alone:'#f0b722' },
+  visore:   { valore: 100, segnaposto:'#cfd0e4', alone:'#b58ce8' }
+};
 const COLLEZIONE = ['iphone','computer','visore'];
 const BONUS_COLLEZIONE = 300;
-const BUONE   = ['cubo','matita'];
-const CATTIVE = ['dongle','cavi'];
 
 function forseChicca(z, corsia){
-  const r = Math.random();
-  // un prodotto ogni tanto, e mai due volte lo stesso nella partita
-  if (r < 0.06){
-    const restano = COLLEZIONE.filter(k => !S.collezione[k]);
-    if (restano.length){
-      S.cose.push({ tipo:'chicca', quale: restano[Math.random()*restano.length | 0], z, corsia });
-      return;
-    }
-  }
-  if (r > 0.55) return;
-  /* Le cattive stanno sulla corsia comoda, le buone su quella scomoda:
-     se stessero dove capita, la scelta non ci sarebbe. */
-  const buona = r < 0.28;
-  const quale = (buona ? BUONE : CATTIVE)[Math.random()*2 | 0];
-  S.cose.push({ tipo:'chicca', quale, z, corsia });
+  // solo i tre prodotti, uno per partita, e non a ogni gruppo
+  if (Math.random() > 0.09) return;
+  const restano = COLLEZIONE.filter(k => !S.collezione[k]);
+  if (!restano.length) return;
+  S.cose.push({ tipo:'chicca', quale: restano[Math.random()*restano.length | 0], z, corsia });
 }
 
 /* ---------- l'arcobaleno ----------
@@ -419,10 +389,12 @@ function salta(){
 }
 
 /* ---------- i traguardi ----------
-   Ogni mille punti, un'icona d'oro risale il corridoio piu' grande di
+   Ogni mille punti un'icona d'oro risale il corridoio piu' grande di
    tutto il resto. NON si raccoglie e non si schiva: passa e basta.
    E' un applauso, non un'altra cosa da inseguire — se si potesse
-   prendere diventerebbe l'ennesimo oggetto da valutare in corsa. */
+   prendere diventerebbe l'ennesimo oggetto da valutare in corsa.
+
+   E' anche il metro della velocita': ogni traguardo e' uno scalino. */
 const OGNI_TRAGUARDO = 1000;
 
 function controllaTraguardo(){
@@ -485,7 +457,7 @@ function genera(){
     // ARCOBALENO: la strada e' libera, il problema e' arrivarci pronti
     S.cose.push({ tipo:'arco', z: NASCE_ARCO, corsia: 0 });
     S.respiro = true;
-    for (let i=0; i<4; i++) anello('verde', NASCE_ARCO - 0.55 + i*0.05, 0);
+    for (let i=0; i<4; i++) anello('verde', NASCE_ARCO - 0.60 + i*PASSO_ANELLI, 0);
     S.prossimo = 1.15;
 
   } else {
@@ -525,8 +497,7 @@ const LEZIONI = {
     titolo: 'Cosa vale cosa',
     corpo: '<p><b class="verde">Anello verde 10</b> · <b class="blu">blu 25</b> · ' +
            '<b class="rosso">rosso 50</b><br>' +
-           'Icone e oggetti Apple: <b class="verde">danno punti</b><br>' +
-           'Adattatori e cavi vecchi: <b class="rosso">li tolgono</b><br>' +
+           'I prodotti nelle bolle: <b class="verde">100 a testa</b><br>' +
            'Il cuore ti ridà un tentativo<br><br>' +
            'Carrelli e cartelli ti costano un cuore.<br>' +
            'L\'arcobaleno si passa <b>al centro, scivolando</b>.</p>'
@@ -827,93 +798,19 @@ function aggiorna(dt){
       if (c.tipo === 'anello'){
         c.presa = true;
         S.raccolti += ANELLI[c.anello].valore;
-      } else if (c.tipo === 'icona'){
-        c.presa = true;
-        S.raccolti += VALORE_ICONA;
-        segnale(c, '+' + VALORE_ICONA, true);
       } else if (c.tipo === 'vita'){
         c.presa = true;
         if (S.vite < 2){ S.vite++; mostraVite('guarito'); segnale(c, '+♥', true); }
         else { S.raccolti += 25; segnale(c, '+25', true); }   // col cuore pieno vale punti
-      } else if (c.tipo === 'arco'){
-      /* Le misure non sono quelle di un arcobaleno vero: se lo fossero,
-         l'apertura centrale sarebbe altissima e non ci sarebbe niente
-         sotto cui abbassarsi. L'arco e' tarato perche' il passaggio
-         resti sotto la meta' del personaggio in piedi. */
-      const L = bordo(PISTA_SX, q.y), R = bordo(PISTA_DX, q.y);
-      const cx = (L + R) / 2, cy = q.y;
-      const fuoriA = (R - L) / 2, fuoriB = 676 * q.scala;
-      const dentroA = (R - L) * 0.20, dentroB = 268 * q.scala;   // ci deve stare comodo, steso
-      const im = A.arcobaleno;
-      if (im){
-        /* Il varco dell'immagine e' il 42% della sua altezza: si dimensiona
-           su quello, perche' e' l'unica misura che conta — deve starci
-           dentro il personaggio steso e non quello in piedi. */
-        const h = 720 * q.scala, w = h * (im.width / im.height);
-        ctx.drawImage(im, cx - w/2, cy - h, w, h);
-      } else {
-        const tinte = ['#4a9e3f','#e8c22a','#e88a22','#d94b3f',
-                       '#c8409c','#7a48b8','#3f8ad9'];
-        for (let k=0; k<tinte.length; k++){
-          const t0 = k / tinte.length, t1 = (k+1) / tinte.length;
-          const a0 = fuoriA + (dentroA - fuoriA) * t0, b0 = fuoriB + (dentroB - fuoriB) * t0;
-          const a1 = fuoriA + (dentroA - fuoriA) * t1, b1 = fuoriB + (dentroB - fuoriB) * t1;
-          ctx.fillStyle = tinte[k];
-          ctx.beginPath();
-          ctx.ellipse(cx, cy, a0, b0, 0, Math.PI, 2*Math.PI);
-          ctx.ellipse(cx, cy, a1, b1, 0, 2*Math.PI, Math.PI, true);
-          ctx.closePath(); ctx.fill();
-        }
-      }
-    } else if (c.tipo === 'traguardo'){
-      const s = 320 * q.scala;                    // il doppio abbondante di una chicca
-      const su = s * (2.1 + 0.10 * Math.sin(S.distanza * 3 + c.z * 5));
-      const cx = q.x, cy = q.y - su + s/2;
-      ctx.save();
-      ctx.globalAlpha = Math.min(1, (1.25 - c.z) * 3);   // entra sfumando
-      // alone
-      const alone = ctx.createRadialGradient(cx, cy, s*0.25, cx, cy, s*0.95);
-      alone.addColorStop(0, 'rgba(240,190,80,.55)');
-      alone.addColorStop(1, 'rgba(240,190,80,0)');
-      ctx.fillStyle = alone;
-      ctx.beginPath(); ctx.arc(cx, cy, s*0.95, 0, 7); ctx.fill();
-      const im = A.traguardo;
-      if (im){
-        const w = s * (im.width / im.height);
-        ctx.drawImage(im, cx - w/2, cy - s/2, w, s);
-      } else {
-        ctx.fillStyle = '#e8b23c'; ctx.strokeStyle = '#a9761c';
-        ctx.lineWidth = Math.max(2, s*0.05);
-        ctx.beginPath(); ctx.roundRect(cx - s*0.42, cy - s*0.42, s*0.84, s*0.84, s*0.22);
-        ctx.fill(); ctx.stroke();
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold ' + (s*0.5|0) + 'px system-ui, sans-serif';
-        ctx.textAlign='center'; ctx.textBaseline='middle';
-        ctx.fillText('★', cx, cy + s*0.02);
-        ctx.textAlign='left'; ctx.textBaseline='alphabetic';
-      }
-      /* Il numero va SOPRA l'icona: sotto finisce dietro al
-         personaggio, che corre proprio li' in mezzo. */
-      ctx.font = 'bold ' + Math.max(14, s*0.34|0) + 'px system-ui, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.lineWidth = Math.max(3, s*0.06); ctx.strokeStyle = 'rgba(255,255,255,.92)';
-      ctx.strokeText(c.quota, cx, cy - s*0.68);
-      ctx.fillStyle = '#b8811f';
-      ctx.fillText(c.quota, cx, cy - s*0.68);
-      ctx.textAlign = 'left';
-      ctx.restore();
-    } else if (c.tipo === 'chicca'){
+      } else if (c.tipo === 'chicca'){
         c.presa = true;
         const k = CHICCHE[c.quale];
         S.raccolti += k.valore;
-        segnale(c, (k.valore > 0 ? '+' : '') + k.valore, k.buona);
-        if (!k.buona) S.scossa = 0.22;          // un sussulto piccolo: fastidio, non danno
-        if (k.raro){
-          S.collezione[c.quale] = true;
-          if (COLLEZIONE.every(x => S.collezione[x])){
-            S.raccolti += BONUS_COLLEZIONE;
-            segnale({ z:0.06, corsia:S.corsiaVista }, '+' + BONUS_COLLEZIONE, true);
-          }
+        segnale(c, '+' + k.valore, true);
+        S.collezione[c.quale] = true;
+        if (COLLEZIONE.every(x => S.collezione[x])){
+          S.raccolti += BONUS_COLLEZIONE;
+          segnale({ z:0.06, corsia:S.corsiaVista }, '+' + BONUS_COLLEZIONE, true);
         }
       } else {
         c.presa = true;                          // un carrello colpisce una volta sola
@@ -942,11 +839,12 @@ function disegna(){
   fila(A.costola,  PASSO_COSTOLA,  CIMA_PARETE, null,       0.030, PISTA_SX, -25);
   pavimentoFinto();
 
-  // le cose lontane per prime, così le vicine coprono
+  // le cose lontane per prime, cosi' le vicine coprono
   const ord = S.cose.slice().sort((a,b) => b.z - a.z);
   for (const c of ord){
     if (c.presa || c.z > NASCE + 0.1 || c.z < -0.02) continue;
     const q = proietta(c.z, c.corsia);
+
     if (c.tipo === 'anello'){
       const s = 152 * q.scala;
       /* Niente rotazione schiacciata: un anello schiacciato di lato
@@ -960,19 +858,60 @@ function disegna(){
       } else {
         ctx.strokeStyle = { rosso:'#c0453f', verde:'#79c245', blu:'#4aa8cc' }[c.anello];
         ctx.lineWidth = Math.max(2, s*0.16);
-        ctx.beginPath();
-        ctx.ellipse(q.x, q.y - su*0.6, s*0.33, s*0.33, 0, 0, 7);
+        ctx.beginPath(); ctx.ellipse(q.x, q.y - su*0.6, s*0.33, s*0.33, 0, 0, 7);
         ctx.stroke();
       }
+
+    } else if (c.tipo === 'chicca'){
+      /* Le bolle devono farsi venire voglia: respirano di misura e
+         ondeggiano appena. Un oggetto immobile a schermo si ignora. */
+      const k = CHICCHE[c.quale];
+      const s = 260 * q.scala;
+      const su = s * (1.25 + 0.07 * Math.sin(S.distanza*5 + c.z*7));
+      const battito = 1 + 0.09 * Math.sin(S.distanza * 7 + c.z * 4);
+      const dondolo = 0.10 * Math.sin(S.distanza * 3.5 + c.z * 3);
+      ombra(q.x, q.y, s * 0.30, 0.14);
+      ctx.save();
+      ctx.globalAlpha = 0.5; ctx.fillStyle = k.alone;
+      ctx.beginPath(); ctx.ellipse(q.x, q.y - su + s*0.45, s*0.62, s*0.62, 0, 0, 7);
+      ctx.fill(); ctx.restore();
+      const im = A[c.quale];
+      if (im){
+        const h = s * battito, w = h * (im.width / im.height);
+        ctx.save();
+        ctx.translate(q.x, q.y - su + s/2); ctx.rotate(dondolo);
+        ctx.drawImage(im, -w/2, -h/2, w, h);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = k.segnaposto; ctx.strokeStyle = '#8a8a80';
+        ctx.lineWidth = Math.max(2, s*0.06);
+        ctx.beginPath(); ctx.roundRect(q.x - s*0.36, q.y - su, s*0.72, s*0.72, s*0.18);
+        ctx.fill(); ctx.stroke();
+      }
+
+    } else if (c.tipo === 'vita'){
+      const s = 140 * q.scala;
+      const su = s * (1.3 + 0.07 * Math.sin(S.distanza * 5 + c.z * 7));
+      ombra(q.x, q.y, s * 0.28, 0.16);
+      const im = A.vita;
+      if (im){
+        const w = s * (im.width / im.height);
+        ctx.drawImage(im, q.x - w/2, q.y - su, w, s);
+      } else {
+        ctx.fillStyle = '#fff'; ctx.strokeStyle = '#d9453f';
+        ctx.lineWidth = Math.max(2, s*0.09);
+        ctx.beginPath(); ctx.roundRect(q.x - s*0.4, q.y - su, s*0.8, s*0.8, s*0.2);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#d9453f';
+        ctx.font = 'bold ' + (s*0.55|0) + 'px system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('\u2665', q.x, q.y - su + s*0.42);
+        ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      }
+
     } else if (c.tipo === 'arco'){
-      /* Le misure non sono quelle di un arcobaleno vero: se lo fossero,
-         l'apertura centrale sarebbe altissima e non ci sarebbe niente
-         sotto cui abbassarsi. L'arco e' tarato perche' il passaggio
-         resti sotto la meta' del personaggio in piedi. */
       const L = bordo(PISTA_SX, q.y), R = bordo(PISTA_DX, q.y);
       const cx = (L + R) / 2, cy = q.y;
-      const fuoriA = (R - L) / 2, fuoriB = 676 * q.scala;
-      const dentroA = (R - L) * 0.20, dentroB = 268 * q.scala;   // ci deve stare comodo, steso
       const im = A.arcobaleno;
       if (im){
         /* Il varco dell'immagine e' il 42% della sua altezza: si dimensiona
@@ -981,6 +920,8 @@ function disegna(){
         const h = 720 * q.scala, w = h * (im.width / im.height);
         ctx.drawImage(im, cx - w/2, cy - h, w, h);
       } else {
+        const fuoriA = (R - L) / 2, fuoriB = 676 * q.scala;
+        const dentroA = (R - L) * 0.20, dentroB = 268 * q.scala;
         const tinte = ['#4a9e3f','#e8c22a','#e88a22','#d94b3f',
                        '#c8409c','#7a48b8','#3f8ad9'];
         for (let k=0; k<tinte.length; k++){
@@ -994,13 +935,13 @@ function disegna(){
           ctx.closePath(); ctx.fill();
         }
       }
+
     } else if (c.tipo === 'traguardo'){
-      const s = 320 * q.scala;                    // il doppio abbondante di una chicca
+      const s = 320 * q.scala;
       const su = s * (2.1 + 0.10 * Math.sin(S.distanza * 3 + c.z * 5));
       const cx = q.x, cy = q.y - su + s/2;
       ctx.save();
       ctx.globalAlpha = Math.min(1, (1.25 - c.z) * 3);   // entra sfumando
-      // alone
       const alone = ctx.createRadialGradient(cx, cy, s*0.25, cx, cy, s*0.95);
       alone.addColorStop(0, 'rgba(240,190,80,.55)');
       alone.addColorStop(1, 'rgba(240,190,80,0)');
@@ -1018,11 +959,11 @@ function disegna(){
         ctx.fillStyle = '#fff';
         ctx.font = 'bold ' + (s*0.5|0) + 'px system-ui, sans-serif';
         ctx.textAlign='center'; ctx.textBaseline='middle';
-        ctx.fillText('★', cx, cy + s*0.02);
+        ctx.fillText('\u2605', cx, cy + s*0.02);
         ctx.textAlign='left'; ctx.textBaseline='alphabetic';
       }
-      /* Il numero va SOPRA l'icona: sotto finisce dietro al
-         personaggio, che corre proprio li' in mezzo. */
+      /* Il numero va SOPRA: sotto finisce dietro al personaggio, che
+         corre proprio li' in mezzo. */
       ctx.font = 'bold ' + Math.max(14, s*0.34|0) + 'px system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.lineWidth = Math.max(3, s*0.06); ctx.strokeStyle = 'rgba(255,255,255,.92)';
@@ -1031,70 +972,7 @@ function disegna(){
       ctx.fillText(c.quota, cx, cy - s*0.68);
       ctx.textAlign = 'left';
       ctx.restore();
-    } else if (c.tipo === 'chicca'){
-      const k = CHICCHE[c.quale];
-      const s = (k.raro ? 260 : k.buona ? 130 : 150) * q.scala;
-      // le buone galleggiano e brillano, le cattive stanno per terra
-      const su = k.buona ? s * (1.25 + 0.07 * Math.sin(S.distanza*5 + c.z*7)) : s * 0.9;
-      /* Le bolle devono farsi venire voglia: respirano di misura e
-         ondeggiano appena. Un oggetto immobile a schermo si ignora. */
-      const battito = k.raro ? 1 + 0.09 * Math.sin(S.distanza * 7 + c.z * 4) : 1;
-      const dondolo = k.raro ? 0.10 * Math.sin(S.distanza * 3.5 + c.z * 3) : 0;
-      ombra(q.x, q.y, s * 0.30, k.buona ? 0.14 : 0.22);
-      if (k.buona){
-        ctx.save();
-        ctx.globalAlpha = k.raro ? 0.5 : 0.35;
-        ctx.fillStyle = { cubo:'#f0b722', matita:'#4ac6e8', iphone:'#4ac6e8',
-                          computer:'#f0b722', visore:'#b58ce8' }[c.quale] || '#f0b722';
-        ctx.beginPath(); ctx.ellipse(q.x, q.y - su + s*0.45, s*0.62, s*0.62, 0, 0, 7);
-        ctx.fill(); ctx.restore();
-      }
-      const im = A[c.quale];
-      if (im){
-        const h = s * battito, w = h * (im.width / im.height);
-        ctx.save();
-        ctx.translate(q.x, q.y - su + s/2); ctx.rotate(dondolo);
-        ctx.drawImage(im, -w/2, -h/2, w, h);
-        ctx.restore();
-      } else {
-        ctx.fillStyle = k.segnaposto;
-        ctx.strokeStyle = k.buona ? '#8a8a80' : '#66665f';
-        ctx.lineWidth = Math.max(2, s*0.06);
-        ctx.beginPath(); ctx.roundRect(q.x - s*0.36, q.y - su, s*0.72, s*0.72, s*0.18);
-        ctx.fill(); ctx.stroke();
-      }
-    } else if (c.tipo === 'icona'){
-      const s = 120 * q.scala;
-      const su = s * (1.3 + 0.07 * Math.sin(S.distanza * 5 + c.z * 7));
-      ombra(q.x, q.y, s * 0.26, 0.14);
-      const im = A[c.quale];
-      if (im){
-        const w = s * (im.width / im.height);
-        ctx.drawImage(im, q.x - w/2, q.y - su, w, s);
-      } else {
-        ctx.fillStyle = '#7fb5e8'; ctx.strokeStyle = '#3a6f9e';
-        ctx.lineWidth = Math.max(2, s*0.08);
-        ctx.beginPath(); ctx.roundRect(q.x - s*0.4, q.y - su, s*0.8, s*0.8, s*0.22);
-        ctx.fill(); ctx.stroke();
-      }
-    } else if (c.tipo === 'vita'){
-      const s = 140 * q.scala;
-      const su = s * (1.3 + 0.07 * Math.sin(S.distanza * 5 + c.z * 7));
-      ombra(q.x, q.y, s * 0.28, 0.16);
-      if (A.vita){
-        const im = A.vita, w = s * (im.width / im.height);
-        ctx.drawImage(im, q.x - w/2, q.y - su, w, s);
-      } else {
-        ctx.fillStyle = '#fff'; ctx.strokeStyle = '#d9453f';
-        ctx.lineWidth = Math.max(2, s*0.09);
-        ctx.beginPath(); ctx.roundRect(q.x - s*0.4, q.y - su, s*0.8, s*0.8, s*0.2);
-        ctx.fill(); ctx.stroke();
-        ctx.fillStyle = '#d9453f';
-        ctx.font = 'bold ' + (s*0.55|0) + 'px system-ui, sans-serif';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText('♥', q.x, q.y - su + s*0.42);
-        ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-      }
+
     } else if (c.tipo === 'cartello'){
       const s = 200 * q.scala;
       ombra(q.x, q.y, s * 0.34, 0.22);
@@ -1109,6 +987,7 @@ function disegna(){
         ctx.lineTo(q.x - s*0.42, q.y); ctx.closePath();
         ctx.fill(); ctx.stroke();
       }
+
     } else {
       /* I carrelli sono l'unica cosa da schivare di lato: se sembrano
          bassi si prova a saltarli. Vanno grossi. */
