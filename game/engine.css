@@ -170,6 +170,23 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
    Se un domani se ne aggiungono altre, adattaTerminale() in engine.js rimpicciolisce. */
 .frow{margin-bottom:.18em;white-space:nowrap;overflow:hidden}
 .fk{opacity:.75}
+/* Registrazione: il Mac non e' un oggetto appoggiato sulla scena, e' disegnato
+   dentro il fondale (bg_macintosh). #propwrap allora non incornicia piu'
+   niente — l'immagine del prop non si mostra e il contenitore copre la scena
+   intera — e resta solo il terminale, che engine.js incolla in pixel sopra lo
+   schermo del CRT (ancoraTerminale): con le percentuali il testo sarebbe
+   finito fuori dal vetro su ogni finestra di forma diversa dal telefono. */
+#propwrap.fondale{left:0;top:0;width:100%;max-width:none;height:100%}
+#propwrap.fondale.in,#propwrap.fondale.out{transform:none}
+#propwrap.fondale #prop{display:none}
+/* Sullo schermo del Mac c'e' gia' disegnata una finestra di sistema: il
+   terminale ci si appoggia sopra con un pannello suo, se no le due scritte si
+   accavallano e non si legge niente. */
+#propwrap.fondale #screen{left:0;top:0;width:auto;height:auto;
+ background:rgba(228,238,248,.97);border:1px solid rgba(20,40,70,.35);
+ color:#12263f;padding:.5em .6em;font-size:clamp(6px,2vw,12px);line-height:1.35;
+ box-shadow:inset 0 0 0 2px rgba(255,255,255,.6)}
+
 /* ---------- badge dell'accredito ----------
    Lucas lo consegna a fine registrazione: l'immagine porta la mela, il nome
    del giocatore ci viene scritto sopra. Se l'immagine non c'e' ancora, la

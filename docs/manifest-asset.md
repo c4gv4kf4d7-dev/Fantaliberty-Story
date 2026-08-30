@@ -16,7 +16,8 @@ Uno sfondo intero per schermata, sempre presente sotto ogni altra cosa.
 | File | Scena | Uso |
 |---|---|---|
 | `bg_esterno_vialetto` | S0 | Primo frame assoluto del gioco, prima di qualunque interazione |
-| `bg_esterno_ingresso` | S0 | Dietro Lucas e il terminale durante la registrazione |
+| `bg_esterno_ingresso` | S0 | L'ingresso del teatro: Lucas accoglie il giocatore |
+| `bg_macintosh` | S0 | Registrazione e consegna del badge. Il Mac non e' piu' un oggetto sovrapposto (`prop_mac_terminale`): sta dentro il fondale, e il terminale si incolla in pixel allo schermo disegnato qui (`ancoraTerminale()` in engine.js, step `prop` con `"fondale": true`). Se l'immagine viene ridisegnata, ricontrollare le coordinate del vetro in `SCHERMO_FONDALE` |
 | `bg_lobby_z1_tenda` | S1 | Zona 1 della lobby. Ha l'hotspot ENTRA al centro. **L'apertura si anima in codice** (fade o split delle due metà dell'immagine), non serve un secondo fondale "tenda aperta" |
 | `bg_lobby_z2_hall_of_fame` | S1 | Zona 2. Sopra ci vanno le targhe (`obj_targa_hall_of_fame`) come layer cliccabili |
 | `bg_lobby_z3_regolamento` | S1 | Zona 3. Il cartellone illuminato del regolamento: la lastra bianca è **vuota di proposito**, il testo è UI vera che si apre sopra (non va disegnato nell'immagine). Ha preso il posto di `bg_lobby_z3_premi`, la vecchia teca dei premi |
