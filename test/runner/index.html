@@ -261,7 +261,8 @@ const PRONTI = Promise.all([
   carica('cubo',      'run_bonus_cubo.webp'),
   carica('matita',    'run_bonus_matita.webp'),
   carica('dongle',    'run_malus_dongle.webp'),
-  carica('cavi',      'run_malus_cavi.webp')
+  carica('cavi',      'run_malus_cavi.webp'),
+  carica('traguardo', 'run_traguardo.webp')
 ]);
 
 /* ---------- stato ---------- */
@@ -279,6 +280,7 @@ const S = {
   prossimo:0,         // fra quanta distanza generare il prossimo gruppo
   lezione:null,       // quale spiegazione e' aperta adesso
   imparate:{},        // quelle gia' viste in questa partita
+  traguardo:0,        // l'ultimo migliaio gia' festeggiato
   vite:3,
   intoccabile:0,     // dopo un colpo si lampeggia e non si muore due volte
   scossa:0
@@ -336,6 +338,20 @@ function forseChicca(z, corsia){
   const buona = r < 0.28;
   const quale = (buona ? BUONE : CATTIVE)[Math.random()*2 | 0];
   S.cose.push({ tipo:'chicca', quale, z, corsia });
+}
+
+/* ---------- i traguardi ----------
+   Ogni mille punti, un'icona d'oro risale il corridoio piu' grande di
+   tutto il resto. NON si raccoglie e non si schiva: passa e basta.
+   E' un applauso, non un'altra cosa da inseguire — se si potesse
+   prendere diventerebbe l'ennesimo oggetto da valutare in corsa. */
+const OGNI_TRAGUARDO = 1000;
+
+function controllaTraguardo(){
+  const quanti = (S.punti / OGNI_TRAGUARDO) | 0;
+  if (quanti <= S.traguardo) return;
+  S.traguardo = quanti;
+  S.cose.push({ tipo:'traguardo', z:1.15, corsia:0, quota:quanti * OGNI_TRAGUARDO });
 }
 
 function corsiaDiversa(da){
@@ -637,12 +653,14 @@ function aggiorna(dt){
   if (S.scossa > 0) S.scossa -= dt;
   if (S.intoccabile > 0) S.intoccabile -= dt;
 
+  controllaTraguardo();
   S.prossimo -= avanti;
   if (S.prossimo <= 0) genera();
 
   for (const c of S.cose){
     c.z -= avanti;
     if (c.presa) continue;
+    if (c.tipo === 'traguardo') continue;        // si attraversa
     if (c.tipo === 'ostacolo' && S.intoccabile > 0) continue;
     if (c.z < 0.10 && c.z > -0.02 && Math.abs(c.corsia - S.corsiaVista) < 0.55){
       if (c.tipo === 'anello'){
@@ -652,7 +670,44 @@ function aggiorna(dt){
         c.presa = true;
         if (S.vite < 3){ S.vite++; mostraVite('guarito'); segnale(c, '+♥', true); }
         else { S.raccolti += 25; segnale(c, '+25', true); }   // col cuore pieno vale punti
-      } else if (c.tipo === 'chicca'){
+      } else if (c.tipo === 'traguardo'){
+      const s = 320 * q.scala;                    // il doppio abbondante di una chicca
+      const su = s * (2.1 + 0.10 * Math.sin(S.distanza * 3 + c.z * 5));
+      const cx = q.x, cy = q.y - su + s/2;
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, (1.25 - c.z) * 3);   // entra sfumando
+      // alone
+      const alone = ctx.createRadialGradient(cx, cy, s*0.25, cx, cy, s*0.95);
+      alone.addColorStop(0, 'rgba(240,190,80,.55)');
+      alone.addColorStop(1, 'rgba(240,190,80,0)');
+      ctx.fillStyle = alone;
+      ctx.beginPath(); ctx.arc(cx, cy, s*0.95, 0, 7); ctx.fill();
+      const im = A.traguardo;
+      if (im){
+        const w = s * (im.width / im.height);
+        ctx.drawImage(im, cx - w/2, cy - s/2, w, s);
+      } else {
+        ctx.fillStyle = '#e8b23c'; ctx.strokeStyle = '#a9761c';
+        ctx.lineWidth = Math.max(2, s*0.05);
+        ctx.beginPath(); ctx.roundRect(cx - s*0.42, cy - s*0.42, s*0.84, s*0.84, s*0.22);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold ' + (s*0.5|0) + 'px system-ui, sans-serif';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('★', cx, cy + s*0.02);
+        ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+      }
+      /* Il numero va SOPRA l'icona: sotto finisce dietro al
+         personaggio, che corre proprio li' in mezzo. */
+      ctx.font = 'bold ' + Math.max(14, s*0.34|0) + 'px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.lineWidth = Math.max(3, s*0.06); ctx.strokeStyle = 'rgba(255,255,255,.92)';
+      ctx.strokeText(c.quota, cx, cy - s*0.68);
+      ctx.fillStyle = '#b8811f';
+      ctx.fillText(c.quota, cx, cy - s*0.68);
+      ctx.textAlign = 'left';
+      ctx.restore();
+    } else if (c.tipo === 'chicca'){
         c.presa = true;
         const k = CHICCHE[c.quale];
         S.raccolti += k.valore;
@@ -707,6 +762,43 @@ function disegna(){
         ctx.ellipse(q.x, q.y - su*0.6, s*0.33, s*0.33, 0, 0, 7);
         ctx.stroke();
       }
+    } else if (c.tipo === 'traguardo'){
+      const s = 320 * q.scala;                    // il doppio abbondante di una chicca
+      const su = s * (2.1 + 0.10 * Math.sin(S.distanza * 3 + c.z * 5));
+      const cx = q.x, cy = q.y - su + s/2;
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, (1.25 - c.z) * 3);   // entra sfumando
+      // alone
+      const alone = ctx.createRadialGradient(cx, cy, s*0.25, cx, cy, s*0.95);
+      alone.addColorStop(0, 'rgba(240,190,80,.55)');
+      alone.addColorStop(1, 'rgba(240,190,80,0)');
+      ctx.fillStyle = alone;
+      ctx.beginPath(); ctx.arc(cx, cy, s*0.95, 0, 7); ctx.fill();
+      const im = A.traguardo;
+      if (im){
+        const w = s * (im.width / im.height);
+        ctx.drawImage(im, cx - w/2, cy - s/2, w, s);
+      } else {
+        ctx.fillStyle = '#e8b23c'; ctx.strokeStyle = '#a9761c';
+        ctx.lineWidth = Math.max(2, s*0.05);
+        ctx.beginPath(); ctx.roundRect(cx - s*0.42, cy - s*0.42, s*0.84, s*0.84, s*0.22);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold ' + (s*0.5|0) + 'px system-ui, sans-serif';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('★', cx, cy + s*0.02);
+        ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+      }
+      /* Il numero va SOPRA l'icona: sotto finisce dietro al
+         personaggio, che corre proprio li' in mezzo. */
+      ctx.font = 'bold ' + Math.max(14, s*0.34|0) + 'px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.lineWidth = Math.max(3, s*0.06); ctx.strokeStyle = 'rgba(255,255,255,.92)';
+      ctx.strokeText(c.quota, cx, cy - s*0.68);
+      ctx.fillStyle = '#b8811f';
+      ctx.fillText(c.quota, cx, cy - s*0.68);
+      ctx.textAlign = 'left';
+      ctx.restore();
     } else if (c.tipo === 'chicca'){
       const k = CHICCHE[c.quale];
       const s = (k.buona ? 130 : 150) * q.scala;
@@ -795,7 +887,7 @@ function via(){
   S.fase = 'corsa'; S.corsia = 0; S.corsiaVista = 0;
   S.velocita = 0.55; S.distanza = 0; S.punti = 0; S.raccolti = 0;
   S.cose = []; S.prossimo = 0.4; S.scossa = 0; SEGNALI.length = 0;
-  S.vite = 3; S.intoccabile = 0; mostraVite(null);
+  S.vite = 3; S.intoccabile = 0; S.traguardo = 0; mostraVite(null);
   S.imparate = {}; riprendi();
   document.getElementById('veloStart').hidden = true;
   document.getElementById('veloFine').hidden  = true;
