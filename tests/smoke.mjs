@@ -737,14 +737,14 @@ assert.equal(VN.state.sfacciato, false);
   assert.equal($('carperk').textContent, '', 'niente perk mentre ci si veste');
   assert.equal($('carperk').style.display, 'none');
   assert.ok($('bg').classList.contains('sfoca'), 'il camerino va fuori fuoco dietro la figura');
-  assert.ok($('carImg').getAttribute('src').includes('stile_hawaiano_idle_camerino'));
+  assert.ok($('carImg').getAttribute('src').includes('stile_hawaiano_palco_attesa'));
 
   $('cnext').onclick({ stopPropagation() {} });
   assert.equal($('carnome').textContent, 'Showman');
   $('cprev').onclick({ stopPropagation() {} });
   $('cprev').onclick({ stopPropagation() {} });
   assert.equal($('carnome').textContent, 'Ingegnere', 'il carosello gira');
-  assert.ok($('carImg').getAttribute('src').includes('stile_ingegnere_idle_camerino'));
+  assert.ok($('carImg').getAttribute('src').includes('stile_ingegnere_palco_attesa'));
 
   // confermare e' irreversibile: prima la modale, e "Fammi ripensare" non sceglie
   $('carok').onclick({ stopPropagation() {} });
