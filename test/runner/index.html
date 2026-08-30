@@ -32,8 +32,28 @@
     padding:14px 16px; font-weight:700; color:#2a2a28;
     text-shadow:0 1px 0 rgba(255,255,255,.7);
   }
+  /* la colonna si dimensiona sul testo piu' largo, non sul numero:
+     con un punteggio a una cifra "record" traboccava fuori schermo */
+  #segna{ display:flex; flex-direction:column; align-items:flex-end; }
   #punti{ font-size:26px; letter-spacing:.5px; }
-  #record{ font-size:13px; opacity:.65; font-weight:600; }
+  #record{ font-size:13px; opacity:.65; font-weight:600; white-space:nowrap; }
+
+  /* i cuori: uno per tentativo */
+  #vite{ display:flex; gap:5px; font-size:25px; line-height:1; }
+  #vite span{ color:#d9453f; text-shadow:0 1px 0 rgba(255,255,255,.7); }
+  #vite span.spenta{ color:#b9b9b3; opacity:.45; }
+  #vite.colpito span{ animation: tremaCuore .45s ease-out; }
+  #vite.guarito span:not(.spenta){ animation: pulsaCuore .5s ease-out; }
+  @keyframes tremaCuore{
+    0%,100%{ transform:translateX(0) }
+    15%{ transform:translateX(-5px) rotate(-8deg) }
+    35%{ transform:translateX(5px) rotate(7deg) }
+    55%{ transform:translateX(-4px) rotate(-5deg) }
+    75%{ transform:translateX(3px) rotate(3deg) }
+  }
+  @keyframes pulsaCuore{
+    0%,100%{ transform:scale(1) } 45%{ transform:scale(1.45) }
+  }
   #fps{
     position:absolute; left:16px; bottom:12px; font-size:11px;
     color:#2a2a28; opacity:.45; font-weight:600;
@@ -62,7 +82,10 @@
   <canvas id="cv"></canvas>
 
   <div class="ui">
-    <div id="hud"><div id="punti">0</div><div id="record">record 0</div></div>
+    <div id="hud">
+      <div id="vite"><span>♥</span><span>♥</span><span>♥</span></div>
+      <div id="segna"><div id="punti">0</div><div id="record">record 0</div></div>
+    </div>
     <div id="fps"></div>
   </div>
 
@@ -71,7 +94,8 @@
     <p>Scorri il dito a <b>destra</b> o <b>sinistra</b> per cambiare corsia.<br>
        Prendi gli anelli, evita i carrelli.<br>
        <b style="color:#79c245">Verde 10</b> · <b style="color:#4aa8cc">Blu 25</b> ·
-       <b style="color:#c0453f">Rosso 50</b> — vale di piu' quello piu' difficile.</p>
+       <b style="color:#c0453f">Rosso 50</b> — vale di piu' quello piu' difficile.<br>
+       Hai <b>tre cuori</b>: l'icona della salute te ne ridà uno.</p>
     <button id="btnVia">Via</button>
     <small>prototipo — non è il gioco vero</small>
   </div>
@@ -199,7 +223,8 @@ const PRONTI = Promise.all([
   carica('carrello',  'run_ost_carrello.webp'),
   carica('rosso',     'run_anello_rosso.webp'),
   carica('verde',     'run_anello_verde.webp'),
-  carica('blu',       'run_anello_blu.webp')
+  carica('blu',       'run_anello_blu.webp'),
+  carica('vita',      'run_vita.webp')
 ]);
 
 /* ---------- stato ---------- */
@@ -215,6 +240,8 @@ const S = {
   cose:[],            // { tipo:'anello'|'ostacolo', z, corsia, anello, presa }
   raccolti:0,         // punti dagli anelli, separati da quelli della corsa
   prossimo:0,         // fra quanta distanza generare il prossimo gruppo
+  vite:3,
+  intoccabile:0,     // dopo un colpo si lampeggia e non si muore due volte
   scossa:0
 };
 window.RUN = S;   // esposto per il collaudo automatico
@@ -242,6 +269,12 @@ const ANELLI = {
 function anello(colore, z, corsia){
   S.cose.push({ tipo:'anello', anello:colore, z, corsia });
 }
+/* La ricarica compare di rado, e piu' spesso quando serve davvero:
+   trovarla col cuore pieno e' un premio sprecato. */
+function forseVita(z, corsia){
+  const probabilita = S.vite >= 3 ? 0.05 : (S.vite === 2 ? 0.20 : 0.34);
+  if (Math.random() < probabilita) S.cose.push({ tipo:'vita', z, corsia });
+}
 function corsiaDiversa(da){
   return [-1,0,1].filter(x => x !== da)[Math.random()*2 | 0];
 }
@@ -254,6 +287,7 @@ function genera(){
     // FILA VERDE: nessun ostacolo, si corre dritti e si incassa
     const n = 5 + (Math.random()*3 | 0);
     for (let i=0; i<n; i++) anello('verde', NASCE + i*0.055, c);
+    forseVita(NASCE + 0.34, corsiaDiversa(c));
     S.prossimo = 0.62;
 
   } else if (r < 0.68){
@@ -261,6 +295,7 @@ function genera(){
     const d = corsiaDiversa(c);
     for (let i=0; i<3; i++) anello('blu', NASCE + i*0.05, c);
     for (let i=0; i<3; i++) anello('blu', NASCE + 0.28 + i*0.05, d);
+    forseVita(NASCE + 0.5, c);
     S.prossimo = 0.75;
 
   } else if (r < 0.88){
@@ -400,6 +435,9 @@ function personaggio(){
   const alt = 300 * q.scala * 1.74;
   const x = q.x, y = q.y + 10;
   ombra(x, y, alt * 0.20, 0.20);
+  // appena colpiti si lampeggia: dice che per un attimo non si muore
+  const lampeggia = S.intoccabile > 0 && ((S.intoccabile * 12) | 0) % 2 === 0;
+  ctx.globalAlpha = lampeggia ? 0.35 : 1;
 
   if (A.corsa){
     const im = A.corsa, fw = im.width / 4;
@@ -410,6 +448,7 @@ function personaggio(){
     const salto = Math.abs(Math.sin(S.passo * Math.PI / 2)) * alt * 0.06;
     sagoma(x, y - salto, alt, '#3f6ea8');
   }
+  ctx.globalAlpha = 1;
 }
 
 /* ---------- ciclo ---------- */
@@ -438,6 +477,7 @@ function aggiorna(dt){
   S.passo    += dt * (7 + S.velocita * 5);
   S.corsiaVista += (S.corsia - S.corsiaVista) * Math.min(1, dt * 14);
   if (S.scossa > 0) S.scossa -= dt;
+  if (S.intoccabile > 0) S.intoccabile -= dt;
 
   S.prossimo -= avanti;
   if (S.prossimo <= 0) genera();
@@ -445,12 +485,18 @@ function aggiorna(dt){
   for (const c of S.cose){
     c.z -= avanti;
     if (c.presa) continue;
+    if (c.tipo === 'ostacolo' && S.intoccabile > 0) continue;
     if (c.z < 0.10 && c.z > -0.02 && Math.abs(c.corsia - S.corsiaVista) < 0.55){
       if (c.tipo === 'anello'){
         c.presa = true;
         S.raccolti += ANELLI[c.anello].valore;
+      } else if (c.tipo === 'vita'){
+        c.presa = true;
+        if (S.vite < 3){ S.vite++; mostraVite('guarito'); }
+        else S.raccolti += 25;                  // col cuore pieno vale punti
       } else {
-        finisci(); return;
+        c.presa = true;                          // un carrello colpisce una volta sola
+        colpito(); if (S.fase !== 'corsa') return;
       }
     }
   }
@@ -496,6 +542,24 @@ function disegna(){
         ctx.ellipse(q.x, q.y - su*0.6, s*0.33, s*0.33, 0, 0, 7);
         ctx.stroke();
       }
+    } else if (c.tipo === 'vita'){
+      const s = 140 * q.scala;
+      const su = s * (1.3 + 0.07 * Math.sin(S.distanza * 5 + c.z * 7));
+      ombra(q.x, q.y, s * 0.28, 0.16);
+      if (A.vita){
+        const im = A.vita, w = s * (im.width / im.height);
+        ctx.drawImage(im, q.x - w/2, q.y - su, w, s);
+      } else {
+        ctx.fillStyle = '#fff'; ctx.strokeStyle = '#d9453f';
+        ctx.lineWidth = Math.max(2, s*0.09);
+        ctx.beginPath(); ctx.roundRect(q.x - s*0.4, q.y - su, s*0.8, s*0.8, s*0.2);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#d9453f';
+        ctx.font = 'bold ' + (s*0.55|0) + 'px system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('♥', q.x, q.y - su + s*0.42);
+        ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      }
     } else {
       const s = 320 * q.scala;
       ombra(q.x, q.y, s * 0.34, 0.22);
@@ -513,10 +577,35 @@ function disegna(){
 }
 
 /* ---------- inizio e fine ---------- */
+function mostraVite(effetto){
+  const box = document.getElementById('vite');
+  box.innerHTML = '';
+  for (let i=0; i<3; i++){
+    const c = document.createElement('span');
+    c.textContent = '♥';
+    if (i >= S.vite) c.className = 'spenta';
+    box.appendChild(c);
+  }
+  /* L'animazione va tolta e rimessa, se no una seconda botta di fila
+     non la fa ripartire: il nodo ce l'ha gia' addosso. */
+  box.classList.remove('colpito','guarito');
+  void box.offsetWidth;
+  if (effetto) box.classList.add(effetto);
+}
+
+function colpito(){
+  S.vite--;
+  S.scossa = 0.55;
+  S.intoccabile = 1.4;      // il tempo di rimettersi, senza morire due volte
+  mostraVite('colpito');
+  if (S.vite <= 0) finisci();
+}
+
 function via(){
   S.fase = 'corsa'; S.corsia = 0; S.corsiaVista = 0;
   S.velocita = 0.55; S.distanza = 0; S.punti = 0; S.raccolti = 0;
   S.cose = []; S.prossimo = 0.4; S.scossa = 0;
+  S.vite = 3; S.intoccabile = 0; mostraVite(null);
   document.getElementById('veloStart').hidden = true;
   document.getElementById('veloFine').hidden  = true;
 }
