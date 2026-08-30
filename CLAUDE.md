@@ -123,6 +123,19 @@ Attenzione al piano dei layer: `#carosello` sta a `z-index:1`, **sotto**
 `#boxwrap` (2). Alzandolo, il bottone "Sono io" smette di essere premibile
 in silenzio — il test in jsdom non se ne accorge.
 
+Nel carosello si mostra **`palco_attesa`**, non `idle_camerino`: le pose del
+palco sono ritagliate strette attorno alla figura, quindi a `object-fit:contain`
+riempiono l'inquadratura invece di lasciare margini vuoti, e sono le stesse che
+il giocatore si vedra' addosso in S5 — quello che scegli e' quello che avrai.
+`idle_camerino` resta dichiarato in `story.stili` ma non lo usa piu' nessuno.
+
+I quattro sprite avevano **residui di sfondo bianco chiusi dentro il disegno**
+(puntini fra le ciocche dei capelli, una chiazza fra le gambe, una fra l'asta
+del microfono e i pantaloni): sul fondale scuro si leggono come sporco. Si
+tolgono con `tools/togli_bianchi.py`, guardando **sempre** l'anteprima in
+magenta prima di scrivere — su canottiera, camicia e scarpe bianche il confine
+e' sottile.
+
 ## La lobby si presenta una volta sola
 
 Nell'hub la battuta di una zona vale solo al **primo** passaggio. Tornandoci,

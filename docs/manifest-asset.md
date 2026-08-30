@@ -101,7 +101,8 @@ sono layer componibili: ogni posa è un'immagine intera.
 
 | File (per ogni stile: hawaiano / showman / drip / ingegnere) | Dove |
 |---|---|
-| `stile_X_idle_camerino` | S3 — carosello di scelta |
+| `stile_X_palco_attesa` | S3 — carosello di scelta (e S5, fra le pose della domanda) |
+| `stile_X_idle_camerino` | non collegato: sostituito nel carosello da `palco_attesa`, che e' ritagliato piu' stretto e sta meglio a figura intera |
 | `stile_X_idle_palco` | S4-S5 — stato di attesa, ha l'auricolare disegnato dentro |
 | `stile_X_annuncio` | S5 — **la posa più usata di tutto il gioco**, mostrata a ogni risposta data |
 | `stile_X_indica_schermo` | S5 — si alterna casualmente con `_annuncio` per dare varietà |

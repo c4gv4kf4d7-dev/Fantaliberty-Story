@@ -315,7 +315,7 @@ più avanti in `[S5]`. Salvare in `run.flags.sfacciato_s2 = true/false`.
   → [S3.02]
 
 [S3.02] SCHERMATA STILE — carosello, 4 opzioni
-  Asset: bg_camerino + stile_{hawaiano|showman|drip|ingegnere}_idle_camerino
+  Asset: bg_camerino + stile_{hawaiano|showman|drip|ingegnere}_palco_attesa
   ⚠️ run.gender è già noto da [S0.03] e NON dipende dallo stile scelto qui.
 
   Ogni card mostra immagine + descrizione ironica + il perk del quiz collegato:
