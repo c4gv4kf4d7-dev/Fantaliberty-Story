@@ -586,6 +586,7 @@
     precaricaScena(sc);
     atmosfera(sc);
     if (sc.terminal) buildTerminal(sc.terminal);
+    else terminaleNelFondale(false);   // il terminale sul fondale non sopravvive alla scena
     avviaQuandoPronta(id);
   }
 
@@ -836,6 +837,15 @@
         return next();
 
       case 'prop':
+        // Variante "fondale": non c'e' nessun oggetto da far comparire, il Mac
+        // e' gia' dentro il fondale della scena. Serve solo ad accendere (e poi
+        // spegnere) il terminale sopra lo schermo che sta nell'immagine.
+        if (st.fondale) {
+          terminaleNelFondale(!!st.show);
+          el.propwrap.classList.remove(st.show ? 'out' : 'in');
+          el.propwrap.classList.add(st.show ? 'in' : 'out');
+          return next();
+        }
         // l'id passa da fmt(): cosi' una scena puo' scrivere "slide_{categoria}"
         // e far scegliere l'oggetto alla variabile
         if (st.id) {
@@ -3224,6 +3234,53 @@
   }
 
   /* ---------------- terminale del prop ---------------- */
+
+  /* Il Mac della registrazione non e' piu' un prop appoggiato sopra la scena:
+     e' disegnato dentro il fondale (bg_macintosh). Il terminale allora deve
+     incollarsi allo schermo che sta nell'immagine, e quello non si puo'
+     inseguire con percentuali dello stage: il fondale e' object-fit:cover con
+     object-position center top, quindi su una finestra piu' larga l'immagine
+     viene ingrandita e tagliata sotto, e la stessa percentuale finisce da
+     un'altra parte. Qui le coordinate si ricalcolano dalla geometria vera
+     dell'immagine disegnata, cosi' il testo resta dentro il vetro del CRT su
+     qualunque schermo.
+     I quattro numeri sono il vetro dello schermo misurato su bg_macintosh
+     (852x1846: x 252-577, y 792-1025), rientrato di poco per non far toccare
+     il testo alla cornice. */
+  var SCHERMO_FONDALE = { x: 0.305, y: 0.437, w: 0.358, h: 0.108 };
+
+  function ancoraTerminale() {
+    var s = el && el.screen;
+    if (!s || !el.propwrap || !el.propwrap.classList.contains('fondale')) return;
+    var img = el.bg;
+    var nw = img && img.naturalWidth, nh = img && img.naturalHeight;
+    if (!nw || !nh) return;                       // fondale non ancora decodificato
+    var lw = el.stage ? el.stage.clientWidth : 0;
+    var lh = el.stage ? el.stage.clientHeight : 0;
+    if (!lw || !lh) return;
+    var scala = Math.max(lw / nw, lh / nh);       // object-fit: cover
+    var dw = nw * scala, dh = nh * scala;
+    var ox = (lw - dw) / 2, oy = 0;               // object-position: center top
+    s.style.left = (ox + SCHERMO_FONDALE.x * dw).toFixed(1) + 'px';
+    s.style.top = (oy + SCHERMO_FONDALE.y * dh).toFixed(1) + 'px';
+    s.style.width = (SCHERMO_FONDALE.w * dw).toFixed(1) + 'px';
+    s.style.height = (SCHERMO_FONDALE.h * dh).toFixed(1) + 'px';
+    adattaTerminale();
+  }
+
+  // Il terminale si aggancia al fondale, quindi va rimisurato quando il fondale
+  // cambia forma: finestra ridimensionata, rotazione, immagine appena arrivata.
+  function terminaleNelFondale(dentro) {
+    if (!el || !el.propwrap) return;
+    el.propwrap.classList.toggle('fondale', !!dentro);
+    if (!dentro) {
+      if (el.screen) el.screen.style.cssText = '';
+      return;
+    }
+    ancoraTerminale();
+    if (el.bg && !el.bg.complete) el.bg.addEventListener('load', ancoraTerminale, { once: true });
+  }
+
   var termRows = [];
   function buildTerminal(rows) {
     termRows = rows;
@@ -3311,6 +3368,7 @@
       global.addEventListener('resize', adattaTerminale);   // ripiego
       termOsservatore = true;
     }
+    global.addEventListener('resize', ancoraTerminale);
   }
 
   function termSet(varName) {
