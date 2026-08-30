@@ -335,6 +335,54 @@ if (bozze.length) {
   console.log(`appunti [BOZZA] ancora nello script (${bozze.length}): ${[...new Set(bozze)].join(', ')}`);
 }
 
+/* ---------- 1d. solo caratteri che il font sa disegnare ----------
+   Il gioco usa Press Start 2P, che ha un repertorio limitato. Un carattere che
+   il font non ha NON fa sparire il testo: il browser ripiega su un altro font
+   solo per quel carattere, quindi a schermo esce una lettera di famiglia
+   diversa in mezzo alla frase. E' un difetto che si vede solo giocando quella
+   battuta — successo con la okina di "'Ohi'a lehua" in una domanda iPhone.
+
+   game/glifi.json e' l'elenco dei caratteri che il font copre davvero, estratto
+   dal file del font da tools/glifi_font.py: va rigenerato se si cambia font. */
+const glifi = new Set(
+  JSON.parse(fs.readFileSync(new URL('../game/glifi.json', import.meta.url), 'utf8')).codici
+);
+{
+  const fuori = new Map();
+  const guarda = (dove, t) => {
+    for (const ch of String(t)) {
+      const c = ch.codePointAt(0);
+      if (c > 31 && !glifi.has(c) && !fuori.has(ch)) fuori.set(ch, `${dove}: "${String(t).slice(0, 50)}"`);
+    }
+  };
+  // Si guardano TUTTE le stringhe tranne quelle strutturali (id, nomi di file,
+  // nomi di variabile). Elencare invece i campi "di testo" lascia scoperti i
+  // punti annidati — le battute stanno sotto opzioni[].battute.<stile>, cioe'
+  // sotto una chiave che e' il nome dello stile, e la prima versione di questo
+  // test non le guardava: proprio dove stava la okina che l'ha motivato.
+  const strutturali = new Set(['id', 'var', 'who', 'char', 'body', 'head', 'goto', 'gotoMult',
+    'next', 'bg', 't', 'posa', 'img', 'asset', 'extra_asset', 'da', 'name', 'icona', 'prop',
+    'classe', 'classeCorpo', 'value', 'tipo', 'pattern', 'stile', 'src']);
+  const scava = (n, dove) => {
+    if (Array.isArray(n)) return n.forEach((v) => scava(v, dove));
+    if (n && typeof n === 'object') {
+      for (const [k, v] of Object.entries(n)) {
+        if (k.startsWith('_') || strutturali.has(k)) continue;
+        if (typeof v === 'string') guarda(dove, v);
+        else scava(v, dove);
+      }
+    }
+  };
+  for (const [id, sc] of Object.entries(story.scenes)) scava(sc, `scena ${id}`);
+  scava(story.stili, 'stili');
+  scava(banca, 'domande');
+  scava(quiz, 'quiz');
+  assert.equal(fuori.size, 0,
+    `caratteri che il font non sa disegnare: ${[...fuori.entries()]
+      .map(([ch, dove]) => `${JSON.stringify(ch)} (U+${ch.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')}) in ${dove}`)
+      .join(' — ')}`);
+}
+
 /* ---------- 1b. niente asterischi di declinazione nei dialoghi ---------- */
 // Dopo che il giocatore ha detto come rivolgersi a lui, ogni frase deve essere
 // declinata: "impalat*" a schermo e' un difetto visibile.

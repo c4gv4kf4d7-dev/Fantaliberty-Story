@@ -335,7 +335,7 @@
           "who": "lucas",
           "var": "nome",
           "max": 14,
-          "text": "Registriamoti al terminale. Come ti chiamiamo? Nome vero o soprannome, decidi tu.",
+          "text": "Ti registro al terminale. Come ti chiamiamo? Nome vero o soprannome, decidi tu.",
           "_nota": "Il nome vero non serve: e' l'etichetta con cui il gioco si rivolge al giocatore e con cui compare in classifica. Il regolamento (zona 3 della lobby) lo chiama nickname, e deve restare coerente con quello che si chiede qui."
         },
         {
