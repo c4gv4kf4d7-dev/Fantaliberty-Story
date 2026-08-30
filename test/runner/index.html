@@ -54,6 +54,17 @@
   @keyframes pulsaCuore{
     0%,100%{ transform:scale(1) } 45%{ transform:scale(1.45) }
   }
+  /* Il cuore perso non sbiadisce e basta: schizza in alto e scoppia.
+     Vive in un nodo suo, staccato dalla fila, se no la fila si sposta. */
+  #scoppio{
+    position:absolute; pointer-events:none; font-size:25px; color:#d9453f;
+    animation: scoppiaCuore .75s cubic-bezier(.2,.7,.3,1) forwards;
+  }
+  @keyframes scoppiaCuore{
+    0%   { transform:translate(0,0) scale(1); opacity:1 }
+    35%  { transform:translate(0,-46px) scale(1.9) rotate(-12deg); opacity:1 }
+    100% { transform:translate(0,-72px) scale(3.2) rotate(10deg); opacity:0 }
+  }
   #fps{
     position:absolute; left:16px; bottom:12px; font-size:11px;
     color:#2a2a28; opacity:.45; font-weight:600;
@@ -299,6 +310,7 @@ const S = {
   lezione:null,       // quale spiegazione e' aperta adesso
   imparate:{},        // quelle gia' viste in questa partita
   collezione:{},      // quali dei tre prodotti sono gia' stati presi
+  respiro:false,      // il gruppo dopo l'arcobaleno dev'essere innocuo
   scivola:0,
   salto:0,            // quanto manca alla fine del salto          // quanto manca alla fine della scivolata
   traguardo:0,        // l'ultimo migliaio gia' festeggiato
@@ -322,6 +334,9 @@ try { record = +(localStorage.getItem(RECORD) || 0) || 0; } catch(e){}
    Il colore dice il rischio prima ancora del punteggio: si impara a
    vedere il rosso e prepararsi, che e' esattamente il punto. */
 const NASCE = 1.6;   // a che distanza compaiono le cose: e' il tempo di reazione
+/* Distanza fra un anello e il successivo. Stretti sembravano un blocco
+   solo; larghi si prendono uno per uno, come le monete. */
+const PASSO_ANELLI = 0.105;
 const ANELLI = {
   verde: { valore: 10 },
   blu:   { valore: 25 },
@@ -374,11 +389,7 @@ function forseChicca(z, corsia){
       return;
     }
   }
-  if (r < 0.28){
-    S.cose.push({ tipo:'icona', quale: ICONE[Math.random()*ICONE.length | 0], z, corsia });
-    return;
-  }
-  if (r > 0.62) return;
+  if (r > 0.55) return;
   /* Le cattive stanno sulla corsia comoda, le buone su quella scomoda:
      se stessero dove capita, la scelta non ci sarebbe. */
   const buona = r < 0.28;
@@ -426,13 +437,22 @@ function corsiaDiversa(da){
 }
 
 function genera(){
-  const r = Math.random();
   const c = (Math.random()*3 | 0) - 1;
+
+  /* Dopo l'arcobaleno serve una tregua: ci si rialza dalla scivolata e
+     un carrello subito dopo non e' difficile, e' ingiusto. */
+  if (S.respiro){
+    S.respiro = false;
+    for (let i=0; i<4; i++) anello('verde', NASCE + i*PASSO_ANELLI, c);
+    S.prossimo = 0.7;
+    return;
+  }
+  const r = Math.random();
 
   if (r < 0.26){
     // FILA VERDE: nessun ostacolo, si corre dritti e si incassa
-    const n = 5 + (Math.random()*3 | 0);
-    for (let i=0; i<n; i++) anello('verde', NASCE + i*0.055, c);
+    const n = 4 + (Math.random()*2 | 0);
+    for (let i=0; i<n; i++) anello('verde', NASCE + i*PASSO_ANELLI, c);
     forseVita(NASCE + 0.34, corsiaDiversa(c));
     forseChicca(NASCE + 0.20, c);            // in mezzo alla fila comoda
     S.prossimo = 0.62;
@@ -440,8 +460,8 @@ function genera(){
   } else if (r < 0.44){
     // ZIGZAG BLU: due terzetti su corsie diverse, obbligano a spostarsi
     const d = corsiaDiversa(c);
-    for (let i=0; i<3; i++) anello('blu', NASCE + i*0.05, c);
-    for (let i=0; i<3; i++) anello('blu', NASCE + 0.28 + i*0.05, d);
+    for (let i=0; i<3; i++) anello('blu', NASCE + i*PASSO_ANELLI, c);
+    for (let i=0; i<3; i++) anello('blu', NASCE + 0.42 + i*PASSO_ANELLI, d);
     forseVita(NASCE + 0.5, c);
     forseChicca(NASCE + 0.16, corsiaDiversa(c));
     S.prossimo = 0.75;
@@ -449,21 +469,22 @@ function genera(){
   } else if (r < 0.60){
     // CARTELLO: o lo schivi di lato o lo scavalchi
     S.cose.push({ tipo:'cartello', z:NASCE, corsia:c });
-    for (let i=0; i<3; i++) anello('verde', NASCE - 0.30 + i*0.05, c);
+    for (let i=0; i<3; i++) anello('verde', NASCE - 0.35 + i*PASSO_ANELLI, c);
     forseChicca(NASCE + 0.30, corsiaDiversa(c));
     S.prossimo = 0.62;
 
   } else if (r < 0.80){
     // ROSSI DAVANTI ALL'OSTACOLO: si prendono e si schiva all'ultimo
-    for (let i=0; i<2; i++) anello('rosso', NASCE + 0.16 + i*0.05, c);
+    for (let i=0; i<2; i++) anello('rosso', NASCE + 0.18 + i*PASSO_ANELLI, c);
     S.cose.push({ tipo:'ostacolo', z: NASCE, corsia: c });
-    for (let i=0; i<3; i++) anello('verde', NASCE + i*0.055, corsiaDiversa(c));
+    for (let i=0; i<3; i++) anello('verde', NASCE + i*PASSO_ANELLI, corsiaDiversa(c));
     forseChicca(NASCE + 0.42, c);
     S.prossimo = 0.7;
 
   } else if (r < 0.94){
     // ARCOBALENO: la strada e' libera, il problema e' arrivarci pronti
     S.cose.push({ tipo:'arco', z: NASCE_ARCO, corsia: 0 });
+    S.respiro = true;
     for (let i=0; i<4; i++) anello('verde', NASCE_ARCO - 0.55 + i*0.05, 0);
     S.prossimo = 1.15;
 
@@ -473,7 +494,7 @@ function genera(){
     S.cose.push({ tipo:'ostacolo', z:NASCE, corsia:a });
     S.cose.push({ tipo:'ostacolo', z:NASCE, corsia:b });
     const sola = [-1,0,1].find(x => x !== a && x !== b);
-    for (let i=0; i<3; i++) anello('blu', NASCE + i*0.05, sola);
+    for (let i=0; i<3; i++) anello('blu', NASCE + i*PASSO_ANELLI, sola);
     S.prossimo = 0.85;
   }
 }
@@ -495,8 +516,7 @@ const LEZIONI = {
     corpo: '<div class="dita"><span style="--v:-14px">◀</span>' +
            '<span style="--v:14px">▶</span></div>' +
            '<p><b>Destra e sinistra</b> per cambiare corsia.<br>' +
-           '<b>Su</b> per saltare · <b>Giù</b> per scivolare.<br>' +
-           'Da computer, le frecce.</p>'
+           '<b>Su</b> per saltare · <b>Giù</b> per scivolare.</p>'
   },
   /* Una scheda sola con tutto quello che si incontra: prima erano
      quattro lezioni e il gioco si fermava di continuo nei primi
@@ -760,9 +780,13 @@ function passo(ora){
 }
 
 function aggiorna(dt){
-  /* La corsa deve accelerare in modo che si SENTA: prima cresceva cosi'
-     piano che dopo un minuto sembrava la stessa partita dell'inizio. */
-  S.velocita = Math.min(2.1, S.velocita + dt * 0.055);
+  /* La velocita' non sale di continuo ma A SCALINI, uno per traguardo:
+     salire sempre un pochino diventa subito ingestibile e non si capisce
+     perche'. Cosi' invece ogni scalino e' un momento riconoscibile, e in
+     mezzo c'e' un tratto in cui si prende la mano. */
+  const scalino = Math.min(6, (S.punti / OGNI_TRAGUARDO) | 0);
+  const voluta = 0.62 + scalino * 0.17;
+  S.velocita += (voluta - S.velocita) * Math.min(1, dt * 1.6);
   const avanti = S.velocita * dt;
   S.distanza += avanti;
   S.scorri   += avanti;
@@ -822,7 +846,10 @@ function aggiorna(dt){
       const dentroA = (R - L) * 0.20, dentroB = 268 * q.scala;   // ci deve stare comodo, steso
       const im = A.arcobaleno;
       if (im){
-        const w = (R - L) * 1.04, h = w * (im.height / im.width);
+        /* Il varco dell'immagine e' il 42% della sua altezza: si dimensiona
+           su quello, perche' e' l'unica misura che conta — deve starci
+           dentro il personaggio steso e non quello in piedi. */
+        const h = 720 * q.scala, w = h * (im.width / im.height);
         ctx.drawImage(im, cx - w/2, cy - h, w, h);
       } else {
         const tinte = ['#4a9e3f','#e8c22a','#e88a22','#d94b3f',
@@ -905,7 +932,7 @@ function aggiorna(dt){
 function disegna(){
   ctx.save();
   if (S.scossa > 0){
-    ctx.translate((Math.random()-.5) * 18 * S.scossa, (Math.random()-.5) * 18 * S.scossa);
+    ctx.translate((Math.random()-.5) * 14 * S.scossa, (Math.random()-.5) * 14 * S.scossa);
   }
 
   if (A.fondale) ctx.drawImage(A.fondale, 0, 0, W, H);
@@ -948,7 +975,10 @@ function disegna(){
       const dentroA = (R - L) * 0.20, dentroB = 268 * q.scala;   // ci deve stare comodo, steso
       const im = A.arcobaleno;
       if (im){
-        const w = (R - L) * 1.04, h = w * (im.height / im.width);
+        /* Il varco dell'immagine e' il 42% della sua altezza: si dimensiona
+           su quello, perche' e' l'unica misura che conta — deve starci
+           dentro il personaggio steso e non quello in piedi. */
+        const h = 720 * q.scala, w = h * (im.width / im.height);
         ctx.drawImage(im, cx - w/2, cy - h, w, h);
       } else {
         const tinte = ['#4a9e3f','#e8c22a','#e88a22','#d94b3f',
@@ -1003,22 +1033,29 @@ function disegna(){
       ctx.restore();
     } else if (c.tipo === 'chicca'){
       const k = CHICCHE[c.quale];
-      const s = (k.raro ? 170 : k.buona ? 130 : 150) * q.scala;
+      const s = (k.raro ? 260 : k.buona ? 130 : 150) * q.scala;
       // le buone galleggiano e brillano, le cattive stanno per terra
       const su = k.buona ? s * (1.25 + 0.07 * Math.sin(S.distanza*5 + c.z*7)) : s * 0.9;
+      /* Le bolle devono farsi venire voglia: respirano di misura e
+         ondeggiano appena. Un oggetto immobile a schermo si ignora. */
+      const battito = k.raro ? 1 + 0.09 * Math.sin(S.distanza * 7 + c.z * 4) : 1;
+      const dondolo = k.raro ? 0.10 * Math.sin(S.distanza * 3.5 + c.z * 3) : 0;
       ombra(q.x, q.y, s * 0.30, k.buona ? 0.14 : 0.22);
       if (k.buona){
         ctx.save();
         ctx.globalAlpha = k.raro ? 0.5 : 0.35;
         ctx.fillStyle = { cubo:'#f0b722', matita:'#4ac6e8', iphone:'#4ac6e8',
                           computer:'#f0b722', visore:'#b58ce8' }[c.quale] || '#f0b722';
-        ctx.beginPath(); ctx.ellipse(q.x, q.y - su + s*0.4, s*0.55, s*0.55, 0, 0, 7);
+        ctx.beginPath(); ctx.ellipse(q.x, q.y - su + s*0.45, s*0.62, s*0.62, 0, 0, 7);
         ctx.fill(); ctx.restore();
       }
       const im = A[c.quale];
       if (im){
-        const w = s * (im.width / im.height);
-        ctx.drawImage(im, q.x - w/2, q.y - su, w, s);
+        const h = s * battito, w = h * (im.width / im.height);
+        ctx.save();
+        ctx.translate(q.x, q.y - su + s/2); ctx.rotate(dondolo);
+        ctx.drawImage(im, -w/2, -h/2, w, h);
+        ctx.restore();
       } else {
         ctx.fillStyle = k.segnaposto;
         ctx.strokeStyle = k.buona ? '#8a8a80' : '#66665f';
@@ -1108,18 +1145,32 @@ function mostraVite(effetto){
   if (effetto) box.classList.add(effetto);
 }
 
+function scoppiaCuore(){
+  const box = document.getElementById('vite');
+  const perso = box.children[S.vite];        // quello appena spento
+  if (!perso) return;
+  const r = perso.getBoundingClientRect(), p = box.parentElement.getBoundingClientRect();
+  const nodo = document.createElement('div');
+  nodo.id = 'scoppio'; nodo.textContent = '♥';
+  nodo.style.left = (r.left - p.left) + 'px';
+  nodo.style.top  = (r.top  - p.top)  + 'px';
+  box.parentElement.appendChild(nodo);
+  setTimeout(() => nodo.remove(), 800);
+}
+
 function colpito(){
   S.vite--;
-  S.scossa = 0.55;
-  S.intoccabile = 1.4;      // il tempo di rimettersi, senza morire due volte
+  S.scossa = 0.3;           // un sussulto breve: il gioco non si ferma mai
+  S.intoccabile = 2.0;      // due secondi lampeggiando, poi si riparte
   mostraVite('colpito');
+  scoppiaCuore();
   if (S.vite <= 0) finisci();
 }
 
 function via(){
   S.fase = 'corsa'; S.corsia = 0; S.corsiaVista = 0;
   S.velocita = 0.62; S.distanza = 0; S.punti = 0; S.raccolti = 0;
-  S.cose = []; S.prossimo = 0.4; S.scossa = 0; SEGNALI.length = 0;
+  S.cose = []; S.prossimo = 0.4; S.respiro = false; S.scossa = 0; SEGNALI.length = 0;
   S.vite = 2; S.intoccabile = 0; S.traguardo = 0; S.scivola = 0; S.salto = 0; mostraVite(null);
   S.imparate = {}; S.collezione = {}; riprendi();
   document.getElementById('veloStart').hidden = true;
