@@ -11,7 +11,7 @@
     ],
     "note": "Formato: iPhone portrait 390x844. Il terzo inferiore e' area dialogo.",
     "keynote": "2026-09-09T19:00:00+02:00",
-    "_nota_keynote": "Data e ora del keynote vero, ora locale italiana. Il countdown di S7 conta fin qui. DA CONFERMARE con l'utente: se Apple annuncia un'altra data, si cambia solo questa riga."
+    "_nota_keynote": "Data e ora del keynote vero, ora locale italiana. Il countdown di S7 conta fin qui. Confermata dall'utente il 30 agosto 2026: 9 settembre, ore 19:00."
   },
   "assets": {
     "bg": {
@@ -43,8 +43,7 @@
       "slide_watch": "props/prop_schermo_slide_categoria_watch.webp",
       "slide_altro": "props/prop_schermo_slide_categoria_altro.webp",
       "clicker": "props/prop_clicker_inceppato.webp",
-      "gobbo": "props/prop_gobbo_teleprompter.webp",
-      "podio": "props/prop_podium@3x.webp"
+      "gobbo": "props/prop_gobbo_teleprompter.webp"
     },
     "chars": {},
     "platea": {
@@ -971,8 +970,7 @@
     "keynote": {
       "title": "S5 — Il keynote",
       "bg": "palco_platea_piena",
-      "podio": true,
-      "_nota": "[S5]. Susan apre dalla regia (una battuta pescata da regia.apertura), poi [S5.INTERMEZZO.R1] e R2 mentre la sala si scalda. Il leggio (\"podio\") resta acceso per tutto S5, si spegne da solo entrando in teleprompter perche' quella scena non lo dichiara.",
+      "_nota": "[S5]. Susan apre dalla regia (una battuta pescata da regia.apertura), poi [S5.INTERMEZZO.R1] e R2 mentre la sala si scalda.",
       "steps": [
         {
           "t": "io",
@@ -1000,7 +998,6 @@
     "argomenti": {
       "title": "S5 — I macroargomenti",
       "bg": "palco_schermo_categorie",
-      "podio": true,
       "_nota": "[S5.HUB]: tre pannelli, ordine libero. Lo stato di ognuno si ricava dalle risposte gia' date. Quando sono tutti completi la griglia cede il turno e si passa al recap. Le 9 icone obj_icone_categorie del manifest non sono state consegnate: i pannelli sono disegnati in CSS sopra il fondale, che li ha gia' vuoti.",
       "steps": [
         {
@@ -1023,7 +1020,6 @@
     "argomento": {
       "title": "S5 — Pronostici",
       "bg": "palco_platea_piena",
-      "podio": true,
       "_nota": "Un macroargomento: tutte le core in sequenza fissa, poi il bivio della regia che pesca 3 facoltative dal pool, poi un intermezzo e si torna alla griglia. Da qui in poi Susan parla sempre in cuffia: e' in regia, non sul palco.",
       "steps": [
         {

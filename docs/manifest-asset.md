@@ -131,7 +131,6 @@ all'inizio della S4 e non cambia più per tutta la sessione.
 | `obj_card_condivisibile` | S7 | Template finale: combina `stile_X_saluto_finale`, `obj_badge` compilato, nome e store — esportato client-side come immagine 1080×1920/1080×1350 |
 | `obj_zaino_rider` | S5 | **Ora è un personaggio pixel-art completo** (rider con zaino termico), non un oggetto isolato — appare solo nell'evento personale della Drip |
 | `prop_ukulele` | S5 | Oggetto separato dell'evento personale dell'Hawaiano (UKULELE): compare solo per la durata dell'evento, non resta in scena dopo |
-| `prop_podium` | S5 | Il leggio del keynote — **non è un prop a comparsa**: fisso per tutta la durata di S5 (`story.scenes[x].podio: true`), davanti alla figura del giocatore, dietro il box del dialogo |
 
 ### Le otto composizioni Susan + personaggio (S4)
 Consegnate come **immagini già complete** (Susan e lo stile scelto insieme,
