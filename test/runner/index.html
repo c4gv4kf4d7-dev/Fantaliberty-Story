@@ -257,7 +257,11 @@ const PRONTI = Promise.all([
   carica('rosso',     'run_anello_rosso.webp'),
   carica('verde',     'run_anello_verde.webp'),
   carica('blu',       'run_anello_blu.webp'),
-  carica('vita',      'run_vita.webp')
+  carica('vita',      'run_vita.webp'),
+  carica('cubo',      'run_bonus_cubo.webp'),
+  carica('matita',    'run_bonus_matita.webp'),
+  carica('dongle',    'run_malus_dongle.webp'),
+  carica('cavi',      'run_malus_cavi.webp')
 ]);
 
 /* ---------- stato ---------- */
@@ -310,6 +314,30 @@ function forseVita(z, corsia){
   const probabilita = S.vite >= 3 ? 0.05 : (S.vite === 2 ? 0.20 : 0.34);
   if (Math.random() < probabilita) S.cose.push({ tipo:'vita', z, corsia });
 }
+/* ---------- le chicche ----------
+   Regola, e va tenuta: il carrello e' l'unica cosa che toglie un cuore.
+   Le chicche tolgono solo punti — sono dispetti, non trappole.
+   Buone luminose e colorate, cattive grigie e opache: si deve capire
+   da lontano, senza aver letto niente. */
+const CHICCHE = {
+  cubo:   { valore:  30, buona:true,  segnaposto:'#e8e4dc' },
+  matita: { valore:  40, buona:true,  segnaposto:'#dff2f7' },
+  dongle: { valore: -40, buona:false, segnaposto:'#9a9a94' },
+  cavi:   { valore: -60, buona:false, segnaposto:'#8d8d88' }
+};
+const BUONE   = ['cubo','matita'];
+const CATTIVE = ['dongle','cavi'];
+
+function forseChicca(z, corsia){
+  const r = Math.random();
+  if (r > 0.55) return;
+  /* Le cattive stanno sulla corsia comoda, le buone su quella scomoda:
+     se stessero dove capita, la scelta non ci sarebbe. */
+  const buona = r < 0.28;
+  const quale = (buona ? BUONE : CATTIVE)[Math.random()*2 | 0];
+  S.cose.push({ tipo:'chicca', quale, z, corsia });
+}
+
 function corsiaDiversa(da){
   return [-1,0,1].filter(x => x !== da)[Math.random()*2 | 0];
 }
@@ -323,6 +351,7 @@ function genera(){
     const n = 5 + (Math.random()*3 | 0);
     for (let i=0; i<n; i++) anello('verde', NASCE + i*0.055, c);
     forseVita(NASCE + 0.34, corsiaDiversa(c));
+    forseChicca(NASCE + 0.20, c);            // in mezzo alla fila comoda
     S.prossimo = 0.62;
 
   } else if (r < 0.68){
@@ -331,6 +360,7 @@ function genera(){
     for (let i=0; i<3; i++) anello('blu', NASCE + i*0.05, c);
     for (let i=0; i<3; i++) anello('blu', NASCE + 0.28 + i*0.05, d);
     forseVita(NASCE + 0.5, c);
+    forseChicca(NASCE + 0.16, corsiaDiversa(c));
     S.prossimo = 0.75;
 
   } else if (r < 0.88){
@@ -338,6 +368,7 @@ function genera(){
     for (let i=0; i<2; i++) anello('rosso', NASCE + 0.16 + i*0.05, c);
     S.cose.push({ tipo:'ostacolo', z: NASCE, corsia: c });
     for (let i=0; i<3; i++) anello('verde', NASCE + i*0.055, corsiaDiversa(c));
+    forseChicca(NASCE + 0.42, c);
     S.prossimo = 0.7;
 
   } else {
@@ -375,6 +406,12 @@ const LEZIONI = {
            '<b class="blu">Blu 25</b> — cambiano corsia, devi seguirli.<br>' +
            '<b class="rosso">Rosso 50</b> — sono attaccati a un carrello.</p>'
   },
+  chicche: {
+    titolo: 'Non tutto quello che luccica',
+    corpo: '<p>Gli oggetti <b class="verde">luminosi e colorati</b> danno punti.<br>' +
+           'Quelli <b style="color:#a8a8a2">grigi e opachi</b> te li tolgono: un ' +
+           'adattatore, una matassa di cavi.<br>Non ti fanno male — ti fanno perdere.</p>'
+  },
   ostacolo: {
     titolo: 'I carrelli no',
     corpo: '<p>Spostati di corsia per evitarli. Ogni botta ti costa un cuore, ' +
@@ -407,6 +444,7 @@ function controllaLezioni(){
     if (c.z > 1.25 || c.z < 0.25 || c.presa) continue;
     if (c.tipo === 'anello'   && !S.imparate.anelli)   return spiega('anelli');
     if (c.tipo === 'ostacolo' && !S.imparate.ostacolo) return spiega('ostacolo');
+    if (c.tipo === 'chicca'   && !S.imparate.chicche)  return spiega('chicche');
   }
 }
 
@@ -471,6 +509,31 @@ function pavimentoFinto(){
     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
   }
   ctx.globalAlpha = 1;
+}
+
+/* Un punteggio che cambia senza dire perche' non insegna niente:
+   il numero parte da dove hai preso la cosa e sale sfumando. */
+const SEGNALI = [];
+function segnale(c, testo, buona){
+  const q = proietta(Math.max(c.z, 0.02), c.corsia);
+  SEGNALI.push({ x:q.x, y:q.y - 120 * q.scala, testo, buona, vita:1 });
+}
+function disegnaSegnali(dt){
+  for (const s of SEGNALI){
+    s.vita -= dt * 1.1;
+    s.y -= dt * 90;
+  }
+  while (SEGNALI.length && SEGNALI[0].vita <= 0) SEGNALI.shift();
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 46px system-ui, -apple-system, sans-serif';
+  for (const s of SEGNALI){
+    ctx.globalAlpha = Math.max(0, Math.min(1, s.vita));
+    ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(255,255,255,.85)';
+    ctx.strokeText(s.testo, s.x, s.y);
+    ctx.fillStyle = s.buona ? '#2f8f4e' : '#c0453f';
+    ctx.fillText(s.testo, s.x, s.y);
+  }
+  ctx.globalAlpha = 1; ctx.textAlign = 'left';
 }
 
 // macchia a terra sotto un oggetto: dice a colpo d'occhio su che corsia sta
@@ -587,8 +650,14 @@ function aggiorna(dt){
         S.raccolti += ANELLI[c.anello].valore;
       } else if (c.tipo === 'vita'){
         c.presa = true;
-        if (S.vite < 3){ S.vite++; mostraVite('guarito'); }
-        else S.raccolti += 25;                  // col cuore pieno vale punti
+        if (S.vite < 3){ S.vite++; mostraVite('guarito'); segnale(c, '+♥', true); }
+        else { S.raccolti += 25; segnale(c, '+25', true); }   // col cuore pieno vale punti
+      } else if (c.tipo === 'chicca'){
+        c.presa = true;
+        const k = CHICCHE[c.quale];
+        S.raccolti += k.valore;
+        segnale(c, (k.valore > 0 ? '+' : '') + k.valore, k.buona);
+        if (!k.buona) S.scossa = 0.22;          // un sussulto piccolo: fastidio, non danno
       } else {
         c.presa = true;                          // un carrello colpisce una volta sola
         colpito(); if (S.fase !== 'corsa') return;
@@ -598,7 +667,8 @@ function aggiorna(dt){
   S.cose = S.cose.filter(c => c.z > -0.02);   // superato = fuori scena
 
   // gli anelli valgono, ma anche il solo restare in piedi
-  S.punti = S.raccolti + ((S.distanza * 4) | 0);
+  // sotto zero non si va: un punteggio negativo sembra un guasto
+  S.punti = Math.max(0, S.raccolti + ((S.distanza * 4) | 0));
   document.getElementById('punti').textContent = S.punti;
 }
 
@@ -637,6 +707,30 @@ function disegna(){
         ctx.ellipse(q.x, q.y - su*0.6, s*0.33, s*0.33, 0, 0, 7);
         ctx.stroke();
       }
+    } else if (c.tipo === 'chicca'){
+      const k = CHICCHE[c.quale];
+      const s = (k.buona ? 130 : 150) * q.scala;
+      // le buone galleggiano e brillano, le cattive stanno per terra
+      const su = k.buona ? s * (1.25 + 0.07 * Math.sin(S.distanza*5 + c.z*7)) : s * 0.9;
+      ombra(q.x, q.y, s * 0.30, k.buona ? 0.14 : 0.22);
+      if (k.buona){
+        ctx.save();
+        ctx.globalAlpha = 0.35;
+        ctx.fillStyle = c.quale === 'cubo' ? '#f0b722' : '#4ac6e8';
+        ctx.beginPath(); ctx.ellipse(q.x, q.y - su + s*0.4, s*0.55, s*0.55, 0, 0, 7);
+        ctx.fill(); ctx.restore();
+      }
+      const im = A[c.quale];
+      if (im){
+        const w = s * (im.width / im.height);
+        ctx.drawImage(im, q.x - w/2, q.y - su, w, s);
+      } else {
+        ctx.fillStyle = k.segnaposto;
+        ctx.strokeStyle = k.buona ? '#8a8a80' : '#66665f';
+        ctx.lineWidth = Math.max(2, s*0.06);
+        ctx.beginPath(); ctx.roundRect(q.x - s*0.36, q.y - su, s*0.72, s*0.72, s*0.18);
+        ctx.fill(); ctx.stroke();
+      }
     } else if (c.tipo === 'vita'){
       const s = 140 * q.scala;
       const su = s * (1.3 + 0.07 * Math.sin(S.distanza * 5 + c.z * 7));
@@ -668,6 +762,7 @@ function disegna(){
   }
 
   if (S.fase !== 'attesa') personaggio();
+  disegnaSegnali(S.fase === 'corsa' ? 0.016 : 0);
   ctx.restore();
 }
 
@@ -699,7 +794,7 @@ function colpito(){
 function via(){
   S.fase = 'corsa'; S.corsia = 0; S.corsiaVista = 0;
   S.velocita = 0.55; S.distanza = 0; S.punti = 0; S.raccolti = 0;
-  S.cose = []; S.prossimo = 0.4; S.scossa = 0;
+  S.cose = []; S.prossimo = 0.4; S.scossa = 0; SEGNALI.length = 0;
   S.vite = 3; S.intoccabile = 0; mostraVite(null);
   S.imparate = {}; riprendi();
   document.getElementById('veloStart').hidden = true;
