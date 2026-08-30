@@ -31,7 +31,7 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '21',
+    engine: '22',
     story: null,
     banca: null,    // game/domande.json: domande, battute per stile, eventi, intermezzi
     quiz: null,     // game/quiz.json: i tre livelli del quiz di Peter [S8]
@@ -586,12 +586,6 @@
     precaricaScena(sc);
     atmosfera(sc);
     if (sc.terminal) buildTerminal(sc.terminal);
-    // il leggio del keynote: fisso per tutta la scena, non uno step. La src si
-    // imposta una sola volta, non serve rifarlo a ogni cambio scena.
-    if (el.podiumwrap) {
-      if (sc.podio && el.podiumImg && !el.podiumImg.src) el.podiumImg.src = assetUrl('props', 'podio');
-      el.podiumwrap.classList.toggle('on', !!sc.podio);
-    }
     avviaQuandoPronta(id);
   }
 
@@ -3957,7 +3951,6 @@
       nero: $('nero'),
       boot: $('boot'), bootbar: $('bootbar'), logo: $('logo'), logoImg: $('logoImg'),
       avatar: $('avatar'), propwrap: $('propwrap'), prop: $('prop'), screen: $('screen'),
-      podiumwrap: $('podiumwrap'), podiumImg: $('podiumImg'),
       boxwrap: $('boxwrap'), name: $('name'), nametxt: $('nametxt'), voce: $('voce'),
       txt: $('txt'), arrow: $('arrow'),
       choices: $('choices'), inputform: $('inputform'), ti: $('ti'), tok: $('tok'),
