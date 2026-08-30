@@ -127,6 +127,8 @@ for (const [id, sc] of Object.entries(story.scenes)) {
     if (st.t === 'io' && !st.hide) {
       const posa = st.posa || 'idle_palco';
       for (const [k, s2] of Object.entries(story.stili || {})) {
+        // le chiavi con l'underscore sono note di lavorazione, non stili
+        if (k.startsWith('_')) continue;
         const f = s2.pose?.[posa];
         assert.ok(f, `scena ${id}: lo stile "${k}" non ha la posa "${posa}"`);
         assert.ok(fs.existsSync(path.join(ROOT, (story.meta.assetBase || '') + f)),
@@ -1378,7 +1380,8 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.ok(dots()[1].classList.contains('sel'), 'seconda zona');
   assert.ok($('bg').getAttribute('src').includes('hall_of_fame'), 'fondale della zona 2');
   assert.match(txt(), /Hall of Fame/);
-  assert.ok($('npcBody').getAttribute('src').includes('chr_francesca_idle'), 'Francesca c\'e\' anche qui');
+  assert.ok($('npcBody').getAttribute('src').includes('chr_francesca_presenta'),
+    'Francesca c\'e\' anche qui, e presenta la parete');
   // Lo scorrimento si anima sul fondale, non sul personaggio: #npc ha gia' la sua
   // animazione d'ingresso, e una seconda la sovrascriveva lasciandolo trasparente
   // a fine corsa — a schermo Francesca spariva da tutte le zone dopo il primo swipe.
@@ -1395,12 +1398,12 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   $('hnext').onclick({ stopPropagation() {} });
   assert.ok(dots()[3].classList.contains('sel'), 'quarta zona');
   assert.ok($('bg').getAttribute('src').includes('quiz_bloccata'), 'zona 4 ancora chiusa');
-  assert.ok($('npcBody').getAttribute('src').includes('chr_peter_occhi_bassi'), 'Peter dorme');
+  assert.ok($('npcBody').getAttribute('src').includes('chr_peter_dorme'), 'Peter dorme');
   // si vede Peter, ma a commentare e' Francesca: chi parla e chi e' in scena
   // sono due cose diverse
   assert.equal($('name').textContent, 'Francesca', 'la battuta sulla zona 4 e\' di Francesca');
   spots()[0].onclick({ stopPropagation() {} });
-  assert.ok($('npcBody').getAttribute('src').includes('chr_peter_alza_occhi'), 'al tocco si sveglia di scatto');
+  assert.ok($('npcBody').getAttribute('src').includes('chr_peter_annoiato'), 'al tocco si sveglia, ma annoiato');
   assert.equal($('name').textContent, 'Peter', 'ma al tocco parla Peter');
   assert.match(txt(), /Ti ho sentito/);
   VN.step();
@@ -1462,7 +1465,7 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.equal(dots().length, 4, 'restano quattro zone anche dopo il lock');
   // dopo le previsioni l'hub si apre gia' su Peter: e' quello che resta da fare
   assert.ok($('bg').getAttribute('src').includes('quiz_aperta'), 'zona 4 aperta');
-  assert.ok($('npcBody').getAttribute('src').includes('chr_peter_alza_occhi'), 'Peter sveglio');
+  assert.ok($('npcBody').getAttribute('src').includes('chr_peter_prego'), 'Peter sveglio, e invita al tavolo');
   const spot = $('hubspots').querySelector('.hspot');
   spot.onclick({ stopPropagation() {} });
   [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });

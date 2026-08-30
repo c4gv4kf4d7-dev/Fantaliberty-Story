@@ -31,7 +31,7 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '23',
+    engine: '24',
     story: null,
     banca: null,    // game/domande.json: domande, battute per stile, eventi, intermezzi
     quiz: null,     // game/quiz.json: i tre livelli del quiz di Peter [S8]
@@ -1279,7 +1279,10 @@
      in un posto solo, e la scena dice soltanto quale posa mostrare. */
   function opzioniCarosello(st) {
     var da = VN.story[st.da || 'stili'] || {};
-    var ordine = st.ordine || Object.keys(da);
+    // le chiavi con l'underscore sono note di lavorazione, non opzioni: senza
+    // questo filtro un "_nota" scritto accanto agli stili comparirebbe nel
+    // carosello del camerino come un quinto stile scegliibile
+    var ordine = st.ordine || Object.keys(da).filter(function (k) { return k[0] !== '_'; });
     return ordine.filter(function (k) { return da[k]; }).map(function (k) {
       var o = da[k];
       return {
@@ -1532,12 +1535,17 @@
      occhi, e nessuna posa punta a un'opzione piuttosto che a un'altra.
 
      Dentro ogni fascia si pesca a caso fra due pose, come si fa gia' per
-     l'annuncio: venti domande di fila con la stessa inquadratura si notano. */
+     l'annuncio: venti domande di fila con la stessa inquadratura si notano.
+
+     Si usano le "palco_*", che sono figure intere come idle_palco e come le
+     pose dell'annuncio: cosi' per tutto il giro delle domande l'inquadratura
+     non cambia mai taglio. Le "espressioni_*" sono primi piani del viso e
+     alternarle a una figura intera faceva saltare la camera a ogni battuta. */
   var POSE_DOMANDA = {
-    facile:  ['sicuro', 'neutro'],       // diff 1-2: una che si sa gia'
-    media:   ['neutro', 'sicuro'],       // diff 3
-    tosta:   ['difficolta', 'sorpreso'], // diff 4-5: qui si suda
-    extra:   ['sorpreso', 'neutro']      // le facoltative: arrivano a sorpresa
+    facile:  ['palco_sicuro', 'palco_attesa'],    // diff 1-2: una che si sa gia'
+    media:   ['palco_attesa', 'palco_presenta'],  // diff 3
+    tosta:   ['palco_dubbio', 'palco_attesa'],    // diff 4-5: qui si suda
+    extra:   ['palco_dubbio', 'palco_sicuro']     // le facoltative: a sorpresa
   };
 
   function posaPerDomanda(d, tipo) {

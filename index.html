@@ -9,7 +9,7 @@
      il browser continua a chiedere la versione vecchia degli asset -->
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <meta name="description" content="FantaLiberty: visual novel interattiva. Steve Jobs Theater, WWDC 26.">
-<link rel="stylesheet" href="./game/engine.css?v=78">
+<link rel="stylesheet" href="./game/engine.css?v=79">
 </head>
 <body>
 <div id="stage">
@@ -223,7 +223,7 @@
   </div>
 </div>
 
-<script src="./game/engine.js?v=78"></script>
+<script src="./game/engine.js?v=79"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -234,7 +234,7 @@
   };
   if (params.get('reset')) { try { localStorage.removeItem('fl_nexus_save_v1'); } catch (e) {} }
 
-  var ENGINE_ATTESO = '23';   // deve combaciare con VN.engine in game/engine.js
+  var ENGINE_ATTESO = '24';   // deve combaciare con VN.engine in game/engine.js
   var partito = false;
 
   function mostraErrore(msg) {
@@ -292,7 +292,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=78', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=79', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e
