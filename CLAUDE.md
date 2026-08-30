@@ -136,6 +136,11 @@ difetto ("mi rispiega cos'e' la Hall of Fame ogni volta").
 Toccare un hotspot in una zona muta fa **rientrare** chi risponde: senza
 quello, Francesca parlerebbe fuori campo e sembrerebbe la regia in cuffia.
 
+**Le frecce per cambiare zona (`#hubnav`) stanno dentro `#boxwrap`.** Quindi in
+una zona muta non si spegne il contenitore (`in`), che porterebbe via anche
+quelle e lascerebbe il giocatore senza comandi visibili: si spegne solo il
+fumetto, con la classe `muto`.
+
 ## Mai un fotogramma della scena di prima
 
 Un `<img>` a cui si cambia `src` **continua a disegnare l'immagine vecchia**
