@@ -2344,6 +2344,21 @@
     return s.passato || s.tentativi >= 2;
   }
 
+  /* Un livello e' fuori portata quando uno di quelli prima e' stato bruciato:
+     la scaletta chiede di passarlo, e passarlo non si puo' piu'. Non e' la
+     stessa cosa di "prima l'altro", che e' un'attesa: qui non si apre mai piu',
+     e dirlo con l'etichetta dell'attesa lascia il giocatore a girare fra tre
+     pannelli spenti aspettando qualcosa che non arriva. */
+  function livelloIrraggiungibile(liv, ordine) {
+    if (perkStile() === 'tutto_sbloccato') return false;
+    var i = ordine.indexOf(liv);
+    for (var k = 0; k < i; k++) {
+      var s = statoQuiz(ordine[k]);
+      if (!s.passato && s.tentativi >= 2) return true;
+    }
+    return false;
+  }
+
   function secondiQuiz() {
     var c = cfgQuiz();
     return perkStile() === 'tempo' ? (c.timer_s_ingegnere || c.timer_s || 10) : (c.timer_s || 10);
@@ -2373,7 +2388,9 @@
       b.innerHTML = '<span class="gnome"></span><span class="gstato"></span>';
       b.querySelector('.gnome').textContent = fmt(cfg.nome || liv);
       b.querySelector('.gstato').textContent = !aperto
-        ? (st.etichettaChiuso || 'chiuso')
+        ? (livelloIrraggiungibile(liv, ordine)
+            ? (st.etichettaMai || 'fuori portata')
+            : (st.etichettaChiuso || 'chiuso'))
         : s.passato ? '+' + mult(s.vinto || 0)
         : s.tentativi >= 2 ? (st.etichettaBruciato || 'finito')
         : cfg.domande + ' dom · ' + secondiQuiz() + 's';
@@ -2424,7 +2441,14 @@
     setSpeaker(st.who || 'peter');
     el.griglia.classList.add('on');
     pending = null;
-    if (st.text) typeKeep(fmt(testoDi(st) || st.text));
+    // Quando non resta niente da giocare — livelli passati, bruciati o fuori
+    // portata — "da dove vuoi cominciare?" e' una domanda senza risposta: la
+    // griglia e' tutta spenta e il giocatore non capisce di aver finito.
+    var restaQualcosa = ordine.some(function (liv) {
+      return livelloAperto(liv, ordine) && !livelloChiuso(liv);
+    });
+    var riga = (!restaQualcosa && st.finito) ? st.finito : (testoDi(st) || st.text);
+    if (riga) typeKeep(fmt(riga));
     if (azioni.length) showChoices({ options: azioni, colonne: false });
   }
 

@@ -2107,6 +2107,35 @@ function giocaLivello(liv, stile, giuste) {
   VN.step();
   VN.step(); VN.step(); VN.step();
   assert.ok(cellePerLivello()[0].classList.contains('fatta'), 'Base non si riapre');
+
+  /* Bruciato Base, la scaletta e' finita: Avanzato e Leggenda non si apriranno
+     mai piu'. Peter non deve chiedere "da dove vuoi cominciare?" davanti a una
+     griglia tutta spenta, e i due livelli irraggiungibili non devono dire
+     "prima l'altro", che suona come un'attesa. */
+  const celleFinite = cellePerLivello();
+  const step = story.scenes.quiz.steps.find((x) => x.t === 'quizhub');
+  assert.equal($('txt').textContent, step.finito,
+    'niente piu\' da giocare: Peter lo dice invece di chiedere da dove cominciare');
+  assert.equal(celleFinite[1].querySelector('.gstato').textContent, step.etichettaMai,
+    'Avanzato e\' fuori portata, non in attesa');
+  assert.equal(celleFinite[2].querySelector('.gstato').textContent, step.etichettaMai,
+    'e cosi\' Leggenda');
+  assert.equal(azioniQuiz().length, 1, 'resta solo la via d\'uscita');
+}
+
+/* 10d-bis. lo showman non resta mai bloccato: i suoi livelli sono aperti da
+   subito, quindi bruciarne uno non chiude gli altri */
+{
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'quiz' });
+  VN.state.stile = 'showman'; VN.state.locked = true; VN.state.quiz_visto = true;
+  VN.state.quiz = { base: { passato: false, tentativi: 2, pool: 0, seconda: false } };
+  VN.step();
+  const celle = cellePerLivello();
+  assert.ok(celle[0].classList.contains('fatta'), 'Base bruciato resta chiuso');
+  assert.equal(celle[1].classList.contains('fatta'), false, 'ma Avanzato e\' ancora giocabile');
+  const stepQ = story.scenes.quiz.steps.find((x) => x.t === 'quizhub');
+  assert.equal($('txt').textContent, stepQ.text, 'e Peter chiede ancora da dove cominciare');
 }
 
 /* 10e. il perk dell'hawaiano: il primo fallimento di ogni livello non conta */
