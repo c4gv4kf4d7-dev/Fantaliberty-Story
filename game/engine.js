@@ -571,7 +571,7 @@
     // battuta sfumava *sopra* il fondale nuovo.
     if (!silent) {
       el.boxwrap.style.transition = 'none';
-      el.boxwrap.classList.remove('in');
+      el.boxwrap.classList.remove('in', 'muto');
       void el.boxwrap.offsetWidth;
       el.boxwrap.style.transition = '';
       el.txt.textContent = '';
@@ -2868,13 +2868,17 @@
       pending = null;
       el.arrow.style.opacity = 0;
       if (battuta) {
+        el.boxwrap.classList.remove('muto');
         el.boxwrap.classList.add('in');
         setSpeaker(chi);
         typeKeep(fmt(battuta));
       } else {
-        // niente da dire: via anche il box, cosi' la lobby resta pulita
+        // Niente da dire: via il fumetto, cosi' la lobby resta pulita. Il
+        // contenitore pero' resta acceso, perche' le frecce per cambiare zona
+        // stanno dentro di lui: spegnendolo tutto, il giocatore non aveva piu'
+        // nessun comando visibile per girare.
         el.txt.textContent = '';
-        el.boxwrap.classList.remove('in');
+        el.boxwrap.classList.add('in', 'muto');
         setSpeaker(null);
       }
       if (!scorso && tutorial && tutorial.body) {
@@ -2921,6 +2925,7 @@
       if (uscito) return;
       if (bloccato) {
         var bw = h.who || zones[cur].who;
+        el.boxwrap.classList.remove('muto');
         el.boxwrap.classList.add('in');
         if (bw && current.who !== bw) showChar(perHub(bw === zones[cur].who ? zones[cur] : { who: bw }));
         setSpeaker(bw);
@@ -2940,6 +2945,7 @@
           var parla = function () {
             var r = righe[k++];
             var rw = r.who || h.who || zones[cur].who;
+            el.boxwrap.classList.remove('muto');
             el.boxwrap.classList.add('in');
             // nelle zone gia' viste il personaggio non e' in scena: se e' lui a
             // rispondere al tocco, rientra invece di parlare da fuori campo
@@ -3633,7 +3639,7 @@
     // e basta lo lascia sfumare *dopo*, cioe' mentre la luce torna. Va spento
     // di netto, con la transizione disattivata per un giro.
     el.boxwrap.style.transition = 'none';
-    el.boxwrap.classList.remove('in', 'sistema');
+    el.boxwrap.classList.remove('in', 'sistema', 'muto');
     void el.boxwrap.offsetWidth;
     el.boxwrap.style.transition = '';
 

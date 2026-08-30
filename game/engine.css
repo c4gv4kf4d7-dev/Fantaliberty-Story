@@ -241,6 +241,11 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
     niente lo suggerisca, e' una risposta che il giocatore non sa di avere. */
  max-height:62%;display:flex;flex-direction:column}
 #boxwrap.in{opacity:1;transform:translateY(0)}
+/* Zona gia' vista: nessuno parla, ma le frecce per cambiare zona stanno dentro
+   #boxwrap e devono restare. Si spegne il fumetto, non il contenitore. */
+#boxwrap.muto #box,#boxwrap.muto #name{display:none}
+#boxwrap.muto{pointer-events:none}
+#boxwrap.muto #hubnav{pointer-events:auto}
 /* Riga di sistema: non la dice nessuno, e' il gioco che avvisa ("il badge e'
    in stampa"). Cornice tratteggiata e testo centrato, perche' si distingua da
    una battuta di un personaggio. */

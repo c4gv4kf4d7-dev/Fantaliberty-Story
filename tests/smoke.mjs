@@ -1374,11 +1374,16 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   // le altre zone, rivedendole, restano mute: niente Francesca, niente box
   $('hnext').onclick({ stopPropagation() {} });
   assert.equal(txt(), '', 'la zona gia\' vista non ripete la presentazione');
-  assert.equal($('boxwrap').classList.contains('in'), false, 'e il box sparisce');
+  assert.ok($('boxwrap').classList.contains('muto'), 'e il fumetto sparisce');
+  // ...ma il contenitore resta acceso: dentro ci sono le frecce per cambiare
+  // zona, e senza quelle il giocatore non ha piu' nessun comando visibile
+  assert.ok($('boxwrap').classList.contains('in'), 'le frecce restano a schermo');
+  assert.ok($('hubnav').classList.contains('on'), 'la barra delle zone e\' accesa');
   assert.equal($('npc').classList.contains('in'), false, 'Francesca non e\' piu\' in scena');
   // ma se tocchi qualcosa, rientra e risponde
   spots()[0].onclick({ stopPropagation() {} });
   assert.ok($('npc').classList.contains('in'), 'al tocco il personaggio rientra');
+  assert.equal($('boxwrap').classList.contains('muto'), false, 'e il fumetto torna');
   assert.match(txt(), /albo d'oro/);
   $('hprev').onclick({ stopPropagation() {} });
   assert.match(txt(), /Dietro questa tenda/, 'e sulla tenda la battuta si ripete');
