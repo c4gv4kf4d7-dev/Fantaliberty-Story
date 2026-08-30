@@ -11,7 +11,8 @@
     ],
     "note": "Formato: iPhone portrait 390x844. Il terzo inferiore e' area dialogo.",
     "keynote": "2026-09-09T19:00:00+02:00",
-    "_nota_keynote": "Data e ora del keynote vero, ora locale italiana. Il countdown di S7 conta fin qui. Confermata dall'utente il 30 agosto 2026: 9 settembre, ore 19:00."
+    "_nota_keynote": "Data e ora del keynote vero, ora locale italiana. Il countdown di S7 conta fin qui. Confermata dall'utente il 30 agosto 2026: 9 settembre, ore 19:00.",
+    "_nota_pose_palco": "Le quattro pose 'palco_*' sono figure intere, tagliate dai fogli consegnati il 30 agosto. Servono al giro delle domande di S5: prima il giocatore restava in idle_palco per tutte e ventuno. L'ordine sui fogli NON e' lo stesso per tutti gli stili, quindi il ruolo e' stato assegnato guardandole una per una: attesa = braccia incrociate o in ascolto, presenta = mano aperta che spiega, sicuro = indica (il microfono, per lo showman), dubbio = spalle alzate o perplesso. Sono figure intere come idle_palco: passando dall'una all'altra l'inquadratura non salta, cosa che invece succedeva con le 'espressioni_*', che sono primi piani."
   },
   "assets": {
     "bg": {
@@ -90,14 +91,23 @@
         "duo_spinta_drip": "chars/scene_drip_push.webp",
         "duo_spinta_hawaiano": "chars/scene_hawaiian_push.webp",
         "duo_spinta_showman": "chars/scene_showman_push.webp",
-        "duo_spinta_ingegnere": "chars/scene_engineer_push.webp"
+        "duo_spinta_ingegnere": "chars/scene_engineer_push.webp",
+        "severa": "chars/chr_susan_severa.webp",
+        "ordina": "chars/chr_susan_ordina.webp",
+        "regia": "chars/chr_susan_regia.webp",
+        "spazientita": "chars/chr_susan_spazientita.webp",
+        "pensa": "chars/chr_susan_pensa.webp",
+        "incita": "chars/chr_susan_incita.webp",
+        "stop": "chars/chr_susan_stop.webp",
+        "approva": "chars/chr_susan_approva.webp"
       },
       "heads": {},
       "_nota": "Sprite unico per posa (come lucas/francesca): niente head/neck. Le quattro pose commento_* vengono dal foglio chr_susan_commento_stile, tagliato in ordine drip, hawaiano, showman, ingegnere: in S3 si mostra quella che corrisponde a run.stile. Susan e' anche la regia: da S4 in poi parla in cuffia e li' non ha uno sprite in scena, ma l'icona dell'auricolare accanto al nome. Non e' un personaggio di sola voce — in S2, S3 e S7 e' li' davanti — quindi la cuffia la chiede il singolo step con \"incuffia\": true. Le otto pose duo_* sono composizioni GIA' complete (Susan + il personaggio dello stile, proporzioni e posizione decise nel disegno): quando sono in scena l'avatar del giocatore va tenuto nascosto con {t:\"io\",\"hide\":true}, altrimenti si vedrebbe una seconda copia del personaggio sovrapposta.",
       "icona": [
         "chars/chr_indicatore_regia_1.webp",
         "chars/chr_indicatore_regia_2.webp"
-      ]
+      ],
+      "_notaVolti": "Susan NON usa l'inquadratura sul viso (nessun 'volti'): le pose duo_* sono composizioni con DUE persone e il rilevamento del viso ne prenderebbe una sola, inquadrando la coppia sulla faccia sbagliata. Le sue misure le dichiara la scena."
     },
     "francesca": {
       "name": "Francesca",
@@ -110,7 +120,14 @@
         "indica_tenda": "chars/chr_francesca_indica_tenda.webp",
         "orgogliosa": "chars/chr_francesca_orgogliosa.webp",
         "ride": "chars/chr_francesca_ride.webp",
-        "scettica": "chars/chr_francesca_scettica.webp"
+        "scettica": "chars/chr_francesca_scettica.webp",
+        "presenta": "chars/chr_francesca_presenta.webp",
+        "contenta": "chars/chr_francesca_contenta.webp",
+        "pensa": "chars/chr_francesca_pensa.webp",
+        "indica_su": "chars/chr_francesca_indica_su.webp",
+        "spiega": "chars/chr_francesca_spiega.webp",
+        "pollice_su": "chars/chr_francesca_pollice_su.webp",
+        "tablet": "chars/chr_francesca_tablet.webp"
       },
       "heads": {},
       "_nota": "Sprite unico per posa (come lucas): niente head/neck, ogni posa e' un'immagine intera.",
@@ -146,16 +163,58 @@
           "ar": 1.5
         },
         "ride": {
-          "h": 0.562,
-          "cx": 0.576,
-          "cy": 0.452,
-          "ar": 1.1524
+          "h": 0.26,
+          "cx": 0.526,
+          "cy": 0.264,
+          "ar": 0.7441
         },
         "scettica": {
           "h": 0.516,
           "cx": 0.577,
           "cy": 0.443,
           "ar": 1.0942
+        },
+        "presenta": {
+          "h": 0.285,
+          "cx": 0.449,
+          "cy": 0.26,
+          "ar": 0.7821
+        },
+        "contenta": {
+          "h": 0.279,
+          "cx": 0.428,
+          "cy": 0.259,
+          "ar": 0.554
+        },
+        "pensa": {
+          "h": 0.542,
+          "cx": 0.512,
+          "cy": 0.406,
+          "ar": 0.776
+        },
+        "indica_su": {
+          "h": 0.285,
+          "cx": 0.495,
+          "cy": 0.26,
+          "ar": 0.7536
+        },
+        "spiega": {
+          "h": 0.277,
+          "cx": 0.536,
+          "cy": 0.271,
+          "ar": 0.6465
+        },
+        "pollice_su": {
+          "h": 0.266,
+          "cx": 0.549,
+          "cy": 0.261,
+          "ar": 0.7441
+        },
+        "tablet": {
+          "h": 0.254,
+          "cx": 0.515,
+          "cy": 0.267,
+          "ar": 0.5898
         }
       },
       "_notaVolti": "Misura del viso in ogni posa: altezza, centro orizzontale e verticale, e proporzione dell'immagine (ar = larghezza/altezza), tutto in frazione dell'immagine. Il motore ci calcola sopra il riquadro (vedi inquadra()), cosi' il viso viene sempre grande come quello di Lucas e nello stesso punto dell'inquadratura. Serve perche' le pose non sono tutte dello stesso taglio: cinque sono mezzibusti, 'ride' e 'scettica' sono primi piani di sola testa. 'ar' e' quella che permette di calcolare il riquadro SUBITO, senza aspettare che l'immagine sia caricata: aspettarla faceva vedere per un fotogramma la figura alla misura di default, piccola. Ricavate col riconoscimento dell'incarnato (vedi il commento nel motore): se arriva una posa nuova, misurarla allo stesso modo invece di stimarla a occhio."
@@ -170,13 +229,22 @@
         "annuisce": "chars/chr_peter_annuisce.webp",
         "scuote_testa": "chars/chr_peter_scuote_testa.webp",
         "applauso_ironico": "chars/chr_peter_applauso_ironico.webp",
-        "guarda_orologio": "chars/chr_peter_guarda_orologio.webp"
+        "guarda_orologio": "chars/chr_peter_guarda_orologio.webp",
+        "braccia": "chars/chr_peter_braccia.webp",
+        "occhiali": "chars/chr_peter_occhiali.webp",
+        "valuta": "chars/chr_peter_valuta.webp",
+        "prego": "chars/chr_peter_prego.webp",
+        "esatto": "chars/chr_peter_esatto.webp",
+        "sbuffa": "chars/chr_peter_sbuffa.webp",
+        "annoiato": "chars/chr_peter_annoiato.webp",
+        "dorme": "chars/chr_peter_dorme.webp"
       },
       "heads": {},
       "_nota": "Sprite unico per posa. Dorme (occhi_bassi) finche' run.locked e' false, si sveglia (alza_occhi) quando i pronostici sono chiusi: la lobby modella i due stati con 'when' sulla zona 4. Le altre quattro pose sono il quiz di S8. Tutte vanno mostrate a height 44%: e' seduto a un tavolino in primo piano, non e' una figura intera.",
       "scala": 1.35,
       "_notaScala": "Come Francesca: ritagli quasi quadrati, alla misura base restavano piccoli accanto a Lucas.",
-      "scalaHub": 1.15
+      "scalaHub": 1.15,
+      "_notaVolti": "Peter NON usa l'inquadratura sul viso (nessun 'volti'): resta su 'scala', tarata a occhio e approvata. La posa 'occhi_bassi' lo mostra accasciato sul tavolino, con il viso in basso nell'immagine: ancorando il viso all'altezza di quello di Lucas verrebbe sollevato di netto e si perderebbe il senso della posa."
     }
   },
   "vars": {
@@ -1372,7 +1440,7 @@
               "_nota": "La stessa zona, a show finito: la tenda non porta piu' da nessuna parte, e la battuta non manda piu' nessuno di la'.",
               "bg": "lobby_z1_tenda",
               "who": "francesca",
-              "body": "idle",
+              "body": "spiega",
               "say": "Di la' hanno gia' cominciato a smontare le sedie. La tua parte sul palco e' andata.",
               "hotspots": [
                 {
@@ -1393,7 +1461,7 @@
               "id": "hall_of_fame",
               "bg": "lobby_z2_hall_of_fame",
               "who": "francesca",
-              "body": "idle",
+              "body": "presenta",
               "say": "La Hall of Fame. Ogni anno qualcuno giura di aver 'solo tirato a indovinare'.",
               "hotspots": [
                 {
@@ -1414,7 +1482,7 @@
               "id": "regolamento",
               "bg": "lobby_z3_regolamento",
               "who": "francesca",
-              "body": "idle",
+              "body": "tablet",
               "say": "Il regolamento e' li' sul cartellone, se ti serve. Non e' lungo: abbiamo preferito lasciarti qualche possibilita' di sbagliare.",
               "hotspots": [
                 {
@@ -1437,7 +1505,7 @@
               "chiuso": true,
               "bg": "lobby_z4_quiz_bloccata",
               "who": "peter",
-              "body": "occhi_bassi",
+              "body": "dorme",
               "dice": "francesca",
               "say": "E quello è Peter. Gestisce il quiz finale.\nNon svegliarlo: è l'unico momento della giornata in cui non può farti una domanda.",
               "hotspots": [
@@ -1450,7 +1518,7 @@
                   "who": "peter",
                   "react": {
                     "level": "pose",
-                    "body": "alza_occhi"
+                    "body": "annoiato"
                   },
                   "say": "Ti ho sentito.",
                   "after": [
@@ -1470,7 +1538,7 @@
               },
               "bg": "lobby_z4_quiz_aperta",
               "who": "peter",
-              "body": "alza_occhi",
+              "body": "prego",
               "say": "Il keynote e' andato. Adesso arriva la parte difficile.\nLe domande le faccio io.",
               "hotspots": [
                 {
@@ -2002,7 +2070,11 @@
         "neutro": "stili/stile_hawaiano_espressioni_neutro.webp",
         "sicuro": "stili/stile_hawaiano_espressioni_sicuro.webp",
         "sorpreso": "stili/stile_hawaiano_espressioni_sorpreso.webp",
-        "difficolta": "stili/stile_hawaiano_espressioni_difficolta.webp"
+        "difficolta": "stili/stile_hawaiano_espressioni_difficolta.webp",
+        "palco_attesa": "stili/stile_hawaiano_palco_attesa.webp",
+        "palco_presenta": "stili/stile_hawaiano_palco_presenta.webp",
+        "palco_sicuro": "stili/stile_hawaiano_palco_sicuro.webp",
+        "palco_dubbio": "stili/stile_hawaiano_palco_dubbio.webp"
       }
     },
     "showman": {
@@ -2024,7 +2096,11 @@
         "neutro": "stili/stile_showman_espressioni_neutro.webp",
         "sicuro": "stili/stile_showman_espressioni_sicuro.webp",
         "sorpreso": "stili/stile_showman_espressioni_sorpreso.webp",
-        "difficolta": "stili/stile_showman_espressioni_difficolta.webp"
+        "difficolta": "stili/stile_showman_espressioni_difficolta.webp",
+        "palco_attesa": "stili/stile_showman_palco_attesa.webp",
+        "palco_presenta": "stili/stile_showman_palco_presenta.webp",
+        "palco_sicuro": "stili/stile_showman_palco_sicuro.webp",
+        "palco_dubbio": "stili/stile_showman_palco_dubbio.webp"
       }
     },
     "drip": {
@@ -2046,7 +2122,11 @@
         "neutro": "stili/stile_drip_espressioni_neutro.webp",
         "sicuro": "stili/stile_drip_espressioni_sicuro.webp",
         "sorpreso": "stili/stile_drip_espressioni_sorpreso.webp",
-        "difficolta": "stili/stile_drip_espressioni_difficolta.webp"
+        "difficolta": "stili/stile_drip_espressioni_difficolta.webp",
+        "palco_attesa": "stili/stile_drip_palco_attesa.webp",
+        "palco_presenta": "stili/stile_drip_palco_presenta.webp",
+        "palco_sicuro": "stili/stile_drip_palco_sicuro.webp",
+        "palco_dubbio": "stili/stile_drip_palco_dubbio.webp"
       }
     },
     "ingegnere": {
@@ -2068,7 +2148,11 @@
         "neutro": "stili/stile_ingegnere_espressioni_neutro.webp",
         "sicuro": "stili/stile_ingegnere_espressioni_sicuro.webp",
         "sorpreso": "stili/stile_ingegnere_espressioni_sorpreso.webp",
-        "difficolta": "stili/stile_ingegnere_espressioni_difficolta.webp"
+        "difficolta": "stili/stile_ingegnere_espressioni_difficolta.webp",
+        "palco_attesa": "stili/stile_ingegnere_palco_attesa.webp",
+        "palco_presenta": "stili/stile_ingegnere_palco_presenta.webp",
+        "palco_sicuro": "stili/stile_ingegnere_palco_sicuro.webp",
+        "palco_dubbio": "stili/stile_ingegnere_palco_dubbio.webp"
       }
     }
   },

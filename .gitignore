@@ -19,3 +19,7 @@ dist/
 
 # script usa-e-getta delle mie verifiche: non vanno nel repo
 *.tmp.mjs
+
+# fogli sorgente delle pose: si convertono in WebP e non vanno nel repo
+# (15 MB di PNG grezzi per sette fogli)
+assets/**/*.PNG

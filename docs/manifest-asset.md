@@ -200,3 +200,27 @@ Segnati qui per evitare che Claude Code li cerchi per errore.
   fissa del fondale, non serve come oggetto separato.
 - Un ipotetico fondale "tenda aperta" — non esiste, si salta direttamente a
   `bg_sala_ingresso_superiore` dopo la transizione in codice.
+
+## Le pose consegnate il 30 agosto
+
+Sette fogli, tagliati in 40 pose singole. I fogli grezzi (15 MB di PNG) non
+stanno nel repo: `.gitignore` esclude `assets/**/*.PNG`.
+
+| foglio | pezzi | dove finiscono |
+|---|---|---|
+| `stile_<stile>_pose_palco` (4 fogli) | 4 figure intere | `assets/stili/stile_<stile>_palco_{attesa,presenta,sicuro,dubbio}.webp` |
+| `stile_francesca_pose` | 8 mezzibusti | `assets/chars/chr_francesca_{presenta,contenta,pensa,indica_su,ride,spiega,pollice_su,tablet}.webp` |
+| `stile_peter_pose` | 8 mezzibusti | `assets/chars/chr_peter_{braccia,occhiali,valuta,prego,esatto,sbuffa,annoiato,dorme}.webp` |
+| `stile_susan-pose` | 8 mezzibusti | `assets/chars/chr_susan_{severa,ordina,regia,spazientita,pensa,incita,stop,approva}.webp` |
+
+**L'ordine sui fogli non e' lo stesso per tutti gli stili**: il ruolo e' stato
+assegnato guardando le pose una per una, non per posizione.
+
+Tre fogli (hawaiian, showman, peter) sono arrivati su fondo a scacchiera, senza
+trasparenza. Scontornati partendo dai bordi, non per colore: il contorno scuro
+del disegno fa da diga, quindi i capelli bianchi di Peter e la camicia dello
+showman non vengono toccati. Verificato componendo su magenta.
+
+Le nuove pose di Susan la mostrano **con l'auricolare**: sono la sua versione
+"regia". Quelle vecchie (panico, mani nei capelli, indica il camerino) non ce
+l'hanno e restano al loro posto nelle scene dove serve la Susan di persona.
