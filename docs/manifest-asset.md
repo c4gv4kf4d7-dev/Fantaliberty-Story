@@ -16,7 +16,8 @@ Uno sfondo intero per schermata, sempre presente sotto ogni altra cosa.
 | File | Scena | Uso |
 |---|---|---|
 | `bg_esterno_vialetto` | S0 | Primo frame assoluto del gioco, prima di qualunque interazione |
-| `bg_esterno_ingresso` | S0 | Dietro Lucas e il terminale durante la registrazione |
+| `bg_esterno_ingresso` | S0 | L'ingresso del teatro: Lucas accoglie il giocatore |
+| `bg_macintosh` | S0 | Registrazione e consegna del badge. Il Mac non e' piu' un oggetto sovrapposto (`prop_mac_terminale`): sta dentro il fondale, e il terminale si incolla in pixel allo schermo disegnato qui (`ancoraTerminale()` in engine.js, step `prop` con `"fondale": true`). Se l'immagine viene ridisegnata, ricontrollare le coordinate del vetro in `SCHERMO_FONDALE` |
 | `bg_lobby_z1_tenda` | S1 | Zona 1 della lobby. Ha l'hotspot ENTRA al centro. **L'apertura si anima in codice** (fade o split delle due metà dell'immagine), non serve un secondo fondale "tenda aperta" |
 | `bg_lobby_z2_hall_of_fame` | S1 | Zona 2. Sopra ci vanno le targhe (`obj_targa_hall_of_fame`) come layer cliccabili |
 | `bg_lobby_z3_regolamento` | S1 | Zona 3. Il cartellone illuminato del regolamento: la lastra bianca è **vuota di proposito**, il testo è UI vera che si apre sopra (non va disegnato nell'immagine). Ha preso il posto di `bg_lobby_z3_premi`, la vecchia teca dei premi |
@@ -100,7 +101,8 @@ sono layer componibili: ogni posa è un'immagine intera.
 
 | File (per ogni stile: hawaiano / showman / drip / ingegnere) | Dove |
 |---|---|
-| `stile_X_idle_camerino` | S3 — carosello di scelta |
+| `stile_X_palco_attesa` | S3 — carosello di scelta (e S5, fra le pose della domanda) |
+| `stile_X_idle_camerino` | non collegato: sostituito nel carosello da `palco_attesa`, che e' ritagliato piu' stretto e sta meglio a figura intera |
 | `stile_X_idle_palco` | S4-S5 — stato di attesa, ha l'auricolare disegnato dentro |
 | `stile_X_annuncio` | S5 — **la posa più usata di tutto il gioco**, mostrata a ogni risposta data |
 | `stile_X_indica_schermo` | S5 — si alterna casualmente con `_annuncio` per dare varietà |
@@ -131,7 +133,6 @@ all'inizio della S4 e non cambia più per tutta la sessione.
 | `obj_card_condivisibile` | S7 | Template finale: combina `stile_X_saluto_finale`, `obj_badge` compilato, nome e store — esportato client-side come immagine 1080×1920/1080×1350 |
 | `obj_zaino_rider` | S5 | **Ora è un personaggio pixel-art completo** (rider con zaino termico), non un oggetto isolato — appare solo nell'evento personale della Drip |
 | `prop_ukulele` | S5 | Oggetto separato dell'evento personale dell'Hawaiano (UKULELE): compare solo per la durata dell'evento, non resta in scena dopo |
-| `prop_podium` | S5 | Il leggio del keynote — **non è un prop a comparsa**: fisso per tutta la durata di S5 (`story.scenes[x].podio: true`), davanti alla figura del giocatore, dietro il box del dialogo |
 
 ### Le otto composizioni Susan + personaggio (S4)
 Consegnate come **immagini già complete** (Susan e lo stile scelto insieme,
@@ -150,9 +151,14 @@ chiavi italiane di `story.stili` (`hawaiano`→hawaiian, `ingegnere`→engineer)
 
 ---
 
-## PLATEA
-Layer sovrapposti a `bg_palco_platea_piena`, mai correlati al contenuto
-della risposta data.
+## PLATEA — non si fanno
+Erano layer da sovrapporre a `bg_palco_platea_piena`, mai correlati al
+contenuto della risposta. **Decisione presa: non si disegnano.** Il gioco è già
+lungo e le reazioni della platea aggiungerebbero un passaggio fra una scelta e
+l'altra; la priorità è rifinire quello che c'è. I file restano dichiarati in
+`story.json` (il motore sa mostrarli, se un giorno arrivassero) ma non sono più
+in lavorazione: senza di loro la scena va avanti uguale, senza layer di
+reazione. Le scene non vanno modificate per compensarne l'assenza.
 
 | File | Uso |
 |---|---|
@@ -196,3 +202,27 @@ Segnati qui per evitare che Claude Code li cerchi per errore.
   fissa del fondale, non serve come oggetto separato.
 - Un ipotetico fondale "tenda aperta" — non esiste, si salta direttamente a
   `bg_sala_ingresso_superiore` dopo la transizione in codice.
+
+## Le pose consegnate il 30 agosto
+
+Sette fogli, tagliati in 40 pose singole. I fogli grezzi (15 MB di PNG) non
+stanno nel repo: `.gitignore` esclude `assets/**/*.PNG`.
+
+| foglio | pezzi | dove finiscono |
+|---|---|---|
+| `stile_<stile>_pose_palco` (4 fogli) | 4 figure intere | `assets/stili/stile_<stile>_palco_{attesa,presenta,sicuro,dubbio}.webp` |
+| `stile_francesca_pose` | 8 mezzibusti | `assets/chars/chr_francesca_{presenta,contenta,pensa,indica_su,ride,spiega,pollice_su,tablet}.webp` |
+| `stile_peter_pose` | 8 mezzibusti | `assets/chars/chr_peter_{braccia,occhiali,valuta,prego,esatto,sbuffa,annoiato,dorme}.webp` |
+| `stile_susan-pose` | 8 mezzibusti | `assets/chars/chr_susan_{severa,ordina,regia,spazientita,pensa,incita,stop,approva}.webp` |
+
+**L'ordine sui fogli non e' lo stesso per tutti gli stili**: il ruolo e' stato
+assegnato guardando le pose una per una, non per posizione.
+
+Tre fogli (hawaiian, showman, peter) sono arrivati su fondo a scacchiera, senza
+trasparenza. Scontornati partendo dai bordi, non per colore: il contorno scuro
+del disegno fa da diga, quindi i capelli bianchi di Peter e la camicia dello
+showman non vengono toccati. Verificato componendo su magenta.
+
+Le nuove pose di Susan la mostrano **con l'auricolare**: sono la sua versione
+"regia". Quelle vecchie (panico, mani nei capelli, indica il camerino) non ce
+l'hanno e restano al loro posto nelle scene dove serve la Susan di persona.

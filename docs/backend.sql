@@ -25,6 +25,12 @@ create table if not exists public.runs (
   -- arrivate:
   --     alter table public.runs add column if not exists quiz jsonb;
   quiz         jsonb,
+  -- Aggiunta con la schermata dell'email (dopo il teleprompter, prima dei
+  -- titoli di coda): e' facoltativa, quindi puo' essere null. Se la tabella
+  -- esiste gia', la colonna va aggiunta prima di pubblicare, altrimenti
+  -- l'invio viene rifiutato con un 400 (PGRST204):
+  --     alter table public.runs add column if not exists email text;
+  email        text,
   versione     text
 );
 
@@ -62,10 +68,13 @@ create policy "chiunque puo inserire la propria schedina"
 --   picks     le risposte date, per macroargomento
 --   flags     due scelte di tono di [S2] e [S4]
 --   quiz      livelli del quiz di Peter e moltiplicatori assegnati
+--   email     facoltativa: la lascia il giocatore dopo il teleprompter, e
+--             serve solo a mandargli i risultati finali. Chi salta la
+--             schermata manda null
 --   versione  la versione dello script con cui e' stata giocata
 --
--- Non c'e' altro: niente email, niente identificativi del dispositivo, niente
--- indirizzi IP raccolti dal gioco.
+-- Non c'e' altro: l'email solo se il giocatore l'ha lasciata, e niente
+-- identificativi del dispositivo, niente indirizzi IP raccolti dal gioco.
 --
 -- ---------------------------------------------------------------------------
 -- Chi puo' leggere

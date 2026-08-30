@@ -123,6 +123,92 @@ Attenzione al piano dei layer: `#carosello` sta a `z-index:1`, **sotto**
 `#boxwrap` (2). Alzandolo, il bottone "Sono io" smette di essere premibile
 in silenzio — il test in jsdom non se ne accorge.
 
+Nel carosello si mostra **`palco_attesa`**, non `idle_camerino`: le pose del
+palco sono ritagliate strette attorno alla figura, quindi a `object-fit:contain`
+riempiono l'inquadratura invece di lasciare margini vuoti, e sono le stesse che
+il giocatore si vedra' addosso in S5 — quello che scegli e' quello che avrai.
+`idle_camerino` resta dichiarato in `story.stili` ma non lo usa piu' nessuno.
+
+I quattro sprite avevano **residui di sfondo bianco chiusi dentro il disegno**
+(puntini fra le ciocche dei capelli, una chiazza fra le gambe, una fra l'asta
+del microfono e i pantaloni): sul fondale scuro si leggono come sporco. Si
+tolgono con `tools/togli_bianchi.py`, guardando **sempre** l'anteprima in
+magenta prima di scrivere — su canottiera, camicia e scarpe bianche il confine
+e' sottile.
+
+## La lobby si presenta una volta sola
+
+Nell'hub la battuta di una zona vale solo al **primo** passaggio. Tornandoci,
+il personaggio esce di scena e il box del dialogo sparisce del tutto: chi ha
+gia' fatto il giro deve poter girare in silenzio. L'unica zona con una
+battuta di ritorno e' la tenda (`"ritorno"` nella zona di `story.json`), dove
+Francesca ricompare dal secondo passaggio per dire che di la' comincia lo
+show. Se si aggiunge un `ritorno` a un'altra zona, si torna al vecchio
+difetto ("mi rispiega cos'e' la Hall of Fame ogni volta").
+
+Toccare un hotspot in una zona muta fa **rientrare** chi risponde: senza
+quello, Francesca parlerebbe fuori campo e sembrerebbe la regia in cuffia.
+
+**Le frecce per cambiare zona (`#hubnav`) stanno dentro `#boxwrap`.** Quindi in
+una zona muta non si spegne il contenitore (`in`), che porterebbe via anche
+quelle e lascerebbe il giocatore senza comandi visibili: si spegne solo il
+fumetto, con la classe `muto`.
+
+## Mai un fotogramma della scena di prima
+
+Un `<img>` a cui si cambia `src` **continua a disegnare l'immagine vecchia**
+finche' la nuova non e' decodificata. Da qui nascono tutti gli "intrusi": il
+fondale dell'ingresso sotto Francesca, la posa precedente per un fotogramma,
+la slide sbagliata dentro il riquadro. Non e' la cache del browser, ed e'
+saltuario perche' dipende da quanto ci mette il file ad arrivare.
+
+**Non si assegna `src` a mano su un elemento che si vede.** Ci sono due modi,
+e non sono intercambiabili (`engine.js`, sezione "immagini"):
+
+- **`scambia(nodo, src)`** — l'elemento e' gia' a schermo e cambia contenuto
+  (posa, espressione, slide, figura del carosello). L'immagine vecchia e'
+  ancora quella giusta finche' non arriva la nuova, quindi si tiene: il `src`
+  si assegna solo quando l'immagine e' pronta. Nessun buco.
+- **`apparira(nodo, src, contenitore)`** — l'elemento deve *comparire*, e
+  quello che ha addosso e' roba della scena di prima. Si assegna subito ma
+  resta invisibile (`.attesa`) finche' non e' pronta. Nessun intruso.
+
+`showChar()` sceglie da solo fra i due: stesso personaggio gia' in scena =
+cambio di posa (`scambia`), altrimenti sta entrando (`apparira`).
+
+Tre regole che reggono il resto:
+
+1. **`img.complete` da solo mente.** Subito dopo aver assegnato un `src`
+   nuovo risponde ancora per l'immagine vecchia. La domanda giusta la fa
+   `mostrata(img, src)`, che confronta `currentSrc`. Lo stesso vale per il
+   precaricamento: **non basta sapere che il precaricatore ha finito**, perche'
+   senza header di cache l'`<img>` vero rifa' la richiesta e resta indietro —
+   si aspetta sempre l'elemento a schermo.
+2. **Niente "dopo tot lo mostro comunque".** Mostrarlo comunque vuol dire
+   mostrare l'immagine di prima, cioe' proprio la cosa da non fare. Se un file
+   non arriva, l'elemento resta vuoto e la scena va avanti lo stesso. L'unico
+   ripiego a tempo e' il fondale: se tarda, la scena **si copre di nero**
+   (che e' il linguaggio del gioco) invece di far entrare i personaggi nuovi
+   sopra il fondale vecchio.
+3. **Anche i tempi sono intrusi.** Uno step che finisce piu' tardi (attesa,
+   dissolvenza, transizione) tiene in mano un "poi fai questo": se intanto la
+   scena e' cambiata, quel seguito e' della scena di prima e farebbe partire da
+   sola quella nuova. Per questo ogni seguito differito passa da
+   `perScena(next)`, che lo annulla al cambio di scena.
+
+`precaricaScena()` (la scena nuova, mentre il buio copre) e
+`precaricaProssime()` (le scene in cui si puo' finire dopo, mentre si gioca)
+servono a far si' che quelle attese, in pratica, siano gia' finite.
+
+`npm test` gira in jsdom e non carica immagini: **questa famiglia di bug non
+la vede proprio** (per questo il motore si accorge da solo di essere in jsdom,
+`siDecodifica()`, e li' non aspetta nessuno). Il controllo vero e'
+`npm run transizioni`: browser vero, asset rallentati apposta, tutte le
+transizioni che la storia puo' fare, e conta i fotogrammi in cui si vede
+qualcosa che non e' ancora pronto. Si puo' stringere la vite con
+`CHARS=4000 BG=4000 npm run transizioni`. Se si tocca una di queste cose,
+rilanciarlo.
+
 ## Animazioni CSS: due classi sullo stesso nodo si combattono
 
 Regola (violata due volte con lo stesso sintomo — il personaggio sparisce
@@ -175,6 +261,46 @@ Altre due cose di S8 che sembrano dettagli e non lo sono:
   render, scrivere a macchina sarebbe una penalità invisibile;
 - **la griglia dei livelli convive con `#choices`** — per questo `#griglia`
   sta prima nell'HTML e `#boxwrap` prende la classe `quizhub`.
+
+## Dopo le previsioni il gioco non finisce
+
+L'ordine e' vincolato e non va riordinato per comodita': conferma delle
+previsioni -> **email facoltativa** -> titoli di coda -> cartello "Hai
+completato una fase, non l'intera esperienza" -> **ritorno in lobby**, dove
+Francesca si congratula (POST-L01..L07, posa `orgogliosa`) e manda dal Peter
+dei quiz. Al countdown ci si arriva **dopo** il quiz, non prima.
+
+Tre cose da non rompere:
+
+1. **La sequenza del ritorno si vede una volta sola** (`post_lobby_visto`), e
+   le battute d'apertura della lobby ("io sono Francesca") valgono solo con
+   `locked` a false. Chi aggiunge uno step in `lobby` deve chiedersi in quale
+   dei due stati vive, e dichiararlo con `se`.
+2. **Dopo le previsioni la lobby non manda piu' dietro la tenda.** La zona 1 e'
+   scritta due volte (`tenda` / `tenda_dopo`, condizionate a `locked`), l'hub si
+   riapre da Peter (`startDopo`) e il tutorial dello swipe non si ripete
+   (`tutorialSe`). Chi rimette un `goto` verso la sala rimanda il giocatore a
+   rigiocare lo show.
+3. **L'email non e' obbligatoria e non deve diventarlo.** Campo vuoto +
+   CONTINUA vale come saltare, e il salto e' un bottone dichiarato. La partita
+   va in coda al momento della conferma e la spedisce la schermata dell'email:
+   una riga sola, con l'email dentro se c'e'. Se cambia il payload cambia anche
+   l'elenco nel regolamento (e la colonna in `docs/backend.sql`).
+
+## Il linguaggio: mai "schedina bloccata"
+
+Al giocatore non si dice mai "schedina bloccata", "la schedina e' chiusa",
+"previsioni bloccate". Si dice che le previsioni sono **fatte, confermate,
+registrate, concluse**. Le variabili interne restano `locked` e compagnia: la
+regola riguarda il testo che si legge a schermo (dialoghi, bottoni, modali,
+countdown, card, regolamento, HTML).
+
+## La platea non avra' mai i suoi layer
+
+`pla_*` (idle, applausi, risata, silenzio, coro) **non si disegnano**: e' una
+decisione presa, non un lavoro in sospeso. Il motore sa gia' mostrarli e le
+reazioni di S5 ci girano intorno: si lascia tutto com'e', senza compensare
+l'assenza con altro. Non rimetterli in `meta.assetiInArrivo`.
 
 ## Il regolamento (zona 3) contiene anche la parte legale
 

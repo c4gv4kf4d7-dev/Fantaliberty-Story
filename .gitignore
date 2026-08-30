@@ -16,3 +16,10 @@ __pycache__/
 # build compilata: si rigenera con `npm run build`, non va in Git
 # (l'ultima committata era ferma a mesi fa e oggi peserebbe 11 MB)
 dist/
+
+# script usa-e-getta delle mie verifiche: non vanno nel repo
+*.tmp.mjs
+
+# fogli sorgente delle pose: si convertono in WebP e non vanno nel repo
+# (15 MB di PNG grezzi per sette fogli)
+assets/**/*.PNG

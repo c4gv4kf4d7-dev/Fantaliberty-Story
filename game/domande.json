@@ -73,7 +73,7 @@
               "tipo": "plausibile",
               "pt": 4,
               "battute": {
-                "hawaiano": "Un rosso come il ʻŌhiʻa lehua, il fiore più iconico delle Hawaii. Cambia il nome, resta bello.",
+                "hawaiano": "Un rosso come il 'Ōhi'a lehua, il fiore più iconico delle Hawaii. Cambia il nome, resta bello.",
                 "showman": "Un rosso NUOVO, con un nome che ancora non conoscevate!",
                 "drip": "Un rosso! Chissà che nome strano gli avranno dato al marketing.",
                 "ingegnere": "Una variante del rosso di rara complessità cromatica, al limite delle attuali conoscenze di color science."
@@ -289,7 +289,7 @@
       "extra": [
         {
           "id": "IPHONE.E1",
-          "q": "Che fine fa la Dynamic Island?",
+          "q": "La Dynamic Island: la rimpiccioliscono, la lasciano o la fanno sparire?",
           "opzioni": [
             {
               "label": "Più piccola",
@@ -302,7 +302,7 @@
               }
             },
             {
-              "label": "Uguale",
+              "label": "La lasciano così",
               "val": 3,
               "battute": {
                 "hawaiano": "Stessa forma di sempre. Se va bene, va bene.",
@@ -312,7 +312,7 @@
               }
             },
             {
-              "label": "Sparita",
+              "label": "La fanno sparire",
               "val": 3,
               "battute": {
                 "hawaiano": "Sparita. Non c'è più. Fine di un'epoca, come l'ultima onda della stagione.",
@@ -714,35 +714,35 @@
         },
         {
           "id": "WATCH.E4",
-          "q": "Nuovi cinturini/materiali?",
+          "q": "Secondo te creano una nuova linea di cinturini?",
           "opzioni": [
             {
-              "label": "Segmento dedicato",
+              "label": "Sì, una linea completamente nuova",
               "val": 2,
               "battute": {
-                "hawaiano": "C'è tutto un momento sui cinturini nuovi. Bello quando curano ogni dettaglio.",
-                "showman": "UN SEGMENTO INTERO SUI CINTURINI! La moda incontra la tecnologia!",
-                "drip": "Segmento intero sui cinturini. Povero il Bro dell'inventario...",
-                "ingegnere": "Un segmento dedicato ai nuovi materiali per i cinturini, segnale di un investimento reale in questa categoria accessori."
+                "hawaiano": "Una linea di cinturini tutta nuova. Bello quando arriva una collezione fresca, come cambiare tavola per la stagione giusta.",
+                "showman": "UNA LINEA TUTTA NUOVA DI CINTURINI! La moda incontra la tecnologia e sale sul palco!",
+                "drip": "Linea nuova di cinturini. Finalmente un drop vero, non solo cambio colore.",
+                "ingegnere": "Una nuova linea di cinturini indica un investimento reale nella categoria accessori, con identità e materiali distinti."
               }
             },
             {
-              "label": "Di sfuggita",
+              "label": "Solo nuovi colori e materiali",
               "val": 1,
               "battute": {
-                "hawaiano": "Ne parlano un attimo e via. Va bene lo stesso.",
-                "showman": "SOLO UN ACCENNO! Ma quell'accenno vale già tanto!",
-                "drip": "Solo un accenno veloce. Ci sta, non serve sempre il dramma.",
-                "ingegnere": "I nuovi cinturini vengono menzionati brevemente, senza un segmento dedicato, probabilmente non la priorità dell'evento."
+                "hawaiano": "Nuovi colori e materiali, senza rivoluzioni. A volte basta cambiare ritmo per far sembrare tutto più leggero.",
+                "showman": "NUOVI COLORI, NUOVI MATERIALI! Non è una linea nuova, ma il polso ringrazia!",
+                "drip": "Colori e materiali nuovi. Upgrade leggero, ma almeno il fit cambia.",
+                "ingegnere": "Un aggiornamento di colori e materiali mantiene la linea esistente, migliorando la varietà senza creare una categoria separata."
               }
             },
             {
-              "label": "No",
+              "label": "No, niente di nuovo",
               "val": 2,
               "battute": {
                 "hawaiano": "Niente cinturini nuovi, oggi. Sarà per un'altra volta.",
-                "showman": "NIENTE cinturini nuovi! Ma quelli che avete già sono fantastici!",
-                "drip": "Niente cinturini nuovi. Solo nuovi colori. Basic, ma ci sta.",
+                "showman": "NESSUNA NOVITÀ SUI CINTURINI! Ma quelli che avete già sono ancora fantastici!",
+                "drip": "Niente di nuovo sui cinturini. Armadio salvo, portafoglio pure.",
                 "ingegnere": "Nessuna novità sui cinturini in questo evento, la categoria accessori resta ferma."
               }
             }
@@ -784,10 +784,10 @@
         {
           "id": "ALTRO.C1",
           "diff": 3,
-          "q": "Gli AirPods 5 salgono sul palco?",
+          "q": "Ok, AirPods. Ne vediamo di nuove stasera?",
           "opzioni": [
             {
-              "label": "Sì, due modelli (con/senza ANC)",
+              "label": "Sì, due modelli nuovi",
               "tipo": "consenso",
               "pt": 3,
               "battute": {
@@ -798,7 +798,7 @@
               }
             },
             {
-              "label": "Sì, un modello solo",
+              "label": "Sì, ma uno solo",
               "tipo": "plausibile",
               "pt": 4,
               "battute": {
@@ -809,7 +809,7 @@
               }
             },
             {
-              "label": "Niente AirPods stasera",
+              "label": "No, niente AirPods",
               "tipo": "plausibile",
               "pt": 4,
               "battute": {

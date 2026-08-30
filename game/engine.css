@@ -100,6 +100,13 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
   100%{transform:translate(var(--drift,4vw),-26vh);opacity:0}
 }
 
+/* Immagine chiesta ma non ancora decodificata: quello che il browser
+   disegnerebbe adesso e' ancora l'immagine di prima (il personaggio o lo
+   sfondo della scena precedente). Si tiene invisibile finche' non e' pronta —
+   visibility e non display, cosi' le animazioni d'ingresso partono lo stesso e
+   le misure restano calcolabili. Vedi apparira() nel motore. */
+.attesa{visibility:hidden!important}
+
 /* ---------- NPC: corpo + testa ----------
    #npc e' il riquadro del personaggio; la testa e' posizionata in percentuale
    su quel riquadro (punto di ancoraggio del collo, uguale per tutte le pose). */
@@ -172,6 +179,23 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
    Se un domani se ne aggiungono altre, adattaTerminale() in engine.js rimpicciolisce. */
 .frow{margin-bottom:.18em;white-space:nowrap;overflow:hidden}
 .fk{opacity:.75}
+/* Registrazione: il Mac non e' un oggetto appoggiato sulla scena, e' disegnato
+   dentro il fondale (bg_macintosh). #propwrap allora non incornicia piu'
+   niente — l'immagine del prop non si mostra e il contenitore copre la scena
+   intera — e resta solo il terminale, che engine.js incolla in pixel sopra lo
+   schermo del CRT (ancoraTerminale): con le percentuali il testo sarebbe
+   finito fuori dal vetro su ogni finestra di forma diversa dal telefono. */
+#propwrap.fondale{left:0;top:0;width:100%;max-width:none;height:100%}
+#propwrap.fondale.in,#propwrap.fondale.out{transform:none}
+#propwrap.fondale #prop{display:none}
+/* Sullo schermo del Mac c'e' gia' disegnata una finestra di sistema: il
+   terminale ci si appoggia sopra con un pannello suo, se no le due scritte si
+   accavallano e non si legge niente. */
+#propwrap.fondale #screen{left:0;top:0;width:auto;height:auto;
+ background:rgba(228,238,248,.97);border:1px solid rgba(20,40,70,.35);
+ color:#12263f;padding:.5em .6em;font-size:clamp(6px,2vw,12px);line-height:1.35;
+ box-shadow:inset 0 0 0 2px rgba(255,255,255,.6)}
+
 /* ---------- badge dell'accredito ----------
    Lucas lo consegna a fine registrazione: l'immagine porta la mela, il nome
    del giocatore ci viene scritto sopra. Se l'immagine non c'e' ancora, la
@@ -234,6 +258,11 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
     niente lo suggerisca, e' una risposta che il giocatore non sa di avere. */
  max-height:62%;display:flex;flex-direction:column}
 #boxwrap.in{opacity:1;transform:translateY(0)}
+/* Zona gia' vista: nessuno parla, ma le frecce per cambiare zona stanno dentro
+   #boxwrap e devono restare. Si spegne il fumetto, non il contenitore. */
+#boxwrap.muto #box,#boxwrap.muto #name{display:none}
+#boxwrap.muto{pointer-events:none}
+#boxwrap.muto #hubnav{pointer-events:auto}
 /* Riga di sistema: non la dice nessuno, e' il gioco che avvisa ("il badge e'
    in stampa"). Cornice tratteggiata e testo centrato, perche' si distingua da
    una battuta di un personaggio. */
@@ -569,12 +598,12 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  background:radial-gradient(ellipse 62% 46% at 50% 40%,
    rgba(12,16,30,0) 0%, rgba(8,10,20,.42) 60%, rgba(5,6,13,.86) 100%)}
 /* l'alone sotto i piedi: appoggia la figura invece di lasciarla levitare */
-#carluce{position:absolute;left:50%;top:71%;width:56%;height:8%;
+#carluce{position:absolute;left:50%;top:69%;width:56%;height:8%;
  transform:translate(-50%,-50%);pointer-events:none;
  background:radial-gradient(ellipse at center,
    rgba(255,228,176,.28) 0%, rgba(255,220,160,.10) 45%, rgba(255,220,160,0) 72%)}
 
-#carImg{position:absolute;left:50%;top:6%;height:66%;width:88%;
+#carImg{position:absolute;left:50%;top:5%;height:63%;width:88%;
  transform:translateX(-50%);object-fit:contain;object-position:bottom center;
  image-rendering:auto;pointer-events:none;
  filter:drop-shadow(0 18px 26px rgba(0,0,0,.55))}
@@ -629,6 +658,39 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  text-align:center;letter-spacing:.05em;box-shadow:0 3px 0 rgba(0,0,0,.5);margin-top:2px}
 #carok:hover,#carok:focus{background:#3d466e;outline:none}
 #carok:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.5)}
+
+/* ---------- email facoltativa (S7, dopo il teleprompter) ----------
+   Stesso pannello del regolamento: flex e non grid, cosi' il bottone resta
+   dentro lo schermo anche sui telefoni piccoli (vedi la nota li' sotto). */
+#emailwrap{position:absolute;inset:0;z-index:7;display:none;align-items:center;
+ justify-content:center;background:rgba(4,5,10,.72);
+ padding:6vw calc(5vw + env(safe-area-inset-left,0px))
+ calc(5vw + env(safe-area-inset-bottom,0px))}
+#emailwrap.on{display:flex}
+#emailbox{flex:none;display:flex;flex-direction:column;gap:10px;width:100%;max-width:24em;
+ max-height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;
+ background:#1b1f33;border:3px solid #fff;border-radius:14px;padding:16px 15px 14px;
+ box-shadow:0 10px 0 rgba(0,0,0,.5), 0 0 34px rgba(255,217,138,.18)}
+#emailtit{color:#ffd98a;font-size:clamp(10px,3vw,15px);letter-spacing:.12em;text-align:center;
+ text-shadow:0 0 16px rgba(255,217,138,.4)}
+#emailtesto{color:#fff;font-size:clamp(7px,2.1vw,11px);line-height:1.9;text-align:center}
+#emaillabel{color:#9fb4d8;font-size:clamp(6px,1.9vw,10px);letter-spacing:.08em;margin-top:4px}
+#emailin{background:#0d1020;border:3px solid #fff;border-radius:8px;color:#fff;
+ font-family:inherit;font-size:clamp(7px,2.2vw,11px);padding:10px 9px;min-width:0}
+#emailin:focus{outline:none;border-color:#ffd98a}
+/* l'errore compare solo quando serve: uno spazio riservato a vuoto sembrerebbe
+   un pezzo di interfaccia rotto */
+#emailerr{display:none;color:#ff9a9a;font-size:clamp(6px,1.9vw,10px);line-height:1.6}
+#emailerr.on{display:block}
+#emailnota{color:#fff;opacity:.85;font-size:clamp(6px,1.9vw,10px);line-height:1.8}
+#emailprivacy{color:#9fb4d8;font-size:clamp(5px,1.6vw,9px);line-height:1.7}
+#emailok{margin-top:4px}
+/* il salto e' una scelta vera, non una scorciatoia da nascondere: si legge, ma
+   non compete con CONTINUA */
+#emailsalta{background:none;border:0;color:#9fb4d8;font-family:inherit;
+ font-size:clamp(6px,1.9vw,10px);line-height:1.7;text-decoration:underline;
+ cursor:pointer;padding:6px 2px}
+#emailsalta:hover,#emailsalta:focus{color:#fff;outline:none}
 
 /* ---------- countdown e card (S7) ---------- */
 #countdown{position:absolute;inset:0;z-index:6;display:none;place-items:center;

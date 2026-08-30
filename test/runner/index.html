@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>FantaLiberty — Runner (prototipo)</title>
+<style>
+  :root{ color-scheme: light; }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; height:100%; overflow:hidden; overflow:clip;
+    background:#111; touch-action:none; overscroll-behavior:none;
+    -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  #wrap{
+    position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  }
+  #stage{
+    position:relative; background:#e9e9e4;
+    box-shadow:0 0 40px rgba(0,0,0,.6);
+  }
+  canvas{ display:block; width:100%; height:100%; }
+
+  /* ---- interfaccia sopra il canvas ---- */
+  .ui{
+    position:absolute; inset:0; pointer-events:none;
+    display:flex; flex-direction:column;
+  }
+  #hud{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    padding:14px 16px; font-weight:700; color:#2a2a28;
+    text-shadow:0 1px 0 rgba(255,255,255,.7);
+  }
+  /* la colonna si dimensiona sul testo piu' largo, non sul numero:
+     con un punteggio a una cifra "record" traboccava fuori schermo */
+  #segna{ display:flex; flex-direction:column; align-items:flex-end; }
+  #punti{ font-size:26px; letter-spacing:.5px; }
+  #record{ font-size:13px; opacity:.65; font-weight:600; white-space:nowrap; }
+
+  /* i cuori: uno per tentativo */
+  #vite{ display:flex; gap:5px; font-size:25px; line-height:1; }
+  #vite span{ color:#d9453f; text-shadow:0 1px 0 rgba(255,255,255,.7); }
+  #vite span.spenta{ color:#b9b9b3; opacity:.45; }
+  #vite.colpito span{ animation: tremaCuore .45s ease-out; }
+  #vite.guarito span:not(.spenta){ animation: pulsaCuore .5s ease-out; }
+  @keyframes tremaCuore{
+    0%,100%{ transform:translateX(0) }
+    15%{ transform:translateX(-5px) rotate(-8deg) }
+    35%{ transform:translateX(5px) rotate(7deg) }
+    55%{ transform:translateX(-4px) rotate(-5deg) }
+    75%{ transform:translateX(3px) rotate(3deg) }
+  }
+  @keyframes pulsaCuore{
+    0%,100%{ transform:scale(1) } 45%{ transform:scale(1.45) }
+  }
+  /* Il cuore perso non sbiadisce e basta: schizza in alto e scoppia.
+     Vive in un nodo suo, staccato dalla fila, se no la fila si sposta. */
+  #scoppio{
+    position:absolute; pointer-events:none; font-size:25px; color:#d9453f;
+    animation: scoppiaCuore .75s cubic-bezier(.2,.7,.3,1) forwards;
+  }
+  @keyframes scoppiaCuore{
+    0%   { transform:translate(0,0) scale(1); opacity:1 }
+    35%  { transform:translate(0,-46px) scale(1.9) rotate(-12deg); opacity:1 }
+    100% { transform:translate(0,-72px) scale(3.2) rotate(10deg); opacity:0 }
+  }
+  #fps{
+    position:absolute; left:16px; bottom:12px; font-size:11px;
+    color:#2a2a28; opacity:.45; font-weight:600;
+  }
+
+  .velo{
+    position:absolute; inset:0; pointer-events:auto;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px; text-align:center; padding:24px;
+    background:rgba(238,238,233,.86); backdrop-filter:blur(3px);
+  }
+  .velo[hidden]{ display:none !important; }
+  .velo h1{ margin:0; font-size:30px; color:#1d1d1b; letter-spacing:-.5px; }
+  .velo p{ margin:0; font-size:15px; line-height:1.5; color:#4a4a46; max-width:19em; }
+  .velo .big{ font-size:52px; font-weight:800; color:#1d1d1b; margin:4px 0; }
+  .velo button{
+    margin-top:10px; padding:14px 30px; font-size:17px; font-weight:700;
+    border:0; border-radius:999px; background:#1d1d1b; color:#fff; cursor:pointer;
+    font-family:inherit;
+  }
+  .velo small{ font-size:12px; color:#8a8a84; }
+
+  /* La lezione non copre la scena: spiega una cosa che si sta vedendo,
+     quindi resta in basso e lascia guardare il corridoio. */
+  #lezione{
+    position:absolute; left:0; right:0; bottom:0; pointer-events:auto;
+    padding:20px 22px calc(24px + env(safe-area-inset-bottom));
+    background:linear-gradient(to top, #1c1c1a 0%, rgba(28,28,26,.97) 70%, rgba(28,28,26,.82) 100%);
+    box-shadow:0 -30px 60px rgba(28,28,26,.45);
+    color:#f4f4f0; text-align:center;
+    border-radius:22px 22px 0 0;
+    animation: entraLezione .28s ease-out;
+  }
+  #lezione[hidden]{ display:none !important; }
+  @keyframes entraLezione{ from{ transform:translateY(60px); opacity:0 } }
+  #lezione h2{ margin:0 0 8px; font-size:20px; letter-spacing:-.3px; }
+  #lezione p{ margin:0; font-size:15px; line-height:1.5; color:#cfcfc8; }
+  #lezione b.verde{ color:#8fd45a } #lezione b.blu{ color:#63c0e0 }
+  #lezione b.rosso{ color:#e8615a }
+  #lezione .dita{ font-size:34px; letter-spacing:14px; margin:6px 0 2px; }
+  #lezione .dita span{ display:inline-block; animation: spingi 1.1s ease-in-out infinite; }
+  #lezione .dita span:last-child{ animation-delay:.55s }
+  @keyframes spingi{
+    0%,100%{ transform:translateX(0); opacity:.45 }
+    50%{ transform:translateX(var(--v,10px)); opacity:1 }
+  }
+  /* la freccia in giu' si muove in giu', non di lato */
+  #lezione .dita span[style*="--v:0"]{ animation-name: spingiGiu; }
+  @keyframes spingiGiu{
+    0%,100%{ transform:translateY(-6px); opacity:.45 }
+    50%{ transform:translateY(10px); opacity:1 }
+  }
+  #lezione button{
+    margin-top:14px; padding:12px 28px; font-size:16px; font-weight:700;
+    border:0; border-radius:999px; background:#f4f4f0; color:#1d1d1b;
+    font-family:inherit; cursor:pointer;
+  }
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <canvas id="cv"></canvas>
+
+  <div class="ui">
+    <div id="hud">
+      <div id="vite"><span>♥</span><span>♥</span></div>
+      <div id="segna"><div id="punti">0</div><div id="record">record 0</div></div>
+    </div>
+    <div id="fps"></div>
+  </div>
+
+  <div class="velo" id="veloStart">
+    <h1>Corsa nel corridoio</h1>
+    <p>Corri nel corridoio, prendi gli anelli, evita i carrelli.<br>
+       Ti spiego il resto strada facendo.</p>
+    <button id="btnVia">Via</button>
+    <small>prototipo — non è il gioco vero</small>
+  </div>
+
+  <div id="lezione" hidden>
+      <h2 id="lezTitolo"></h2>
+      <div id="lezCorpo"></div>
+      <button id="lezOk">Ho capito</button>
+    </div>
+
+  <div class="velo" id="veloFine" hidden>
+    <h1>Sbam.</h1>
+    <div class="big" id="finePunti">0</div>
+    <p id="fineNota"></p>
+    <button id="btnAncora">Ancora</button>
+  </div>
+</div></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ══════════════════════════════════════════════════════════════
+   PROTOTIPO RUNNER — test di fattibilità, non collegato al gioco.
+
+   Il personaggio non si muove mai davvero: scorre il mondo.
+   La profondità è una z fra 0 (addosso a noi) e 1 (in fondo);
+   la prospettiva è una sola formula, projetta(), usata da tutti.
+
+   Gli asset veri vengono caricati da ../../assets/in_app_game/ se ci sono,
+   altrimenti il gioco disegna dei segnaposto e gira lo stesso.
+   ══════════════════════════════════════════════════════════════ */
+
+const cv  = document.getElementById('cv');
+const ctx = cv.getContext('2d', { alpha:false });
+
+/* ---------- misure: 9:16 dentro qualunque finestra ---------- */
+const W = 720, H = 1280;           // risoluzione logica del gioco
+cv.width = W; cv.height = H;
+
+function adatta(){
+  const box = document.getElementById('stage');
+  const k = Math.min(innerWidth / W, innerHeight / H);
+  box.style.width  = Math.round(W * k) + 'px';
+  box.style.height = Math.round(H * k) + 'px';
+}
+addEventListener('resize', adatta); adatta();
+
+/* ---------- geometria del corridoio ----------
+   Il corridoio curva, e non di una curva regolare: il bordo sinistro
+   prima si allarga e poi rientra. Nessuna formula la indovina, quindi
+   i due bordi della pista sono stati TRACCIATI A MANO sul fondale con
+   test/runner/taratura.html, e qui sotto ci sono i punti misurati.
+
+   Coppie [y, x] in coordinate di gioco (720x1280), dall'alto in basso.
+   Se un giorno cambia il fondale, si rifa' la taratura e si sostituiscono
+   queste due tabelle: non c'e' altro da toccare. */
+const PISTA_SX = [[705,198],[724,209],[739,215],[753,213],[772,206],[788,197],
+                  [808,188],[824,177],[848,160],[920,113],[995,56],[1039,18]];
+const PISTA_DX = [[682,199],[686,240],[688,293],[709,332],[741,390],[788,449],
+                  [856,531],[924,601],[1023,693]];
+
+/* Dove FINISCONO in alto le cose appoggiate ai due lati: il bordo del
+   soffitto, misurato sul fondale. Coppie [x, y]. La conferma e' che
+   questi valori coincidono con la cima dei montanti dipinti nel
+   corridoio originale, prima che li togliessimo. */
+const CIMA_VETRO  = [[200,605],[240,599],[280,588],[320,572],[360,551],[400,513],
+                     [440,463],[480,411],[520,352],[560,290],[600,225],[640,160],
+                     [680,95],[700,64]];
+/* Dove il vetro POGGIA: e' piu' in basso del bordo della pista, che
+   corre dentro la ghiaia. Misurata sulla base dei montanti dipinti
+   nel corridoio originale — riconoscibile perche' li' comincia il
+   loro riflesso sul pavimento a specchio. */
+const BASE_VETRO = [[273,695],[284,699],[295,703],[306,707],[318,713],[331,723],
+                    [422,793],[451,826],[494,872],[569,968]];
+
+const CIMA_PARETE = [[0,372],[30,398],[60,424],[90,451],[120,477],[150,507],
+                     [170,527],[190,567],[200,605]];
+
+const Y_FONDO = 690;        // dove i due bordi si chiudono, in fondo alla curva
+const K       = 7;          // quanto "stringe" la profondita'
+const LARGO   = 0.26;       // distanza fra le corsie, in frazione di pista
+
+/* Dove passa un bordo all'altezza y. Fra due punti si va dritti; sopra
+   il primo e sotto l'ultimo si prosegue con la pendenza del tratto
+   d'estremita' (in basso la pista esce dallo schermo, ed e' giusto cosi'). */
+function bordo(t, y){
+  if (y <= t[0][0]) return t[0][1];
+  const u = t.length - 1;
+  if (y >= t[u][0]){
+    const [ya,xa] = t[u-1], [yb,xb] = t[u];
+    return xb + (xb - xa) * (y - yb) / (yb - ya);
+  }
+  for (let i=1; i<=u; i++){
+    if (y <= t[i][0]){
+      const [ya,xa] = t[i-1], [yb,xb] = t[i];
+      return xa + (xb - xa) * (y - ya) / (yb - ya || 1);
+    }
+  }
+  return t[u][1];
+}
+const BANDA_SOTTO = bordo(PISTA_DX, H) - bordo(PISTA_SX, H);
+
+// z=0 → davanti a noi, z cresce andando in fondo.
+function proietta(z, corsia){
+  const p = Math.min(1.15, 1 / (1 + z * K));
+  const y = Y_FONDO + (H - Y_FONDO) * p;
+  const L = bordo(PISTA_SX, y), R = bordo(PISTA_DX, y), banda = R - L;
+  return {
+    p, y,
+    x: L + banda * (0.5 + corsia * LARGO),
+    scala: banda / BANDA_SOTTO       // la pista misurata da gia' la profondita' giusta
+  };
+}
+
+/* ---------- asset: se ci sono si usano, se no segnaposto ---------- */
+const A = {};
+function carica(nome, file){
+  return new Promise(ok => {
+    const im = new Image();
+    im.onload  = () => { A[nome] = im; ok(); };
+    im.onerror = () => { A[nome] = null; ok(); };   // manca: si va di segnaposto
+    im.src = '../../assets/in_app_game/' + file;
+  });
+}
+const PRONTI = Promise.all([
+  carica('fondale',   'run_corridoio_scena.webp'),
+  carica('montante',  'run_montante.webp'),
+  carica('costola',   'run_parete_costola.webp'),
+  carica('corsa',     'run_pg_corsa.webp'),
+  carica('carrello',  'run_ost_carrello.webp'),
+  carica('rosso',     'run_anello_rosso.webp'),
+  carica('verde',     'run_anello_verde.webp'),
+  carica('blu',       'run_anello_blu.webp'),
+  carica('vita',      'run_vita.webp'),
+  carica('traguardo', 'run_traguardo.webp'),
+  carica('arcobaleno','run_ost_arcobaleno.webp'),
+  carica('scivolata', 'run_pg_scivolata.webp'),
+  carica('iphone',    'run_bonus_iphone.webp'),
+  carica('computer',  'run_bonus_computer.webp'),
+  carica('visore',    'run_bonus_visore.webp'),
+  carica('cartello',  'run_ost_cartello.webp'),
+  carica('salto',     'run_pg_salto.webp')
+]);
+
+/* ---------- stato ---------- */
+const S = {
+  fase:'attesa',      // attesa | corsa | fine
+  corsia:0,           // -1, 0, +1
+  corsiaVista:0,      // posizione morbida, insegue corsia
+  velocita:0.62,      // z al secondo
+  distanza:0,
+  punti:0,
+  passo:0,            // fase del ciclo di corsa
+  scorri:0,           // scorrimento del pavimento
+  cose:[],            // { tipo:'anello'|'ostacolo', z, corsia, anello, presa }
+  raccolti:0,         // punti dagli anelli, separati da quelli della corsa
+  prossimo:0,         // fra quanta distanza generare il prossimo gruppo
+  lezione:null,       // quale spiegazione e' aperta adesso
+  imparate:{},        // quelle gia' viste in questa partita
+  collezione:{},      // quali dei tre prodotti sono gia' stati presi
+  respiro:false,      // il gruppo dopo l'arcobaleno dev'essere innocuo
+  scivola:0,
+  salto:0,            // quanto manca alla fine del salto          // quanto manca alla fine della scivolata
+  traguardo:0,        // l'ultimo migliaio gia' festeggiato
+  vite:2,
+  intoccabile:0,     // dopo un colpo si lampeggia e non si muore due volte
+  scossa:0
+};
+window.RUN = S;   // esposto per il collaudo automatico
+const RECORD = 'fl_runner_record';
+let record = 0;
+try { record = +(localStorage.getItem(RECORD) || 0) || 0; } catch(e){}
+
+/* ---------- generazione del percorso ----------
+   Gli anelli sono quelli dell'attivita' dell'orologio, e non sono
+   intercambiabili: ognuno vale quanto e' difficile prenderlo.
+
+     VERDE  in fila sulla stessa corsia — si prende correndo dritti
+     BLU    alterna le corsie — costringe a zigzagare
+     ROSSO  attaccato a un ostacolo — lo prendi e devi schivare subito
+
+   Il colore dice il rischio prima ancora del punteggio: si impara a
+   vedere il rosso e prepararsi, che e' esattamente il punto. */
+const NASCE = 1.6;   // a che distanza compaiono le cose: e' il tempo di reazione
+/* Distanza fra un anello e il successivo. Stretti sembravano un blocco
+   solo; larghi si prendono uno per uno, come le monete. */
+const PASSO_ANELLI = 0.105;
+const ANELLI = {
+  verde: { valore: 10 },
+  blu:   { valore: 25 },
+  rosso: { valore: 50 }
+};
+
+function anello(colore, z, corsia){
+  S.cose.push({ tipo:'anello', anello:colore, z, corsia });
+}
+/* La ricarica compare di rado, e piu' spesso quando serve davvero:
+   trovarla col cuore pieno e' un premio sprecato. */
+function forseVita(z, corsia){
+  const probabilita = S.vite >= 2 ? 0.07 : 0.34;
+  if (Math.random() < probabilita) S.cose.push({ tipo:'vita', z, corsia });
+}
+/* ---------- le chicche ----------
+   Regola, e va tenuta: il carrello e' l'unica cosa che toglie un cuore.
+
+   Sono rimasti solo gli oggetti che hanno un disegno vero. I segnaposto
+   grigi e colorati (cubo, matita, adattatore, cavi) sono stati tolti: un
+   quadratino anonimo che vale punti non insegna niente, e a schermo
+   sembrava un errore piu' che un oggetto. Cosi' nel percorso ci sono tre
+   cose sole da leggere — gli anelli, i prodotti nelle bolle, il cuore. */
+const CHICCHE = {
+  iphone:   { valore: 100, segnaposto:'#2b2b2e', alone:'#4ac6e8' },
+  computer: { valore: 100, segnaposto:'#d8cfae', alone:'#f0b722' },
+  visore:   { valore: 100, segnaposto:'#cfd0e4', alone:'#b58ce8' }
+};
+const COLLEZIONE = ['iphone','computer','visore'];
+const BONUS_COLLEZIONE = 300;
+
+function forseChicca(z, corsia){
+  // solo i tre prodotti, uno per partita, e non a ogni gruppo
+  if (Math.random() > 0.09) return;
+  const restano = COLLEZIONE.filter(k => !S.collezione[k]);
+  if (!restano.length) return;
+  S.cose.push({ tipo:'chicca', quale: restano[Math.random()*restano.length | 0], z, corsia });
+}
+
+/* ---------- l'arcobaleno ----------
+   Occupa tutto il corridoio e si passa solo sotto il centro, scivolando.
+   La forma dice gia' la regola: un arco e' alto in mezzo e basso ai
+   lati, quindi dove ci si passa si vede senza doverlo spiegare.
+
+   E' il primo ostacolo che chiede DUE cose insieme — mettersi al
+   centro e scivolare — percio' nasce piu' lontano degli altri: la
+   difficolta' dev'essere nel farlo, non nel non avere tempo. */
+const NASCE_ARCO = 2.4;
+const SCIVOLATA  = 0.55;      // quanto dura, in secondi
+const SALTO      = 0.62;      // idem per il salto
+
+function scivola(){
+  if (S.fase !== 'corsa' || S.scivola > 0 || S.salto > 0) return;
+  S.scivola = SCIVOLATA;
+}
+function salta(){
+  if (S.fase !== 'corsa' || S.salto > 0 || S.scivola > 0) return;
+  S.salto = SALTO;
+}
+
+/* ---------- i traguardi ----------
+   Ogni mille punti un'icona d'oro risale il corridoio piu' grande di
+   tutto il resto. NON si raccoglie e non si schiva: passa e basta.
+   E' un applauso, non un'altra cosa da inseguire — se si potesse
+   prendere diventerebbe l'ennesimo oggetto da valutare in corsa.
+
+   E' anche il metro della velocita': ogni traguardo e' uno scalino. */
+const OGNI_TRAGUARDO = 1000;
+
+function controllaTraguardo(){
+  const quanti = (S.punti / OGNI_TRAGUARDO) | 0;
+  if (quanti <= S.traguardo) return;
+  S.traguardo = quanti;
+  S.cose.push({ tipo:'traguardo', z:1.15, corsia:0, quota:quanti * OGNI_TRAGUARDO });
+}
+
+function corsiaDiversa(da){
+  return [-1,0,1].filter(x => x !== da)[Math.random()*2 | 0];
+}
+
+function genera(){
+  const c = (Math.random()*3 | 0) - 1;
+
+  /* Dopo l'arcobaleno serve una tregua: ci si rialza dalla scivolata e
+     un carrello subito dopo non e' difficile, e' ingiusto. */
+  if (S.respiro){
+    S.respiro = false;
+    for (let i=0; i<4; i++) anello('verde', NASCE + i*PASSO_ANELLI, c);
+    S.prossimo = 0.7;
+    return;
+  }
+  const r = Math.random();
+
+  if (r < 0.26){
+    // FILA VERDE: nessun ostacolo, si corre dritti e si incassa
+    const n = 4 + (Math.random()*2 | 0);
+    for (let i=0; i<n; i++) anello('verde', NASCE + i*PASSO_ANELLI, c);
+    forseVita(NASCE + 0.34, corsiaDiversa(c));
+    forseChicca(NASCE + 0.20, c);            // in mezzo alla fila comoda
+    S.prossimo = 0.62;
+
+  } else if (r < 0.44){
+    // ZIGZAG BLU: due terzetti su corsie diverse, obbligano a spostarsi
+    const d = corsiaDiversa(c);
+    for (let i=0; i<3; i++) anello('blu', NASCE + i*PASSO_ANELLI, c);
+    for (let i=0; i<3; i++) anello('blu', NASCE + 0.42 + i*PASSO_ANELLI, d);
+    forseVita(NASCE + 0.5, c);
+    forseChicca(NASCE + 0.16, corsiaDiversa(c));
+    S.prossimo = 0.75;
+
+  } else if (r < 0.60){
+    // CARTELLO: o lo schivi di lato o lo scavalchi
+    S.cose.push({ tipo:'cartello', z:NASCE, corsia:c });
+    for (let i=0; i<3; i++) anello('verde', NASCE - 0.35 + i*PASSO_ANELLI, c);
+    forseChicca(NASCE + 0.30, corsiaDiversa(c));
+    S.prossimo = 0.62;
+
+  } else if (r < 0.80){
+    // ROSSI DAVANTI ALL'OSTACOLO: si prendono e si schiva all'ultimo
+    for (let i=0; i<2; i++) anello('rosso', NASCE + 0.18 + i*PASSO_ANELLI, c);
+    S.cose.push({ tipo:'ostacolo', z: NASCE, corsia: c });
+    for (let i=0; i<3; i++) anello('verde', NASCE + i*PASSO_ANELLI, corsiaDiversa(c));
+    forseChicca(NASCE + 0.42, c);
+    S.prossimo = 0.7;
+
+  } else if (r < 0.94){
+    // ARCOBALENO: la strada e' libera, il problema e' arrivarci pronti
+    S.cose.push({ tipo:'arco', z: NASCE_ARCO, corsia: 0 });
+    S.respiro = true;
+    for (let i=0; i<4; i++) anello('verde', NASCE_ARCO - 0.60 + i*PASSO_ANELLI, 0);
+    S.prossimo = 1.15;
+
+  } else {
+    // due ostacoli: resta una corsia sola, e li' ci sono dei blu
+    const a = c, b = corsiaDiversa(a);
+    S.cose.push({ tipo:'ostacolo', z:NASCE, corsia:a });
+    S.cose.push({ tipo:'ostacolo', z:NASCE, corsia:b });
+    const sola = [-1,0,1].find(x => x !== a && x !== b);
+    for (let i=0; i<3; i++) anello('blu', NASCE + i*PASSO_ANELLI, sola);
+    S.prossimo = 0.85;
+  }
+}
+
+/* ---------- il minitutorial ----------
+   Non un elenco di regole prima di cominciare: si gioca, e la prima
+   volta che una cosa compare il gioco si ferma e la spiega mentre e'
+   li' da vedere. Il riquadro sta in basso apposta, per non coprirla.
+
+   Si vede una volta sola, poi mai piu' (?tutorial=1 lo rimette). */
+const IMPARATO = 'fl_runner_tutorial';
+let giaImparato = false;
+try { giaImparato = localStorage.getItem(IMPARATO) === '1'; } catch(e){}
+if (location.search.includes('tutorial=1')) giaImparato = false;
+
+const LEZIONI = {
+  comandi: {
+    titolo: 'I comandi',
+    corpo: '<div class="dita"><span style="--v:-14px">◀</span>' +
+           '<span style="--v:14px">▶</span></div>' +
+           '<p><b>Destra e sinistra</b> per cambiare corsia.<br>' +
+           '<b>Su</b> per saltare · <b>Giù</b> per scivolare.</p>'
+  },
+  /* Una scheda sola con tutto quello che si incontra: prima erano
+     quattro lezioni e il gioco si fermava di continuo nei primi
+     trenta secondi, che e' proprio quando uno vuole giocare. */
+  punti: {
+    titolo: 'Cosa vale cosa',
+    corpo: '<p><b class="verde">Anello verde 10</b> · <b class="blu">blu 25</b> · ' +
+           '<b class="rosso">rosso 50</b><br>' +
+           'I prodotti nelle bolle: <b class="verde">100 a testa</b><br>' +
+           'Il cuore ti ridà un tentativo<br><br>' +
+           'Carrelli e cartelli ti costano un cuore.<br>' +
+           'L\'arcobaleno si passa <b>al centro, scivolando</b>.</p>'
+  }
+};
+
+function spiega(quale){
+  if (giaImparato || S.imparate[quale]) return;
+  S.imparate[quale] = true;
+  S.lezione = quale;
+  S.fase = 'lezione';                       // il mondo si ferma, il disegno no
+  document.getElementById('lezTitolo').textContent = LEZIONI[quale].titolo;
+  document.getElementById('lezCorpo').innerHTML   = LEZIONI[quale].corpo;
+  document.getElementById('lezione').hidden = false;
+}
+function riprendi(){
+  document.getElementById('lezione').hidden = true;
+  S.lezione = null;
+  if (S.fase === 'lezione') S.fase = 'corsa';
+}
+document.getElementById('lezOk').onclick = riprendi;
+
+/* Quando fermarsi: appena la cosa e' comparsa ed e' ancora lontana,
+   cosi' si guarda con calma quello di cui si sta parlando. */
+function controllaLezioni(){
+  if (giaImparato) return;
+  if (!S.imparate.comandi && S.distanza > 0.12) return spiega('comandi');
+  if (!S.imparate.punti   && S.distanza > 0.55) return spiega('punti');
+}
+
+/* ---------- comandi ---------- */
+function muovi(d){
+  if (S.fase === 'lezione'){ riprendi(); return; }
+  if (S.fase !== 'corsa') return;
+  S.corsia = Math.max(-1, Math.min(1, S.corsia + d));
+}
+addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft')  { muovi(-1); e.preventDefault(); }
+  if (e.key === 'ArrowRight') { muovi(+1); e.preventDefault(); }
+  if (e.key === 'ArrowDown')  { giu(); e.preventDefault(); }
+  if (e.key === 'ArrowUp')    { su(); e.preventDefault(); }
+});
+function su(){
+  if (S.fase === 'lezione'){ riprendi(); return; }
+  salta();
+}
+function giu(){
+  if (S.fase === 'lezione'){ riprendi(); return; }
+  scivola();
+}
+let tx = 0, ty = 0, tattivo = false;
+cv.addEventListener('touchstart', e => {
+  const t = e.changedTouches[0]; tx = t.clientX; ty = t.clientY; tattivo = true;
+}, { passive:true });
+cv.addEventListener('touchmove', e => {
+  if (!tattivo) return;
+  const t = e.changedTouches[0], dx = t.clientX - tx, dy = t.clientY - ty;
+  if (Math.abs(dx) > 26 && Math.abs(dx) > Math.abs(dy)){
+    muovi(dx > 0 ? +1 : -1); tattivo = false;
+  } else if (dy > 30 && Math.abs(dy) > Math.abs(dx)){
+    giu(); tattivo = false;
+  } else if (dy < -30 && Math.abs(dy) > Math.abs(dx)){
+    su(); tattivo = false;
+  }
+}, { passive:true });
+cv.addEventListener('touchend', () => { tattivo = false; }, { passive:true });
+// col mouse: click sulla metà destra o sinistra
+cv.addEventListener('mousedown', e => {
+  const r = cv.getBoundingClientRect();
+  muovi(e.clientX - r.left < r.width/2 ? -1 : +1);
+});
+
+/* ---------- disegno: segnaposto ---------- */
+function fondaleFinto(){
+  // cielo/vetro a destra, parete a sinistra, pavimento
+  ctx.fillStyle = '#f2f2ee'; ctx.fillRect(0, 0, W, H);
+  // pavimento: gli stessi due bordi misurati sul fondale vero
+  ctx.fillStyle = '#e6e6e1';
+  ctx.beginPath();
+  for (let i=0; i<=20; i++){ const y = Y_FONDO + (H-Y_FONDO)*(i/20); i?ctx.lineTo(bordo(PISTA_SX,y),y):ctx.moveTo(bordo(PISTA_SX,y),y); }
+  for (let i=20; i>=0; i--){ const y = Y_FONDO + (H-Y_FONDO)*(i/20); ctx.lineTo(bordo(PISTA_DX,y), y); }
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#dfe6dc';                       // verde oltre il vetro
+  ctx.beginPath(); ctx.moveTo(W, Y_FONDO - 30); ctx.lineTo(W, H);
+  for (let i=20; i>=0; i--){ const y = Y_FONDO + (H-Y_FONDO)*(i/20); ctx.lineTo(bordo(PISTA_DX,y), y); }
+  ctx.closePath(); ctx.fill();
+  // montanti del vetro
+  ctx.strokeStyle = 'rgba(60,64,60,.5)'; ctx.lineWidth = 3;
+  for (let i=1; i<=9; i++){
+    const z = i*i*0.02, q = proietta(z, 1.6);
+    ctx.beginPath(); ctx.moveTo(q.x, q.y); ctx.lineTo(q.x, q.y - 640*q.scala); ctx.stroke();
+  }
+}
+
+function pavimentoFinto(){
+  // righe trasversali che scorrono: bastano a dare la velocità
+  ctx.strokeStyle = 'rgba(120,124,120,.22)'; ctx.lineWidth = 2;
+  for (let i=0; i<26; i++){
+    const z = ((i * 0.09) - (S.scorri % 0.09) + 0.09) % 2.34;
+    if (z > 1.4) continue;
+    const a = proietta(z, -1.9), b = proietta(z, 1.9);
+    ctx.globalAlpha = Math.min(1, a.scala * 1.6);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* Un punteggio che cambia senza dire perche' non insegna niente:
+   il numero parte da dove hai preso la cosa e sale sfumando. */
+const SEGNALI = [];
+function segnale(c, testo, buona){
+  const q = proietta(Math.max(c.z, 0.02), c.corsia);
+  SEGNALI.push({ x:q.x, y:q.y - 120 * q.scala, testo, buona, vita:1 });
+}
+function disegnaSegnali(dt){
+  for (const s of SEGNALI){
+    s.vita -= dt * 1.1;
+    s.y -= dt * 90;
+  }
+  while (SEGNALI.length && SEGNALI[0].vita <= 0) SEGNALI.shift();
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 46px system-ui, -apple-system, sans-serif';
+  for (const s of SEGNALI){
+    ctx.globalAlpha = Math.max(0, Math.min(1, s.vita));
+    ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(255,255,255,.85)';
+    ctx.strokeText(s.testo, s.x, s.y);
+    ctx.fillStyle = s.buona ? '#2f8f4e' : '#c0453f';
+    ctx.fillText(s.testo, s.x, s.y);
+  }
+  ctx.globalAlpha = 1; ctx.textAlign = 'left';
+}
+
+// macchia a terra sotto un oggetto: dice a colpo d'occhio su che corsia sta
+function ombra(x, y, raggio, forza){
+  ctx.fillStyle = 'rgba(40,46,52,' + forza + ')';
+  ctx.beginPath();
+  ctx.ellipse(x, y, raggio, raggio * 0.30, 0, 0, 7);
+  ctx.fill();
+}
+
+/* ---------- quello che scorre ai lati ----------
+   Il fondale e' un guscio fermo: montanti e costole sono pezzi separati
+   disegnati sopra, con la stessa prospettiva delle corsie.
+
+   Il parco NON si muove: e' dipinto nel fondale. Una striscia che
+   scorreva oltre il vetro e' stata provata e tolta — tagliava gli alberi
+   e la giuntura col prato dipinto si vedeva. */
+const PASSO_MONTANTE = 0.17;    // ogni quanta profondita' passa un montante
+const PASSO_COSTOLA  = 0.55;    // le costole sono molto piu' rade
+const FONDO_VISTA    = 1.9;     // fin dove si disegnano
+
+/* Un montante non e' alto "tanto quanto e' vicino": parte dal pavimento
+   e ARRIVA AL SOFFITTO. L'altezza viene dalla differenza fra i due bordi
+   misurati, non da un moltiplicatore — e' quello che li faceva crescere
+   all'infinito come pali della luce.
+
+   La larghezza invece non viene dalle proporzioni del file: montante e
+   costola erano disegnati larghi per leggersi da soli, in scena sono
+   stecche. */
+function fila(img, passo, cima, base, spessore, pista, scarto){
+  if (!img) return;
+  const n = Math.ceil(FONDO_VISTA / passo);
+  for (let i = n; i >= 0; i--){
+    const z = i * passo - (S.scorri % passo);
+    if (z < 0.015 || z > FONDO_VISTA) continue;
+    const q = proietta(z, 0);
+    const x = bordo(pista, q.y) + scarto * q.scala;
+    const giu = base ? bordo(base, x) : q.y;
+    const su = bordo(cima, x);
+    const alt = giu - su;
+    if (alt < 6) continue;
+    const largo = Math.max(2.2, alt * spessore);   // in fondo restano visibili
+    ctx.drawImage(img, x - largo/2, su, largo, alt);
+  }
+}
+
+function sagoma(x, y, s, colore){
+  ctx.fillStyle = colore;
+  ctx.beginPath();
+  ctx.roundRect(x - s*0.28, y - s, s*0.56, s, s*0.14);
+  ctx.fill();
+}
+
+/* ---------- disegno: personaggio ---------- */
+function personaggio(){
+  const q = proietta(0.06, S.corsiaVista);
+  const alt = 300 * q.scala * 1.74;
+  const x = q.x, y = q.y + 10;
+  ombra(x, y, alt * 0.20, 0.20);
+  // appena colpiti si lampeggia: dice che per un attimo non si muore
+  const lampeggia = S.intoccabile > 0 && ((S.intoccabile * 12) | 0) % 2 === 0;
+  ctx.globalAlpha = lampeggia ? 0.35 : 1;
+
+  /* Il salto alza il personaggio e scorre i quattro fotogrammi: sale
+     fino all'apice e ridiscende sugli stessi, al contrario. */
+  let sollevato = 0;
+  if (S.salto > 0){
+    const t = 1 - S.salto / SALTO;                 // 0 stacco, 1 atterraggio
+    sollevato = Math.sin(t * Math.PI) * alt * 0.62;
+  }
+  if (S.salto > 0 && A.salto){
+    const im = A.salto, fw = im.width / 4;
+    const t = 1 - S.salto / SALTO;
+    const f = Math.min(3, Math.round((t < 0.5 ? t : 1 - t) * 6));
+    const w = alt * (fw / im.height);
+    ctx.drawImage(im, f * fw, 0, fw, im.height,
+                  x - w/2, y - alt - sollevato, w, alt);
+  } else if (S.salto > 0){
+    ctx.fillStyle = '#3f6ea8';
+    ctx.beginPath();
+    ctx.roundRect(x - alt*0.26, y - alt*0.9 - sollevato, alt*0.52, alt*0.8, alt*0.14);
+    ctx.fill();
+  } else if (S.scivola > 0 && A.scivolata){
+    const im = A.scivolata, h = alt * 0.5;         // steso: meta' altezza
+    const w = h * (im.width / im.height);
+    ctx.drawImage(im, x - w/2, y - h, w, h);
+  } else if (S.scivola > 0){
+    // segnaposto: sagoma bassa e larga, si capisce che e' steso
+    ctx.fillStyle = '#3f6ea8';
+    ctx.beginPath();
+    ctx.roundRect(x - alt*0.30, y - alt*0.45, alt*0.60, alt*0.45, alt*0.12);
+    ctx.fill();
+  } else if (A.corsa){
+    const im = A.corsa, fw = im.width / 4;
+    const f = (S.passo | 0) % 4;
+    const w = alt * (fw / im.height);
+    ctx.drawImage(im, f * fw, 0, fw, im.height, x - w/2, y - alt, w, alt);
+  } else {
+    const salto = Math.abs(Math.sin(S.passo * Math.PI / 2)) * alt * 0.06;
+    sagoma(x, y - salto, alt, '#3f6ea8');
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ---------- ciclo ---------- */
+let ultimo = performance.now(), fpsAcc = 0, fpsN = 0;
+
+function passo(ora){
+  requestAnimationFrame(passo);
+  let dt = (ora - ultimo) / 1000; ultimo = ora;
+  if (dt > 0.05) dt = 0.05;                     // niente salti dopo un blocco
+
+  if (S.fase === 'corsa'){ aggiorna(dt); controllaLezioni(); }
+  disegna();
+
+  fpsAcc += dt; fpsN++;
+  if (fpsAcc > 0.5){
+    document.getElementById('fps').textContent = Math.round(fpsN / fpsAcc) + ' fps';
+    fpsAcc = 0; fpsN = 0;
+  }
+}
+
+function aggiorna(dt){
+  /* La velocita' non sale di continuo ma A SCALINI, uno per traguardo:
+     salire sempre un pochino diventa subito ingestibile e non si capisce
+     perche'. Cosi' invece ogni scalino e' un momento riconoscibile, e in
+     mezzo c'e' un tratto in cui si prende la mano. */
+  const scalino = Math.min(6, (S.punti / OGNI_TRAGUARDO) | 0);
+  const voluta = 0.62 + scalino * 0.17;
+  S.velocita += (voluta - S.velocita) * Math.min(1, dt * 1.6);
+  const avanti = S.velocita * dt;
+  S.distanza += avanti;
+  S.scorri   += avanti;
+  S.passo    += dt * (7 + S.velocita * 5);
+  S.corsiaVista += (S.corsia - S.corsiaVista) * Math.min(1, dt * 14);
+  if (S.scossa > 0) S.scossa -= dt;
+  if (S.intoccabile > 0) S.intoccabile -= dt;
+  if (S.scivola > 0) S.scivola -= dt;
+  if (S.salto > 0) S.salto -= dt;
+
+  controllaTraguardo();
+  S.prossimo -= avanti;
+  if (S.prossimo <= 0) genera();
+
+  for (const c of S.cose){
+    c.z -= avanti;
+    if (c.presa) continue;
+    if (c.tipo === 'traguardo') continue;        // si attraversa
+    if (c.tipo === 'arco'){
+      if (c.z < 0.10 && c.z > -0.02 && !c.presa){
+        const dentro = Math.abs(S.corsiaVista) < 0.45;   // corsia di mezzo
+        if (!(dentro && S.scivola > 0)){
+          c.presa = true; colpito(); if (S.fase !== 'corsa') return;
+        } else c.presa = true;                            // passato pulito
+      }
+      continue;
+    }
+    if (c.tipo === 'ostacolo' && S.intoccabile > 0) continue;
+    if (c.tipo === 'cartello'){
+      if (S.intoccabile > 0) continue;
+      if (c.z < 0.10 && c.z > -0.02 && !c.presa &&
+          Math.abs(c.corsia - S.corsiaVista) < 0.55 && S.salto <= 0){
+        c.presa = true; colpito(); if (S.fase !== 'corsa') return;
+      }
+      continue;
+    }
+    if (c.z < 0.10 && c.z > -0.02 && Math.abs(c.corsia - S.corsiaVista) < 0.55){
+      if (c.tipo === 'anello'){
+        c.presa = true;
+        S.raccolti += ANELLI[c.anello].valore;
+      } else if (c.tipo === 'vita'){
+        c.presa = true;
+        if (S.vite < 2){ S.vite++; mostraVite('guarito'); segnale(c, '+♥', true); }
+        else { S.raccolti += 25; segnale(c, '+25', true); }   // col cuore pieno vale punti
+      } else if (c.tipo === 'chicca'){
+        c.presa = true;
+        const k = CHICCHE[c.quale];
+        S.raccolti += k.valore;
+        segnale(c, '+' + k.valore, true);
+        S.collezione[c.quale] = true;
+        if (COLLEZIONE.every(x => S.collezione[x])){
+          S.raccolti += BONUS_COLLEZIONE;
+          segnale({ z:0.06, corsia:S.corsiaVista }, '+' + BONUS_COLLEZIONE, true);
+        }
+      } else {
+        c.presa = true;                          // un carrello colpisce una volta sola
+        colpito(); if (S.fase !== 'corsa') return;
+      }
+    }
+  }
+  S.cose = S.cose.filter(c => c.z > -0.02);   // superato = fuori scena
+
+  // gli anelli valgono, ma anche il solo restare in piedi
+  // sotto zero non si va: un punteggio negativo sembra un guasto
+  S.punti = Math.max(0, S.raccolti + ((S.distanza * 4) | 0));
+  document.getElementById('punti').textContent = S.punti;
+}
+
+function disegna(){
+  ctx.save();
+  if (S.scossa > 0){
+    ctx.translate((Math.random()-.5) * 14 * S.scossa, (Math.random()-.5) * 14 * S.scossa);
+  }
+
+  if (A.fondale) ctx.drawImage(A.fondale, 0, 0, W, H);
+  else fondaleFinto();
+
+  fila(A.montante, PASSO_MONTANTE, CIMA_VETRO,  BASE_VETRO, 0.014, PISTA_DX, -20);
+  fila(A.costola,  PASSO_COSTOLA,  CIMA_PARETE, null,       0.030, PISTA_SX, -25);
+  pavimentoFinto();
+
+  // le cose lontane per prime, cosi' le vicine coprono
+  const ord = S.cose.slice().sort((a,b) => b.z - a.z);
+  for (const c of ord){
+    if (c.presa || c.z > NASCE + 0.1 || c.z < -0.02) continue;
+    const q = proietta(c.z, c.corsia);
+
+    if (c.tipo === 'anello'){
+      const s = 152 * q.scala;
+      /* Niente rotazione schiacciata: un anello schiacciato di lato
+         sembra rotto, non in movimento. Galleggia appena. */
+      const su = s * (1.25 + 0.06 * Math.sin(S.distanza * 5 + c.z * 7));
+      ombra(q.x, q.y, s * 0.30, 0.16);
+      const im = A[c.anello];
+      if (im){
+        const w = s * (im.width / im.height);
+        ctx.drawImage(im, q.x - w/2, q.y - su, w, s);
+      } else {
+        ctx.strokeStyle = { rosso:'#c0453f', verde:'#79c245', blu:'#4aa8cc' }[c.anello];
+        ctx.lineWidth = Math.max(2, s*0.16);
+        ctx.beginPath(); ctx.ellipse(q.x, q.y - su*0.6, s*0.33, s*0.33, 0, 0, 7);
+        ctx.stroke();
+      }
+
+    } else if (c.tipo === 'chicca'){
+      /* Le bolle devono farsi venire voglia: respirano di misura e
+         ondeggiano appena. Un oggetto immobile a schermo si ignora. */
+      const k = CHICCHE[c.quale];
+      const s = 260 * q.scala;
+      const su = s * (1.25 + 0.07 * Math.sin(S.distanza*5 + c.z*7));
+      const battito = 1 + 0.09 * Math.sin(S.distanza * 7 + c.z * 4);
+      const dondolo = 0.10 * Math.sin(S.distanza * 3.5 + c.z * 3);
+      ombra(q.x, q.y, s * 0.30, 0.14);
+      ctx.save();
+      ctx.globalAlpha = 0.5; ctx.fillStyle = k.alone;
+      ctx.beginPath(); ctx.ellipse(q.x, q.y - su + s*0.45, s*0.62, s*0.62, 0, 0, 7);
+      ctx.fill(); ctx.restore();
+      const im = A[c.quale];
+      if (im){
+        const h = s * battito, w = h * (im.width / im.height);
+        ctx.save();
+        ctx.translate(q.x, q.y - su + s/2); ctx.rotate(dondolo);
+        ctx.drawImage(im, -w/2, -h/2, w, h);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = k.segnaposto; ctx.strokeStyle = '#8a8a80';
+        ctx.lineWidth = Math.max(2, s*0.06);
+        ctx.beginPath(); ctx.roundRect(q.x - s*0.36, q.y - su, s*0.72, s*0.72, s*0.18);
+        ctx.fill(); ctx.stroke();
+      }
+
+    } else if (c.tipo === 'vita'){
+      const s = 140 * q.scala;
+      const su = s * (1.3 + 0.07 * Math.sin(S.distanza * 5 + c.z * 7));
+      ombra(q.x, q.y, s * 0.28, 0.16);
+      const im = A.vita;
+      if (im){
+        const w = s * (im.width / im.height);
+        ctx.drawImage(im, q.x - w/2, q.y - su, w, s);
+      } else {
+        ctx.fillStyle = '#fff'; ctx.strokeStyle = '#d9453f';
+        ctx.lineWidth = Math.max(2, s*0.09);
+        ctx.beginPath(); ctx.roundRect(q.x - s*0.4, q.y - su, s*0.8, s*0.8, s*0.2);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#d9453f';
+        ctx.font = 'bold ' + (s*0.55|0) + 'px system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('\u2665', q.x, q.y - su + s*0.42);
+        ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      }
+
+    } else if (c.tipo === 'arco'){
+      const L = bordo(PISTA_SX, q.y), R = bordo(PISTA_DX, q.y);
+      const cx = (L + R) / 2, cy = q.y;
+      const im = A.arcobaleno;
+      if (im){
+        /* Il varco dell'immagine e' il 42% della sua altezza: si dimensiona
+           su quello, perche' e' l'unica misura che conta — deve starci
+           dentro il personaggio steso e non quello in piedi. */
+        const h = 720 * q.scala, w = h * (im.width / im.height);
+        ctx.drawImage(im, cx - w/2, cy - h, w, h);
+      } else {
+        const fuoriA = (R - L) / 2, fuoriB = 676 * q.scala;
+        const dentroA = (R - L) * 0.20, dentroB = 268 * q.scala;
+        const tinte = ['#4a9e3f','#e8c22a','#e88a22','#d94b3f',
+                       '#c8409c','#7a48b8','#3f8ad9'];
+        for (let k=0; k<tinte.length; k++){
+          const t0 = k / tinte.length, t1 = (k+1) / tinte.length;
+          const a0 = fuoriA + (dentroA - fuoriA) * t0, b0 = fuoriB + (dentroB - fuoriB) * t0;
+          const a1 = fuoriA + (dentroA - fuoriA) * t1, b1 = fuoriB + (dentroB - fuoriB) * t1;
+          ctx.fillStyle = tinte[k];
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, a0, b0, 0, Math.PI, 2*Math.PI);
+          ctx.ellipse(cx, cy, a1, b1, 0, 2*Math.PI, Math.PI, true);
+          ctx.closePath(); ctx.fill();
+        }
+      }
+
+    } else if (c.tipo === 'traguardo'){
+      const s = 320 * q.scala;
+      const su = s * (2.1 + 0.10 * Math.sin(S.distanza * 3 + c.z * 5));
+      const cx = q.x, cy = q.y - su + s/2;
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, (1.25 - c.z) * 3);   // entra sfumando
+      const alone = ctx.createRadialGradient(cx, cy, s*0.25, cx, cy, s*0.95);
+      alone.addColorStop(0, 'rgba(240,190,80,.55)');
+      alone.addColorStop(1, 'rgba(240,190,80,0)');
+      ctx.fillStyle = alone;
+      ctx.beginPath(); ctx.arc(cx, cy, s*0.95, 0, 7); ctx.fill();
+      const im = A.traguardo;
+      if (im){
+        const w = s * (im.width / im.height);
+        ctx.drawImage(im, cx - w/2, cy - s/2, w, s);
+      } else {
+        ctx.fillStyle = '#e8b23c'; ctx.strokeStyle = '#a9761c';
+        ctx.lineWidth = Math.max(2, s*0.05);
+        ctx.beginPath(); ctx.roundRect(cx - s*0.42, cy - s*0.42, s*0.84, s*0.84, s*0.22);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold ' + (s*0.5|0) + 'px system-ui, sans-serif';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('\u2605', cx, cy + s*0.02);
+        ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+      }
+      /* Il numero va SOPRA: sotto finisce dietro al personaggio, che
+         corre proprio li' in mezzo. */
+      ctx.font = 'bold ' + Math.max(14, s*0.34|0) + 'px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.lineWidth = Math.max(3, s*0.06); ctx.strokeStyle = 'rgba(255,255,255,.92)';
+      ctx.strokeText(c.quota, cx, cy - s*0.68);
+      ctx.fillStyle = '#b8811f';
+      ctx.fillText(c.quota, cx, cy - s*0.68);
+      ctx.textAlign = 'left';
+      ctx.restore();
+
+    } else if (c.tipo === 'cartello'){
+      const s = 200 * q.scala;
+      ombra(q.x, q.y, s * 0.34, 0.22);
+      if (A.cartello){
+        const im = A.cartello, w = s * (im.width / im.height);
+        ctx.drawImage(im, q.x - w/2, q.y - s, w, s);
+      } else {
+        ctx.fillStyle = '#e8c22a'; ctx.strokeStyle = '#7a6412';
+        ctx.lineWidth = Math.max(2, s*0.06);
+        ctx.beginPath();
+        ctx.moveTo(q.x, q.y - s); ctx.lineTo(q.x + s*0.42, q.y);
+        ctx.lineTo(q.x - s*0.42, q.y); ctx.closePath();
+        ctx.fill(); ctx.stroke();
+      }
+
+    } else {
+      /* I carrelli sono l'unica cosa da schivare di lato: se sembrano
+         bassi si prova a saltarli. Vanno grossi. */
+      const s = 400 * q.scala;
+      ombra(q.x, q.y, s * 0.34, 0.22);
+      if (A.carrello){
+        const im = A.carrello, w = s * (im.width / im.height);
+        ctx.drawImage(im, q.x - w/2, q.y - s, w, s);
+      } else {
+        sagoma(q.x, q.y, s, '#2f3540');
+      }
+    }
+  }
+
+  if (S.fase !== 'attesa') personaggio();
+  disegnaSegnali(S.fase === 'corsa' ? 0.016 : 0);
+  ctx.restore();
+}
+
+/* ---------- inizio e fine ---------- */
+function mostraVite(effetto){
+  const box = document.getElementById('vite');
+  box.innerHTML = '';
+  for (let i=0; i<2; i++){
+    const c = document.createElement('span');
+    c.textContent = '♥';
+    if (i >= S.vite) c.className = 'spenta';
+    box.appendChild(c);
+  }
+  /* L'animazione va tolta e rimessa, se no una seconda botta di fila
+     non la fa ripartire: il nodo ce l'ha gia' addosso. */
+  box.classList.remove('colpito','guarito');
+  void box.offsetWidth;
+  if (effetto) box.classList.add(effetto);
+}
+
+function scoppiaCuore(){
+  const box = document.getElementById('vite');
+  const perso = box.children[S.vite];        // quello appena spento
+  if (!perso) return;
+  const r = perso.getBoundingClientRect(), p = box.parentElement.getBoundingClientRect();
+  const nodo = document.createElement('div');
+  nodo.id = 'scoppio'; nodo.textContent = '♥';
+  nodo.style.left = (r.left - p.left) + 'px';
+  nodo.style.top  = (r.top  - p.top)  + 'px';
+  box.parentElement.appendChild(nodo);
+  setTimeout(() => nodo.remove(), 800);
+}
+
+function colpito(){
+  S.vite--;
+  S.scossa = 0.3;           // un sussulto breve: il gioco non si ferma mai
+  S.intoccabile = 2.0;      // due secondi lampeggiando, poi si riparte
+  mostraVite('colpito');
+  scoppiaCuore();
+  if (S.vite <= 0) finisci();
+}
+
+function via(){
+  S.fase = 'corsa'; S.corsia = 0; S.corsiaVista = 0;
+  S.velocita = 0.62; S.distanza = 0; S.punti = 0; S.raccolti = 0;
+  S.cose = []; S.prossimo = 0.4; S.respiro = false; S.scossa = 0; SEGNALI.length = 0;
+  S.vite = 2; S.intoccabile = 0; S.traguardo = 0; S.scivola = 0; S.salto = 0; mostraVite(null);
+  S.imparate = {}; S.collezione = {}; riprendi();
+  document.getElementById('veloStart').hidden = true;
+  document.getElementById('veloFine').hidden  = true;
+}
+function finisci(){
+  S.fase = 'fine'; S.scossa = 0.5;
+  riprendi();
+  if (!giaImparato && S.imparate.punti){
+    giaImparato = true;
+    try { localStorage.setItem(IMPARATO, '1'); } catch(e){}
+  }
+  if (S.punti > record){
+    record = S.punti;
+    try { localStorage.setItem(RECORD, record); } catch(e){}
+  }
+  document.getElementById('record').textContent = 'record ' + record;
+  document.getElementById('finePunti').textContent = S.punti;
+  document.getElementById('fineNota').textContent =
+    S.punti >= record ? 'Nuovo record.' : 'Il record resta ' + record + '.';
+  document.getElementById('veloFine').hidden = false;
+}
+document.getElementById('btnVia').onclick    = via;
+document.getElementById('btnAncora').onclick = via;
+document.getElementById('record').textContent = 'record ' + record;
+
+PRONTI.then(() => {
+  const mancanti = Object.keys(A).filter(k => !A[k]);
+  if (mancanti.length){
+    document.querySelector('#veloStart small').textContent =
+      'prototipo — grafica finta (' + mancanti.join(', ') + ')';
+  }
+  requestAnimationFrame(passo);
+});
+
+})();
+</script>
+</body>
+</html>

@@ -10,21 +10,15 @@
       "f"
     ],
     "note": "Formato: iPhone portrait 390x844. Il terzo inferiore e' area dialogo.",
-    "assetiInArrivo": [
-      "platea/pla_platea_idle.webp",
-      "platea/pla_applauso_pieno.webp",
-      "platea/pla_applauso_tiepido.webp",
-      "platea/pla_risata.webp",
-      "platea/pla_silenzio_imbarazzato.webp",
-      "platea/pla_coro_nome.webp"
-    ],
     "keynote": "2026-09-09T19:00:00+02:00",
-    "_nota_keynote": "Data e ora del keynote vero, ora locale italiana. Il countdown di S7 conta fin qui. DA CONFERMARE con l'utente: se Apple annuncia un'altra data, si cambia solo questa riga."
+    "_nota_keynote": "Data e ora del keynote vero, ora locale italiana. Il countdown di S7 conta fin qui. Confermata dall'utente il 30 agosto 2026: 9 settembre, ore 19:00.",
+    "_nota_pose_palco": "Le quattro pose 'palco_*' sono figure intere, tagliate dai fogli consegnati il 30 agosto. Servono al giro delle domande di S5: prima il giocatore restava in idle_palco per tutte e ventuno. L'ordine sui fogli NON e' lo stesso per tutti gli stili, quindi il ruolo e' stato assegnato guardandole una per una: attesa = braccia incrociate o in ascolto, presenta = mano aperta che spiega, sicuro = indica (il microfono, per lo showman), dubbio = spalle alzate o perplesso. Sono figure intere come idle_palco: passando dall'una all'altra l'inquadratura non salta, cosa che invece succedeva con le 'espressioni_*', che sono primi piani."
   },
   "assets": {
     "bg": {
       "esterno_vialetto": "bg/bg_esterno_vialetto.webp",
       "esterno_ingresso": "bg/bg_esterno_ingresso.webp",
+      "macintosh": "bg/bg_macintosh.webp",
       "camerino": "bg/bg_camerino.webp",
       "backstage_corridoio": "bg/bg_backstage_corridoio.webp",
       "lobby": "bg/bg_lobby.webp",
@@ -51,8 +45,7 @@
       "slide_watch": "props/prop_schermo_slide_categoria_watch.webp",
       "slide_altro": "props/prop_schermo_slide_categoria_altro.webp",
       "clicker": "props/prop_clicker_inceppato.webp",
-      "gobbo": "props/prop_gobbo_teleprompter.webp",
-      "podio": "props/prop_podium@3x.webp"
+      "gobbo": "props/prop_gobbo_teleprompter.webp"
     },
     "chars": {},
     "platea": {
@@ -99,14 +92,23 @@
         "duo_spinta_drip": "chars/scene_drip_push.webp",
         "duo_spinta_hawaiano": "chars/scene_hawaiian_push.webp",
         "duo_spinta_showman": "chars/scene_showman_push.webp",
-        "duo_spinta_ingegnere": "chars/scene_engineer_push.webp"
+        "duo_spinta_ingegnere": "chars/scene_engineer_push.webp",
+        "severa": "chars/chr_susan_severa.webp",
+        "ordina": "chars/chr_susan_ordina.webp",
+        "regia": "chars/chr_susan_regia.webp",
+        "spazientita": "chars/chr_susan_spazientita.webp",
+        "pensa": "chars/chr_susan_pensa.webp",
+        "incita": "chars/chr_susan_incita.webp",
+        "stop": "chars/chr_susan_stop.webp",
+        "approva": "chars/chr_susan_approva.webp"
       },
       "heads": {},
       "_nota": "Sprite unico per posa (come lucas/francesca): niente head/neck. Le quattro pose commento_* vengono dal foglio chr_susan_commento_stile, tagliato in ordine drip, hawaiano, showman, ingegnere: in S3 si mostra quella che corrisponde a run.stile. Susan e' anche la regia: da S4 in poi parla in cuffia e li' non ha uno sprite in scena, ma l'icona dell'auricolare accanto al nome. Non e' un personaggio di sola voce — in S2, S3 e S7 e' li' davanti — quindi la cuffia la chiede il singolo step con \"incuffia\": true. Le otto pose duo_* sono composizioni GIA' complete (Susan + il personaggio dello stile, proporzioni e posizione decise nel disegno): quando sono in scena l'avatar del giocatore va tenuto nascosto con {t:\"io\",\"hide\":true}, altrimenti si vedrebbe una seconda copia del personaggio sovrapposta.",
       "icona": [
         "chars/chr_indicatore_regia_1.webp",
         "chars/chr_indicatore_regia_2.webp"
-      ]
+      ],
+      "_notaVolti": "Susan NON usa l'inquadratura sul viso (nessun 'volti'): le pose duo_* sono composizioni con DUE persone e il rilevamento del viso ne prenderebbe una sola, inquadrando la coppia sulla faccia sbagliata. Le sue misure le dichiara la scena."
     },
     "francesca": {
       "name": "Francesca",
@@ -119,7 +121,14 @@
         "indica_tenda": "chars/chr_francesca_indica_tenda.webp",
         "orgogliosa": "chars/chr_francesca_orgogliosa.webp",
         "ride": "chars/chr_francesca_ride.webp",
-        "scettica": "chars/chr_francesca_scettica.webp"
+        "scettica": "chars/chr_francesca_scettica.webp",
+        "presenta": "chars/chr_francesca_presenta.webp",
+        "contenta": "chars/chr_francesca_contenta.webp",
+        "pensa": "chars/chr_francesca_pensa.webp",
+        "indica_su": "chars/chr_francesca_indica_su.webp",
+        "spiega": "chars/chr_francesca_spiega.webp",
+        "pollice_su": "chars/chr_francesca_pollice_su.webp",
+        "tablet": "chars/chr_francesca_tablet.webp"
       },
       "heads": {},
       "_nota": "Sprite unico per posa (come lucas): niente head/neck, ogni posa e' un'immagine intera.",
@@ -155,16 +164,58 @@
           "ar": 1.5
         },
         "ride": {
-          "h": 0.562,
-          "cx": 0.576,
-          "cy": 0.452,
-          "ar": 1.1524
+          "h": 0.26,
+          "cx": 0.526,
+          "cy": 0.264,
+          "ar": 0.7441
         },
         "scettica": {
           "h": 0.516,
           "cx": 0.577,
           "cy": 0.443,
           "ar": 1.0942
+        },
+        "presenta": {
+          "h": 0.285,
+          "cx": 0.449,
+          "cy": 0.26,
+          "ar": 0.7821
+        },
+        "contenta": {
+          "h": 0.279,
+          "cx": 0.428,
+          "cy": 0.259,
+          "ar": 0.554
+        },
+        "pensa": {
+          "h": 0.542,
+          "cx": 0.512,
+          "cy": 0.406,
+          "ar": 0.776
+        },
+        "indica_su": {
+          "h": 0.285,
+          "cx": 0.495,
+          "cy": 0.26,
+          "ar": 0.7536
+        },
+        "spiega": {
+          "h": 0.277,
+          "cx": 0.536,
+          "cy": 0.271,
+          "ar": 0.6465
+        },
+        "pollice_su": {
+          "h": 0.266,
+          "cx": 0.549,
+          "cy": 0.261,
+          "ar": 0.7441
+        },
+        "tablet": {
+          "h": 0.254,
+          "cx": 0.515,
+          "cy": 0.267,
+          "ar": 0.5898
         }
       },
       "_notaVolti": "Misura del viso in ogni posa: altezza, centro orizzontale e verticale, e proporzione dell'immagine (ar = larghezza/altezza), tutto in frazione dell'immagine. Il motore ci calcola sopra il riquadro (vedi inquadra()), cosi' il viso viene sempre grande come quello di Lucas e nello stesso punto dell'inquadratura. Serve perche' le pose non sono tutte dello stesso taglio: cinque sono mezzibusti, 'ride' e 'scettica' sono primi piani di sola testa. 'ar' e' quella che permette di calcolare il riquadro SUBITO, senza aspettare che l'immagine sia caricata: aspettarla faceva vedere per un fotogramma la figura alla misura di default, piccola. Ricavate col riconoscimento dell'incarnato (vedi il commento nel motore): se arriva una posa nuova, misurarla allo stesso modo invece di stimarla a occhio."
@@ -179,13 +230,22 @@
         "annuisce": "chars/chr_peter_annuisce.webp",
         "scuote_testa": "chars/chr_peter_scuote_testa.webp",
         "applauso_ironico": "chars/chr_peter_applauso_ironico.webp",
-        "guarda_orologio": "chars/chr_peter_guarda_orologio.webp"
+        "guarda_orologio": "chars/chr_peter_guarda_orologio.webp",
+        "braccia": "chars/chr_peter_braccia.webp",
+        "occhiali": "chars/chr_peter_occhiali.webp",
+        "valuta": "chars/chr_peter_valuta.webp",
+        "prego": "chars/chr_peter_prego.webp",
+        "esatto": "chars/chr_peter_esatto.webp",
+        "sbuffa": "chars/chr_peter_sbuffa.webp",
+        "annoiato": "chars/chr_peter_annoiato.webp",
+        "dorme": "chars/chr_peter_dorme.webp"
       },
       "heads": {},
       "_nota": "Sprite unico per posa. Dorme (occhi_bassi) finche' run.locked e' false, si sveglia (alza_occhi) quando i pronostici sono chiusi: la lobby modella i due stati con 'when' sulla zona 4. Le altre quattro pose sono il quiz di S8. Tutte vanno mostrate a height 44%: e' seduto a un tavolino in primo piano, non e' una figura intera.",
       "scala": 1.35,
       "_notaScala": "Come Francesca: ritagli quasi quadrati, alla misura base restavano piccoli accanto a Lucas.",
-      "scalaHub": 1.15
+      "scalaHub": 1.15,
+      "_notaVolti": "Peter NON usa l'inquadratura sul viso (nessun 'volti'): resta su 'scala', tarata a occhio e approvata. La posa 'occhi_bassi' lo mostra accasciato sul tavolino, con il viso in basso nell'immagine: ancorando il viso all'altezza di quello di Lucas verrebbe sollevato di netto e si perderebbe il senso della posa."
     }
   },
   "vars": {
@@ -210,7 +270,9 @@
     "livello": null,
     "quiz": null,
     "mult_bank": 0,
-    "moltiplicatori": null
+    "moltiplicatori": null,
+    "email": null,
+    "post_lobby_visto": false
   },
   "scenes": {
     "arrivo": {
@@ -265,8 +327,8 @@
     },
     "registrazione": {
       "title": "Atto 1 — Registrazione",
-      "bg": "esterno_ingresso",
-      "bgFx": "blur",
+      "bg": "macintosh",
+      "_nota": "Il Mac non e' piu' un oggetto sovrapposto: sta dentro il fondale, e il terminale si incolla allo schermo disegnato li' (step prop con \"fondale\": true). Le domande le fa come sempre la box di dialogo; il terminale e' solo l'eco di quello che si risponde. A stampa finita il fondale va fuori fuoco e si passa al badge.",
       "terminal": [
         {
           "key": "NOME:",
@@ -323,14 +385,16 @@
         {
           "t": "show",
           "who": "lucas",
-          "body": "neutro"
+          "body": "neutro",
+          "height": "40%",
+          "bottom": "12%",
+          "right": "-8%",
+          "_nota": "Piu' piccolo e piu' in basso del solito: lo schermo del Mac ora e' dentro il fondale, e con la misura piena (56%) Lucas ci finiva davanti e copriva il terminale."
         },
         {
           "t": "prop",
-          "id": "mac_terminale",
-          "show": true,
-          "size": "64%",
-          "top": "4%"
+          "fondale": true,
+          "show": true
         },
         {
           "t": "wait",
@@ -341,7 +405,7 @@
           "who": "lucas",
           "var": "nome",
           "max": 14,
-          "text": "Registriamoti al terminale. Come ti chiamiamo? Nome vero o soprannome, decidi tu.",
+          "text": "Ti registro al terminale. Come ti chiamiamo? Nome vero o soprannome, decidi tu.",
           "_nota": "Il nome vero non serve: e' l'etichetta con cui il gioco si rivolge al giocatore e con cui compare in classifica. Il regolamento (zona 3 della lobby) lo chiama nickname, e deve restare coerente con quello che si chiede qui."
         },
         {
@@ -660,7 +724,12 @@
         },
         {
           "t": "prop",
+          "fondale": true,
           "show": false
+        },
+        {
+          "t": "fx",
+          "name": "blur"
         },
         {
           "t": "wait",
@@ -814,7 +883,7 @@
           "t": "carosello",
           "var": "stile",
           "da": "stili",
-          "posa": "idle_camerino",
+          "posa": "palco_attesa",
           "_nota": "S3.02-S3.03. Le opzioni vengono da story.stili, non da qui: le stesse pose e gli stessi perk servono a S5 e S8. La conferma e' irreversibile — dopo, niente riscrive 'stile'. Niente 'etichettaPerk': il perk e' una meccanica del quiz e sulla scheda confondeva, si spiega a S8.",
           "conferma_label": "Sono io",
           "conferma": {
@@ -977,8 +1046,7 @@
     "keynote": {
       "title": "S5 — Il keynote",
       "bg": "palco_platea_piena",
-      "podio": true,
-      "_nota": "[S5]. Susan apre dalla regia (una battuta pescata da regia.apertura), poi [S5.INTERMEZZO.R1] e R2 mentre la sala si scalda. Il leggio (\"podio\") resta acceso per tutto S5, si spegne da solo entrando in teleprompter perche' quella scena non lo dichiara.",
+      "_nota": "[S5]. Susan apre dalla regia (una battuta pescata da regia.apertura), poi [S5.INTERMEZZO.R1] e R2 mentre la sala si scalda.",
       "steps": [
         {
           "t": "io",
@@ -1006,7 +1074,6 @@
     "argomenti": {
       "title": "S5 — I macroargomenti",
       "bg": "palco_schermo_categorie",
-      "podio": true,
       "_nota": "[S5.HUB]: tre pannelli, ordine libero. Lo stato di ognuno si ricava dalle risposte gia' date. Quando sono tutti completi la griglia cede il turno e si passa al recap. Le 9 icone obj_icone_categorie del manifest non sono state consegnate: i pannelli sono disegnati in CSS sopra il fondale, che li ha gia' vuoti.",
       "steps": [
         {
@@ -1029,7 +1096,6 @@
     "argomento": {
       "title": "S5 — Pronostici",
       "bg": "palco_platea_piena",
-      "podio": true,
       "_nota": "Un macroargomento: tutte le core in sequenza fissa, poi il bivio della regia che pesca 3 facoltative dal pool, poi un intermezzo e si torna alla griglia. Da qui in poi Susan parla sempre in cuffia: e' in regia, non sul palco.",
       "steps": [
         {
@@ -1109,10 +1175,10 @@
           "da": "argomenti",
           "text": "Rileggi tutto. Tocca una riga per cambiarla.",
           "daFare": "Facoltativa non giocata",
-          "bottone": "BLOCCA LA SCALETTA",
+          "bottone": "CONFERMA LE PREVISIONI",
           "lock": {
-            "text": "Sicuro? Dopo questo, la schedina e' chiusa.",
-            "si": "Si', blocco tutto",
+            "text": "Sicuro? Dopo questo le tue previsioni sono definitive.",
+            "si": "Si', confermo",
             "no": "Fammi rileggere"
           },
           "goto": "finale",
@@ -1139,33 +1205,200 @@
         {
           "t": "show",
           "who": "francesca",
-          "body": "benvenuto"
+          "body": "benvenuto",
+          "se": {
+            "var": "locked",
+            "is": false
+          }
         },
         {
           "t": "say",
           "who": "francesca",
-          "text": "Eccoti, {NOME}. Io sono Francesca, e da qui in poi la lobby e' tua: girala tutta, tocca quello che ti incuriosisce."
+          "text": "Eccoti, {NOME}. Io sono Francesca, e da qui in poi la lobby e' tua: girala tutta, tocca quello che ti incuriosisce.",
+          "se": {
+            "var": "locked",
+            "is": false
+          }
         },
         {
           "t": "say",
           "who": "francesca",
-          "text": "Tanto di la' non si inizia senza di te."
+          "text": "Tanto di la' non si inizia senza di te.",
+          "se": {
+            "var": "locked",
+            "is": false
+          }
         },
         {
           "t": "show",
           "who": "francesca",
-          "body": "indica_tenda"
+          "body": "indica_tenda",
+          "se": {
+            "var": "locked",
+            "is": false
+          }
         },
         {
           "t": "say",
           "who": "francesca",
-          "text": "Quando sei {g:pronto|pronta} vai pure verso la tenda ed entra. Da quel momento... sei a teatro."
+          "text": "Quando sei {g:pronto|pronta} vai pure verso la tenda ed entra. Da quel momento... sei a teatro.",
+          "se": {
+            "var": "locked",
+            "is": false
+          }
+        },
+        {
+          "t": "show",
+          "who": "francesca",
+          "body": "orgogliosa",
+          "pop": true,
+          "se": [
+            {
+              "var": "locked",
+              "is": true
+            },
+            {
+              "var": "post_lobby_visto",
+              "is": false
+            }
+          ],
+          "_nota": "[POST-L01]-[POST-L07] Il ritorno in lobby dopo le previsioni: Francesca si congratula e passa la parola a Peter. Una volta sola (post_lobby_visto)."
+        },
+        {
+          "t": "say",
+          "who": "francesca",
+          "text": "Ah, eccoti. Allora, com'e' andata?",
+          "se": [
+            {
+              "var": "locked",
+              "is": true
+            },
+            {
+              "var": "post_lobby_visto",
+              "is": false
+            }
+          ]
+        },
+        {
+          "t": "say",
+          "who": "francesca",
+          "text": "Hai fatto le tue previsioni. Adesso non resta che aspettare il keynote e scoprire quanto eri lontan{g:o|a} dalla realta'.",
+          "se": [
+            {
+              "var": "locked",
+              "is": true
+            },
+            {
+              "var": "post_lobby_visto",
+              "is": false
+            }
+          ]
+        },
+        {
+          "t": "say",
+          "who": "francesca",
+          "text": "Ma non abbiamo finito.",
+          "se": [
+            {
+              "var": "locked",
+              "is": true
+            },
+            {
+              "var": "post_lobby_visto",
+              "is": false
+            }
+          ]
+        },
+        {
+          "t": "say",
+          "who": "francesca",
+          "text": "Puoi ancora mettere alla prova quello che sai sul mondo Apple.",
+          "se": [
+            {
+              "var": "locked",
+              "is": true
+            },
+            {
+              "var": "post_lobby_visto",
+              "is": false
+            }
+          ]
+        },
+        {
+          "t": "show",
+          "who": "francesca",
+          "body": "idle",
+          "se": [
+            {
+              "var": "locked",
+              "is": true
+            },
+            {
+              "var": "post_lobby_visto",
+              "is": false
+            }
+          ]
+        },
+        {
+          "t": "say",
+          "who": "francesca",
+          "text": "Vai da Peter e prova a rispondere ai suoi quiz.",
+          "se": [
+            {
+              "var": "locked",
+              "is": true
+            },
+            {
+              "var": "post_lobby_visto",
+              "is": false
+            }
+          ]
+        },
+        {
+          "t": "say",
+          "who": "francesca",
+          "text": "Ogni risposta giusta puo' aiutarti a moltiplicare i punti delle tue previsioni.",
+          "se": [
+            {
+              "var": "locked",
+              "is": true
+            },
+            {
+              "var": "post_lobby_visto",
+              "is": false
+            }
+          ]
+        },
+        {
+          "t": "say",
+          "who": "francesca",
+          "text": "Quindi si', conoscere tutti quei dettagli inutilmente specifici potrebbe finalmente tornarti utile.",
+          "se": [
+            {
+              "var": "locked",
+              "is": true
+            },
+            {
+              "var": "post_lobby_visto",
+              "is": false
+            }
+          ]
+        },
+        {
+          "t": "set",
+          "var": "post_lobby_visto",
+          "value": true,
+          "se": {
+            "var": "locked",
+            "is": true
+          },
+          "_nota": "La sequenza del ritorno si vede una volta sola. Il flag si alza anche se la sequenza e' gia' stata vista: e' idempotente, e cosi' non serve una seconda condizione."
         },
         {
           "t": "hub",
           "var": "zona",
           "start": "tenda",
-          "_nota": "S1.HUB: quattro zone, swipe libero, nessun ordine imposto. La zona 4 e' scritta due volte, una per stato di run.locked: il motore mostra solo quella la cui condizione e' vera.",
+          "_nota": "S1.HUB: quattro zone, swipe libero, nessun ordine imposto. La zona 1 e la zona 4 sono scritte due volte, una per stato di run.locked: il motore mostra solo quella la cui condizione e' vera. Dopo le previsioni l'hub si riapre da Peter, che e' quello che resta da fare.",
           "tutorial": {
             "who": "francesca",
             "body": "gesto_swipe",
@@ -1178,6 +1411,12 @@
               "who": "francesca",
               "body": "indica_tenda",
               "say": "La tenda e' quella. Di la' c'e' la sala, e non si torna indietro.",
+              "ritorno": {
+                "who": "francesca",
+                "body": "indica_tenda",
+                "say": "Sei {g:pronto|pronta}? Dietro questa tenda comincia lo show. Da qui in poi si gioca sul serio.",
+                "_nota": "Dalla seconda volta sulla zona tenda in poi. Nelle altre zone non c'e' 'ritorno': chi ha gia' fatto il giro le rivede in silenzio, senza Francesca e senza box."
+              },
               "hotspots": [
                 {
                   "label": "ENTRA",
@@ -1194,13 +1433,43 @@
                   },
                   "goto": "aggancio"
                 }
+              ],
+              "when": {
+                "var": "locked",
+                "is": false
+              }
+            },
+            {
+              "id": "tenda_dopo",
+              "when": {
+                "var": "locked",
+                "is": true
+              },
+              "_nota": "La stessa zona, a show finito: la tenda non porta piu' da nessuna parte, e la battuta non manda piu' nessuno di la'.",
+              "bg": "lobby_z1_tenda",
+              "who": "francesca",
+              "body": "spiega",
+              "say": "Di la' hanno gia' cominciato a smontare le sedie. La tua parte sul palco e' andata.",
+              "hotspots": [
+                {
+                  "label": "LA TENDA",
+                  "x": "40%",
+                  "y": "44%",
+                  "w": "20%",
+                  "h": "42%",
+                  "who": "francesca",
+                  "say": "Non c'e' piu' niente da vedere, li' dietro. Il pezzo che ti manca e' dall'altra parte della lobby: Peter.",
+                  "react": {
+                    "level": "micro"
+                  }
+                }
               ]
             },
             {
               "id": "hall_of_fame",
               "bg": "lobby_z2_hall_of_fame",
               "who": "francesca",
-              "body": "idle",
+              "body": "presenta",
               "say": "La Hall of Fame. Ogni anno qualcuno giura di aver 'solo tirato a indovinare'.",
               "hotspots": [
                 {
@@ -1221,8 +1490,8 @@
               "id": "regolamento",
               "bg": "lobby_z3_regolamento",
               "who": "francesca",
-              "body": "idle",
-              "say": "Prima di entrare puoi dare un'occhiata alle regole. Non sono molte. Anche perche' abbiamo preferito lasciarti qualche possibilita' di sbagliare.",
+              "body": "tablet",
+              "say": "Il regolamento e' li' sul cartellone, se ti serve. Non e' lungo: abbiamo preferito lasciarti qualche possibilita' di sbagliare.",
               "hotspots": [
                 {
                   "label": "IL REGOLAMENTO",
@@ -1244,7 +1513,7 @@
               "chiuso": true,
               "bg": "lobby_z4_quiz_bloccata",
               "who": "peter",
-              "body": "occhi_bassi",
+              "body": "dorme",
               "dice": "francesca",
               "say": "E quello è Peter. Gestisce il quiz finale.\nNon svegliarlo: è l'unico momento della giornata in cui non può farti una domanda.",
               "hotspots": [
@@ -1257,7 +1526,7 @@
                   "who": "peter",
                   "react": {
                     "level": "pose",
-                    "body": "alza_occhi"
+                    "body": "annoiato"
                   },
                   "say": "Ti ho sentito.",
                   "after": [
@@ -1277,8 +1546,8 @@
               },
               "bg": "lobby_z4_quiz_aperta",
               "who": "peter",
-              "body": "alza_occhi",
-              "say": "Il keynote è andato. Adesso arriva la parte difficile.\nLe domande le faccio io.",
+              "body": "prego",
+              "say": "Il keynote e' andato. Adesso arriva la parte difficile.\nLe domande le faccio io.",
               "hotspots": [
                 {
                   "label": "IL QUIZ",
@@ -1295,7 +1564,18 @@
                 }
               ]
             }
-          ]
+          ],
+          "tutorialSe": {
+            "var": "locked",
+            "is": false
+          },
+          "startDopo": {
+            "zona": "quiz_aperto",
+            "se": {
+              "var": "locked",
+              "is": true
+            }
+          }
         }
       ]
     },
@@ -1527,6 +1807,19 @@
           "t": "nero"
         },
         {
+          "t": "email",
+          "_nota": "[S7.03b] Facoltativa: si continua anche senza. Qui parte anche la spedizione della partita, messa in coda al momento del blocco.",
+          "titolo": "DOVE TI TROVIAMO?",
+          "testo": "Quando avremo i risultati finali, possiamo mandarteli via email.",
+          "label": "La tua email",
+          "placeholder": "nome@esempio.com",
+          "nota": "Non devi lasciarla per forza. Pero' Lorenzo e Michael ci hanno lavorato parecchio, quindi ecco. Pensaci.",
+          "privacy": "La useremo solo per inviarti i risultati di FantaLiberty Story.",
+          "ok": "CONTINUA",
+          "salta": "Preferisco spezzare loro il cuore",
+          "errore": "Manca qualcosa: controlla che ci siano la chiocciola e il punto."
+        },
+        {
           "t": "title",
           "_nota": "[S7.04b] I titoli di coda: dopo il pollice in su del CEO e prima del countdown. Cinque blocchi che compaiono, restano e sfumano uno nell'altro — non si accumulano come il cartello d'apertura. Vanno da soli, un tocco li salta tutti. Totale ~15 secondi. Il tono e' asciutto: i primi crediti seri, poi due assurdi, e la chiusa sui 30 Newton.",
           "dissolvenza": 400,
@@ -1608,9 +1901,27 @@
               "tieni": 1100
             }
           ]
+        },
+        {
+          "t": "title",
+          "_nota": "[S7.04c] Dopo i titoli di coda. Non lo dice Francesca: e' il gioco che parla al giocatore, e serve a far capire che l'esperienza non e' finita. Al tocco si torna in lobby.",
+          "lines": [
+            {
+              "text": "Hai completato una fase,",
+              "pausa": 150
+            },
+            {
+              "text": "non l'intera esperienza.",
+              "pausa": 420
+            },
+            {
+              "text": "Tocca lo schermo per continuare",
+              "small": true
+            }
+          ]
         }
       ],
-      "next": "countdown"
+      "next": "lobby"
     },
     "countdown": {
       "title": "S7 — Countdown",
@@ -1622,11 +1933,11 @@
         },
         {
           "t": "countdown",
-          "titolo": "{NOME} — SCALETTA BLOCCATA",
+          "titolo": "{NOME} — PREVISIONI COMPLETATE",
           "label": "Il keynote vero inizia tra",
           "punti": "Punti in gioco:",
           "arrivato": "E' iniziato. Buona visione.",
-          "cardTitolo": "SCALETTA BLOCCATA",
+          "cardTitolo": "PREVISIONI COMPLETATE",
           "cardPunti": "PUNTI IN GIOCO",
           "azioni": [
             {
@@ -1672,7 +1983,9 @@
     },
     "badge": {
       "title": "Atto 1 — Il badge",
-      "bg": "esterno_ingresso",
+      "bg": "macintosh",
+      "bgFx": "blur",
+      "_nota": "Stesso fondale della registrazione, tenuto fuori fuoco: il badge e i coriandoli si staccano, e non si vede un cambio di posto fra la stampa e la consegna.",
       "steps": [
         {
           "t": "fx",
@@ -1767,7 +2080,11 @@
         "neutro": "stili/stile_hawaiano_espressioni_neutro.webp",
         "sicuro": "stili/stile_hawaiano_espressioni_sicuro.webp",
         "sorpreso": "stili/stile_hawaiano_espressioni_sorpreso.webp",
-        "difficolta": "stili/stile_hawaiano_espressioni_difficolta.webp"
+        "difficolta": "stili/stile_hawaiano_espressioni_difficolta.webp",
+        "palco_attesa": "stili/stile_hawaiano_palco_attesa.webp",
+        "palco_presenta": "stili/stile_hawaiano_palco_presenta.webp",
+        "palco_sicuro": "stili/stile_hawaiano_palco_sicuro.webp",
+        "palco_dubbio": "stili/stile_hawaiano_palco_dubbio.webp"
       }
     },
     "showman": {
@@ -1789,7 +2106,11 @@
         "neutro": "stili/stile_showman_espressioni_neutro.webp",
         "sicuro": "stili/stile_showman_espressioni_sicuro.webp",
         "sorpreso": "stili/stile_showman_espressioni_sorpreso.webp",
-        "difficolta": "stili/stile_showman_espressioni_difficolta.webp"
+        "difficolta": "stili/stile_showman_espressioni_difficolta.webp",
+        "palco_attesa": "stili/stile_showman_palco_attesa.webp",
+        "palco_presenta": "stili/stile_showman_palco_presenta.webp",
+        "palco_sicuro": "stili/stile_showman_palco_sicuro.webp",
+        "palco_dubbio": "stili/stile_showman_palco_dubbio.webp"
       }
     },
     "drip": {
@@ -1811,7 +2132,11 @@
         "neutro": "stili/stile_drip_espressioni_neutro.webp",
         "sicuro": "stili/stile_drip_espressioni_sicuro.webp",
         "sorpreso": "stili/stile_drip_espressioni_sorpreso.webp",
-        "difficolta": "stili/stile_drip_espressioni_difficolta.webp"
+        "difficolta": "stili/stile_drip_espressioni_difficolta.webp",
+        "palco_attesa": "stili/stile_drip_palco_attesa.webp",
+        "palco_presenta": "stili/stile_drip_palco_presenta.webp",
+        "palco_sicuro": "stili/stile_drip_palco_sicuro.webp",
+        "palco_dubbio": "stili/stile_drip_palco_dubbio.webp"
       }
     },
     "ingegnere": {
@@ -1833,7 +2158,11 @@
         "neutro": "stili/stile_ingegnere_espressioni_neutro.webp",
         "sicuro": "stili/stile_ingegnere_espressioni_sicuro.webp",
         "sorpreso": "stili/stile_ingegnere_espressioni_sorpreso.webp",
-        "difficolta": "stili/stile_ingegnere_espressioni_difficolta.webp"
+        "difficolta": "stili/stile_ingegnere_espressioni_difficolta.webp",
+        "palco_attesa": "stili/stile_ingegnere_palco_attesa.webp",
+        "palco_presenta": "stili/stile_ingegnere_palco_presenta.webp",
+        "palco_sicuro": "stili/stile_ingegnere_palco_sicuro.webp",
+        "palco_dubbio": "stili/stile_ingegnere_palco_dubbio.webp"
       }
     }
   },
@@ -1987,7 +2316,8 @@
               "le risposte ai quiz",
               "i punteggi",
               "bonus e moltiplicatori",
-              "i risultati della partita"
+              "i risultati della partita",
+              "l'indirizzo email, se il giocatore sceglie di lasciarlo a fine partita"
             ]
           },
           {
@@ -1997,11 +2327,12 @@
           {
             "lista": [
               "personalizzare alcune parti dell'esperienza di gioco",
-              "registrare la schedina del partecipante",
+              "registrare le previsioni del partecipante",
               "gestire il corretto funzionamento della partita",
               "calcolare punteggi, bonus e risultati",
               "creare classifiche generali e per categoria",
-              "determinare i risultati finali dell'iniziativa"
+              "determinare i risultati finali dell'iniziativa",
+              "inviare i risultati finali via email, a chi ha lasciato l'indirizzo"
             ]
           },
           "I dati non vengono utilizzati per pubblicita', marketing, profilazione o altre finalita' commerciali.",
