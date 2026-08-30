@@ -119,7 +119,7 @@
 
   <div class="ui">
     <div id="hud">
-      <div id="vite"><span>♥</span><span>♥</span><span>♥</span></div>
+      <div id="vite"><span>♥</span><span>♥</span></div>
       <div id="segna"><div id="punti">0</div><div id="record">record 0</div></div>
     </div>
     <div id="fps"></div>
@@ -273,7 +273,14 @@ const PRONTI = Promise.all([
   carica('scivolata', 'run_pg_scivolata.webp'),
   carica('iphone',    'run_bonus_iphone.webp'),
   carica('computer',  'run_bonus_computer.webp'),
-  carica('visore',    'run_bonus_visore.webp')
+  carica('visore',    'run_bonus_visore.webp'),
+  carica('cartello',  'run_ost_cartello.webp'),
+  carica('salto',     'run_pg_salto.webp'),
+  carica('icona1',    'run_icona_1.webp'),
+  carica('icona2',    'run_icona_2.webp'),
+  carica('icona3',    'run_icona_3.webp'),
+  carica('icona4',    'run_icona_4.webp'),
+  carica('icona5',    'run_icona_5.webp')
 ]);
 
 /* ---------- stato ---------- */
@@ -281,7 +288,7 @@ const S = {
   fase:'attesa',      // attesa | corsa | fine
   corsia:0,           // -1, 0, +1
   corsiaVista:0,      // posizione morbida, insegue corsia
-  velocita:0.55,      // z al secondo
+  velocita:0.62,      // z al secondo
   distanza:0,
   punti:0,
   passo:0,            // fase del ciclo di corsa
@@ -292,9 +299,10 @@ const S = {
   lezione:null,       // quale spiegazione e' aperta adesso
   imparate:{},        // quelle gia' viste in questa partita
   collezione:{},      // quali dei tre prodotti sono gia' stati presi
-  scivola:0,          // quanto manca alla fine della scivolata
+  scivola:0,
+  salto:0,            // quanto manca alla fine del salto          // quanto manca alla fine della scivolata
   traguardo:0,        // l'ultimo migliaio gia' festeggiato
-  vite:3,
+  vite:2,
   intoccabile:0,     // dopo un colpo si lampeggia e non si muore due volte
   scossa:0
 };
@@ -326,7 +334,7 @@ function anello(colore, z, corsia){
 /* La ricarica compare di rado, e piu' spesso quando serve davvero:
    trovarla col cuore pieno e' un premio sprecato. */
 function forseVita(z, corsia){
-  const probabilita = S.vite >= 3 ? 0.05 : (S.vite === 2 ? 0.20 : 0.34);
+  const probabilita = S.vite >= 2 ? 0.07 : 0.34;
   if (Math.random() < probabilita) S.cose.push({ tipo:'vita', z, corsia });
 }
 /* ---------- le chicche ----------
@@ -346,6 +354,11 @@ const CHICCHE = {
   computer: { valore: 100, buona:true, raro:true, segnaposto:'#d8cfae' },
   visore:   { valore: 100, buona:true, raro:true, segnaposto:'#cfd0e4' }
 };
+/* Un'icona qualunque vale sempre uguale: sono cinque disegni diversi
+   della stessa cosa, non cinque oggetti da imparare a distinguere. */
+const ICONE = ['icona1','icona2','icona3','icona4','icona5'];
+const VALORE_ICONA = 20;
+
 const COLLEZIONE = ['iphone','computer','visore'];
 const BONUS_COLLEZIONE = 300;
 const BUONE   = ['cubo','matita'];
@@ -361,7 +374,11 @@ function forseChicca(z, corsia){
       return;
     }
   }
-  if (r > 0.55) return;
+  if (r < 0.28){
+    S.cose.push({ tipo:'icona', quale: ICONE[Math.random()*ICONE.length | 0], z, corsia });
+    return;
+  }
+  if (r > 0.62) return;
   /* Le cattive stanno sulla corsia comoda, le buone su quella scomoda:
      se stessero dove capita, la scelta non ci sarebbe. */
   const buona = r < 0.28;
@@ -379,10 +396,15 @@ function forseChicca(z, corsia){
    difficolta' dev'essere nel farlo, non nel non avere tempo. */
 const NASCE_ARCO = 2.4;
 const SCIVOLATA  = 0.55;      // quanto dura, in secondi
+const SALTO      = 0.62;      // idem per il salto
 
 function scivola(){
-  if (S.fase !== 'corsa' || S.scivola > 0) return;
+  if (S.fase !== 'corsa' || S.scivola > 0 || S.salto > 0) return;
   S.scivola = SCIVOLATA;
+}
+function salta(){
+  if (S.fase !== 'corsa' || S.salto > 0 || S.scivola > 0) return;
+  S.salto = SALTO;
 }
 
 /* ---------- i traguardi ----------
@@ -407,7 +429,7 @@ function genera(){
   const r = Math.random();
   const c = (Math.random()*3 | 0) - 1;
 
-  if (r < 0.38){
+  if (r < 0.26){
     // FILA VERDE: nessun ostacolo, si corre dritti e si incassa
     const n = 5 + (Math.random()*3 | 0);
     for (let i=0; i<n; i++) anello('verde', NASCE + i*0.055, c);
@@ -415,7 +437,7 @@ function genera(){
     forseChicca(NASCE + 0.20, c);            // in mezzo alla fila comoda
     S.prossimo = 0.62;
 
-  } else if (r < 0.68){
+  } else if (r < 0.44){
     // ZIGZAG BLU: due terzetti su corsie diverse, obbligano a spostarsi
     const d = corsiaDiversa(c);
     for (let i=0; i<3; i++) anello('blu', NASCE + i*0.05, c);
@@ -424,7 +446,14 @@ function genera(){
     forseChicca(NASCE + 0.16, corsiaDiversa(c));
     S.prossimo = 0.75;
 
-  } else if (r < 0.88){
+  } else if (r < 0.60){
+    // CARTELLO: o lo schivi di lato o lo scavalchi
+    S.cose.push({ tipo:'cartello', z:NASCE, corsia:c });
+    for (let i=0; i<3; i++) anello('verde', NASCE - 0.30 + i*0.05, c);
+    forseChicca(NASCE + 0.30, corsiaDiversa(c));
+    S.prossimo = 0.62;
+
+  } else if (r < 0.80){
     // ROSSI DAVANTI ALL'OSTACOLO: si prendono e si schiva all'ultimo
     for (let i=0; i<2; i++) anello('rosso', NASCE + 0.16 + i*0.05, c);
     S.cose.push({ tipo:'ostacolo', z: NASCE, corsia: c });
@@ -461,35 +490,26 @@ try { giaImparato = localStorage.getItem(IMPARATO) === '1'; } catch(e){}
 if (location.search.includes('tutorial=1')) giaImparato = false;
 
 const LEZIONI = {
-  swipe: {
-    titolo: 'Scorri per cambiare corsia',
+  comandi: {
+    titolo: 'I comandi',
     corpo: '<div class="dita"><span style="--v:-14px">◀</span>' +
            '<span style="--v:14px">▶</span></div>' +
-           '<p>Trascina il dito a destra o a sinistra. Da computer, le frecce.</p>'
+           '<p><b>Destra e sinistra</b> per cambiare corsia.<br>' +
+           '<b>Su</b> per saltare · <b>Giù</b> per scivolare.<br>' +
+           'Da computer, le frecce.</p>'
   },
-  anelli: {
-    titolo: 'Gli anelli valgono il rischio',
-    corpo: '<p><b class="verde">Verde 10</b> — in fila, si corre dritti.<br>' +
-           '<b class="blu">Blu 25</b> — cambiano corsia, devi seguirli.<br>' +
-           '<b class="rosso">Rosso 50</b> — sono attaccati a un carrello.</p>'
-  },
-  chicche: {
-    titolo: 'Non tutto quello che luccica',
-    corpo: '<p>Gli oggetti <b class="verde">luminosi e colorati</b> danno punti.<br>' +
-           'Quelli <b style="color:#a8a8a2">grigi e opachi</b> te li tolgono: un ' +
-           'adattatore, una matassa di cavi.<br>Non ti fanno male — ti fanno perdere.</p>'
-  },
-  arco: {
-    titolo: 'Sotto l\'arcobaleno',
-    corpo: '<div class="dita"><span style="--v:0;">▼</span></div>' +
-           '<p>Occupa tutto il corridoio: ci si passa <b>solo al centro</b>, ' +
-           'e <b>scorrendo il dito in giù</b> per scivolare.<br>' +
-           'Mettiti in mezzo prima che arrivi.</p>'
-  },
-  ostacolo: {
-    titolo: 'I carrelli no',
-    corpo: '<p>Spostati di corsia per evitarli. Ogni botta ti costa un cuore, ' +
-           'e ne hai tre.<br>L\'icona della salute te ne ridà uno.</p>'
+  /* Una scheda sola con tutto quello che si incontra: prima erano
+     quattro lezioni e il gioco si fermava di continuo nei primi
+     trenta secondi, che e' proprio quando uno vuole giocare. */
+  punti: {
+    titolo: 'Cosa vale cosa',
+    corpo: '<p><b class="verde">Anello verde 10</b> · <b class="blu">blu 25</b> · ' +
+           '<b class="rosso">rosso 50</b><br>' +
+           'Icone e oggetti Apple: <b class="verde">danno punti</b><br>' +
+           'Adattatori e cavi vecchi: <b class="rosso">li tolgono</b><br>' +
+           'Il cuore ti ridà un tentativo<br><br>' +
+           'Carrelli e cartelli ti costano un cuore.<br>' +
+           'L\'arcobaleno si passa <b>al centro, scivolando</b>.</p>'
   }
 };
 
@@ -513,14 +533,8 @@ document.getElementById('lezOk').onclick = riprendi;
    cosi' si guarda con calma quello di cui si sta parlando. */
 function controllaLezioni(){
   if (giaImparato) return;
-  if (!S.imparate.swipe && S.distanza > 0.12) return spiega('swipe');
-  for (const c of S.cose){
-    if (c.z > (c.tipo === 'arco' ? 2.1 : 1.25) || c.z < 0.25 || c.presa) continue;
-    if (c.tipo === 'anello'   && !S.imparate.anelli)   return spiega('anelli');
-    if (c.tipo === 'ostacolo' && !S.imparate.ostacolo) return spiega('ostacolo');
-    if (c.tipo === 'chicca'   && !S.imparate.chicche)  return spiega('chicche');
-    if (c.tipo === 'arco'     && !S.imparate.arco)     return spiega('arco');
-  }
+  if (!S.imparate.comandi && S.distanza > 0.12) return spiega('comandi');
+  if (!S.imparate.punti   && S.distanza > 0.55) return spiega('punti');
 }
 
 /* ---------- comandi ---------- */
@@ -533,7 +547,12 @@ addEventListener('keydown', e => {
   if (e.key === 'ArrowLeft')  { muovi(-1); e.preventDefault(); }
   if (e.key === 'ArrowRight') { muovi(+1); e.preventDefault(); }
   if (e.key === 'ArrowDown')  { giu(); e.preventDefault(); }
+  if (e.key === 'ArrowUp')    { su(); e.preventDefault(); }
 });
+function su(){
+  if (S.fase === 'lezione'){ riprendi(); return; }
+  salta();
+}
 function giu(){
   if (S.fase === 'lezione'){ riprendi(); return; }
   scivola();
@@ -549,6 +568,8 @@ cv.addEventListener('touchmove', e => {
     muovi(dx > 0 ? +1 : -1); tattivo = false;
   } else if (dy > 30 && Math.abs(dy) > Math.abs(dx)){
     giu(); tattivo = false;
+  } else if (dy < -30 && Math.abs(dy) > Math.abs(dx)){
+    su(); tattivo = false;
   }
 }, { passive:true });
 cv.addEventListener('touchend', () => { tattivo = false; }, { passive:true });
@@ -679,7 +700,26 @@ function personaggio(){
   const lampeggia = S.intoccabile > 0 && ((S.intoccabile * 12) | 0) % 2 === 0;
   ctx.globalAlpha = lampeggia ? 0.35 : 1;
 
-  if (S.scivola > 0 && A.scivolata){
+  /* Il salto alza il personaggio e scorre i quattro fotogrammi: sale
+     fino all'apice e ridiscende sugli stessi, al contrario. */
+  let sollevato = 0;
+  if (S.salto > 0){
+    const t = 1 - S.salto / SALTO;                 // 0 stacco, 1 atterraggio
+    sollevato = Math.sin(t * Math.PI) * alt * 0.62;
+  }
+  if (S.salto > 0 && A.salto){
+    const im = A.salto, fw = im.width / 4;
+    const t = 1 - S.salto / SALTO;
+    const f = Math.min(3, Math.round((t < 0.5 ? t : 1 - t) * 6));
+    const w = alt * (fw / im.height);
+    ctx.drawImage(im, f * fw, 0, fw, im.height,
+                  x - w/2, y - alt - sollevato, w, alt);
+  } else if (S.salto > 0){
+    ctx.fillStyle = '#3f6ea8';
+    ctx.beginPath();
+    ctx.roundRect(x - alt*0.26, y - alt*0.9 - sollevato, alt*0.52, alt*0.8, alt*0.14);
+    ctx.fill();
+  } else if (S.scivola > 0 && A.scivolata){
     const im = A.scivolata, h = alt * 0.5;         // steso: meta' altezza
     const w = h * (im.width / im.height);
     ctx.drawImage(im, x - w/2, y - h, w, h);
@@ -720,7 +760,9 @@ function passo(ora){
 }
 
 function aggiorna(dt){
-  S.velocita = Math.min(1.35, S.velocita + dt * 0.022);
+  /* La corsa deve accelerare in modo che si SENTA: prima cresceva cosi'
+     piano che dopo un minuto sembrava la stessa partita dell'inizio. */
+  S.velocita = Math.min(2.1, S.velocita + dt * 0.055);
   const avanti = S.velocita * dt;
   S.distanza += avanti;
   S.scorri   += avanti;
@@ -729,6 +771,7 @@ function aggiorna(dt){
   if (S.scossa > 0) S.scossa -= dt;
   if (S.intoccabile > 0) S.intoccabile -= dt;
   if (S.scivola > 0) S.scivola -= dt;
+  if (S.salto > 0) S.salto -= dt;
 
   controllaTraguardo();
   S.prossimo -= avanti;
@@ -748,13 +791,25 @@ function aggiorna(dt){
       continue;
     }
     if (c.tipo === 'ostacolo' && S.intoccabile > 0) continue;
+    if (c.tipo === 'cartello'){
+      if (S.intoccabile > 0) continue;
+      if (c.z < 0.10 && c.z > -0.02 && !c.presa &&
+          Math.abs(c.corsia - S.corsiaVista) < 0.55 && S.salto <= 0){
+        c.presa = true; colpito(); if (S.fase !== 'corsa') return;
+      }
+      continue;
+    }
     if (c.z < 0.10 && c.z > -0.02 && Math.abs(c.corsia - S.corsiaVista) < 0.55){
       if (c.tipo === 'anello'){
         c.presa = true;
         S.raccolti += ANELLI[c.anello].valore;
+      } else if (c.tipo === 'icona'){
+        c.presa = true;
+        S.raccolti += VALORE_ICONA;
+        segnale(c, '+' + VALORE_ICONA, true);
       } else if (c.tipo === 'vita'){
         c.presa = true;
-        if (S.vite < 3){ S.vite++; mostraVite('guarito'); segnale(c, '+♥', true); }
+        if (S.vite < 2){ S.vite++; mostraVite('guarito'); segnale(c, '+♥', true); }
         else { S.raccolti += 25; segnale(c, '+25', true); }   // col cuore pieno vale punti
       } else if (c.tipo === 'arco'){
       /* Le misure non sono quelle di un arcobaleno vero: se lo fossero,
@@ -971,6 +1026,20 @@ function disegna(){
         ctx.beginPath(); ctx.roundRect(q.x - s*0.36, q.y - su, s*0.72, s*0.72, s*0.18);
         ctx.fill(); ctx.stroke();
       }
+    } else if (c.tipo === 'icona'){
+      const s = 120 * q.scala;
+      const su = s * (1.3 + 0.07 * Math.sin(S.distanza * 5 + c.z * 7));
+      ombra(q.x, q.y, s * 0.26, 0.14);
+      const im = A[c.quale];
+      if (im){
+        const w = s * (im.width / im.height);
+        ctx.drawImage(im, q.x - w/2, q.y - su, w, s);
+      } else {
+        ctx.fillStyle = '#7fb5e8'; ctx.strokeStyle = '#3a6f9e';
+        ctx.lineWidth = Math.max(2, s*0.08);
+        ctx.beginPath(); ctx.roundRect(q.x - s*0.4, q.y - su, s*0.8, s*0.8, s*0.22);
+        ctx.fill(); ctx.stroke();
+      }
     } else if (c.tipo === 'vita'){
       const s = 140 * q.scala;
       const su = s * (1.3 + 0.07 * Math.sin(S.distanza * 5 + c.z * 7));
@@ -989,8 +1058,24 @@ function disegna(){
         ctx.fillText('♥', q.x, q.y - su + s*0.42);
         ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
       }
+    } else if (c.tipo === 'cartello'){
+      const s = 200 * q.scala;
+      ombra(q.x, q.y, s * 0.34, 0.22);
+      if (A.cartello){
+        const im = A.cartello, w = s * (im.width / im.height);
+        ctx.drawImage(im, q.x - w/2, q.y - s, w, s);
+      } else {
+        ctx.fillStyle = '#e8c22a'; ctx.strokeStyle = '#7a6412';
+        ctx.lineWidth = Math.max(2, s*0.06);
+        ctx.beginPath();
+        ctx.moveTo(q.x, q.y - s); ctx.lineTo(q.x + s*0.42, q.y);
+        ctx.lineTo(q.x - s*0.42, q.y); ctx.closePath();
+        ctx.fill(); ctx.stroke();
+      }
     } else {
-      const s = 320 * q.scala;
+      /* I carrelli sono l'unica cosa da schivare di lato: se sembrano
+         bassi si prova a saltarli. Vanno grossi. */
+      const s = 400 * q.scala;
       ombra(q.x, q.y, s * 0.34, 0.22);
       if (A.carrello){
         const im = A.carrello, w = s * (im.width / im.height);
@@ -1010,7 +1095,7 @@ function disegna(){
 function mostraVite(effetto){
   const box = document.getElementById('vite');
   box.innerHTML = '';
-  for (let i=0; i<3; i++){
+  for (let i=0; i<2; i++){
     const c = document.createElement('span');
     c.textContent = '♥';
     if (i >= S.vite) c.className = 'spenta';
@@ -1033,9 +1118,9 @@ function colpito(){
 
 function via(){
   S.fase = 'corsa'; S.corsia = 0; S.corsiaVista = 0;
-  S.velocita = 0.55; S.distanza = 0; S.punti = 0; S.raccolti = 0;
+  S.velocita = 0.62; S.distanza = 0; S.punti = 0; S.raccolti = 0;
   S.cose = []; S.prossimo = 0.4; S.scossa = 0; SEGNALI.length = 0;
-  S.vite = 3; S.intoccabile = 0; S.traguardo = 0; S.scivola = 0; mostraVite(null);
+  S.vite = 2; S.intoccabile = 0; S.traguardo = 0; S.scivola = 0; S.salto = 0; mostraVite(null);
   S.imparate = {}; S.collezione = {}; riprendi();
   document.getElementById('veloStart').hidden = true;
   document.getElementById('veloFine').hidden  = true;
@@ -1043,7 +1128,7 @@ function via(){
 function finisci(){
   S.fase = 'fine'; S.scossa = 0.5;
   riprendi();
-  if (!giaImparato && S.imparate.ostacolo){
+  if (!giaImparato && S.imparate.punti){
     giaImparato = true;
     try { localStorage.setItem(IMPARATO, '1'); } catch(e){}
   }
