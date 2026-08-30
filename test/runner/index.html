@@ -75,6 +75,36 @@
     font-family:inherit;
   }
   .velo small{ font-size:12px; color:#8a8a84; }
+
+  /* La lezione non copre la scena: spiega una cosa che si sta vedendo,
+     quindi resta in basso e lascia guardare il corridoio. */
+  #lezione{
+    position:absolute; left:0; right:0; bottom:0; pointer-events:auto;
+    padding:20px 22px calc(24px + env(safe-area-inset-bottom));
+    background:linear-gradient(to top, #1c1c1a 0%, rgba(28,28,26,.97) 70%, rgba(28,28,26,.82) 100%);
+    box-shadow:0 -30px 60px rgba(28,28,26,.45);
+    color:#f4f4f0; text-align:center;
+    border-radius:22px 22px 0 0;
+    animation: entraLezione .28s ease-out;
+  }
+  #lezione[hidden]{ display:none !important; }
+  @keyframes entraLezione{ from{ transform:translateY(60px); opacity:0 } }
+  #lezione h2{ margin:0 0 8px; font-size:20px; letter-spacing:-.3px; }
+  #lezione p{ margin:0; font-size:15px; line-height:1.5; color:#cfcfc8; }
+  #lezione b.verde{ color:#8fd45a } #lezione b.blu{ color:#63c0e0 }
+  #lezione b.rosso{ color:#e8615a }
+  #lezione .dita{ font-size:34px; letter-spacing:14px; margin:6px 0 2px; }
+  #lezione .dita span{ display:inline-block; animation: spingi 1.1s ease-in-out infinite; }
+  #lezione .dita span:last-child{ animation-delay:.55s }
+  @keyframes spingi{
+    0%,100%{ transform:translateX(0); opacity:.45 }
+    50%{ transform:translateX(var(--v,10px)); opacity:1 }
+  }
+  #lezione button{
+    margin-top:14px; padding:12px 28px; font-size:16px; font-weight:700;
+    border:0; border-radius:999px; background:#f4f4f0; color:#1d1d1b;
+    font-family:inherit; cursor:pointer;
+  }
 </style>
 </head>
 <body>
@@ -91,14 +121,17 @@
 
   <div class="velo" id="veloStart">
     <h1>Corsa nel corridoio</h1>
-    <p>Scorri il dito a <b>destra</b> o <b>sinistra</b> per cambiare corsia.<br>
-       Prendi gli anelli, evita i carrelli.<br>
-       <b style="color:#79c245">Verde 10</b> · <b style="color:#4aa8cc">Blu 25</b> ·
-       <b style="color:#c0453f">Rosso 50</b> — vale di piu' quello piu' difficile.<br>
-       Hai <b>tre cuori</b>: l'icona della salute te ne ridà uno.</p>
+    <p>Corri nel corridoio, prendi gli anelli, evita i carrelli.<br>
+       Ti spiego il resto strada facendo.</p>
     <button id="btnVia">Via</button>
     <small>prototipo — non è il gioco vero</small>
   </div>
+
+  <div id="lezione" hidden>
+      <h2 id="lezTitolo"></h2>
+      <div id="lezCorpo"></div>
+      <button id="lezOk">Ho capito</button>
+    </div>
 
   <div class="velo" id="veloFine" hidden>
     <h1>Sbam.</h1>
@@ -240,6 +273,8 @@ const S = {
   cose:[],            // { tipo:'anello'|'ostacolo', z, corsia, anello, presa }
   raccolti:0,         // punti dagli anelli, separati da quelli della corsa
   prossimo:0,         // fra quanta distanza generare il prossimo gruppo
+  lezione:null,       // quale spiegazione e' aperta adesso
+  imparate:{},        // quelle gia' viste in questa partita
   vite:3,
   intoccabile:0,     // dopo un colpo si lampeggia e non si muore due volte
   scossa:0
@@ -316,8 +351,68 @@ function genera(){
   }
 }
 
+/* ---------- il minitutorial ----------
+   Non un elenco di regole prima di cominciare: si gioca, e la prima
+   volta che una cosa compare il gioco si ferma e la spiega mentre e'
+   li' da vedere. Il riquadro sta in basso apposta, per non coprirla.
+
+   Si vede una volta sola, poi mai piu' (?tutorial=1 lo rimette). */
+const IMPARATO = 'fl_runner_tutorial';
+let giaImparato = false;
+try { giaImparato = localStorage.getItem(IMPARATO) === '1'; } catch(e){}
+if (location.search.includes('tutorial=1')) giaImparato = false;
+
+const LEZIONI = {
+  swipe: {
+    titolo: 'Scorri per cambiare corsia',
+    corpo: '<div class="dita"><span style="--v:-14px">◀</span>' +
+           '<span style="--v:14px">▶</span></div>' +
+           '<p>Trascina il dito a destra o a sinistra. Da computer, le frecce.</p>'
+  },
+  anelli: {
+    titolo: 'Gli anelli valgono il rischio',
+    corpo: '<p><b class="verde">Verde 10</b> — in fila, si corre dritti.<br>' +
+           '<b class="blu">Blu 25</b> — cambiano corsia, devi seguirli.<br>' +
+           '<b class="rosso">Rosso 50</b> — sono attaccati a un carrello.</p>'
+  },
+  ostacolo: {
+    titolo: 'I carrelli no',
+    corpo: '<p>Spostati di corsia per evitarli. Ogni botta ti costa un cuore, ' +
+           'e ne hai tre.<br>L\'icona della salute te ne ridà uno.</p>'
+  }
+};
+
+function spiega(quale){
+  if (giaImparato || S.imparate[quale]) return;
+  S.imparate[quale] = true;
+  S.lezione = quale;
+  S.fase = 'lezione';                       // il mondo si ferma, il disegno no
+  document.getElementById('lezTitolo').textContent = LEZIONI[quale].titolo;
+  document.getElementById('lezCorpo').innerHTML   = LEZIONI[quale].corpo;
+  document.getElementById('lezione').hidden = false;
+}
+function riprendi(){
+  document.getElementById('lezione').hidden = true;
+  S.lezione = null;
+  if (S.fase === 'lezione') S.fase = 'corsa';
+}
+document.getElementById('lezOk').onclick = riprendi;
+
+/* Quando fermarsi: appena la cosa e' comparsa ed e' ancora lontana,
+   cosi' si guarda con calma quello di cui si sta parlando. */
+function controllaLezioni(){
+  if (giaImparato) return;
+  if (!S.imparate.swipe && S.distanza > 0.12) return spiega('swipe');
+  for (const c of S.cose){
+    if (c.z > 1.25 || c.z < 0.25 || c.presa) continue;
+    if (c.tipo === 'anello'   && !S.imparate.anelli)   return spiega('anelli');
+    if (c.tipo === 'ostacolo' && !S.imparate.ostacolo) return spiega('ostacolo');
+  }
+}
+
 /* ---------- comandi ---------- */
 function muovi(d){
+  if (S.fase === 'lezione'){ riprendi(); return; }
   if (S.fase !== 'corsa') return;
   S.corsia = Math.max(-1, Math.min(1, S.corsia + d));
 }
@@ -459,7 +554,7 @@ function passo(ora){
   let dt = (ora - ultimo) / 1000; ultimo = ora;
   if (dt > 0.05) dt = 0.05;                     // niente salti dopo un blocco
 
-  if (S.fase === 'corsa') aggiorna(dt);
+  if (S.fase === 'corsa'){ aggiorna(dt); controllaLezioni(); }
   disegna();
 
   fpsAcc += dt; fpsN++;
@@ -606,11 +701,17 @@ function via(){
   S.velocita = 0.55; S.distanza = 0; S.punti = 0; S.raccolti = 0;
   S.cose = []; S.prossimo = 0.4; S.scossa = 0;
   S.vite = 3; S.intoccabile = 0; mostraVite(null);
+  S.imparate = {}; riprendi();
   document.getElementById('veloStart').hidden = true;
   document.getElementById('veloFine').hidden  = true;
 }
 function finisci(){
   S.fase = 'fine'; S.scossa = 0.5;
+  riprendi();
+  if (!giaImparato && S.imparate.ostacolo){
+    giaImparato = true;
+    try { localStorage.setItem(IMPARATO, '1'); } catch(e){}
+  }
   if (S.punti > record){
     record = S.punti;
     try { localStorage.setItem(RECORD, record); } catch(e){}
