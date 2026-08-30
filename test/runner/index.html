@@ -100,6 +100,12 @@
     0%,100%{ transform:translateX(0); opacity:.45 }
     50%{ transform:translateX(var(--v,10px)); opacity:1 }
   }
+  /* la freccia in giu' si muove in giu', non di lato */
+  #lezione .dita span[style*="--v:0"]{ animation-name: spingiGiu; }
+  @keyframes spingiGiu{
+    0%,100%{ transform:translateY(-6px); opacity:.45 }
+    50%{ transform:translateY(10px); opacity:1 }
+  }
   #lezione button{
     margin-top:14px; padding:12px 28px; font-size:16px; font-weight:700;
     border:0; border-radius:999px; background:#f4f4f0; color:#1d1d1b;
@@ -262,7 +268,9 @@ const PRONTI = Promise.all([
   carica('matita',    'run_bonus_matita.webp'),
   carica('dongle',    'run_malus_dongle.webp'),
   carica('cavi',      'run_malus_cavi.webp'),
-  carica('traguardo', 'run_traguardo.webp')
+  carica('traguardo', 'run_traguardo.webp'),
+  carica('arcobaleno','run_ost_arcobaleno.webp'),
+  carica('scivolata', 'run_pg_scivolata.webp')
 ]);
 
 /* ---------- stato ---------- */
@@ -280,6 +288,7 @@ const S = {
   prossimo:0,         // fra quanta distanza generare il prossimo gruppo
   lezione:null,       // quale spiegazione e' aperta adesso
   imparate:{},        // quelle gia' viste in questa partita
+  scivola:0,          // quanto manca alla fine della scivolata
   traguardo:0,        // l'ultimo migliaio gia' festeggiato
   vite:3,
   intoccabile:0,     // dopo un colpo si lampeggia e non si muore due volte
@@ -340,6 +349,22 @@ function forseChicca(z, corsia){
   S.cose.push({ tipo:'chicca', quale, z, corsia });
 }
 
+/* ---------- l'arcobaleno ----------
+   Occupa tutto il corridoio e si passa solo sotto il centro, scivolando.
+   La forma dice gia' la regola: un arco e' alto in mezzo e basso ai
+   lati, quindi dove ci si passa si vede senza doverlo spiegare.
+
+   E' il primo ostacolo che chiede DUE cose insieme — mettersi al
+   centro e scivolare — percio' nasce piu' lontano degli altri: la
+   difficolta' dev'essere nel farlo, non nel non avere tempo. */
+const NASCE_ARCO = 2.4;
+const SCIVOLATA  = 0.55;      // quanto dura, in secondi
+
+function scivola(){
+  if (S.fase !== 'corsa' || S.scivola > 0) return;
+  S.scivola = SCIVOLATA;
+}
+
 /* ---------- i traguardi ----------
    Ogni mille punti, un'icona d'oro risale il corridoio piu' grande di
    tutto il resto. NON si raccoglie e non si schiva: passa e basta.
@@ -387,6 +412,12 @@ function genera(){
     forseChicca(NASCE + 0.42, c);
     S.prossimo = 0.7;
 
+  } else if (r < 0.94){
+    // ARCOBALENO: la strada e' libera, il problema e' arrivarci pronti
+    S.cose.push({ tipo:'arco', z: NASCE_ARCO, corsia: 0 });
+    for (let i=0; i<4; i++) anello('verde', NASCE_ARCO - 0.55 + i*0.05, 0);
+    S.prossimo = 1.15;
+
   } else {
     // due ostacoli: resta una corsia sola, e li' ci sono dei blu
     const a = c, b = corsiaDiversa(a);
@@ -428,6 +459,13 @@ const LEZIONI = {
            'Quelli <b style="color:#a8a8a2">grigi e opachi</b> te li tolgono: un ' +
            'adattatore, una matassa di cavi.<br>Non ti fanno male — ti fanno perdere.</p>'
   },
+  arco: {
+    titolo: 'Sotto l\'arcobaleno',
+    corpo: '<div class="dita"><span style="--v:0;">▼</span></div>' +
+           '<p>Occupa tutto il corridoio: ci si passa <b>solo al centro</b>, ' +
+           'e <b>scorrendo il dito in giù</b> per scivolare.<br>' +
+           'Mettiti in mezzo prima che arrivi.</p>'
+  },
   ostacolo: {
     titolo: 'I carrelli no',
     corpo: '<p>Spostati di corsia per evitarli. Ogni botta ti costa un cuore, ' +
@@ -457,10 +495,11 @@ function controllaLezioni(){
   if (giaImparato) return;
   if (!S.imparate.swipe && S.distanza > 0.12) return spiega('swipe');
   for (const c of S.cose){
-    if (c.z > 1.25 || c.z < 0.25 || c.presa) continue;
+    if (c.z > (c.tipo === 'arco' ? 2.1 : 1.25) || c.z < 0.25 || c.presa) continue;
     if (c.tipo === 'anello'   && !S.imparate.anelli)   return spiega('anelli');
     if (c.tipo === 'ostacolo' && !S.imparate.ostacolo) return spiega('ostacolo');
     if (c.tipo === 'chicca'   && !S.imparate.chicche)  return spiega('chicche');
+    if (c.tipo === 'arco'     && !S.imparate.arco)     return spiega('arco');
   }
 }
 
@@ -473,7 +512,12 @@ function muovi(d){
 addEventListener('keydown', e => {
   if (e.key === 'ArrowLeft')  { muovi(-1); e.preventDefault(); }
   if (e.key === 'ArrowRight') { muovi(+1); e.preventDefault(); }
+  if (e.key === 'ArrowDown')  { giu(); e.preventDefault(); }
 });
+function giu(){
+  if (S.fase === 'lezione'){ riprendi(); return; }
+  scivola();
+}
 let tx = 0, ty = 0, tattivo = false;
 cv.addEventListener('touchstart', e => {
   const t = e.changedTouches[0]; tx = t.clientX; ty = t.clientY; tattivo = true;
@@ -483,6 +527,8 @@ cv.addEventListener('touchmove', e => {
   const t = e.changedTouches[0], dx = t.clientX - tx, dy = t.clientY - ty;
   if (Math.abs(dx) > 26 && Math.abs(dx) > Math.abs(dy)){
     muovi(dx > 0 ? +1 : -1); tattivo = false;
+  } else if (dy > 30 && Math.abs(dy) > Math.abs(dx)){
+    giu(); tattivo = false;
   }
 }, { passive:true });
 cv.addEventListener('touchend', () => { tattivo = false; }, { passive:true });
@@ -613,7 +659,17 @@ function personaggio(){
   const lampeggia = S.intoccabile > 0 && ((S.intoccabile * 12) | 0) % 2 === 0;
   ctx.globalAlpha = lampeggia ? 0.35 : 1;
 
-  if (A.corsa){
+  if (S.scivola > 0 && A.scivolata){
+    const im = A.scivolata, h = alt * 0.5;         // steso: meta' altezza
+    const w = h * (im.width / im.height);
+    ctx.drawImage(im, x - w/2, y - h, w, h);
+  } else if (S.scivola > 0){
+    // segnaposto: sagoma bassa e larga, si capisce che e' steso
+    ctx.fillStyle = '#3f6ea8';
+    ctx.beginPath();
+    ctx.roundRect(x - alt*0.30, y - alt*0.45, alt*0.60, alt*0.45, alt*0.12);
+    ctx.fill();
+  } else if (A.corsa){
     const im = A.corsa, fw = im.width / 4;
     const f = (S.passo | 0) % 4;
     const w = alt * (fw / im.height);
@@ -652,6 +708,7 @@ function aggiorna(dt){
   S.corsiaVista += (S.corsia - S.corsiaVista) * Math.min(1, dt * 14);
   if (S.scossa > 0) S.scossa -= dt;
   if (S.intoccabile > 0) S.intoccabile -= dt;
+  if (S.scivola > 0) S.scivola -= dt;
 
   controllaTraguardo();
   S.prossimo -= avanti;
@@ -661,6 +718,15 @@ function aggiorna(dt){
     c.z -= avanti;
     if (c.presa) continue;
     if (c.tipo === 'traguardo') continue;        // si attraversa
+    if (c.tipo === 'arco'){
+      if (c.z < 0.10 && c.z > -0.02 && !c.presa){
+        const dentro = Math.abs(S.corsiaVista) < 0.45;   // corsia di mezzo
+        if (!(dentro && S.scivola > 0)){
+          c.presa = true; colpito(); if (S.fase !== 'corsa') return;
+        } else c.presa = true;                            // passato pulito
+      }
+      continue;
+    }
     if (c.tipo === 'ostacolo' && S.intoccabile > 0) continue;
     if (c.z < 0.10 && c.z > -0.02 && Math.abs(c.corsia - S.corsiaVista) < 0.55){
       if (c.tipo === 'anello'){
@@ -670,7 +736,34 @@ function aggiorna(dt){
         c.presa = true;
         if (S.vite < 3){ S.vite++; mostraVite('guarito'); segnale(c, '+♥', true); }
         else { S.raccolti += 25; segnale(c, '+25', true); }   // col cuore pieno vale punti
-      } else if (c.tipo === 'traguardo'){
+      } else if (c.tipo === 'arco'){
+      /* Le misure non sono quelle di un arcobaleno vero: se lo fossero,
+         l'apertura centrale sarebbe altissima e non ci sarebbe niente
+         sotto cui abbassarsi. L'arco e' tarato perche' il passaggio
+         resti sotto la meta' del personaggio in piedi. */
+      const L = bordo(PISTA_SX, q.y), R = bordo(PISTA_DX, q.y);
+      const cx = (L + R) / 2, cy = q.y;
+      const fuoriA = (R - L) / 2, fuoriB = 676 * q.scala;
+      const dentroA = (R - L) * 0.20, dentroB = 268 * q.scala;   // ci deve stare comodo, steso
+      const im = A.arcobaleno;
+      if (im){
+        const w = (R - L) * 1.04, h = w * (im.height / im.width);
+        ctx.drawImage(im, cx - w/2, cy - h, w, h);
+      } else {
+        const tinte = ['#4a9e3f','#e8c22a','#e88a22','#d94b3f',
+                       '#c8409c','#7a48b8','#3f8ad9'];
+        for (let k=0; k<tinte.length; k++){
+          const t0 = k / tinte.length, t1 = (k+1) / tinte.length;
+          const a0 = fuoriA + (dentroA - fuoriA) * t0, b0 = fuoriB + (dentroB - fuoriB) * t0;
+          const a1 = fuoriA + (dentroA - fuoriA) * t1, b1 = fuoriB + (dentroB - fuoriB) * t1;
+          ctx.fillStyle = tinte[k];
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, a0, b0, 0, Math.PI, 2*Math.PI);
+          ctx.ellipse(cx, cy, a1, b1, 0, 2*Math.PI, Math.PI, true);
+          ctx.closePath(); ctx.fill();
+        }
+      }
+    } else if (c.tipo === 'traguardo'){
       const s = 320 * q.scala;                    // il doppio abbondante di una chicca
       const su = s * (2.1 + 0.10 * Math.sin(S.distanza * 3 + c.z * 5));
       const cx = q.x, cy = q.y - su + s/2;
@@ -761,6 +854,33 @@ function disegna(){
         ctx.beginPath();
         ctx.ellipse(q.x, q.y - su*0.6, s*0.33, s*0.33, 0, 0, 7);
         ctx.stroke();
+      }
+    } else if (c.tipo === 'arco'){
+      /* Le misure non sono quelle di un arcobaleno vero: se lo fossero,
+         l'apertura centrale sarebbe altissima e non ci sarebbe niente
+         sotto cui abbassarsi. L'arco e' tarato perche' il passaggio
+         resti sotto la meta' del personaggio in piedi. */
+      const L = bordo(PISTA_SX, q.y), R = bordo(PISTA_DX, q.y);
+      const cx = (L + R) / 2, cy = q.y;
+      const fuoriA = (R - L) / 2, fuoriB = 676 * q.scala;
+      const dentroA = (R - L) * 0.20, dentroB = 268 * q.scala;   // ci deve stare comodo, steso
+      const im = A.arcobaleno;
+      if (im){
+        const w = (R - L) * 1.04, h = w * (im.height / im.width);
+        ctx.drawImage(im, cx - w/2, cy - h, w, h);
+      } else {
+        const tinte = ['#4a9e3f','#e8c22a','#e88a22','#d94b3f',
+                       '#c8409c','#7a48b8','#3f8ad9'];
+        for (let k=0; k<tinte.length; k++){
+          const t0 = k / tinte.length, t1 = (k+1) / tinte.length;
+          const a0 = fuoriA + (dentroA - fuoriA) * t0, b0 = fuoriB + (dentroB - fuoriB) * t0;
+          const a1 = fuoriA + (dentroA - fuoriA) * t1, b1 = fuoriB + (dentroB - fuoriB) * t1;
+          ctx.fillStyle = tinte[k];
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, a0, b0, 0, Math.PI, 2*Math.PI);
+          ctx.ellipse(cx, cy, a1, b1, 0, 2*Math.PI, Math.PI, true);
+          ctx.closePath(); ctx.fill();
+        }
       }
     } else if (c.tipo === 'traguardo'){
       const s = 320 * q.scala;                    // il doppio abbondante di una chicca
@@ -887,7 +1007,7 @@ function via(){
   S.fase = 'corsa'; S.corsia = 0; S.corsiaVista = 0;
   S.velocita = 0.55; S.distanza = 0; S.punti = 0; S.raccolti = 0;
   S.cose = []; S.prossimo = 0.4; S.scossa = 0; SEGNALI.length = 0;
-  S.vite = 3; S.intoccabile = 0; S.traguardo = 0; mostraVite(null);
+  S.vite = 3; S.intoccabile = 0; S.traguardo = 0; S.scivola = 0; mostraVite(null);
   S.imparate = {}; riprendi();
   document.getElementById('veloStart').hidden = true;
   document.getElementById('veloFine').hidden  = true;
