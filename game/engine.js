@@ -31,7 +31,7 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '22',
+    engine: '23',
     story: null,
     banca: null,    // game/domande.json: domande, battute per stile, eventi, intermezzi
     quiz: null,     // game/quiz.json: i tre livelli del quiz di Peter [S8]
@@ -1517,6 +1517,46 @@
      Regola d'oro dello script: la reazione della platea e' SEMPRE casuale, mai
      legata a quale opzione e' stata scelta. Se lo fosse, il gioco suggerirebbe
      le risposte e i pronostici non varrebbero piu' niente. */
+  /* Che faccia fa il giocatore mentre legge la domanda.
+     Prima restava in "idle_palco" per tutte e ventuno le domande: uno sta sul
+     palco di un keynote per mezz'ora senza mai cambiare espressione. Gli stili
+     hanno gia' disegnate quattro pose apposta (neutro, sicuro, sorpreso,
+     difficolta) e non le usava nessuno.
+
+     La posa segue il tono della domanda, non la risposta giusta: e' la
+     difficolta' dichiarata nella banca a dire se e' una da prendere alla
+     leggera o una tosta. Questo NON viola la regola d'oro di S5 — quella dice
+     che la reazione non deve correlare con la RISPOSTA del giocatore, perche'
+     se lo facesse suggerirebbe il pronostico. Qui non c'e' nessuna risposta
+     ancora: si commenta la domanda, che il giocatore ha gia' davanti agli
+     occhi, e nessuna posa punta a un'opzione piuttosto che a un'altra.
+
+     Dentro ogni fascia si pesca a caso fra due pose, come si fa gia' per
+     l'annuncio: venti domande di fila con la stessa inquadratura si notano. */
+  var POSE_DOMANDA = {
+    facile:  ['sicuro', 'neutro'],       // diff 1-2: una che si sa gia'
+    media:   ['neutro', 'sicuro'],       // diff 3
+    tosta:   ['difficolta', 'sorpreso'], // diff 4-5: qui si suda
+    extra:   ['sorpreso', 'neutro']      // le facoltative: arrivano a sorpresa
+  };
+
+  function posaPerDomanda(d, tipo) {
+    var fascia;
+    if (tipo === 'extra') fascia = 'extra';
+    else {
+      var diff = d && d.diff;
+      if (diff == null) fascia = 'media';
+      else if (diff <= 2) fascia = 'facile';
+      else if (diff === 3) fascia = 'media';
+      else fascia = 'tosta';
+    }
+    var pose = POSE_DOMANDA[fascia];
+    var scelta = pose[Math.floor(Math.random() * pose.length)];
+    // se lo stile non ha quella posa disegnata si resta com'era, invece di
+    // far sparire la figura
+    return posaStile(scelta) ? scelta : 'idle_palco';
+  }
+
   function showDomande(st) {
     var cat = catCorrente();
     if (!cat) return next();
@@ -1534,7 +1574,7 @@
       if (i >= lista.length) { hideUI(); return next(); }
       var d = lista[i];
       el.boxwrap.classList.add('in');
-      mostraIo({ posa: 'idle_palco' });
+      mostraIo({ posa: posaPerDomanda(d, tipo) });
       setSpeaker(st.who || 'susan', st.incuffia !== false);
       var apri = function () { opzioni(d); };
       type(fmt(aCaso(VN.story.regia && VN.story.regia.introDomanda) || 'Tocca a te.') + ' ' + fmt(d.q), apri);
