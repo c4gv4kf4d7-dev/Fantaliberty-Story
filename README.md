@@ -600,6 +600,14 @@ sui telefoni veri il testo spariva sotto il bordo. Con il file nel repo il
 ripiego non esiste piu' — e il gioco funziona anche offline e nella build in
 file unico.
 
+**Si possono usare solo i caratteri che il font sa disegnare.** Press Start 2P
+ha un repertorio limitato. Un carattere che non ha non fa sparire il testo: il
+browser ripiega su un altro font *solo per quel carattere*, e a schermo esce una
+lettera di famiglia diversa in mezzo alla frase. `npm test` lo rifiuta e dice
+quale carattere e' e dove sta; l'elenco dei caratteri buoni e' in
+`game/glifi.json`, rigenerabile con `python3 tools/glifi_font.py` se si cambia
+font. Le lettere accentate italiane (a, e, i, o, u con accento) ci sono tutte.
+
 **Chi misura qualcosa che dipende dal testo deve aspettare `document.fonts.ready`.**
 Il terminale del Mac e il nome sul badge lo fanno: rimisurano quando il font e'
 pronto, perche' la prima misura arriva quasi sempre prima.

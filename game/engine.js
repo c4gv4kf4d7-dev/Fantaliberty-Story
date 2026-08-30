@@ -31,7 +31,7 @@
     // se il browser mescola una pagina nuova con un motore vecchio preso dalla
     // cache, il gioco resta nero. Da alzare quando cambia il contratto (step
     // nuovi, id nuovi nell'HTML).
-    engine: '20',
+    engine: '21',
     story: null,
     banca: null,    // game/domande.json: domande, battute per stile, eventi, intermezzi
     quiz: null,     // game/quiz.json: i tre livelli del quiz di Peter [S8]
