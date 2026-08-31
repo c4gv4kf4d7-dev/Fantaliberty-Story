@@ -255,18 +255,16 @@
        toccare #curtain, che serve all'intro e viene spento a ogni cambio scena -->
   <div id="nero"></div>
 
-  <!-- Selettore dei volumi: un bottone piccolo in un angolo, e un pannello con
-       due cursori. Musica ed effetti separati perche' danno fastidio in momenti
-       diversi. La scelta resta nel browser, non nella partita. -->
+  <!-- Selettore dell'audio: un bottone piccolo in un angolo, e un pannello con
+       due interruttori. Musica ed effetti separati perche' danno fastidio in
+       momenti diversi: si accendono e si spengono, ciascuno per conto suo, non
+       si regolano. La scelta resta nel browser, non nella partita. -->
   <button id="audiobtn" aria-label="Audio">&#128266;</button>
   <div id="audiowrap">
     <div id="audiobox">
       <h2>AUDIO</h2>
-      <label for="volmus">Musica <span id="volmusval">30%</span></label>
-      <input id="volmus" type="range" min="0" max="100" step="5" value="30">
-      <label for="volsfx">Effetti <span id="volsfxval">80%</span></label>
-      <input id="volsfx" type="range" min="0" max="100" step="5" value="80">
-      <button id="audiomuto">SILENZIA TUTTO</button>
+      <button id="audiomus">MUSICA: ON</button>
+      <button id="audiosfx">EFFETTI: ON</button>
       <button id="audiook">CHIUDI</button>
     </div>
   </div>

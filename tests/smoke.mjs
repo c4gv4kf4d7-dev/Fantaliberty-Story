@@ -2794,20 +2794,23 @@ function apriMoltiplicatori(stato, extra) {
     assert.ok(kb < 600, `assets/sfx/${f} pesa ${Math.round(kb)} KB: un effetto arriva in ritardo`);
   }
 
-  // il selettore dei volumi e la sua parte di pagina
+  // il selettore dell'audio e la sua parte di pagina: due interruttori, non
+  // cursori, e niente "silenzia tutto"
   const pagina = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-  for (const id of ['audiobtn', 'audiowrap', 'volmus', 'volsfx', 'audiomuto', 'audiook']) {
-    assert.ok(pagina.includes(`id="${id}"`), `manca #${id}: il selettore dei volumi non si monta`);
+  for (const id of ['audiobtn', 'audiowrap', 'audiomus', 'audiosfx', 'audiook']) {
+    assert.ok(pagina.includes(`id="${id}"`), `manca #${id}: il selettore dell'audio non si monta`);
   }
+  assert.doesNotMatch(pagina, /input[^>]*type="?range/, 'niente cursori: solo interruttori');
+  assert.doesNotMatch(pagina, /audiomuto|SILENZIA TUTTO/, 'niente bottone "silenzia tutto"');
   assert.match(motore, /AUDIO_CHIAVE = 'fl_audio'/,
     'i volumi stanno in un posto loro, non nel salvataggio della partita');
 
   // la musica e' un tappeto sotto la voce, non un brano che si ascolta
-  const partenza = /var audio = \{ mus: ([0-9.]+)/.exec(motore);
-  assert.ok(partenza && Number(partenza[1]) <= 0.35,
+  const partenza = /var VOLUME_MUS = ([0-9.]+)/.exec(motore);
+  assert.ok(partenza && Number(partenza[1]) <= 0.25,
     `la musica parte a ${partenza && partenza[1]}: e' un sottofondo, deve stare indietro`);
   assert.match(motore, /AUDIO_VERSIONE = \d+/,
-    'la taratura dei volumi ha una versione: senza, chi ha gia' + "'" + ' giocato non vede il cambio');
+    'la taratura dell\'audio ha una versione: senza, chi ha gia' + "'" + ' giocato non vede il cambio');
 
   // le varianti servono a non sentire due volte di fila lo stesso file
   for (const k of ['scelta', 'applausi', 'tastiera']) {

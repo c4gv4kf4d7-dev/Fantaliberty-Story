@@ -2022,6 +2022,8 @@
     "ingresso": {
       "title": "Atto 1 — All'ingresso",
       "bg": "esterno_ingresso",
+      "bgFx": "zoomlento",
+      "_nota_bgFx": "Come il vialetto prima: lo stesso zoom lentissimo (22s, 1.02x -> 1.13x), cosi' i primi due fondali dello Steve Jobs Theater danno la sensazione di camminare avanti piano piano.",
       "dissolvenza": true,
       "uccelli": 2,
       "steps": [

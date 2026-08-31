@@ -4012,12 +4012,17 @@
      schermo: la prima musica resta in attesa (musaAttesa) e parte al primo
      tocco vero, non a un timer. */
   var AUDIO_CHIAVE = 'fl_audio';
-  // La musica sta sotto la voce e sotto gli effetti: e' un tappeto, non un
-  // brano che si ascolta. La versione serve a far ripartire dai valori nuovi
-  // chi aveva gia' salvato i suoi: senza, chi ha giocato prima si ritrova la
-  // musica alta come prima e la modifica non si vede.
-  var AUDIO_VERSIONE = 2;
-  var audio = { mus: 0.3, sfx: 0.8, muto: false, v: AUDIO_VERSIONE };
+  // Niente cursori: musica ed effetti si accendono e si spengono, ciascuno
+  // per conto suo (i cursori non rispondevano bene al tocco su telefono). I
+  // due volumi restano fissi quando sono accesi — la musica e' un tappeto
+  // sotto la voce, quindi resta indietro; gli effetti si sentono per davvero.
+  var VOLUME_MUS = 0.21;   // -30% dal vecchio 0.3
+  var VOLUME_SFX = 0.8;
+  // La versione serve a far ripartire dai valori nuovi chi aveva gia' salvato
+  // i suoi: senza, chi ha gia' girato i cursori vecchi si ritrova con lo
+  // schema di dati sbagliato invece dei due interruttori.
+  var AUDIO_VERSIONE = 3;
+  var audio = { mus: true, sfx: true, v: AUDIO_VERSIONE };
   var musNodo = null, musNome = null, musFade = null, musAttesa = null;
   var audioSbloccato = false;
   var sfxCache = {}, ultimoSfx = {};
@@ -4040,9 +4045,8 @@
       var d = JSON.parse(st.getItem(AUDIO_CHIAVE) || 'null');
       if (d && d.v !== AUDIO_VERSIONE) d = null;      // valori di un'altra taratura
       if (d) {
-        if (typeof d.mus === 'number') audio.mus = d.mus;
-        if (typeof d.sfx === 'number') audio.sfx = d.sfx;
-        audio.muto = !!d.muto;
+        if (typeof d.mus === 'boolean') audio.mus = d.mus;
+        if (typeof d.sfx === 'boolean') audio.sfx = d.sfx;
       }
     } catch (e) {}
   }
@@ -4052,7 +4056,7 @@
     if (st) { try { st.setItem(AUDIO_CHIAVE, JSON.stringify(audio)); } catch (e) {} }
   }
 
-  function volumeMusica() { return audio.muto ? 0 : audio.mus; }
+  function volumeMusica() { return audio.mus ? VOLUME_MUS : 0; }
 
   /* Una dissolvenza vera: il volume si muove a passi piccoli. Non si usa una
      transizione CSS perche' il volume di un <audio> non e' una proprieta' CSS,
@@ -4122,7 +4126,7 @@
      elenco (gli applausi) se ne pesca uno a caso, cosi' la platea non applaude
      sempre nello stesso modo. */
   function suona(quale, volume) {
-    if (!CI_SONO_SUONI || audio.muto || !audioSbloccato) return;
+    if (!CI_SONO_SUONI || !audio.sfx || !audioSbloccato) return;
     var mappa = cfgAudio().effetti || {};
     var file = mappa[quale];
     if (Array.isArray(file)) {
@@ -4143,7 +4147,7 @@
     }
     try {
       nodo.currentTime = 0;
-      nodo.volume = Math.max(0, Math.min(1, audio.sfx * (volume == null ? 1 : volume)));
+      nodo.volume = Math.max(0, Math.min(1, VOLUME_SFX * (volume == null ? 1 : volume)));
       var p = nodo.play();
       if (p && p.catch) p.catch(function () {});
     } catch (e) {}
@@ -4173,36 +4177,40 @@
     if (musNodo) {
       if (musFade) { clearInterval(musFade.id); musFade = null; }
       musNodo.volume = volumeMusica();
-      if (audio.muto) { try { musNodo.pause(); } catch (e) {} }
+      if (!audio.mus) { try { musNodo.pause(); } catch (e) {} }
       else if (musNodo.paused && audioSbloccato) { try { musNodo.play(); } catch (e) {} }
     }
   }
 
-  /* ---------------- il selettore dei volumi ----------------
-     Un bottone piccolo in un angolo, e un pannello con due cursori: musica ed
-     effetti, separati perche' sono due fastidi diversi (la musica in ufficio,
-     gli effetti di notte). Il pannello si chiude toccando fuori, come le altre
-     finestre del gioco, e non tocca la partita. */
+  /* ---------------- il selettore dell'audio ----------------
+     Un bottone piccolo in un angolo, e un pannello con due interruttori:
+     musica ed effetti, separati perche' sono due fastidi diversi (la musica
+     in ufficio, gli effetti di notte). Niente cursori — non rispondevano bene
+     al tocco — e niente "silenzia tutto": con due interruttori indipendenti
+     non serve un terzo bottone che fa la somma degli altri due. Il pannello
+     si chiude toccando fuori, come le altre finestre del gioco, e non tocca
+     la partita. */
   function aggiornaBottoneAudio() {
     if (!el.audiobtn) return;
-    el.audiobtn.textContent = audio.muto || (!audio.mus && !audio.sfx) ? '🔇' : '🔊';
-    el.audiobtn.setAttribute('aria-label', audio.muto ? 'Riattiva l\'audio' : 'Audio');
+    el.audiobtn.textContent = (!audio.mus && !audio.sfx) ? '🔇' : '🔊';
   }
 
-  function mostraPercentuali() {
-    if (el.volmusval) el.volmusval.textContent = Math.round(audio.mus * 100) + '%';
-    if (el.volsfxval) el.volsfxval.textContent = Math.round(audio.sfx * 100) + '%';
+  function aggiornaToggle() {
+    if (el.audiomus) {
+      el.audiomus.textContent = 'MUSICA: ' + (audio.mus ? 'ON' : 'OFF');
+      el.audiomus.classList.toggle('off', !audio.mus);
+    }
+    if (el.audiosfx) {
+      el.audiosfx.textContent = 'EFFETTI: ' + (audio.sfx ? 'ON' : 'OFF');
+      el.audiosfx.classList.toggle('off', !audio.sfx);
+    }
   }
 
   function apriAudio() {
     if (!el.audiowrap) return;
     suona('apri');
     el.audiowrap.classList.add('on');
-    var righe = el.audiowrap.querySelectorAll('input[type=range]');
-    righe[0].value = Math.round(audio.mus * 100);
-    righe[1].value = Math.round(audio.sfx * 100);
-    mostraPercentuali();
-    if (el.audiomuto) el.audiomuto.textContent = audio.muto ? 'RIATTIVA L\'AUDIO' : 'SILENZIA TUTTO';
+    aggiornaToggle();
   }
   function chiudiAudio() {
     if (el.audiowrap) el.audiowrap.classList.remove('on');
@@ -4218,9 +4226,6 @@
       if (el.audiowrap.classList.contains('on')) { suona('chiudi'); chiudiAudio(); }
       else apriAudio();
     };
-    /* Chiudere toccando fuori, ma NON mentre si trascina un cursore: il dito
-       che parte dalla manopola e finisce fuori dal riquadro faceva sparire il
-       pannello a meta' regolazione, e sembrava che il cursore non funzionasse. */
     var partitoDentro = false;
     el.audiowrap.onpointerdown = function (ev) { partitoDentro = ev.target !== el.audiowrap; };
     el.audiowrap.onclick = function (ev) {
@@ -4228,24 +4233,19 @@
       else if (ev.stopPropagation) ev.stopPropagation();
       partitoDentro = false;
     };
-    var righe = el.audiowrap.querySelectorAll('input[type=range]');
-    righe[0].oninput = righe[0].onchange = function () {
-      audio.mus = this.value / 100; audio.muto = false;
-      aggiornaVolumi(); aggiornaBottoneAudio(); mostraPercentuali(); salvaAudio();
-    };
-    righe[1].oninput = righe[1].onchange = function () {
-      audio.sfx = this.value / 100; audio.muto = false;
-      aggiornaBottoneAudio(); mostraPercentuali(); salvaAudio();
-    };
-    // l'effetto di prova si sente quando si lascia il cursore: durante il
-    // trascinamento sarebbe una raffica
-    righe[1].onchange = function () { suona('scelta'); };
-    if (el.audiomuto) {
-      el.audiomuto.onclick = function (ev) {
+    if (el.audiomus) {
+      el.audiomus.onclick = function (ev) {
         if (ev && ev.stopPropagation) ev.stopPropagation();
-        audio.muto = !audio.muto;
-        aggiornaVolumi(); aggiornaBottoneAudio(); mostraPercentuali(); salvaAudio();
-        el.audiomuto.textContent = audio.muto ? 'RIATTIVA L\'AUDIO' : 'SILENZIA TUTTO';
+        audio.mus = !audio.mus;
+        aggiornaVolumi(); aggiornaBottoneAudio(); aggiornaToggle(); salvaAudio();
+      };
+    }
+    if (el.audiosfx) {
+      el.audiosfx.onclick = function (ev) {
+        if (ev && ev.stopPropagation) ev.stopPropagation();
+        audio.sfx = !audio.sfx;
+        aggiornaBottoneAudio(); aggiornaToggle(); salvaAudio();
+        if (audio.sfx) suona('scelta');   // un colpo di prova, solo quando si riaccende
       };
     }
     if (el.audiook) {
@@ -4911,8 +4911,8 @@
       cprev: $('cprev'), cnext: $('cnext'), cdots: $('cdots'),
       carnome: $('carnome'), cardesc: $('cardesc'), carbattuta: $('carbattuta'),
       carperk: $('carperk'), carok: $('carok'),
-      audiobtn: $('audiobtn'), audiowrap: $('audiowrap'), audiomuto: $('audiomuto'),
-      audiook: $('audiook'), volmusval: $('volmusval'), volsfxval: $('volsfxval')
+      audiobtn: $('audiobtn'), audiowrap: $('audiowrap'), audiomus: $('audiomus'),
+      audiosfx: $('audiosfx'), audiook: $('audiook')
     };
     el.avatar.innerHTML = '';
     el.avatar.classList.remove('on', 'entra');
