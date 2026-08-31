@@ -1618,6 +1618,23 @@
             "var": "quiz_visto",
             "is": false
           },
+          "by": "stile",
+          "_nota": "Il perk dello stile si spiega qui e solo qui: in S3, sulla scheda del carosello, era una meccanica del quiz messa dove non serviva. Una riga per stile, la stessa cosa che fa il codice in [S8.LOOP].",
+          "text": {
+            "hawaiano": "Lo stile che hai scelto ti da' una mano: il primo giro storto di ogni livello faccio finta di non averlo visto.",
+            "showman": "Lo stile che hai scelto ti da' una mano: i livelli sono gia' aperti tutti e tre, cominci da quello che vuoi.",
+            "drip": "Lo stile che hai scelto ti da' una mano: una volta per livello ti tolgo io due risposte sbagliate.",
+            "ingegnere": "Lo stile che hai scelto ti da' una mano: tre secondi in piu' su ogni domanda.",
+            "*": "Ogni stile si porta dietro un piccolo vantaggio. Il tuo lo vedrai giocando."
+          }
+        },
+        {
+          "t": "say",
+          "who": "peter",
+          "se": {
+            "var": "quiz_visto",
+            "is": false
+          },
           "text": "Ci sono 3 livelli di difficolta' e hai due tentativi... sei pront{g:o|a}?"
         },
         {

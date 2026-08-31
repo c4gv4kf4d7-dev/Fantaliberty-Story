@@ -2112,6 +2112,39 @@ function apriQuizHub(stile) {
     'gia\' vista la presentazione, un solo tap porta alla griglia');
 }
 
+/* 10a-quater. prima di cominciare, Peter dice al giocatore che vantaggio si
+   porta dietro. E' l'unico posto dove il perk viene spiegato: in S3, sulla
+   scheda del carosello, era una meccanica del quiz messa troppo presto. */
+{
+  const battutaPerk = (stile) => {
+    VN.clearSave();
+    VN.boot(story, { speed: 0, banca, quiz, scene: 'quiz' });
+    VN.state.stile = stile; VN.state.genere = 'f'; VN.state.locked = true;
+    VN.step();                                  // via la prima battuta
+    return $('txt').textContent;
+  };
+  const detto = {
+    hawaiano: battutaPerk('hawaiano'),
+    showman: battutaPerk('showman'),
+    drip: battutaPerk('drip'),
+    ingegnere: battutaPerk('ingegnere')
+  };
+  assert.equal(new Set(Object.values(detto)).size, 4, 'una battuta diversa per stile');
+  assert.match(detto.hawaiano, /primo giro storto/, 'hawaiano: il giro che non si conta');
+  assert.match(detto.showman, /gia' aperti/, 'showman: i livelli sono tutti aperti');
+  assert.match(detto.drip, /due risposte sbagliate/, 'drip: il 50:50');
+  assert.match(detto.ingegnere, /tre secondi in piu'/, 'ingegnere: il tempo in piu\'');
+  assert.equal($('name').textContent, 'Peter', 'la dice Peter');
+
+  // e vale una volta sola: tornando dalla griglia non si rispiega niente
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'quiz' });
+  VN.state.stile = 'drip'; VN.state.quiz_visto = true;
+  VN.step();
+  assert.ok($('griglia').classList.contains('on'),
+    'gia' + '\' vista la presentazione, il perk non si ripete');
+}
+
 /* 10b. il perk dello showman: tutti e tre i livelli aperti da subito */
 {
   const celle = apriQuizHub('showman');
