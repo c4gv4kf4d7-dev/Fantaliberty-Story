@@ -207,9 +207,13 @@
 
   <!-- [S6] il riepilogo delle previsioni nella sala regia: tre monitor, uno
        per macroargomento. Sta fuori da #boxwrap come #regole e #quadrowrap:
-       gli serve tutto lo schermo, non il terzo in basso della dialogo. -->
+       gli serve tutto lo schermo, non il terzo in basso della dialogo.
+       #monschermi non ha una griglia sua: i tre pannelli si agganciano ai
+       tre schermi gia' disegnati nel fondale (ancoraMonitor(), stessa
+       tecnica del terminale in registrazione). Il bottone di conferma resta
+       un overlay a parte, non dentro un monitor. -->
   <div id="monitorwrap">
-    <div id="mongriglia"></div>
+    <div id="monschermi"></div>
     <button id="monconferma">CONFERMA IL TUO KEYNOTE</button>
     <div id="mondettaglio">
       <button id="mondietro">&#9664; Monitor</button>

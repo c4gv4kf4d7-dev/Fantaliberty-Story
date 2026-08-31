@@ -503,37 +503,38 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 .gcell.fatta:hover{background:#1b1f33}
 
 /* ---------- [S6] il riepilogo nella sala regia ----------
-   Tre monitor, uno per macroargomento, sopra il fondale control_room_monitors.
-   Sta fuori da #boxwrap (come #regole): gli serve tutto lo schermo. Il tocco
-   su un monitor apre il dettaglio, che copre la griglia; "torna" lo richiude.
-   Il bottone che chiude la schedina sta sulla griglia, non nel dettaglio. */
-/* niente justify-content:center: se il contenuto (griglia + bottone) e'
-   piu' alto dello schermo (schermi bassi, testo che va a capo), il centraggio
-   lo spingerebbe meta' sopra e meta' sotto i bordi di #stage, che taglia
-   (overflow:clip) senza modo di raggiungere la parte tagliata. overflow-y:auto
-   qui e' la rete di sicurezza; il margin:auto sui due figli (sotto) centra
-   quando c'e' spazio e si azzera da solo quando non basta, lasciando scorrere
-   dall'alto invece di tagliare. */
-#monitorwrap{position:absolute;inset:0;z-index:7;display:none;flex-direction:column;
- justify-content:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch;gap:16px;
- padding:8vh calc(4vw + env(safe-area-inset-right,0px)) calc(4vh + env(safe-area-inset-bottom,0px))
-  calc(4vw + env(safe-area-inset-left,0px));
- background:linear-gradient(rgba(4,6,12,.15), rgba(4,6,12,.55) 60%, rgba(4,6,12,.72))}
-#monitorwrap.on{display:flex}
+   Tre monitor, uno per macroargomento, gia' disegnati dentro il fondale
+   control_room_monitors. I tre pannelli .monschermo non stanno in una
+   griglia sovrapposta: ognuno viene agganciato pixel per pixel a uno dei tre
+   schermi bianchi del fondale (ancoraMonitor() in engine.js — stessa tecnica
+   del terminale in registrazione, vedi SCHERMO_FONDALE/ancoraTerminale). Il
+   tocco su un monitor apre il dettaglio a schermo intero; "torna" lo
+   richiude. Il bottone che chiude la schedina resta un overlay a parte, non
+   dentro un monitor: sta fisso sulla plancia, sempre nello stesso posto. */
+#monitorwrap{position:absolute;inset:0;z-index:7;display:none;pointer-events:none}
+#monitorwrap.on{display:block}
 
-#mongriglia{display:flex;gap:8px;flex:none;margin-top:auto}
-.moncard{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:8px;
- background:rgba(10,14,24,.86);border:2px solid rgba(120,220,180,.4);border-radius:10px;
- padding:10px 6px;color:#eafff2;font-family:inherit;cursor:pointer;
- box-shadow:0 0 18px rgba(0,0,0,.5);
- animation:monentra .5s cubic-bezier(.2,.9,.3,1) backwards}
-.moncard:nth-child(2){animation-delay:.08s}
-.moncard:nth-child(3){animation-delay:.16s}
-.moncard:hover,.moncard:focus{border-color:rgba(120,220,180,.8);outline:none}
-.moncard.fatta{border-color:#4ce08a;box-shadow:0 0 20px rgba(76,224,138,.35)}
-@keyframes monentra{from{opacity:0;transform:translateY(10px) scale(.94)}to{opacity:1;transform:none}}
+#monschermi{position:absolute;inset:0}
 
-.montit{font-size:clamp(8px,2.6vw,12px);letter-spacing:.06em;color:#fff}
+/* posizione e misura vere arrivano da JS (ancoraMonitor): qui solo
+   l'aspetto. Il pannello riempie lo schermo disegnato da bordo a bordo, cosi'
+   il contenuto si distribuisce su tutta l'altezza vera dello schermo invece
+   di stare accalcato in un angolo (spazio verticale generoso: ~52% del
+   fondale, va usato). */
+.monschermo{position:absolute;pointer-events:auto;display:flex;flex-direction:column;
+ align-items:center;justify-content:space-evenly;gap:4px;width:100%;
+ background:#0a0d16;border:0;border-radius:6px;overflow:hidden;
+ padding:6% 8%;color:#eafff2;font-family:inherit;cursor:pointer;
+ box-shadow:inset 0 0 24px rgba(0,0,0,.6);
+ animation:msaccendi .6s ease backwards}
+.monschermo:nth-child(2){animation-delay:.12s}
+.monschermo:nth-child(3){animation-delay:.24s}
+.monschermo:hover,.monschermo:focus{outline:none;
+ box-shadow:inset 0 0 24px rgba(0,0,0,.6),0 0 0 2px rgba(120,220,180,.6)}
+.monschermo.fatta{box-shadow:inset 0 0 24px rgba(0,0,0,.6),0 0 0 2px rgba(76,224,138,.5)}
+@keyframes msaccendi{from{opacity:0;filter:brightness(2.4)}to{opacity:1;filter:none}}
+
+.montit{flex:none;font-size:clamp(8px,3.4vw,13px);letter-spacing:.06em;color:#fff}
 
 /* l'anello: un cerchio pieno (il "buco", colore del pannello) sopra a un
    conic-gradient verde. "--pct" e' 0-100 e si anima con una transizione CSS
@@ -541,27 +542,42 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
    Chrome/Edge): dove non e' supportata il cerchio compare gia' pieno, invece
    di animarsi, senza spezzare niente. */
 @property --pct{syntax:'<number>';inherits:true;initial-value:0}
-.monanello{position:relative;width:clamp(46px,15vw,64px);aspect-ratio:1;border-radius:50%;
+.monanello{flex:none;position:relative;width:clamp(52px,22vw,84px);aspect-ratio:1;border-radius:50%;
  background:conic-gradient(#4ce08a calc(var(--pct,0)*1%), rgba(255,255,255,.14) 0);
  transition:background 1s cubic-bezier(.2,.8,.2,1)}
 .monbuco{position:absolute;inset:14%;border-radius:50%;background:#10141f}
 .monnum{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
  justify-content:center;line-height:1.15;color:#eafff2}
-.monnum b{font-size:clamp(7px,2.1vw,10px)}
-.monnum span{font-size:clamp(5.5px,1.6vw,8px);color:#8fe8b4}
+.monnum b{font-size:clamp(8px,3vw,13px)}
+.monnum span{font-size:clamp(6px,2.2vw,10px);color:#8fe8b4}
 
-.monstato{font-size:clamp(5.5px,1.6vw,8px);letter-spacing:.08em;color:#8fe8b4;text-align:center}
-.moncard:not(.fatta) .monstato{color:#ffd98a}
+/* due righe di conteggio ("DOMANDE 4/4", "FACOLTATIVE 2/3"): piu' leggibili
+   di un elenco di risposte, che a quella larghezza non ci starebbe */
+.msStats{flex:none;display:flex;flex-direction:column;gap:3px;width:100%}
+.msRiga{display:flex;justify-content:space-between;gap:6px;
+ font-size:clamp(5.5px,2vw,9px);letter-spacing:.04em}
+.msEtichetta{color:rgba(234,255,242,.6)}
+.msValore{color:#eafff2}
 
-/* il bottone che chiude la schedina: rosso, fisso sotto la griglia */
-#monconferma{flex:none;margin-bottom:auto;background:#8e2a2a;border:3px solid #ff9a9a;border-radius:8px;
+.monstato{flex:none;font-size:clamp(5.5px,2vw,9px);letter-spacing:.08em;color:#8fe8b4;text-align:center}
+.monschermo:not(.fatta) .monstato{color:#ffd98a}
+
+/* il bottone che chiude la schedina: rosso, un overlay a parte fisso sulla
+   plancia — non si sposta e non dipende dai tre monitor */
+#monconferma{position:absolute;pointer-events:auto;
+ left:calc(6vw + env(safe-area-inset-left,0px));
+ right:calc(6vw + env(safe-area-inset-right,0px));
+ bottom:calc(4vh + env(safe-area-inset-bottom,0px));
+ background:#8e2a2a;border:3px solid #ff9a9a;border-radius:8px;
  color:#fff;font-family:inherit;font-size:clamp(8px,2.3vw,12px);padding:12px 13px;
  cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.5);letter-spacing:.04em}
 #monconferma:hover,#monconferma:focus{background:#a83333;outline:none}
 #monconferma:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.5)}
 
-/* il dettaglio di un monitor: copre la griglia, non e' un pannello a parte */
+/* il dettaglio di un monitor: schermo intero, non un pannello dentro il
+   fondale — resta un overlay a parte come prima */
 #mondettaglio{position:absolute;inset:0;display:none;flex-direction:column;gap:10px;
+ pointer-events:auto;
  padding:8vh calc(4vw + env(safe-area-inset-right,0px)) calc(4vh + env(safe-area-inset-bottom,0px))
   calc(4vw + env(safe-area-inset-left,0px));
  background:#0a0d16}

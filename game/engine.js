@@ -1748,7 +1748,7 @@
     if (!el.monitorwrap) return;
     el.monitorwrap.classList.remove('on');
     if (el.mondettaglio) el.mondettaglio.classList.remove('on');
-    if (el.mongriglia) el.mongriglia.innerHTML = '';
+    if (el.monschermi) el.monschermi.innerHTML = '';
     if (el.monlista) el.monlista.innerHTML = '';
   }
 
@@ -2126,13 +2126,55 @@
     };
   }
 
+  /* I tre schermi bianchi disegnati dentro bg_control_room_monitors,
+     misurati sul file sorgente (1024x1536): stessa tecnica di
+     SCHERMO_FONDALE/ancoraTerminale per il terminale della registrazione,
+     ripetuta tre volte. Se il fondale viene ridisegnato, questi quattro
+     numeri per schermo vanno rimisurati. */
+  var SCHERMI_MONITOR = [
+    { x: 0.00879, y: 0.05859, w: 0.31445, h: 0.52279 },   // sinistra
+    { x: 0.34375, y: 0.05469, w: 0.31445, h: 0.52930 },   // centro
+    { x: 0.68457, y: 0.05859, w: 0.31445, h: 0.52539 }    // destra
+  ];
+
+  function ancoraMonitor() {
+    var box = el && el.monschermi;
+    if (!box || !box.children.length) return;
+    var img = el.bg;
+    var nw = img && img.naturalWidth, nh = img && img.naturalHeight;
+    if (!nw || !nh) {
+      if (img && !img.complete) img.addEventListener('load', ancoraMonitor, { once: true });
+      return;
+    }
+    var lw = el.stage ? el.stage.clientWidth : 0;
+    var lh = el.stage ? el.stage.clientHeight : 0;
+    if (!lw || !lh) return;
+    var scala = Math.max(lw / nw, lh / nh);        // object-fit: cover
+    var dw = nw * scala, dh = nh * scala;
+    var ox = (lw - dw) / 2, oy = 0;                // object-position: center top
+    Array.prototype.forEach.call(box.children, function (nodo, i) {
+      var r = SCHERMI_MONITOR[i];
+      if (!r) return;
+      nodo.style.left = (ox + r.x * dw).toFixed(1) + 'px';
+      nodo.style.top = (oy + r.y * dh).toFixed(1) + 'px';
+      nodo.style.width = (r.w * dw).toFixed(1) + 'px';
+      nodo.style.height = (r.h * dh).toFixed(1) + 'px';
+    });
+  }
+  global.addEventListener('resize', function () {
+    if (el.monitorwrap && el.monitorwrap.classList.contains('on')) ancoraMonitor();
+  });
+
   /* ---------------- [S6] il riepilogo nella sala regia ----------------
      Le previsioni per macroargomento, come tre monitor: la vista generale
      mostra a colpo d'occhio quanto manca a ciascuno (di solito niente: le
      core sono gia' tutte fatte), il tocco apre il dettaglio con le singole
      risposte — ancora tutte modificabili — e le facoltative rimaste da
      pescare. Il bottone che chiude la schedina sta nella vista generale, non
-     nel dettaglio: e' un gesto sulla plancia, non su un monitor solo. */
+     nel dettaglio: e' un gesto sulla plancia, non su un monitor solo. I tre
+     riepiloghi vivono dentro gli schermi disegnati nel fondale, non in una
+     griglia sovrapposta: ogni pannello viene posizionato pixel per pixel su
+     uno dei tre schermi (ancoraMonitor). */
   function showMonitor(st) {
     var argomenti = VN.story[st.da || 'argomenti'] || {};
     var chiavi = Object.keys(argomenti);
@@ -2163,8 +2205,24 @@
       return { nodo: d, num: num };
     }
 
+    // Una riga di statistica compatta ("DOMANDE 4/4"): lo spazio verticale
+    // dello schermo e' generoso (misurato sul fondale), meglio due numeri
+    // leggibili che un elenco di risposte troppo stretto per starci dentro.
+    function msRiga(box, etichetta, fatte, totale) {
+      var r = global.document.createElement('div');
+      r.className = 'msRiga';
+      var e = global.document.createElement('span');
+      e.className = 'msEtichetta';
+      e.textContent = etichetta;
+      var v = global.document.createElement('span');
+      v.className = 'msValore';
+      v.textContent = fatte + '/' + totale;
+      r.appendChild(e); r.appendChild(v);
+      box.appendChild(r);
+    }
+
     function griglia() {
-      el.mongriglia.innerHTML = '';
+      el.monschermi.innerHTML = '';
       chiavi.forEach(function (k) {
         var s = statoCategoria(argomenti, k);
         if (s.percento >= 100 && !completatePrima[k]) {
@@ -2172,26 +2230,39 @@
           suona('traguardo');   // un effetto positivo, non un applauso
         }
         var b = global.document.createElement('button');
-        b.className = 'moncard' + (s.percento >= 100 ? ' fatta' : '');
+        b.className = 'monschermo' + (s.percento >= 100 ? ' fatta' : '');
+
         var tit = global.document.createElement('div');
         tit.className = 'montit';
         tit.textContent = s.nome;
         b.appendChild(tit);
+
         var an = anello(s.percento);
         an.num.innerHTML = '<b>' + s.fatte + '/' + s.totale + '</b><span>' + s.percento + '%</span>';
         b.appendChild(an.nodo);
+
+        var stats = global.document.createElement('div');
+        stats.className = 'msStats';
+        msRiga(stats, 'DOMANDE', s.core.filter(function (d) {
+          return !!(s.date.core || {})[d.id];
+        }).length, s.core.length);
+        msRiga(stats, 'FACOLTATIVE', s.extraGiocate.length, s.quotaExtra);
+        b.appendChild(stats);
+
         var stato = global.document.createElement('div');
         stato.className = 'monstato';
         stato.textContent = s.percento >= 100 ? (st.completato || 'COMPLETATO')
           : (st.daFinire || (s.totale - s.fatte) + ' da completare');
         b.appendChild(stato);
+
         b.onclick = function (ev) {
           if (ev && ev.stopPropagation) ev.stopPropagation();
           if (uscito) return;
           apriDettaglio(k);
         };
-        el.mongriglia.appendChild(b);
+        el.monschermi.appendChild(b);
       });
+      ancoraMonitor();
     }
 
     function apriDettaglio(cat) {
@@ -4993,7 +5064,7 @@
       platea: $('platea'), plateaImg: $('plateaImg'),
       ospitewrap: $('ospitewrap'), ospite: $('ospite'), griglia: $('griglia'),
       evpropwrap: $('evpropwrap'), evprop: $('evprop'),
-      monitorwrap: $('monitorwrap'), mongriglia: $('mongriglia'), monconferma: $('monconferma'),
+      monitorwrap: $('monitorwrap'), monschermi: $('monschermi'), monconferma: $('monconferma'),
       mondettaglio: $('mondettaglio'), mondietro: $('mondietro'), montesta: $('montesta'), monlista: $('monlista'),
       quizbar: $('quizbar'), qinfo: $('qinfo'), qtimer: $('qtimer'), qbar: $('qbar'), qsec: $('qsec'),
       multwrap: $('multwrap'), multrighe: $('multrighe'), multresto: $('multresto'), multok: $('multok'),
