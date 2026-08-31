@@ -2676,6 +2676,8 @@ function apriMoltiplicatori(stato, extra) {
   let spedito = null;
   window.fetch = (url, opt) => { spedito = JSON.parse(opt.body); return Promise.resolve({ ok: true }); };
   apriMoltiplicatori({ mult_bank: 0.15,
+    nome: 'Tester', genere: 'f', store: 'liberty', reparto: 'operation',
+    anni: '2', device: '13 mini', stile: 'drip',
     quiz: { base: { passato: true, tentativi: 1, pool: 0, seconda: false, vinto: 0.1 } } },
     { backend: { url: 'https://esempio', chiave: 'x' } });
   const righe = [...$('multrighe').querySelectorAll('.mriga')];
@@ -2687,6 +2689,63 @@ function apriMoltiplicatori(stato, extra) {
   assert.deepEqual(spedito.quiz.moltiplicatori, { iphone: 0, watch: 0, altro: 0.15 },
     'e la distribuzione scelta');
   assert.equal(spedito.quiz.livelli.base.passato, true, 'e come sono andati i livelli');
+
+  // Il payload e' il contratto con la tabella di Supabase (docs/backend.sql) e
+  // con l'elenco dei dati raccolti nel regolamento: se qui compare o sparisce
+  // un campo, quei due vanno aggiornati insieme.
+  assert.deepEqual(Object.keys(spedito).sort(),
+    ['anni', 'device', 'email', 'flags', 'genere', 'nome', 'picks', 'punti',
+     'quiz', 'reparto', 'run_id', 'runner', 'store', 'stile', 'versione'].sort(),
+    'i campi della schedina sono quelli dichiarati in docs/backend.sql e nel regolamento');
+  assert.equal(typeof spedito.runner.record, 'number',
+    'il record dell\'Apple Campus Run viaggia con la schedina');
+  delete window.fetch;
+}
+
+/* 10k. il record della corsa arriva davvero nella schedina ---- */
+{
+  VN.clearSave();
+  let spedito = null;
+  window.fetch = (url, opt) => { spedito = JSON.parse(opt.body); return Promise.resolve({ ok: true }); };
+  apriMoltiplicatori({ mult_bank: 0.05, runner_record: 4200,
+    quiz: { base: { passato: true, tentativi: 1, pool: 0, seconda: false, vinto: 0.05 } } },
+    { backend: { url: 'https://esempio', chiave: 'x' } });
+  const r = [...$('multrighe').querySelectorAll('.mriga')];
+  r[0].querySelector('.mpiu').onclick({ stopPropagation() {} });
+  $('multok').onclick({ stopPropagation() {} });
+  [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });
+  assert.equal(spedito.runner.record, 4200, 'il record della corsa e\' quello raggiunto');
+  delete window.fetch;
+}
+
+/* 10l. una riga sola per partita: le due spedizioni portano lo stesso id ---- */
+{
+  VN.clearSave();
+  window.localStorage.removeItem('fl_nexus_da_inviare');   // niente code di test precedenti
+  const inviati = [];
+  let intestazioni = null;
+  // la prima spedizione viene rifiutata (colonna mancante, rete): finisce in
+  // coda e riparte dopo. Deve tornare come la stessa riga, non come una nuova.
+  window.fetch = (url, opt) => {
+    inviati.push(JSON.parse(opt.body));
+    intestazioni = opt.headers;
+    return Promise.resolve({ ok: inviati.length > 1, status: 400, text: () => Promise.resolve('') });
+  };
+  apriMoltiplicatori({ mult_bank: 0.05,
+    quiz: { base: { passato: true, tentativi: 1, pool: 0, seconda: false, vinto: 0.05 } } },
+    { backend: { url: 'https://esempio', chiave: 'x' } });
+  [...$('multrighe').querySelectorAll('.mriga')][0].querySelector('.mpiu')
+    .onclick({ stopPropagation() {} });
+  $('multok').onclick({ stopPropagation() {} });
+  [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });
+  await Promise.resolve(); await Promise.resolve();   // il rifiuto finisce in coda
+  VN.riprovaInvio();                       // la seconda spedizione della stessa partita
+  assert.ok(inviati.length >= 2, 'piu\' di una spedizione nella stessa partita');
+  assert.match(inviati[0].run_id, /^[0-9a-f-]{36}$/, 'la schedina porta un id di partita');
+  assert.equal(new Set(inviati.map((x) => x.run_id)).size, 1,
+    'tutte le spedizioni della stessa partita portano lo stesso id: una riga sola');
+  assert.match(intestazioni.Prefer, /merge-duplicates/,
+    'e chiedono a Supabase di riscrivere la riga invece di aggiungerne una');
   delete window.fetch;
 }
 

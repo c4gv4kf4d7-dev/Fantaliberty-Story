@@ -312,6 +312,37 @@ testa va su `height` piccola con `bottom`/`right` per farlo entrare da un
 lato, non a schermo pieno). Il test non se ne accorge, si vede solo negli
 screenshot.
 
+## Cosa arriva a Supabase, e quando
+
+Il payload di `payload()` in `engine.js` e' un contratto con **tre** posti che
+devono restare d'accordo: la tabella in `docs/backend.sql`, l'elenco dei dati
+raccolti dentro il regolamento (zona 3 della lobby) e il test che li confronta.
+Chi aggiunge o toglie un campo li aggiorna tutti e tre — `npm test` fallisce se
+l'elenco dei campi cambia da solo.
+
+- **Si spedisce due volte ma la riga e' una sola**: alla conferma delle
+  previsioni e di nuovo quando si assegnano i moltiplicatori del quiz, che
+  arrivano giorni dopo. Le due spedizioni portano lo stesso `run_id` (generato
+  una volta, salvato con la partita) e Supabase riscrive la riga invece di
+  aggiungerne un'altra (`Prefer: resolution=merge-duplicates`). Perche' regga
+  servono **due cose nel database**: l'indice unico su `run_id` e la policy di
+  update — senza l'indice l'upsert non ha su cosa agganciarsi e tornano le due
+  righe, in silenzio. Stanno in `docs/backend.sql`.
+- **`anni` e' il codice della fascia, non l'etichetta**: `'0'` = 0-2 anni,
+  `'1'` = 3-7, `'2'` = 8-12, `'3'` = piu' di 12. Serve al `rookieBonus`.
+- **`npm run supabase` dice se la tabella e' pronta.** Confronta i campi che
+  `payload()` spedisce con le colonne che esistono davvero, senza scrivere
+  niente. Va lanciato dopo ogni campo nuovo e prima di pubblicare: il 31 agosto
+  2026 mancavano `quiz`, `email` e `runner`, cioe' **nessuna schedina sarebbe
+  arrivata** e il gioco non l'avrebbe detto a nessuno.
+- **Un rifiuto e' muto per il giocatore ma non invisibile**: la schedina torna
+  in coda (`fl_nexus_da_inviare`) e riparte al prossimo avvio, e il motivo
+  finisce in console. Il caso tipico e' una colonna che manca nella tabella
+  (400, `PGRST204`): `docs/backend.sql` ha gli `alter table` pronti.
+- **La chiave nel sito puo' solo inserire.** Non legge, non modifica, non
+  cancella. La verifica dal vivo e le query di cancellazione stanno in fondo a
+  `docs/backend.sql`.
+
 ## I punteggi: il conto finale non lo fa il gioco
 
 L'app salva e spedisce la **somma secca** delle risposte (`totale()`), e basta.

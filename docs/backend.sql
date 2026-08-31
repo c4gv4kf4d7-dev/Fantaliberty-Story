@@ -8,6 +8,12 @@
 create table if not exists public.runs (
   id           uuid primary key default gen_random_uuid(),
   submitted_at timestamptz not null default now(),
+  -- Identificativo della partita, generato dal gioco. Serve a tenere UNA riga
+  -- per partita: la schedina parte due volte (conferma delle previsioni, e poi
+  -- i moltiplicatori del quiz, che arrivano giorni dopo) e la seconda deve
+  -- riscrivere la prima, non aggiungerne un'altra. Ci vuole l'indice unico
+  -- qui sotto, altrimenti l'upsert non ha su cosa agganciarsi.
+  run_id       uuid,
   nome         text,
   genere       text,
   store        text,
@@ -25,6 +31,11 @@ create table if not exists public.runs (
   -- arrivate:
   --     alter table public.runs add column if not exists quiz jsonb;
   quiz         jsonb,
+  -- Aggiunta con l'Apple Campus Run: il record della corsa. Come per le altre,
+  -- se la tabella esiste gia' va aggiunta prima di pubblicare, altrimenti
+  -- l'invio viene rifiutato con un 400 (PGRST204):
+  --     alter table public.runs add column if not exists runner jsonb;
+  runner       jsonb,
   -- Aggiunta con la schermata dell'email (dopo il teleprompter, prima dei
   -- titoli di coda): e' facoltativa, quindi puo' essere null. Se la tabella
   -- esiste gia', la colonna va aggiunta prima di pubblicare, altrimenti
@@ -33,6 +44,15 @@ create table if not exists public.runs (
   email        text,
   versione     text
 );
+
+-- Se la tabella e' stata creata prima di S8, dell'email, della corsa o dell'id
+-- di partita, le colonne aggiunte dopo vanno messe a mano: senza, ogni schedina
+-- viene rifiutata con un 400 e resta in coda nel telefono, in silenzio.
+--     alter table public.runs add column if not exists quiz   jsonb;
+--     alter table public.runs add column if not exists email  text;
+--     alter table public.runs add column if not exists runner jsonb;
+--     alter table public.runs add column if not exists run_id uuid;
+-- Per sapere come sta la tabella vera: npm run supabase
 
 alter table public.runs enable row level security;
 
@@ -44,8 +64,26 @@ drop policy if exists "chiunque puo inserire la propria schedina" on public.runs
 create policy "chiunque puo inserire la propria schedina"
   on public.runs for insert to anon with check (true);
 
+-- Una riga per partita, non una per spedizione.
+--
+-- Il gioco spedisce due volte: alla conferma delle previsioni e quando assegna
+-- i moltiplicatori del quiz, che arrivano giorni dopo. Le due spedizioni
+-- portano lo stesso run_id, e la seconda riscrive la prima invece di
+-- aggiungere una riga (PostgREST: Prefer: resolution=merge-duplicates).
+--
+-- Servono due cose: l'indice unico su cui agganciare l'upsert, e il permesso
+-- di aggiornare. Il permesso e' largo come quello di inserire — chi conosce un
+-- run_id puo' riscrivere quella riga — ma il run_id e' un uuid casuale che sta
+-- solo nel telefono di chi gioca, e non compare da nessuna parte.
+create unique index if not exists runs_run_id_key on public.runs (run_id);
+
+drop policy if exists "chiunque puo aggiornare la propria schedina" on public.runs;
+create policy "chiunque puo aggiornare la propria schedina"
+  on public.runs for update to anon using (true) with check (true);
+
 -- Nessuna policy di select: di default RLS nega tutto quello che non e'
--- esplicitamente permesso.
+-- esplicitamente permesso. L'upsert funziona lo stesso, perche' con
+-- "return=minimal" non deve rileggere niente.
 
 
 -- ---------------------------------------------------------------------------
@@ -61,17 +99,23 @@ create policy "chiunque puo inserire la propria schedina"
 --   genere    serve al testo, che si declina ("sei pronto" / "sei pronta")
 --   store     classifica per punto vendita
 --   reparto   classifica per categoria
---   anni      classifica per anzianita'
+--   anni      classifica per anzianita'. E' il CODICE della fascia, non
+--             l'etichetta: 0 = 0-2 anni, 1 = 3-7, 2 = 8-12, 3 = piu' di 12
 --   device    dato di colore, chiesto in [S0]
 --   stile     decide battute, sprite e perk del quiz
 --   punti     ricalcolati dalle risposte, non accumulati
 --   picks     le risposte date, per macroargomento
 --   flags     due scelte di tono di [S2] e [S4]
 --   quiz      livelli del quiz di Peter e moltiplicatori assegnati
+--   runner    il record dell'Apple Campus Run. Come entri in classifica non e'
+--             deciso: il dato viaggia comunque, cosi' la decisione si puo'
+--             prendere dopo invece che perdere le corse gia' fatte
 --   email     facoltativa: la lascia il giocatore dopo il teleprompter, e
 --             serve solo a mandargli i risultati finali. Chi salta la
 --             schermata manda null
 --   versione  la versione dello script con cui e' stata giocata
+--   run_id    l'id della partita, generato dal gioco: tiene insieme le due
+--             spedizioni della stessa partita in una riga sola
 --
 -- Non c'e' altro: l'email solo se il giocatore l'ha lasciata, e niente
 -- identificativi del dispositivo, niente indirizzi IP raccolti dal gioco.
