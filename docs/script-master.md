@@ -517,12 +517,15 @@ Indice degli id in `docs/indice-domande.md`.
   Asset: bg_control_room_susan (Susan alla console, tre monitor davanti a lei
   — l'immagine ha già la figura disegnata dentro: niente sprite npc qui, la
   battuta arriva in cuffia come il resto della regia)
+  "Questo è il tuo Keynote. O almeno la versione che hai deciso di prevedere."
   "Ok, da qui non si torna indietro."
   → [S6.02]
 
 [S6.02] SUSAN — cambio fondale
-  Asset: bg_control_room_monitors, dissolvenza
-  "Questo è il tuo Keynote. O almeno la versione che hai deciso di prevedere."
+  Asset: bg_control_room_monitors, dissolvenza. Appena la dissolvenza finisce
+  si apre subito [S6.03], senza un'altra battuta in mezzo: le due righe di
+  Susan restano entrambe prima del cambio fondale, cosi' il tocco dopo "Ok,
+  da qui non si torna indietro" porta dritto ai tre monitor.
   → [S6.03]
 
 [S6.03] I TRE MONITOR — riepilogo modificabile
