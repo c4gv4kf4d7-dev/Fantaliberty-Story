@@ -153,3 +153,64 @@ create policy "chiunque puo aggiornare la propria schedina"
 -- diritto, ed e' scritto nel regolamento):
 --
 --   delete from public.runs where lower(nome) = lower('nickname');
+
+
+-- ===========================================================================
+-- Classifica dell'Apple Campus Run
+--
+-- Una riga per giocatore, e dentro il MIGLIOR punteggio: non lo storico delle
+-- partite. Il giocatore e' quello che ha gia' il gioco (player_id e' lo stesso
+-- run_id della schedina, player_name il nickname scelto in [S0]): la corsa non
+-- chiede un nome nuovo a nessuno.
+
+create table if not exists public.runner_leaderboard (
+  player_id    text primary key,
+  player_name  text not null,
+  best_score   integer not null default 0,
+  updated_at   timestamptz not null default now()
+);
+
+-- La classifica si legge in ordine di punteggio, e a parita' e' davanti chi ci
+-- e' arrivato prima. Senza questo indice ogni apertura della classifica
+-- ordinerebbe tutta la tabella.
+create index if not exists runner_leaderboard_ordine
+  on public.runner_leaderboard (best_score desc, updated_at asc);
+
+alter table public.runner_leaderboard enable row level security;
+
+-- Questa tabella, al contrario di runs, si LEGGE: e' una classifica, sta
+-- dentro il gioco e la vedono tutti. Non c'e' niente di personale — un
+-- nickname e un punteggio.
+drop policy if exists "la classifica si legge" on public.runner_leaderboard;
+create policy "la classifica si legge"
+  on public.runner_leaderboard for select to anon using (true);
+
+drop policy if exists "il punteggio si scrive" on public.runner_leaderboard;
+create policy "il punteggio si scrive"
+  on public.runner_leaderboard for insert to anon with check (true);
+
+drop policy if exists "il punteggio si aggiorna" on public.runner_leaderboard;
+create policy "il punteggio si aggiorna"
+  on public.runner_leaderboard for update to anon using (true) with check (true);
+
+-- Il punteggio non scende mai. Il gioco gia' controlla di scrivere solo quando
+-- il punteggio e' piu' alto, ma due partite chiuse nello stesso momento (o una
+-- risposta che arriva in ritardo) potrebbero riscrivere il record con uno
+-- peggiore: qui la regola e' del database, e non si puo' aggirare.
+create or replace function public.runner_solo_meglio()
+returns trigger language plpgsql as $$
+begin
+  if new.best_score < old.best_score then
+    new.best_score := old.best_score;
+    new.updated_at := old.updated_at;
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists runner_solo_meglio on public.runner_leaderboard;
+create trigger runner_solo_meglio
+  before update on public.runner_leaderboard
+  for each row execute function public.runner_solo_meglio();
+
+-- Per cancellare la classifica a fine iniziativa, come per le schedine:
+--   delete from public.runner_leaderboard;
