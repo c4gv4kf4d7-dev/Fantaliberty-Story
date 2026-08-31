@@ -25,6 +25,7 @@ Uno sfondo intero per schermata, sempre presente sotto ogni altra cosa.
 | `bg_lobby_z3_regolamento` | S1 | Zona 3. Il cartellone illuminato del regolamento: la lastra bianca è **vuota di proposito**, il testo è UI vera che si apre sopra (non va disegnato nell'immagine). Ha preso il posto di `bg_lobby_z3_premi`, la vecchia teca dei premi |
 | `bg_lobby_z4_quiz_bloccata` | S1 | Zona 4 prima del lock. Sopra: `obj_tavolino_buzzer_peter` + Peter addormentato |
 | `bg_lobby_z4_quiz_aperta` | S8 | Stessa zona, generata come derivato diretto della bloccata con le luci alzate — va usata al posto della precedente non appena `run.locked === true` |
+| `bg_palco_vuoto` | S2 | Dove va a finire la discesa in sala: il palco vuoto visto da chi ci sta sopra, con la platea davanti. Prima li' tornava `bg_sala_teatro`, cioe' il punto da cui la carrellata era appena partita |
 | `bg_sala_ingresso_superiore` | S2 | Appare subito dopo la transizione della tenda. Susan piccola sul palco in fondo |
 | `bg_sala_discesa_palco` | S2 | Opzionale/P1 — solo se si implementa il parallax a 3 layer invece del fade semplice tra S2 e S4 |
 | `bg_backstage_corridoio` | S2 | Corridoio verso il camerino, durante la corsa |

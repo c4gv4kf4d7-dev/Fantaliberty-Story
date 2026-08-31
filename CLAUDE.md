@@ -225,6 +225,12 @@ mesi lo step che nascondeva il giocatore toglieva solo `on`, e il giocatore
 restava a schermo davanti alla sagoma del CEO. Si tolgono **insieme**
 (`spegniIo()`).
 
+**La figura del giocatore non attraversa i cambi di scena**: `goScene()` la
+spegne sempre, e ogni scena che la vuole la dichiara con uno step `io` come
+prima cosa (quinte, keynote, argomenti, argomento, teleprompter, finale).
+Senza, bastava una scena che si dimenticava di nasconderla per ritrovarsela
+addosso altrove — in lobby, davanti a Francesca, dopo le previsioni.
+
 Regola (violata due volte con lo stesso sintomo — il personaggio sparisce
 con lo sprite giusto caricato): **`#npc` porta una sola animazione alla
 volta.** Le classi di reazione si tolgono da sole quando finiscono, e
@@ -429,9 +435,17 @@ legge su un telefono.
   perché un tap li faceva sparire. Ora un tocco mette la sequenza in
   modalità veloce (i blocchi restano meno tempo ma **compaiono tutti**),
   l'ultimo blocco non sfuma mai da solo (resta con la freccia finché non
-  arriva l'ultimo tap). Timing attuale: ~12s senza toccare, ~6s con un
-  tocco a metà, ~4s toccando di continuo — cambiarli tocca `titoliDiCoda`
-  in `engine.js` e i `tieni` dei blocchi in `story.json`.
+  arriva l'ultimo tap). **Il tocco non fa sparire il blocco che si sta
+  leggendo**: mette in modalità veloce e aspetta comunque `TIENI_VELOCE`
+  (~0,9s) prima di sfumare. Timing attuale: ~12s senza toccare, ~5,5s
+  toccando di continuo — cambiarli tocca `titoliDiCoda` in `engine.js` e i
+  `tieni` dei blocchi in `story.json`.
+
+- **Le due schermate d'avvio (sigla e barra) vanno da sole, ma si saltano
+  con un tocco**, e la freccia lo dice: senza, sembravano bloccate e chi le
+  aveva già viste non aveva modo di passare oltre. Chi ne aggiunge una
+  automatica faccia lo stesso — `pending` + freccia, e i timer annullati
+  quando si salta.
 - **Le sostituzioni di stringhe lunghe su questo file falliscono in
   silenzio.** Apostrofi curvi e accenti spesso non combaciano e
   `str.replace`/`Edit` non protestano. **Dopo ogni modifica a CLAUDE.md,

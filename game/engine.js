@@ -218,20 +218,40 @@
     el.logo.className = 'on';
     if (!VN.speed) { el.logo.className = ''; return done(); }
 
-    setTimeout(accendi, nero);
+    /* Va da sola, ma il tocco deve funzionare lo stesso — e deve vedersi che
+       funziona: senza la freccia le prime due schermate sembravano bloccate,
+       e chi le ha gia' viste non aveva modo di passare oltre. */
+    var timers = [];
+    var finita = false;
+    var chiudi = function () {
+      if (finita) return;
+      finita = true;
+      timers.forEach(clearTimeout);
+      el.logo.className = '';
+      el.curtainArrow.style.opacity = 0;
+      pending = null;
+      done();
+    };
+    el.curtainArrow.style.opacity = 1;
+    pending = chiudi;
+
+    timers.push(setTimeout(accendi, nero));
 
     function accendi() {
+    if (finita) return;
     void el.logo.offsetWidth;
     el.logo.classList.add('accendi');
-    setTimeout(function () {
+    timers.push(setTimeout(function () {
+      if (finita) return;
       el.logo.classList.remove('accendi');
       el.logo.classList.add('acceso');
-      setTimeout(function () {
+      timers.push(setTimeout(function () {
+        if (finita) return;
         el.logo.classList.remove('acceso');
         el.logo.classList.add('spegni');
-        setTimeout(function () { el.logo.className = ''; done(); }, uscita);
-      }, fisso);
-    }, accensione);
+        timers.push(setTimeout(chiudi, uscita));
+      }, fisso));
+    }, accensione));
     }
   }
 
@@ -260,6 +280,23 @@
 
     if (!VN.speed) { el.boot.classList.remove('on'); return done(); }
 
+    // come la sigla: va da sola, ma un tocco la salta e la freccia lo dice
+    var timers = [];
+    var finito = false;
+    var chiudi = function () {
+      if (finito) return;
+      finito = true;
+      clearInterval(avanza);
+      timers.forEach(clearTimeout);
+      el.boot.classList.remove('on');
+      el.curtainTxt.innerHTML = '';
+      el.curtainArrow.style.opacity = 0;
+      pending = null;
+      done();
+    };
+    el.curtainArrow.style.opacity = 1;
+    pending = chiudi;
+
     // il blocco in corso e' grigio, quelli fatti sono pieni: come una barra vera
     var passo = caricamento / blocchi, n = 0;
     var avanza = setInterval(function () {
@@ -268,7 +305,8 @@
       if (++n > blocchi) clearInterval(avanza);
     }, passo);
 
-    setTimeout(function () {
+    timers.push(setTimeout(function () {
+      if (finito) return;
       clearInterval(avanza);
       el.boot.classList.remove('on');
       // fase 2: schermo nero e basta, con il cursore che aspetta
@@ -276,8 +314,8 @@
       cur.className = 'tline';
       cur.innerHTML = '<span class="tcur"></span>';
       el.curtainTxt.appendChild(cur);
-      setTimeout(function () { el.curtainTxt.innerHTML = ''; done(); }, attesa);
-    }, caricamento + 260);
+      timers.push(setTimeout(chiudi, attesa));
+    }, caricamento + 260));
   }
 
   /* ---------------- cartello d'apertura ----------------
@@ -305,8 +343,9 @@
     // Quanto resta a schermo un blocco, e quanto dura la dissolvenza, una volta
     // che il giocatore ha toccato: abbastanza per leggere, non abbastanza per
     // annoiarsi.
-    var TIENI_VELOCE = st.tieniVeloce != null ? st.tieniVeloce : 380;
-    var SFUMA_VELOCE = 150;
+    var TIENI_VELOCE = st.tieniVeloce != null ? st.tieniVeloce : 900;
+    var SFUMA_VELOCE = 200;
+    var attesaVeloce = false;   // il blocco a schermo sta gia' finendo il suo giro
 
     function stop() { if (codaId) { clearTimeout(codaId); codaId = null; } }
 
@@ -315,11 +354,20 @@
        fine. E' la differenza fra "accelera" e "vai via", e la prima versione
        faceva la seconda: un tocco per sbaglio e i titoli sparivano. */
     function avanti() {
-      if (chiuso) return;
+      if (chiuso || attesaVeloce) return;
       veloce = true;
+      attesaVeloce = true;
       stop();
-      el.curtainTxt.classList.add('sfumato');
-      codaId = setTimeout(prossimo, SFUMA_VELOCE);
+      // Il blocco a schermo NON sparisce sotto il dito: resta il tempo di
+      // leggerlo, solo piu' corto. Prima il tocco lo faceva sfumare subito, e
+      // le scritte sparivano proprio mentre si cercava di andare piu' veloce.
+      codaId = setTimeout(function () {
+        if (chiuso) return;
+        pending = null;
+        if (i >= blocchi.length) return attendiUltimo();
+        el.curtainTxt.classList.add('sfumato');
+        codaId = setTimeout(prossimo, SFUMA_VELOCE);
+      }, TIENI_VELOCE);
     }
 
     // Dopo l'ultimo blocco la sequenza si ferma e aspetta: il countdown arriva
@@ -349,6 +397,7 @@
       if (chiuso) return;
       if (i >= blocchi.length) return attendiUltimo();
       var b = blocchi[i++];
+      attesaVeloce = false;
       el.curtainTxt.classList.remove('sfumato');
       el.curtainTxt.innerHTML = '';
 
@@ -563,6 +612,13 @@
     chiudiQuadro();
     chiudiEmail();
     chiudiTransizioni();
+    /* La figura del giocatore non attraversa i cambi di scena: ogni scena che
+       la vuole la dichiara con uno step "io" come prima cosa (le uniche sono
+       quinte, keynote, argomenti, argomento, teleprompter e finale). Senza
+       questa riga bastava una scena che si dimenticava di nasconderla per
+       ritrovarsela addosso altrove — in lobby, davanti a Francesca, dopo le
+       previsioni. */
+    spegniIo();
     if (el.modal) el.modal.classList.remove('on');
     if (!apreSulNero(sc)) el.curtain.classList.remove('on', 'lights');
     // Il box del dialogo restava acceso con l'ultima battuta della scena

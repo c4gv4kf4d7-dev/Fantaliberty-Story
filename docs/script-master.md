@@ -274,7 +274,9 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
   → transizione verso il palco (fade o parallax opzionale) → [S2.02]
 
 [S2.02] SUSAN — dialogo (forma neutra, nessun indirizzo di genere)
-  Asset: bg_sala_ingresso_superiore (ravvicinata) + chr_susan_mani_capelli
+  Asset: bg_palco_vuoto + chr_susan_mani_capelli
+  (la discesa in sala finisce sul palco, visto da chi ci sta sopra: prima
+   tornava la sala dall'alto, cioe' il punto da cui era appena partita)
   "Ascolta. Il CEO è bloccato in tangenziale, no in autostrada...
    insomma è fermo.
 
