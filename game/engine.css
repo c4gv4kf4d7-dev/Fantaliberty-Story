@@ -1005,3 +1005,54 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #dev .scena span{color:#8d96b5;font-size:8px}
 #dev .via{background:#2f6df0;border-color:#7ba3ff;font-size:11px;padding:12px;
  width:100%;margin-bottom:6px}
+
+/* ===== Cartello di attesa (solo su fantaliberty.com, fino al 2 settembre) ====
+   Tutto disegnato con gradienti a stop netti: e' pixel art fatta in CSS, non
+   un'immagine da scaricare. Le tinte sono quelle del gioco (notte blu, rosso
+   sipario, ambra del faro). */
+html.inattesa, html.inattesa body{background:#0a0a0f;overflow:hidden}
+#gate[hidden]{display:none}
+#gate{position:fixed;inset:0;z-index:99;display:flex;align-items:center;
+  justify-content:center;background:#0d0f1c;overflow:hidden}
+#gateScena{position:absolute;inset:0}
+
+/* il palco vuoto: una fascia di assi in basso */
+#gate .gatePalco{position:absolute;left:0;right:0;bottom:0;height:18%;
+  background:repeating-linear-gradient(90deg,#3a2a20 0,#3a2a20 14px,#33231a 14px,#33231a 28px);
+  border-top:6px solid #191118}
+/* il cono del faro: tre fasce a stop netto, come una sfumatura pixellata */
+#gate .gateFaro{position:absolute;left:50%;top:0;bottom:18%;width:min(78vw,520px);
+  transform:translateX(-50%);
+  background:rgba(255,201,110,.10);
+  clip-path:polygon(38% 0,62% 0,100% 100%,0 100%)}
+#gate .gateFaro::before,#gate .gateFaro::after{content:'';position:absolute;
+  left:50%;top:0;bottom:0;transform:translateX(-50%);background:rgba(255,209,130,.10)}
+#gate .gateFaro::before{width:70%;clip-path:polygon(40% 0,60% 0,100% 100%,0 100%)}
+#gate .gateFaro::after{width:44%;clip-path:polygon(42% 0,58% 0,100% 100%,0 100%)}
+/* la pozza di luce sul palco */
+#gate .gatePozza{position:absolute;left:50%;bottom:11%;width:min(64vw,430px);
+  height:7%;transform:translateX(-50%);border-radius:50%;
+  background:rgba(255,206,124,.16);box-shadow:0 0 0 10px rgba(255,206,124,.07)}
+/* le due tende, socchiuse */
+#gate .gateTenda{position:absolute;top:0;bottom:0;width:19%;
+  background:repeating-linear-gradient(90deg,
+    #6d1220 0,#6d1220 10px,#8a1a2b 10px,#8a1a2b 20px,
+    #5a0e1a 20px,#5a0e1a 30px,#7a1524 30px,#7a1524 40px)}
+#gate .gateTenda.sx{left:0;box-shadow:14px 0 0 0 rgba(10,8,14,.5)}
+#gate .gateTenda.dx{right:0;box-shadow:-14px 0 0 0 rgba(10,8,14,.5)}
+/* la mantovana che le unisce in alto */
+#gate .gateMantovana{position:absolute;left:0;right:0;top:0;height:11%;
+  background:repeating-linear-gradient(90deg,
+    #7a1524 0,#7a1524 12px,#961f31 12px,#961f31 24px);
+  border-bottom:6px solid #4a0b15}
+
+#gateTesti{position:relative;text-align:center;padding:0 22vw 16vh;
+  color:#ffd88c;line-height:1.7;text-shadow:0 3px 0 #40101c}
+#gate .gateOcchiello{margin:0 0 5vh;font-size:clamp(6px,1.9vw,10px);
+  letter-spacing:.22em;color:#f2f2f7;opacity:.7}
+#gate .gateTit{margin:0;font-size:clamp(12px,4.2vw,30px);line-height:2;
+  font-weight:400;color:#ffe1a3}
+#gate .gateSub{margin:6vh 0 0;font-size:clamp(7px,2.1vw,13px);line-height:2.1;
+  color:#f2f2f7;opacity:.9}
+#gate .gateSub b{display:inline-block;margin-top:.7em;font-weight:400;
+  font-size:1.5em;color:#ff9f57}

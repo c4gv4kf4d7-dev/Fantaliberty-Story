@@ -253,6 +253,25 @@
   </div>
 </div>
 
+<!-- Cartello "manca poco" sul dominio pubblico: si mostra solo su
+     fantaliberty.com e sparisce da solo alla data di apertura (vedi lo script
+     in fondo). Sull'indirizzo di sviluppo non compare mai. -->
+<div id="gate" hidden>
+  <div id="gateScena" aria-hidden="true">
+    <div class="gateFaro"></div>
+    <div class="gatePalco"></div>
+    <div class="gatePozza"></div>
+    <div class="gateTenda sx"></div>
+    <div class="gateTenda dx"></div>
+    <div class="gateMantovana"></div>
+  </div>
+  <div id="gateTesti">
+    <p class="gateOcchiello">FANTALIBERTY</p>
+    <h1 class="gateTit">PREPARATI<br>A ENTRARE<br>IN SCENA.</h1>
+    <p class="gateSub">CI VEDIAMO IL<br><b>2 SETTEMBRE</b></p>
+  </div>
+</div>
+
 <script src="./game/engine.js?v=97"></script>
 <script>
 (function () {
@@ -263,6 +282,24 @@
     dev: params.has('dev')                  // ?dev -> menu di salto rapido, vedi README
   };
   if (params.get('reset')) { try { localStorage.removeItem('fl_nexus_save_v1'); } catch (e) {} }
+
+  // ---- Cartello di attesa sul sito pubblico -------------------------------
+  // Non e' un controllo di accesso: e' un'insegna. Chiunque sappia leggere il
+  // sorgente entra lo stesso. Serve solo a non far trovare il gioco aperto a
+  // chi passa da fantaliberty.com prima del 2 settembre.
+  var DOMINI_PUBBLICI = ['fantaliberty.com', 'www.fantaliberty.com'];
+  var APERTURA = Date.parse('2026-09-02T00:00:00+02:00');
+  function siApre() {
+    if (params.has('apri')) return true;                 // ?apri -> scavalca il cartello
+    if (DOMINI_PUBBLICI.indexOf(location.hostname) < 0) return true;
+    return Date.now() >= APERTURA;
+  }
+  if (!siApre()) {
+    document.getElementById('gate').hidden = false;
+    document.getElementById('stage').hidden = true;
+    document.documentElement.classList.add('inattesa');
+    return;                                              // il motore non parte proprio
+  }
 
   var ENGINE_ATTESO = '24';   // deve combaciare con VN.engine in game/engine.js
   var partito = false;

@@ -2690,6 +2690,23 @@ function apriMoltiplicatori(stato, extra) {
   delete window.fetch;
 }
 
+/* ---------- il cartello di attesa sul dominio pubblico ---------- */
+{
+  const src = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const domini = /var DOMINI_PUBBLICI = \[([^\]]*)\]/.exec(src);
+  assert.ok(domini, 'il cartello di attesa dichiara i domini pubblici');
+  const lista = domini[1].split(',').map(x => x.trim().replace(/^'|'$/g, ''));
+  assert.deepEqual(lista.sort(), ['fantaliberty.com', 'www.fantaliberty.com'],
+    'il cartello vale solo sul dominio pubblico: l\'indirizzo di sviluppo resta aperto');
+  const data = /var APERTURA = Date.parse\('([^']+)'\)/.exec(src);
+  assert.ok(data && !Number.isNaN(Date.parse(data[1])),
+    'il cartello si toglie da solo a una data valida');
+  assert.ok(src.includes("params.has('apri')"),
+    'resta una scorciatoia per vedere il gioco sul dominio pubblico');
+  assert.ok(/id="gate"[^>]*hidden/.test(src),
+    'il cartello parte nascosto: lo accende solo il controllo sul dominio');
+}
+
 if (todoAssets.size) console.log(`asset ancora da disegnare (${todoAssets.size}):`, [...todoAssets].join(', '));
 console.log(`banca domande: ${idsDomande.size} domande, ${nBattute} battute · quiz: ${idsQuiz.size} domande`);
 console.log('smoke test: OK');

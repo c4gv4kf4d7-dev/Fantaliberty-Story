@@ -583,3 +583,24 @@ legge su un telefono.
 - **`npm test` può contenere asserzioni che documentano uno stato
   temporaneo** (es. "personaggio ancora senza sprite"). Se una modifica lo
   rende vero, il test va aggiornato insieme al codice, non aggirato.
+
+## Il cartello di attesa su fantaliberty.com
+
+Fino al 2 settembre il dominio pubblico non apre il gioco: mostra un cartello
+in pixel art (sipario socchiuso, palco vuoto, faro) disegnato **solo con CSS**,
+niente immagine da scaricare. Tre cose da sapere:
+
+1. **Non e' un controllo di accesso, e' un'insegna.** Il controllo sta nel
+   browser: chi legge il sorgente entra lo stesso. Non va raccontato all'utente
+   come una protezione.
+2. **Vale solo su `fantaliberty.com` / `www.fantaliberty.com`** (elenco
+   `DOMINI_PUBBLICI` in `index.html`). L'indirizzo di sviluppo (github.io) e la
+   build offline da `file://` restano aperti — se qualcuno allarga l'elenco,
+   blocca anche il proprio modo di provare il gioco. `?apri` scavalca il
+   cartello.
+3. **Si toglie da solo** a `APERTURA` (2 settembre 2026, ora italiana): non
+   serve un altro deploy per aprire il sito, ma spostare la data e' una
+   modifica sola in `index.html`.
+
+Il motore non parte proprio quando il cartello e' su (`return` prima di
+`VN.boot`): niente salvataggi toccati, niente richieste ai JSON.
