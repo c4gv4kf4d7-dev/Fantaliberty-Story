@@ -1109,7 +1109,14 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   // si porta dietro negli altri test.
   const storyEvento = JSON.parse(JSON.stringify(story));
   storyEvento.regia.probabilitaEvento = 1;
-  const conseguenze = new Set([...story.regia.improvvisazione, ...story.regia.caos, ...story.regia.critica]);
+  /* Le battute di conseguenza passano da fmt() come tutte le altre: quella
+     dell'improvvisazione ha dentro "{g:Bravissimo|Bravissima}", quindi a
+     schermo arriva declinata. Confrontare la stringa grezza faceva fallire il
+     test ogni volta che usciva proprio quella (due volte su tre). */
+  const declina = (t) => String(t).replace(/\{g:([^|}]*)\|([^}]*)\}/g,
+    (_, m, f) => (VN.state.genere === 'm' ? m : f));
+  const conseguenze = new Set([...story.regia.improvvisazione, ...story.regia.caos,
+    ...story.regia.critica].flatMap((t) => [t, declina(t)]));
   let visto = false;
   for (let tentativi = 0; tentativi < 5 && !visto; tentativi++) {
     VN.boot(storyEvento, { speed: 0, banca, quiz, scene: 'keynote' });
@@ -2063,6 +2070,16 @@ for (const [liv, cfg] of Object.entries(quiz.livelli)) {
   }
 }
 assert.equal(idsQuiz.size, 44, '44 domande di quiz in totale');
+/* Le date non devono tornare a essere il formato dominante: un quiz sul mondo
+   Apple non e' un test di memoria sugli anni. Meno di una domanda su due per
+   pool puo' cominciare con "In che anno". */
+for (const [liv, pools] of Object.entries(quiz.pool)) {
+  pools.forEach((p, i) => {
+    const date = p.filter((q) => /^in che anno/i.test(q.q)).length;
+    assert.ok(date * 2 <= p.length,
+      `${liv} pool ${i + 1}: ${date} domande su ${p.length} chiedono solo un anno`);
+  });
+}
 assert.equal(Number(sommaMult.toFixed(2)), quiz.tetto_mult,
   'la somma dei moltiplicatori pieni deve fare esattamente il tetto dichiarato');
 
@@ -2261,25 +2278,44 @@ function apriQuizHub(stile) {
     'la corsa sta sotto la griglia, prima dell\'uscita');
 }
 
-/* 10a-bis. i moltiplicatori si assegnano solo nelle 24 ore prima del keynote:
-   prima la voce si vede — cosi' si sa che esiste — ma non si tocca */
+/* 10a-bis. i moltiplicatori si assegnano appena se ne vince uno: la voce e'
+   viva, non spenta in attesa del giorno del keynote. La finestra a tempo c'era
+   e teneva la schermata irraggiungibile per tutti i giorni in cui il quiz si
+   gioca davvero — resta possibile rimetterla con "finestra_ore" in quiz.json. */
 {
   VN.clearSave();
   VN.boot(story, { speed: 0, banca, quiz, scene: 'quiz' });
   VN.state.stile = 'showman';
-  VN.state.mult_bank = 0.3;                    // come dopo aver passato i tre livelli
+  VN.state.mult_bank = 0.3;                    // come dopo aver passato un livello
   for (let i = 0; i < 20 && !$('griglia').classList.contains('on'); i++) VN.step();
-  const azioni = azioniQuiz();
-  const presto = azioni.find((b) => /keynote/.test(b.textContent));
-  const quando = Date.parse(story.meta.keynote);
-  const dentro = Date.now() >= quando - 24 * 3600e3;
-  if (!dentro) {
-    assert.ok(presto, 'fuori dalle 24 ore la voce c\'e\', ma spiega che e\' presto');
-    assert.ok(presto.classList.contains('spento'), 'e non si puo\' toccare');
-    assert.ok(presto.disabled, 'anche per la tastiera');
-    presto.onclick({ stopPropagation() {} });
-    assert.equal(VN.sceneId, 'quiz', 'toccarla non porta da nessuna parte');
-  }
+  const assegna = azioniQuiz().find((b) => /moltiplicatori/i.test(b.textContent));
+  assert.ok(assegna, 'con qualcosa in banca la voce c\'e\'');
+  assert.equal(assegna.classList.contains('spento'), false, 'ed e\' viva');
+  assert.equal(assegna.disabled, false, 'anche per la tastiera');
+  assert.match(assegna.textContent, /0\.30/, 'e dice quanto c\'e\' da distribuire');
+  assegna.onclick({ stopPropagation() {} });
+  assert.equal(VN.sceneId, 'moltiplicatori', 'e porta alla schermata dei moltiplicatori');
+
+  // a banca vuota resta fuori: non c'e' niente da assegnare
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'quiz' });
+  VN.state.stile = 'showman';
+  for (let i = 0; i < 20 && !$('griglia').classList.contains('on'); i++) VN.step();
+  assert.equal(azioniQuiz().some((b) => /moltiplicatori/i.test(b.textContent)), false,
+    'senza niente in banca non c\'e\' niente da assegnare');
+
+  // la finestra a tempo esiste ancora, se un giorno la si rivuole
+  const conFinestra = { ...quiz, finestra_ore: 24 };
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz: conFinestra, scene: 'quiz' });
+  VN.state.stile = 'showman';
+  VN.state.mult_bank = 0.3;
+  for (let i = 0; i < 20 && !$('griglia').classList.contains('on'); i++) VN.step();
+  const dentro = Date.now() >= Date.parse(story.meta.keynote) - 24 * 3600e3;
+  const voce = azioniQuiz().find((b) => /moltiplicatori/i.test(b.textContent));
+  assert.ok(voce, 'la voce c\'e\' comunque');
+  assert.equal(voce.classList.contains('spento'), !dentro,
+    'con "finestra_ore" torna spenta finche\' non si e\' dentro la finestra');
 }
 
 /* 10a-ter. "se" salta uno step quando la condizione e' falsa: le battute di

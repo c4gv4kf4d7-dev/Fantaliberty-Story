@@ -1,77 +1,536 @@
 {
-  "_nota": "Quiz di Peter [S8]. Due pool per livello: chi fallisce il primo tentativo trova domande diverse al secondo, cosi' sbagliare apposta per memorizzare non serve. 'ok' e' l'indice 0-based della risposta corretta in 'opzioni'. Fonte: docs/script-master.md, sezione 'QUIZ DI PETER'.",
+  "_nota": "Quiz di Peter [S8]. Due pool per livello: chi fallisce il primo tentativo trova domande diverse al secondo, cosi' sbagliare apposta per memorizzare non serve. 'ok' e' l'indice 0-based della risposta corretta in 'opzioni'. Le domande girano fra prodotti, persone, tecnologia, storia, design, software e cultura dei keynote: le date restano dove sono iconiche, non sono il formato dominante. Base = i prodotti che si conoscono, Avanzato = ecosistema e figure chiave, Leggenda = storia e curiosita' meno note. Fonte: docs/script-master.md, sezione 'QUIZ DI PETER'.",
   "livelli": {
-    "base": { "nome": "Base", "domande": 5, "soglia": 3, "mult1": 0.10, "mult2": 0.05 },
-    "avanzato": { "nome": "Avanzato", "domande": 7, "soglia": 5, "mult1": 0.20, "mult2": 0.10 },
-    "leggenda": { "nome": "Leggenda", "domande": 10, "soglia": 8, "mult1": 0.30, "mult2": 0.15 }
+    "base": {
+      "nome": "Base",
+      "domande": 5,
+      "soglia": 3,
+      "mult1": 0.1,
+      "mult2": 0.05
+    },
+    "avanzato": {
+      "nome": "Avanzato",
+      "domande": 7,
+      "soglia": 5,
+      "mult1": 0.2,
+      "mult2": 0.1
+    },
+    "leggenda": {
+      "nome": "Leggenda",
+      "domande": 10,
+      "soglia": 8,
+      "mult1": 0.3,
+      "mult2": 0.15
+    }
   },
   "timer_s": 10,
   "timer_s_ingegnere": 13,
-  "tetto_mult": 0.60,
-
+  "tetto_mult": 0.6,
   "pool": {
     "base": [
       [
-        { "id": "B1", "q": "In che anno Apple ha presentato il primo iPhone?", "opzioni": ["2005", "2007", "2009", "2010"], "ok": 1 },
-        { "id": "B2", "q": "Oltre a Steve Jobs e Steve Wozniak, chi era il terzo co-fondatore di Apple, che vendette la sua quota per soli 800 dollari?", "opzioni": ["Mike Markkula", "Gil Amelio", "Ronald Wayne", "John Sculley"], "ok": 2 },
-        { "id": "B3", "q": "Prima dell'apertura dello Steve Jobs Theater, in quale citta' si tenevano di solito i keynote Apple?", "opzioni": ["Cupertino", "San Francisco", "Los Angeles", "Austin"], "ok": 1 },
-        { "id": "B4", "q": "In che anno e' stato lanciato il primo Apple Watch?", "opzioni": ["2013", "2015", "2017", "2019"], "ok": 1 },
-        { "id": "B5", "q": "Quale iPhone ha introdotto per primo il Face ID?", "opzioni": ["iPhone 7", "iPhone X", "iPhone 8", "iPhone XR"], "ok": 1 }
+        {
+          "id": "B1",
+          "q": "In che anno Apple ha presentato il primo iPhone?",
+          "opzioni": [
+            "2005",
+            "2007",
+            "2009",
+            "2010"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "B2",
+          "q": "Qual e' stato il primo iPhone con doppia fotocamera posteriore?",
+          "opzioni": [
+            "iPhone 6s Plus",
+            "iPhone 7 Plus",
+            "iPhone 8 Plus",
+            "iPhone X"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "B3",
+          "q": "Quale prodotto Apple e' stato presentato da Steve Jobs estraendolo da una busta durante un keynote?",
+          "opzioni": [
+            "iPod nano",
+            "MacBook Air",
+            "iPad mini",
+            "Apple Watch"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "B4",
+          "q": "In che anno e' stato lanciato il primo Apple Watch?",
+          "opzioni": [
+            "2013",
+            "2015",
+            "2017",
+            "2019"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "B5",
+          "q": "Quale iPhone ha introdotto per primo il Face ID?",
+          "opzioni": [
+            "iPhone 7",
+            "iPhone X",
+            "iPhone 8",
+            "iPhone XR"
+          ],
+          "ok": 1
+        }
       ],
       [
-        { "id": "B1b", "q": "Come si chiama il campus Apple a forma di anello, inaugurato nel 2017 a Cupertino?", "opzioni": ["Apple Campus 2", "Apple Park", "Infinite Loop", "One Apple Park Way"], "ok": 1 },
-        { "id": "B2b", "q": "Come si chiama l'app Apple per localizzare dispositivi smarriti?", "opzioni": ["Life360", "Localizza", "Dov'e' (Find My)", "Radar"], "ok": 2 },
-        { "id": "B3b", "q": "In che anno e' uscito il primo iPhone SE, la versione economica?", "opzioni": ["2014", "2016", "2018", "2020"], "ok": 1 },
-        { "id": "B4b", "q": "Come si chiamava il primo dispositivo palmare di Apple, lanciato nel 1993?", "opzioni": ["Pippin", "Newton (MessagePad)", "eMate", "iPod Touch"], "ok": 1 },
-        { "id": "B5b", "q": "Come si chiamava il primo browser web sviluppato da Apple, lanciato nel 2003?", "opzioni": ["Explorer", "Navigator", "Safari", "WebKit"], "ok": 2 }
+        {
+          "id": "B1b",
+          "q": "Come si chiama il campus Apple a forma di anello, inaugurato nel 2017 a Cupertino?",
+          "opzioni": [
+            "Apple Campus 2",
+            "Apple Park",
+            "Infinite Loop",
+            "One Apple Park Way"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "B2b",
+          "q": "Come si chiama l'app Apple per localizzare dispositivi smarriti?",
+          "opzioni": [
+            "Life360",
+            "Localizza",
+            "Dov'e' (Find My)",
+            "Radar"
+          ],
+          "ok": 2
+        },
+        {
+          "id": "B3b",
+          "q": "In che anno e' uscito il primo iPhone SE, la versione economica?",
+          "opzioni": [
+            "2014",
+            "2016",
+            "2018",
+            "2020"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "B4b",
+          "q": "Come si chiamava il primo dispositivo palmare di Apple, lanciato nel 1993?",
+          "opzioni": [
+            "Pippin",
+            "Newton (MessagePad)",
+            "eMate",
+            "iPod Touch"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "B5b",
+          "q": "Come si chiamava il primo browser web sviluppato da Apple, lanciato nel 2003?",
+          "opzioni": [
+            "Explorer",
+            "Navigator",
+            "Safari",
+            "WebKit"
+          ],
+          "ok": 2
+        }
       ]
     ],
-
     "avanzato": [
       [
-        { "id": "A1", "q": "In che anno Tim Cook e' diventato CEO di Apple?", "opzioni": ["2009", "2011", "2013", "2015"], "ok": 1 },
-        { "id": "A2", "q": "Come si chiamava il primo Macintosh, lanciato nel 1984?", "opzioni": ["Macintosh SE", "Macintosh 128K", "Macintosh Plus", "Macintosh Classic"], "ok": 1 },
-        { "id": "A3", "q": "In che anno Apple ha rimosso il jack per le cuffie dall'iPhone?", "opzioni": ["2014", "2016", "2018", "2020"], "ok": 1 },
-        { "id": "A4", "q": "Qual e' stato il primo iPhone con doppia fotocamera posteriore?", "opzioni": ["iPhone 6s", "iPhone 7 Plus", "iPhone 8 Plus", "iPhone X"], "ok": 1 },
-        { "id": "A5", "q": "Quale fu il primo prodotto Apple a portare il nome \"Air\"?", "opzioni": ["iPad Air", "MacBook Air", "AirPods", "iMac Air"], "ok": 1 },
-        { "id": "A6", "q": "In che anno e' stato presentato il primo iPad?", "opzioni": ["2008", "2010", "2011", "2012"], "ok": 1 },
-        { "id": "A7", "q": "Quale frase e' diventata celebre come chiusura dei keynote di Steve Jobs?", "opzioni": ["\"Think different\"", "\"One more thing\"", "\"Just one more\"", "\"And that's it\""], "ok": 1 }
+        {
+          "id": "A1",
+          "q": "In che anno Tim Cook e' diventato CEO di Apple?",
+          "opzioni": [
+            "2009",
+            "2011",
+            "2013",
+            "2015"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "A2",
+          "q": "Come si chiamava il primo Macintosh, lanciato nel 1984?",
+          "opzioni": [
+            "Macintosh SE",
+            "Macintosh 128K",
+            "Macintosh Plus",
+            "Macintosh Classic"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "A3",
+          "q": "Da quale modello di iPhone Apple ha rimosso il jack per le cuffie?",
+          "opzioni": [
+            "iPhone 6s",
+            "iPhone 7",
+            "iPhone 8",
+            "iPhone X"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "A4",
+          "q": "Oltre a Steve Jobs e Steve Wozniak, chi era il terzo co-fondatore di Apple, che vendette la sua quota per soli 800 dollari?",
+          "opzioni": [
+            "Mike Markkula",
+            "Gil Amelio",
+            "Ronald Wayne",
+            "John Sculley"
+          ],
+          "ok": 2
+        },
+        {
+          "id": "A5",
+          "q": "Quale fu il primo prodotto Apple a portare il nome \"Air\"?",
+          "opzioni": [
+            "iPad Air",
+            "MacBook Air",
+            "AirPods",
+            "iMac Air"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "A6",
+          "q": "In che anno e' stato presentato il primo iPad?",
+          "opzioni": [
+            "2008",
+            "2010",
+            "2011",
+            "2012"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "A7",
+          "q": "Quale frase e' diventata celebre come chiusura dei keynote di Steve Jobs?",
+          "opzioni": [
+            "\"Think different\"",
+            "\"One more thing\"",
+            "\"Just one more\"",
+            "\"And that's it\""
+          ],
+          "ok": 1
+        }
       ],
       [
-        { "id": "A1b", "q": "In che anno sono stati lanciati i primi AirPods?", "opzioni": ["2014", "2016", "2018", "2020"], "ok": 1 },
-        { "id": "A2b", "q": "In che anno e' stato lanciato Apple Music?", "opzioni": ["2013", "2015", "2017", "2019"], "ok": 1 },
-        { "id": "A3b", "q": "Quale fu il primo iPhone con il Touch ID?", "opzioni": ["iPhone 5", "iPhone 5s", "iPhone 6", "iPhone 6s"], "ok": 1 },
-        { "id": "A4b", "q": "Quale fu il primo Mac con processore Intel invece di PowerPC?", "opzioni": ["MacBook Pro", "iMac", "Mac mini", "Power Mac G5"], "ok": 1 },
-        { "id": "A5b", "q": "In che anno e' stato lanciato il primo Apple TV?", "opzioni": ["2005", "2007", "2009", "2011"], "ok": 1 },
-        { "id": "A6b", "q": "Come si chiamava il sistema operativo Mac prima di essere rinominato \"macOS\" nel 2016?", "opzioni": ["System", "OS X", "Mac System", "Classic OS"], "ok": 1 },
-        { "id": "A7b", "q": "In che anno Apple ha acquisito Beats Electronics?", "opzioni": ["2012", "2014", "2016", "2018"], "ok": 1 }
+        {
+          "id": "A1b",
+          "q": "Quale tecnologia Apple permette di iniziare un'attivita' su un dispositivo e continuarla su un altro?",
+          "opzioni": [
+            "AirDrop",
+            "Handoff",
+            "Sidecar",
+            "Universal Clipboard"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "A2b",
+          "q": "Quale prodotto Apple e' stato progettato con una struttura che ricordava un girasole?",
+          "opzioni": [
+            "iMac G4",
+            "Power Mac G4 Cube",
+            "eMac",
+            "iMac G3"
+          ],
+          "ok": 0
+        },
+        {
+          "id": "A3b",
+          "q": "Quale fu il primo iPhone con il Touch ID?",
+          "opzioni": [
+            "iPhone 5",
+            "iPhone 5s",
+            "iPhone 6",
+            "iPhone 6s"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "A4b",
+          "q": "Quale fu il primo Mac con processore Intel invece di PowerPC?",
+          "opzioni": [
+            "MacBook Pro",
+            "iMac",
+            "Mac mini",
+            "Power Mac G5"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "A5b",
+          "q": "Qual e' il ruolo di Craig Federighi in Apple?",
+          "opzioni": [
+            "Senior Vice President of Software Engineering",
+            "Senior Vice President of Hardware Engineering",
+            "Senior Vice President of Marketing",
+            "Senior Vice President of Services"
+          ],
+          "ok": 0
+        },
+        {
+          "id": "A6b",
+          "q": "Come si chiamava il sistema operativo Mac prima di essere rinominato \"macOS\" nel 2016?",
+          "opzioni": [
+            "System",
+            "OS X",
+            "Mac System",
+            "Classic OS"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "A7b",
+          "q": "Quale iPhone e' stato il primo con un chip progettato internamente da Apple?",
+          "opzioni": [
+            "iPhone 3GS",
+            "iPhone 4",
+            "iPhone 4s",
+            "iPhone 5"
+          ],
+          "ok": 1
+        }
       ]
     ],
-
     "leggenda": [
       [
-        { "id": "L1", "q": "Qual era il nome in codice del progetto che ha portato al primo iPhone?", "opzioni": ["Titan", "Purple", "Apollo", "Phoenix"], "ok": 1 },
-        { "id": "L2", "q": "Quale fu il prezzo di lancio del primo iPhone (modello da 4GB, USA)?", "opzioni": ["$399", "$499", "$599", "$699"], "ok": 1 },
-        { "id": "L3", "q": "In che anno Apple ha superato Microsoft per capitalizzazione di mercato?", "opzioni": ["2007", "2010", "2012", "2015"], "ok": 1, "_verifica": "dato da riconfermare prima della pubblicazione" },
-        { "id": "L4", "q": "Come si chiamava il sistema operativo del primo iPhone, prima che venisse rinominato \"iOS\"?", "opzioni": ["Newton OS", "Mac OS Mobile", "iPhone OS", "Pocket OS"], "ok": 2 },
-        { "id": "L5", "q": "In che anno debutto' il logo Apple arcobaleno?", "opzioni": ["1976", "1977", "1980", "1984"], "ok": 1, "_verifica": "dato da riconfermare prima della pubblicazione" },
-        { "id": "L6", "q": "In che anno e' stato lanciato l'App Store?", "opzioni": ["2007", "2008", "2009", "2010"], "ok": 1 },
-        { "id": "L7", "q": "In che anno Steve Jobs fu allontanato dall'azienda che aveva co-fondato?", "opzioni": ["1983", "1985", "1988", "1991"], "ok": 1 },
-        { "id": "L8", "q": "Come si chiamava l'azienda fondata da Steve Jobs dopo essere uscito da Apple, poi riacquisita da Apple stessa nel 1996 segnando il suo ritorno?", "opzioni": ["Pixar", "NeXT", "Be Inc.", "General Magic"], "ok": 1 },
-        { "id": "L9", "q": "In che anno e' stato lanciato il primo iMac, quello con la scocca colorata Bondi Blue?", "opzioni": ["1996", "1998", "2000", "2001"], "ok": 1 },
-        { "id": "L10", "q": "Chi era il CEO di Apple subito prima del ritorno di Steve Jobs nel 1997?", "opzioni": ["John Sculley", "Michael Spindler", "Gil Amelio", "Fred Anderson"], "ok": 2 }
+        {
+          "id": "L1",
+          "q": "Qual era il nome in codice del progetto che ha portato al primo iPhone?",
+          "opzioni": [
+            "Titan",
+            "Purple",
+            "Apollo",
+            "Phoenix"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "L2",
+          "q": "Quale fu il prezzo di lancio del primo iPhone (modello da 4GB, USA)?",
+          "opzioni": [
+            "$399",
+            "$499",
+            "$599",
+            "$699"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "L3",
+          "q": "Quale celebre regista di Hollywood ha diretto lo spot “1984” per il lancio del Macintosh?",
+          "opzioni": [
+            "Steven Spielberg",
+            "Ridley Scott",
+            "James Cameron",
+            "George Lucas"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "L4",
+          "q": "Come si chiamava il sistema operativo del primo iPhone, prima che venisse rinominato \"iOS\"?",
+          "opzioni": [
+            "Newton OS",
+            "Mac OS Mobile",
+            "iPhone OS",
+            "Pocket OS"
+          ],
+          "ok": 2
+        },
+        {
+          "id": "L5",
+          "q": "In che anno debutto' il logo Apple arcobaleno?",
+          "opzioni": [
+            "1976",
+            "1977",
+            "1980",
+            "1984"
+          ],
+          "ok": 1,
+          "_verifica": "dato da riconfermare prima della pubblicazione"
+        },
+        {
+          "id": "L6",
+          "q": "Quale prodotto Apple fu il primo a usare un'interfaccia grafica con finestre, icone e mouse?",
+          "opzioni": [
+            "Apple Lisa",
+            "Macintosh",
+            "Apple II",
+            "NeXT Computer"
+          ],
+          "ok": 0
+        },
+        {
+          "id": "L7",
+          "q": "In che anno Steve Jobs fu allontanato dall'azienda che aveva co-fondato?",
+          "opzioni": [
+            "1983",
+            "1985",
+            "1988",
+            "1991"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "L8",
+          "q": "Come si chiamava l'azienda fondata da Steve Jobs dopo essere uscito da Apple, poi riacquisita da Apple stessa nel 1996 segnando il suo ritorno?",
+          "opzioni": [
+            "Pixar",
+            "NeXT",
+            "Be Inc.",
+            "General Magic"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "L9",
+          "q": "Quale elemento mancava all'iMac G3, e ne fece uno dei prodotti Apple piu' discussi della sua epoca?",
+          "opzioni": [
+            "Lettore floppy disk",
+            "Porta USB",
+            "Scheda audio",
+            "Lettore CD"
+          ],
+          "ok": 0
+        },
+        {
+          "id": "L10",
+          "q": "Chi era il CEO di Apple subito prima del ritorno di Steve Jobs nel 1997?",
+          "opzioni": [
+            "John Sculley",
+            "Michael Spindler",
+            "Gil Amelio",
+            "Fred Anderson"
+          ],
+          "ok": 2
+        }
       ],
       [
-        { "id": "L1b", "q": "In che anno e' stato lanciato iTunes?", "opzioni": ["1999", "2001", "2003", "2005"], "ok": 1 },
-        { "id": "L2b", "q": "A quale prezzo fu venduto originariamente l'Apple I, nel 1976?", "opzioni": ["$299", "$666.66", "$999", "$1.250"], "ok": 1, "_verifica": "dato da riconfermare prima della pubblicazione" },
-        { "id": "L3b", "q": "In che anno e' stata rilasciata Mac OS X, la prima versione basata su tecnologia NeXT/Unix?", "opzioni": ["1999", "2001", "2003", "2005"], "ok": 1 },
-        { "id": "L4b", "q": "In che anno e' uscito il primo iPhone con display Retina?", "opzioni": ["2008", "2009", "2010", "2011"], "ok": 2 },
-        { "id": "L5b", "q": "Quale titolo aveva Steve Jobs quando torno' in Apple nel 1997, prima di diventare CEO effettivo nel 2000?", "opzioni": ["Chairman", "CEO ad interim", "Product Advisor", "Executive Director"], "ok": 1 },
-        { "id": "L6b", "q": "In che anno ha aperto il primo Apple Store?", "opzioni": ["1999", "2001", "2003", "2005"], "ok": 1 },
-        { "id": "L7b", "q": "In quale citta' ha aperto il primo Apple Store in Italia?", "opzioni": ["Milano centro", "Roma", "Carugate (Apple Store Carosello)", "Torino"], "ok": 2, "_verifica": "dato ricostruito da conoscenza generale, non confermato da fonte diretta" },
-        { "id": "L8b", "q": "In che anno e' stato fondato Apple (allora \"Apple Computer Company\")?", "opzioni": ["1974", "1976", "1978", "1980"], "ok": 1 },
-        { "id": "L9b", "q": "Quale frase pronuncio' Steve Jobs a conclusione del celebre discorso di laurea alla Stanford University, nel 2005?", "opzioni": ["\"Think different\"", "\"Stay hungry, stay foolish\"", "\"One more thing\"", "\"Here's to the crazy ones\""], "ok": 1 },
-        { "id": "L10b", "q": "Quale celebre spot pubblicitario, ispirato al romanzo \"1984\" di George Orwell, lancio' il Macintosh durante il Super Bowl del 1984?", "opzioni": ["\"The Machine\"", "\"1984\"", "\"Think Different\"", "\"Big Brother\""], "ok": 1, "_verifica": "nome esatto dello spot da riconfermare" }
+        {
+          "id": "L1b",
+          "q": "In che anno e' stato lanciato iTunes?",
+          "opzioni": [
+            "1999",
+            "2001",
+            "2003",
+            "2005"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "L2b",
+          "q": "A quale prezzo fu venduto originariamente l'Apple I, nel 1976?",
+          "opzioni": [
+            "$299",
+            "$666.66",
+            "$999",
+            "$1.250"
+          ],
+          "ok": 1,
+          "_verifica": "dato da riconfermare prima della pubblicazione"
+        },
+        {
+          "id": "L3b",
+          "q": "Quale sistema operativo fu la base tecnologica su cui Apple costrui' Mac OS X?",
+          "opzioni": [
+            "Classic Mac OS",
+            "NeXTSTEP",
+            "Windows NT",
+            "Solaris"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "L4b",
+          "q": "In che anno e' uscito il primo iPhone con display Retina?",
+          "opzioni": [
+            "2008",
+            "2009",
+            "2010",
+            "2011"
+          ],
+          "ok": 2
+        },
+        {
+          "id": "L5b",
+          "q": "Quale titolo aveva Steve Jobs quando torno' in Apple nel 1997, prima di diventare CEO effettivo nel 2000?",
+          "opzioni": [
+            "Chairman",
+            "CEO ad interim",
+            "Product Advisor",
+            "Executive Director"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "L6b",
+          "q": "In che anno ha aperto il primo Apple Store?",
+          "opzioni": [
+            "1999",
+            "2001",
+            "2003",
+            "2005"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "L7b",
+          "q": "In quale citta' ha aperto il primo Apple Store in Italia?",
+          "opzioni": [
+            "Milano centro",
+            "Roma",
+            "Carugate (Apple Store Carosello)",
+            "Torino"
+          ],
+          "ok": 2,
+          "_verifica": "dato ricostruito da conoscenza generale, non confermato da fonte diretta"
+        },
+        {
+          "id": "L8b",
+          "q": "In che anno e' stato fondato Apple (allora \"Apple Computer Company\")?",
+          "opzioni": [
+            "1974",
+            "1976",
+            "1978",
+            "1980"
+          ],
+          "ok": 1
+        },
+        {
+          "id": "L9b",
+          "q": "Quale frase pronuncio' Steve Jobs a conclusione del celebre discorso di laurea alla Stanford University, nel 2005?",
+          "opzioni": [
+            "\"Think different\"",
+            "\"Stay hungry, stay foolish\"",
+            "\"One more thing\"",
+            "\"Here's to the crazy ones\""
+          ],
+          "ok": 1
+        },
+        {
+          "id": "L10b",
+          "q": "Quale celebre spot pubblicitario, ispirato al romanzo \"1984\" di George Orwell, lancio' il Macintosh durante il Super Bowl del 1984?",
+          "opzioni": [
+            "\"The Machine\"",
+            "\"1984\"",
+            "\"Think Different\"",
+            "\"Big Brother\""
+          ],
+          "ok": 1,
+          "_verifica": "nome esatto dello spot da riconfermare"
+        }
       ]
     ]
   }
