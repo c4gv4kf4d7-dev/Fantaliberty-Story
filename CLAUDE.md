@@ -504,12 +504,17 @@ Quattro cose da non annullare per sbaglio:
    `playerName` = il nome scelto in [S0]) insieme a dove sta il database.
    Aprendo `game/runner/` da soli non arriva niente e la corsa gira come prima,
    col record del telefono — che resta comunque la riserva quando il server non
-   risponde. Tre cose da non rompere: il punteggio si scrive **solo se batte**
-   quello che c'e' (e un trigger nel database lo garantisce comunque, vedi
+   risponde. Il bottone CLASSIFICA sta in **due posti**: sulla schermata
+   iniziale (`btnClassificaInizio`, si vede da subito — non serve aver gia'
+   giocato) e su quella di fine partita (`btnClassifica`); il primo carica in
+   sola lettura (`claCarica()`, mai una scrittura), il secondo arriva da
+   `claAggiorna()`, che prima confronta e semmai scrive il punteggio nuovo.
+   Tre cose da non rompere: il punteggio si scrive **solo se batte** quello
+   che c'e' (e un trigger nel database lo garantisce comunque, vedi
    `docs/backend.sql`); la posizione si fa **contare al database**
    (`Prefer: count=exact`), non scaricando la tabella; e la classifica non
-   ferma mai il gioco — parte dopo aver mostrato il game over, e ANCORA resta
-   premibile mentre carica.
+   ferma mai il gioco — quella di fine partita parte dopo aver mostrato il
+   game over, e ANCORA resta premibile mentre carica.
 5. **Il record si tiene, i punti no.** `VN.state.runner_record` entra nel
    salvataggio; come i punti della corsa si sommino alla classifica dei
    pronostici **non e' deciso** — non inventarlo.

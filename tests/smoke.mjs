@@ -2892,6 +2892,16 @@ function apriMoltiplicatori(stato, extra) {
   }
   assert.match(sql, /new\.best_score < old\.best_score/,
     'il database impedisce da solo che un punteggio peggiore sovrascriva il record');
+
+  // il bottone della classifica si vede fin dalla schermata iniziale, non solo
+  // a fine partita: non serve aver gia' giocato per guardarla
+  assert.match(corsa, /id="veloStart">[\s\S]*?id="btnClassificaInizio"[\s\S]*?<\/div>/,
+    'CLASSIFICA sta dentro #veloStart, non solo in #veloFine');
+  assert.match(corsa, /btnClassificaInizio'\)\.hidden = !claAttiva\(\)/,
+    'compare appena arriva l\'identita\' dal gioco grande, non solo dopo una corsa');
+  const claCaricaCorpo = corsa.split('async function claCarica()')[1].split('\n}')[0];
+  assert.doesNotMatch(claCaricaCorpo, /claSalva/,
+    'il bottone iniziale legge soltanto: non deve scrivere un punteggio sul server');
 }
 
 /* ---------- il cartello di attesa sul dominio pubblico ---------- */

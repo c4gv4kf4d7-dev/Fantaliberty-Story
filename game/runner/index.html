@@ -256,6 +256,11 @@
     <p>Corri nel campus, raccogli tutti gli anelli ed evita gli ostacoli.</p>
     <p>Ogni anello vale punti: più ne collezioni, più in alto salirai in classifica.</p>
     <button id="btnVia">PLAY</button>
+    <!-- Stesso bottone della schermata di fine partita, ma qui si vede dalla
+         primissima apertura: non serve aver gia' giocato per guardare la
+         classifica. Compare solo se il gioco grande ha passato l'identita'
+         e il database, come per quello di fine partita. -->
+    <button id="btnClassificaInizio" class="secondario" hidden>CLASSIFICA</button>
     <button id="btnEsciStart" class="esci" hidden>ESCI</button>
   </div>
 
@@ -1501,6 +1506,32 @@ document.getElementById('btnClassifica').onclick = () => {
   disegnaTabellone();
   document.getElementById('veloClassifica').hidden = false;
 };
+
+/* Come claAggiorna, ma in sola lettura: la usa il bottone della schermata
+   iniziale. Li' non c'e' ancora un punteggio nuovo da confrontare — si
+   guarda e basta, niente da scrivere sul server. */
+async function claCarica(){
+  if (!claAttiva() || CLA.inCorso) return;
+  CLA.inCorso = true;
+  try {
+    CLA.mio = await claMio();
+    CLA.quanti = await claConta('');
+    CLA.posizione = CLA.mio ? (await claConta('&best_score=gt.' + CLA.mio)) + 1 : 0;
+    CLA.top = await claTop();
+    CLA.fallita = false;
+  } catch (e) {
+    CLA.fallita = true;
+    console.warn('[run] classifica non disponibile:', e && e.message);
+  }
+  CLA.inCorso = false;
+  disegnaTabellone();
+}
+document.getElementById('btnClassificaInizio').onclick = () => {
+  disegnaTabellone();               // subito quello che c'e' gia' (es. da una corsa prima)
+  document.getElementById('veloClassifica').hidden = false;
+  claCarica();
+};
+
 document.getElementById('btnChiudiClassifica').onclick = () => {
   document.getElementById('veloClassifica').hidden = true;
 };
@@ -1541,6 +1572,9 @@ addEventListener('message', e => {
   // l'identita' e' quella che il giocatore ha gia': non si chiede niente qui
   if (m.playerId) { CLA.id = String(m.playerId); CLA.nome = String(m.playerName || ''); }
   if (m.backend) CLA.cfg = m.backend;
+  // il bottone della schermata iniziale si vede da subito, non solo a fine
+  // partita: non serve aver gia' giocato per guardare la classifica
+  document.getElementById('btnClassificaInizio').hidden = !claAttiva();
 });
 
 /* Gancio per le verifiche automatiche: con ?prova nell'indirizzo la pagina
