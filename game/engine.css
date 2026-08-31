@@ -53,7 +53,9 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 /* zoom lento: per le inquadrature che devono respirare a lungo */
 #bg.zoomlento,#bg2.zoomlento{animation:zoomlento 22s linear forwards}
 @keyframes zoom{from{transform:scale(1.06)}to{transform:scale(1.16)}}
-@keyframes zoomlento{from{transform:scale(1.02)}to{transform:scale(1.13)}}
+/* zoom +30% (era from 1.02 a 1.13, un guadagno di 0.11): stesso punto di
+   partenza, il guadagno finale sale a 0.143 */
+@keyframes zoomlento{from{transform:scale(1.02)}to{transform:scale(1.163)}}
 
 /* ---------- atmosfera ----------
    Uccelli, foglie e pulviscolo: pochi elementi che si muovono con tempi diversi
