@@ -731,7 +731,9 @@
           "t": "set",
           "var": "__ok",
           "value": "> BADGE IN STAMPA",
-          "lampeggia": 2000
+          "lampeggia": 2000,
+          "suona": "stampa_badge",
+          "_nota_suona": "Il colpo della stampante parte qui, appena l'animazione di stampa comincia — non alla consegna del badge nella scena dopo."
         },
         {
           "t": "say",
@@ -2559,7 +2561,8 @@
       "quiz_fallito": "sfx_quiz_fallito.mp3",
       "logo": "sfx_logo.mp3",
       "titoli_typing": "sfx_typing3.mp3",
-      "ceo_pollice": "sfx_applausi_lungo2.mp3"
+      "ceo_pollice": "sfx_applausi_lungo2.mp3",
+      "stampa_badge": "sfx_stampa_badge.mp3"
     },
     "transizioni": [
       "lobby",

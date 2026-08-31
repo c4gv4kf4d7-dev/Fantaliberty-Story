@@ -1023,6 +1023,9 @@
         // "BADGE IN STAMPA" lampeggia mentre la stampante lavora. Non blocca:
         // il lampeggio deve andare *sotto* la riga d'attesa nel box, non prima.
         if (st.lampeggia && VN.speed) lampeggia(st.var, st.lampeggia);
+        // "suona": un effetto legato a questo set, come "suona" sugli step bg
+        // (es. il colpo della stampante quando parte "BADGE IN STAMPA").
+        if (st.suona) suona(st.suona);
         return next();
 
       case 'goto':
