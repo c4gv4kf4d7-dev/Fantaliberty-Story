@@ -15,10 +15,12 @@ game/
   domande.json          banca pronostici [S5]: 29 domande, 316 battute (una per stile)
   quiz.json             quiz di Peter [S8]: 44 domande, due pool per livello
   backend.json          dove spedire la partita conclusa (url + chiave anon)
+  runner/index.html     APPLE CAMPUS RUN [S9]: il minigioco, pagina a se'
 assets/
   bg/                   sfondi
   chars/                sprite personaggi (un file per espressione)
   props/                oggetti di scena (es. il terminale Mac)
+  in_app_game/          la grafica della corsa (la carica solo game/runner/)
 tools/
   prepara_asset.py      PNG pesanti -> WebP in assets/, con pulizia inclusa
   taglia_sheet.py       un foglio con piu' pose -> un file per posa
@@ -28,8 +30,9 @@ tools/
   ammorbidisci_bordi.py sfuma i contorni a scaletta (alpha binaria)
   optimize_assets.py    resize + quantizzazione colore (Pillow)
   build_single_file.py  compila tutto in dist/nexus_game.html (asset inline base64)
+  taratura_pista.html   traccia a mano i bordi della pista della corsa [S9]
 docs/
-  script-master.md      DOCUMENTO UNICO di riferimento: scene S0B-S8, formule
+  script-master.md      DOCUMENTO UNICO di riferimento: scene S0B-S9, formule
   manifest-asset.md     quale file grafico serve in quale scena
   indice-domande.md     indice degli id, rigenerato da `npm run indice`
   backend.sql           schema e policy della tabella runs, da incollare in Supabase
@@ -495,6 +498,9 @@ salvataggio: il quiz si gioca nei giorni fra il lock e il keynote, non in una
 sessione sola. Quello che si vince si accumula in `VN.state.mult_bank`, e in
 `[S8.FINALE]` diventa `VN.state.moltiplicatori`.
 
+Sotto la griglia dei tre livelli c'e' anche **l'altra sfida**, Apple Campus Run
+(`corsa` nello step `quizhub`) — vedi qui sotto.
+
 I quattro perk di `story.stili` cadono tutti qui:
 
 | perk | stile | effetto |
@@ -509,10 +515,10 @@ della platea non correla mai con la risposta, perche' i pronostici sono opinioni
 sul futuro. Qui le risposte sono verificabili, quindi Peter annuisce o scuote la
 testa — ed e' giusto cosi'.
 
-Un livello **non si salva a meta'**: il salvataggio scatta sulla griglia e sulla
-schermata dei moltiplicatori, non dentro il giro delle domande. Chiudere l'app a
-meta' livello lo annulla senza consumare il tentativo — che e' il
-comportamento giusto per una prova a tempo.
+**Il tentativo si paga entrando, non uscendo**: appena si entra in un livello
+viene contato e salvato. Contarlo a fine livello — com'era all'inizio — lo
+rendeva aggirabile: chi vedeva che stava andando male chiudeva l'app e se lo
+ritrovava intatto. L'unico che ne recupera uno e' l'hawaiano, col suo perk.
 
 Peter va mostrato a `height 44%` **e `bottom 34%`**: e' un primo piano di un uomo
 seduto a un tavolino, e alla misura standard finisce quasi tutto dietro al box
@@ -526,6 +532,49 @@ la barra diventa rossa e Peter guarda l'orologio.
 voce si vede nella griglia — cosi' si sa che esiste — ma non si tocca. La
 conferma e' irreversibile come il lock di S6, e come quello fa partire un invio
 al server.
+
+### S9: Apple Campus Run
+
+Il minigioco **non e' una scena e non e' dentro il motore**: e' una pagina a se'
+(`game/runner/index.html`, una sola, con dentro il suo canvas e la sua logica) e
+il gioco la apre in un riquadro sopra quello che c'e' — come il regolamento e i
+quadri della Hall of Fame. Chiudendola il giocatore e' esattamente dov'era, e la
+storia non si e' mossa di un passo.
+
+Ci si arriva da due posti, senza passaggi in mezzo:
+
+| dove | come si dichiara | si torna a |
+|---|---|---|
+| la griglia di Peter [S8.HUB] | `corsa` nello step `quizhub` | da Peter, che commenta |
+| il countdown [S7.05] | un'azione con `"corsa": true` | al countdown, ancora acceso |
+
+Le due pagine si parlano con dei messaggi (`postMessage`), e nessuna delle due
+sa niente dell'altra oltre a questo:
+
+```
+corsa -> gioco    pronto   sono in piedi
+                  fine     partita finita (punti, record)
+                  esci     il giocatore ha toccato il bottone d'uscita
+gioco -> corsa    apri     con il nome del posto da cui l'ha aperta
+```
+
+Il nome arriva da fuori perche' il gioco lo sa e la corsa no: e' quello che
+finisce sul bottone d'uscita ("Torna da Peter", "Torna al countdown"). Aprendo
+`game/runner/` da soli quel bottone non compare proprio — non ci sarebbe niente
+dietro. `#runchiudi`, nel gioco grande, e' solo la via di sicurezza: compare
+dopo sei secondi se la pagina non ha dato segni di vita.
+
+**Il record entra nel salvataggio** (`VN.state.runner_record`) ma **non nei punti
+delle previsioni**: come le due cose si sommano e' una decisione ancora aperta.
+
+La prospettiva del corridoio e' **misurata a mano**, non calcolata: i due bordi
+della pista sono due tabelle di coppie `[y, x]` tracciate su
+`assets/in_app_game/run_corridoio_base.webp` con `tools/taratura_pista.html`.
+Se un giorno cambia il fondale si rifa' la taratura e si sostituiscono quelle
+due tabelle — non c'e' altro da toccare.
+
+Un file grafico che manca **non rompe niente**: al suo posto la corsa disegna un
+segnaposto e va avanti (`run_traguardo` e' proprio in quel caso).
 
 ### Le pose che dipendono da una variabile
 

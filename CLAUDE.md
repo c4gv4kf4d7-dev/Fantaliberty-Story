@@ -316,7 +316,9 @@ Tre cose da non rompere:
    scritta due volte (`tenda` / `tenda_dopo`, condizionate a `locked`), l'hub si
    riapre da Peter (`startDopo`) e il tutorial dello swipe non si ripete
    (`tutorialSe`). Chi rimette un `goto` verso la sala rimanda il giocatore a
-   rigiocare lo show.
+   rigiocare lo show. La tenda a show finito porta al **countdown**, ed e'
+   l'unico modo di tornarci dalla lobby: senza, chi entrava in lobby si
+   ritrovava il conto alla rovescia raggiungibile solo riaprendo l'app.
 3. **L'email non e' obbligatoria e non deve diventarlo.** Campo vuoto +
    CONTINUA vale come saltare, e il salto e' un bottone dichiarato. La partita
    va in coda al momento della conferma e la spedisce la schermata dell'email:
@@ -348,6 +350,45 @@ Tre misure che sembrano dettagli e non lo sono:
 Chi aggiunge una classe nuova al fondale via `bgFx` la deve aggiungere anche
 all'elenco che `applicaFx()` toglie: una classe che non viene tolta resta
 addosso al fondale per tutte le scene dopo.
+
+## Apple Campus Run: e' una pagina, non una scena
+
+Il minigioco vive tutto in `game/runner/index.html` — canvas, logica, grafica
+— e il motore lo apre in un riquadro (`#runwrap`, un iframe) **sopra** quello
+che c'e', come il regolamento e i quadri: non e' una scena, non fa avanzare
+niente, e alla chiusura il giocatore e' esattamente dov'era. Chi volesse
+"integrarlo meglio" portandolo dentro `engine.js` romperebbe proprio questo.
+
+Quattro cose da non annullare per sbaglio:
+
+1. **Il bottone per uscire sta dentro la corsa, non sopra.** Il gioco le manda
+   il nome del posto da cui l'ha aperta (`esci`) e quello diventa l'etichetta:
+   "Torna da Peter", "Torna al countdown". Aprendo `game/runner/` da soli il
+   bottone non compare — non ci sarebbe niente dietro. `#runchiudi` e' solo la
+   via di sicurezza per la pagina che non si carica.
+2. **La corsa si raggiunge da due posti e basta**: sotto la griglia di Peter
+   (`corsa` nello step `quizhub`) e sul countdown (`"corsa": true` fra le
+   azioni). Il countdown e' la schermata su cui si riapre il gioco nei giorni
+   prima del keynote: le due sfide stanno li' a un tocco apposta, chi rientra
+   non deve rifare il giro della lobby. Aggiungere una terza porta vuol dire
+   aggiungere un passaggio, non una comodita'.
+3. **La corsa non e' un quarto livello del quiz.** Sta *sotto* la griglia: i
+   tre pannelli dicono a che punto sono i livelli, e un quarto che non e' un
+   livello toglie loro quel significato.
+4. **Il record si tiene, i punti no.** `VN.state.runner_record` entra nel
+   salvataggio; come i punti della corsa si sommino alla classifica dei
+   pronostici **non e' deciso** — non inventarlo.
+
+La prospettiva del corridoio e' **misurata a mano**, non calcolata: due tabelle
+di coppie `[y,x]` tracciate su `run_corridoio_base.webp` con
+`tools/taratura_pista.html`. Se cambia il fondale si rifa' la taratura, non si
+cerca una formula: ci sono gia' stati due tentativi (spostamento lineare del
+centro, parabola interpolata) e il corridoio non li segue.
+
+Il tono di Peter sulla corsa e' parte della scena, non un commento a margine:
+il quiz e' roba sua e ne va fiero, la corsa gliel'hanno messa li' e non gli va
+giu' ("Dentro. Il. Campus. Di corsa."). E' l'unico posto dove il gioco dice
+che le sfide sono due — togliendo quelle battute non lo dice piu' nessuno.
 
 ## Il linguaggio: mai "schedina bloccata"
 

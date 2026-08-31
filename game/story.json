@@ -4,6 +4,8 @@
     "version": "0.13.1",
     "start": "arrivo",
     "assetBase": "assets/",
+    "runner": "game/runner/",
+    "_nota_runner": "Apple Campus Run: il minigioco vive in una pagina sua e il motore lo apre in un riquadro sopra la scena (engine.js, apriCorsa). Qui c'e' l'indirizzo perche' cambiando cartella non si tocchi il codice. La build in file unico ci mette al suo posto \"runnerInline\", la pagina intera con dentro le sue immagini: li' non c'e' nessuna cartella da cui pescare.",
     "genderVar": "genere",
     "genderOrder": [
       "m",
@@ -280,7 +282,9 @@
     "moltiplicatori": null,
     "email": null,
     "post_lobby_visto": false,
-    "categorie_visitate": {}
+    "categorie_visitate": {},
+    "runner_record": 0,
+    "runner_giocato": false
   },
   "scenes": {
     "arrivo": {
@@ -1312,7 +1316,7 @@
         {
           "t": "say",
           "who": "francesca",
-          "text": "Vai da Peter e mettiti alla prova con i suoi quiz sul mondo Apple.",
+          "text": "Vai da Peter: ha due sfide per te. Una gliel'hanno messa li' e non gli va giu', ma quello te lo racconta lui.",
           "se": [
             {
               "var": "locked",
@@ -1419,21 +1423,22 @@
               "bg": "lobby_z1_tenda",
               "who": "francesca",
               "body": "spiega",
-              "say": "Di la' hanno gia' cominciato a smontare le sedie. La tua parte sul palco e' andata.",
+              "say": "Di la' hanno gia' cominciato a smontare le sedie. Le rimettono per il keynote vero, e li' dietro c'e' scritto quanto manca.",
               "hotspots": [
                 {
-                  "label": "LA TENDA",
+                  "label": "QUANTO MANCA AL KEYNOTE",
                   "x": "40%",
                   "y": "44%",
                   "w": "20%",
                   "h": "42%",
                   "who": "francesca",
-                  "say": "Non c'e' piu' niente da vedere, li' dietro. Il pezzo che ti manca e' dall'altra parte della lobby: Peter.",
                   "react": {
                     "level": "micro"
-                  }
+                  },
+                  "goto": "countdown"
                 }
-              ]
+              ],
+              "_nota_countdown": "Dopo le previsioni la tenda non porta piu' in sala (quello rimanderebbe a rigiocare lo show): porta al conto alla rovescia, che e' l'altra cosa che il giocatore torna a guardare. Ed e' l'unico modo di tornarci dalla lobby — senza, chi entrava in lobby si ritrovava il countdown raggiungibile solo riaprendo l'app."
             },
             {
               "id": "hall_of_fame",
@@ -1580,7 +1585,7 @@
     "quiz": {
       "title": "S8 — Il quiz di Peter",
       "bg": "lobby_z4_quiz_aperta",
-      "_nota": "[S8.01] e [S8.HUB]. Le tre battute di presentazione hanno \"se\": si dicono solo la prima volta, non a ogni ritorno dalla griglia dei livelli.",
+      "_nota": "[S8.01] e [S8.HUB]. Le battute di presentazione hanno \"se\": si dicono solo la prima volta, non a ogni ritorno dalla griglia dei livelli. Da [S8.01b] a [S8.01d] Peter presenta l'altra sfida, Apple Campus Run, e lo fa malvolentieri: il quiz e' roba sua, la corsa gliel'hanno messa li'. E' l'unico posto dove il gioco spiega che le sfide sono due — la griglia poi le mostra tutte e due insieme.",
       "steps": [
         {
           "t": "hide"
@@ -1600,6 +1605,56 @@
             "is": false
           },
           "text": "Hai fatto il keynote. Ora vediamo quanto conosci quelli passati."
+        },
+        {
+          "t": "show",
+          "who": "peter",
+          "body": "sbuffa",
+          "height": "44%",
+          "bottom": "34%",
+          "se": {
+            "var": "quiz_visto",
+            "is": false
+          },
+          "_nota": "[S8.01b] Cambia posa mentre parla dell'altra sfida e torna ad alza_occhi quando ritorna sul quiz: la faccia dice quello che pensa prima delle parole."
+        },
+        {
+          "t": "say",
+          "who": "peter",
+          "se": {
+            "var": "quiz_visto",
+            "is": false
+          },
+          "text": "Quest'anno pero' le sfide sono due. E una delle due non l'ho scelta io."
+        },
+        {
+          "t": "say",
+          "who": "peter",
+          "se": {
+            "var": "quiz_visto",
+            "is": false
+          },
+          "text": "Hanno messo un gioco dove corri dentro il campus a raccogliere cerchietti. Dentro. Il. Campus. Di corsa."
+        },
+        {
+          "t": "say",
+          "who": "peter",
+          "se": {
+            "var": "quiz_visto",
+            "is": false
+          },
+          "text": "Punti per la prontezza del pollice, non per quello che sai. Comunque e' li' sotto: fai pure, non ti guarda nessuno."
+        },
+        {
+          "t": "show",
+          "who": "peter",
+          "body": "alza_occhi",
+          "height": "44%",
+          "bottom": "34%",
+          "se": {
+            "var": "quiz_visto",
+            "is": false
+          }
         },
         {
           "t": "say",
@@ -1625,7 +1680,7 @@
             "var": "quiz_visto",
             "is": false
           },
-          "text": "Ci sono 3 livelli di difficolta' e hai due tentativi... sei pront{g:o|a}?"
+          "text": "Da me invece sono 3 livelli e due tentativi, con il tempo che scorre. Sei pront{g:o|a}?"
         },
         {
           "t": "set",
@@ -1645,6 +1700,12 @@
           "assegna": "Assegna i moltiplicatori (+{banca})",
           "assegnaPresto": "I moltiplicatori si assegnano il giorno del keynote",
           "assegnati": "Rivedi i moltiplicatori",
+          "corsa": {
+            "label": "Apple Campus Run",
+            "esci": "Torna da Peter",
+            "dopo": "Rieccoti. Hai corso, bravissim{g:o|a}. Le domande sono ancora qui, quando ti va di usare anche la testa.",
+            "_nota": "L'altra sfida, sotto la griglia dei livelli. Non e' una scena: si apre in un riquadro sopra, e chiudendola si e' di nuovo qui, con la griglia com'era. \"dopo\" e' la riga che Peter dice al ritorno, al posto di \"da dove vuoi cominciare?\"."
+          },
           "esci": {
             "label": "Basta cosi', torno in lobby",
             "goto": "lobby"
@@ -1919,7 +1980,17 @@
           "arrivato": "E' iniziato. Buona visione.",
           "cardTitolo": "PREVISIONI COMPLETATE",
           "cardPunti": "PUNTI IN GIOCO",
+          "_nota_azioni": "E' la schermata su cui si riapre il gioco nei giorni fra le previsioni e il keynote, quindi le due sfide stanno qui, a un tocco: chi rientra non deve rifare il giro della lobby per arrivarci. La corsa non e' una scena — si apre sopra il countdown, che resta acceso sotto.",
           "azioni": [
+            {
+              "label": "Il quiz di Peter",
+              "goto": "quiz"
+            },
+            {
+              "label": "Apple Campus Run",
+              "corsa": true,
+              "esci": "Torna al countdown"
+            },
             {
               "label": "Torna in lobby",
               "goto": "lobby"
