@@ -411,6 +411,11 @@ più avanti in `[S5]`. Salvare in `run.flags.sfacciato_s2 = true/false`.
 [S5.HUB] GRIGLIA 3 MACROARGOMENTI, ordine libero
   Asset: bg_palco_schermo_categorie + obj_icone_categorie (stato attiva/
          completata/disabilitata per ciascuna) + stile_X_idle_palco
+  I tre pannelli dello schermo alle spalle si accendono uno per volta, con
+  l'emblema del macroargomento (prop_emblema_categoria_*), alla PRIMA scelta
+  di quella categoria — non a domande finite. Sono scenografia, non
+  interfaccia: stanno sul fondale, non dentro i bottoni, e valgono solo su
+  questo fondale. Fonte: run.categorie_visitate, che entra nel salvataggio.
   - iPhone   (6 core, pool 6 facoltative)
   - Watch    (3 core, pool 5 facoltative)
   - Altro    (3 core, pool 6 facoltative)

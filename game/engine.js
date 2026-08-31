@@ -1497,7 +1497,14 @@
         uscito = true;
         VN.progressed = true;
         VN.state[st.var || 'categoria'] = k;
+        // il pannello sullo schermo si accende adesso, alla scelta, non a
+        // domande finite
+        var viste = VN.state.categorie_visitate || (VN.state.categorie_visitate = {});
+        var primaVolta = !viste[k];
+        viste[k] = true;
         VN.state.pescate = null;                 // le facoltative si pescano al bivio
+        VN.saveNow();
+        if (primaVolta) aggiornaEmblemi(k);
         chiudiGriglia();
         hideUI();
         goScene(st.goto);
@@ -1510,6 +1517,47 @@
     el.griglia.classList.add('on');
     pending = null;
     if (st.text) typeKeep(fmt(st.text));
+  }
+
+  /* ---------------- gli emblemi sullo schermo del palco ----------------
+     I tre pannelli del fondale si accendono uno per volta, alla PRIMA scelta
+     del macroargomento — non a categoria finita. Sono due informazioni diverse:
+     i bottoni della griglia dicono a che punto sono le domande, lo schermo dice
+     dove il giocatore e' gia' stato.
+
+     La verita' sta in VN.state.categorie_visitate, che entra nel salvataggio:
+     cosi' gli emblemi tornano anche riaprendo il gioco, e non dipendono da una
+     classe CSS rimasta addosso. */
+  var EMBLEMI = { iphone: 'emblemaIphone', watch: 'emblemaWatch', altro: 'emblemaAltro' };
+
+  function aggiornaEmblemi(nuova) {
+    if (!el.emblemi) return;
+    var viste = VN.state.categorie_visitate || {};
+    Object.keys(EMBLEMI).forEach(function (k) {
+      var img = el[EMBLEMI[k]];
+      if (!img) return;
+      img.classList.remove('nuovo');
+      if (!viste[k]) { img.classList.remove('attivo'); return; }
+      // apparira(): il src si assegna subito ma l'emblema resta invisibile
+      // finche' l'immagine non e' pronta, cosi' non si accende un pannello
+      // vuoto (o, peggio, con l'emblema di un'altra categoria)
+      apparira(img, assetUrl('props', 'emblema_categoria_' + k), img);
+      img.classList.add('attivo');
+      // lo scatto di accensione solo a quello appena scelto: gli altri erano
+      // gia' accesi e devono restare fermi
+      if (k === nuova) { void img.offsetWidth; img.classList.add('nuovo'); }
+    });
+  }
+
+  /* Gli emblemi vivono su un fondale solo: lo schermo del palco. Su qualunque
+     altro resterebbero appesi in aria — durante le domande, per esempio, dove
+     il fondale e' la platea. Si aggancia al cambio di fondale, cosi' vale anche
+     per un salvataggio ripreso e per il ritorno dalla categoria. */
+  function emblemiPerFondale(id) {
+    if (!el.emblemi) return;
+    var acceso = id === 'palco_schermo_categorie';
+    el.emblemi.classList.toggle('on', acceso);
+    if (acceso) aggiornaEmblemi(null);
   }
 
   function chiudiGriglia() {
@@ -3706,6 +3754,10 @@
   function precaricaScena(sc, critico) {
     if (!sc) return;
     if (sc.bg) precarica(assetUrl('bg', sc.bg), critico !== false);
+    // gli emblemi non stanno in nessuno step: li chiede il fondale
+    if (sc.bg === 'palco_schermo_categorie') {
+      Object.keys(EMBLEMI).forEach(function (k) { precarica(assetUrl('props', 'emblema_categoria_' + k)); });
+    }
     var steps = sc.steps || [];
     for (var i = 0; i < steps.length && critico !== false; i++) {
       var st = steps[i];
@@ -3851,6 +3903,9 @@
         el.bg.src = src;
         applicaFx(el.bg, fx);
         el.bg2.className = '';
+        // gli emblemi arrivano col fondale, non prima: durante la dissolvenza
+        // sotto c'e' ancora quello di prima
+        emblemiPerFondale(bgCorrente);
       }, BG_FADE);
     } else {
       if (id) el.bg.src = src;
@@ -3858,6 +3913,7 @@
       el.bg2.className = '';
     }
     if (id) { bgCorrente = id; bgVoluto = src; }
+    if (!inDissolvenza) emblemiPerFondale(bgCorrente);
     return inDissolvenza;
   }
 
@@ -3936,7 +3992,14 @@
   function azzeraVars(story) {
     VN.state = {};
     VN.progressed = false;
-    Object.keys(story.vars || {}).forEach(function (k) { VN.state[k] = story.vars[k]; });
+    // Copia, non riferimento: un valore composto (categorie_visitate e' un
+    // oggetto) verrebbe condiviso fra la partita e story.vars, e la partita
+    // nuova si ritroverebbe addosso quella di prima — scrivendo per giunta
+    // dentro i dati della storia.
+    Object.keys(story.vars || {}).forEach(function (k) {
+      var v = story.vars[k];
+      VN.state[k] = (v && typeof v === 'object') ? JSON.parse(JSON.stringify(v)) : v;
+    });
   }
 
   /* ---------------- pannello di sviluppo ----------------
@@ -4154,6 +4217,8 @@
       multwrap: $('multwrap'), multrighe: $('multrighe'), multresto: $('multresto'), multok: $('multok'),
       regole: $('regole'), regtit: $('regtit'), regcorpo: $('regcorpo'), regok: $('regok'),
       quadrowrap: $('quadrowrap'), quadroImg: $('quadroImg'), quadrochiudi: $('quadrochiudi'),
+      emblemi: $('emblemi'), emblemaIphone: $('emblema-iphone'),
+      emblemaWatch: $('emblema-watch'), emblemaAltro: $('emblema-altro'),
       emailwrap: $('emailwrap'), emailbox: $('emailbox'), emailtit: $('emailtit'),
       emailtesto: $('emailtesto'), emaillabel: $('emaillabel'), emailin: $('emailin'),
       emailerr: $('emailerr'), emailnota: $('emailnota'), emailprivacy: $('emailprivacy'),

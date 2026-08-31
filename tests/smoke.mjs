@@ -1993,6 +1993,74 @@ function apriQuizHub(stile) {
   return cellePerLivello();
 }
 
+/* ---------- 9-bis. gli emblemi sullo schermo del palco (S5) ----------
+   I tre pannelli del fondale si accendono alla PRIMA scelta del macroargomento,
+   non a categoria finita, e restano accesi tornando alla griglia e riaprendo il
+   gioco. Sono scenografia: vivono solo sul fondale dello schermo. */
+{
+  const embl = () => ({
+    layer: $('emblemi').classList.contains('on'),
+    iphone: $('emblema-iphone').classList.contains('attivo'),
+    watch: $('emblema-watch').classList.contains('attivo'),
+    altro: $('emblema-altro').classList.contains('attivo')
+  });
+  const cellaDi = (k) => [...$('griglia').querySelectorAll('.gcell')].find((c) => c.dataset.arg === k);
+
+  // A. partita nuova: schermo spento
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'argomenti' });
+  VN.state.genere = 'f'; VN.state.stile = 'drip'; VN.state.nome = 'Franca';
+  assert.deepEqual(Object.keys(VN.state.categorie_visitate || {}), [],
+    'si parte senza categorie visitate');
+  assert.equal(embl().layer, true, 'sul fondale dello schermo il layer c\'e\'');
+  assert.deepEqual([embl().iphone, embl().watch, embl().altro], [false, false, false],
+    'ma i tre pannelli sono vuoti');
+
+  // B. si sceglie Watch per primo: si accende solo quello (l'ordine non conta)
+  cellaDi('watch').onclick({ stopPropagation() {} });
+  assert.equal(VN.state.categorie_visitate.watch, true, 'la categoria e\' segnata come visitata');
+  assert.equal(VN.state.categorie_visitate.iphone, undefined, 'e solo quella');
+  assert.equal($('emblema-watch').classList.contains('attivo'), true, 'il pannello Watch si accende');
+  assert.equal($('emblema-watch').classList.contains('nuovo'), true, 'con lo scatto di accensione');
+  assert.ok($('emblema-watch').getAttribute('src').includes('prop_emblema_categoria_watch'));
+  assert.equal($('emblema-iphone').classList.contains('attivo'), false, 'gli altri due restano spenti');
+
+  // F. entrando nella categoria il fondale cambia: gli emblemi non restano
+  // appesi sopra il palco durante le domande
+  assert.equal(VN.sceneId, 'argomento');
+  assert.equal($('emblemi').classList.contains('on'), false,
+    'su un altro fondale il layer si spegne');
+
+  // E. ripresa da salvataggio: gli emblemi tornano da soli
+  VN.clearSave();
+  dom.window.localStorage.setItem('fl_nexus_save_v1', JSON.stringify({
+    v: story.meta.version, scene: 'argomenti', i: 0,
+    state: { nome: 'Franca', genere: 'f', stile: 'drip', picks: {},
+             categorie_visitate: { iphone: true, altro: true } }
+  }));
+  VN.boot(story, { speed: 0, banca, quiz });
+  [...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // Riprendi
+  assert.equal(VN.sceneId, 'argomenti');
+  assert.deepEqual([embl().iphone, embl().watch, embl().altro], [true, false, true],
+    'riaprendo il gioco lo schermo e\' come lo si era lasciato');
+  assert.equal($('emblema-iphone').classList.contains('nuovo'), false,
+    'e nessuno rifa\' l\'animazione di accensione');
+
+  // D. la terza categoria completa lo schermo
+  cellaDi('watch').onclick({ stopPropagation() {} });
+  assert.deepEqual([embl().iphone, embl().watch, embl().altro], [true, true, true],
+    'tutti e tre i pannelli accesi');
+
+  // le categorie visitate non sopravvivono a una partita nuova: "vars" e' un
+  // modello, non lo stato condiviso di tutte le partite
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'argomenti' });
+  assert.deepEqual(Object.keys(VN.state.categorie_visitate || {}), [],
+    'partita nuova, schermo pulito');
+  assert.deepEqual(Object.keys(story.vars.categorie_visitate || {}), [],
+    'e story.vars non e\' stato scritto');
+}
+
 /* 10a. la scaletta dei livelli */
 {
   const celle = apriQuizHub('ingegnere');

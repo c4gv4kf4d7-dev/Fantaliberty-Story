@@ -794,6 +794,34 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  margin-top:14px}
 #cardazioni .ch{text-align:center;text-decoration:none;display:block}
 
+/* ---------- gli emblemi sullo schermo del palco (S5) ----------
+   I tre pannelli del fondale palco_schermo_categorie si accendono uno per
+   volta, alla prima scelta del macroargomento. Fanno parte della scenografia,
+   non dell'interfaccia: niente tocchi, e stanno SOTTO personaggi e box (che
+   sono a z-index 1 e 2) e sopra il fondale.
+
+   Le posizioni sono in percentuale dello schermo, misurate sul fondale come lo
+   si vede a 390x844: il fondale e' ritagliato in "cover", quindi non
+   corrispondono alle percentuali dell'immagine sorgente. Se il fondale viene
+   ridisegnato vanno rimisurate a occhio. */
+#emblemi{position:absolute;inset:0;z-index:0;display:none;pointer-events:none}
+#emblemi.on{display:block}
+#emblemi img{position:absolute;opacity:0;pointer-events:none;
+ filter:drop-shadow(0 0 10px rgba(180,220,255,.35)) drop-shadow(0 8px 16px rgba(0,0,0,.45))}
+#emblemi img.attivo{opacity:1}
+/* l'emblema appena acceso arriva con uno scatto, non con una dissolvenza: e' un
+   pannello dello schermo che si illumina */
+#emblemi img.attivo.nuovo{animation:accendiEmblema .55s ease-out both}
+@keyframes accendiEmblema{
+  0%{opacity:0;transform:translateY(10px) scale(.7);filter:brightness(2.2)}
+  55%{opacity:1;transform:translateY(0) scale(1.06);
+      filter:brightness(1.3) drop-shadow(0 0 18px rgba(190,225,255,.8))}
+  100%{opacity:1;transform:translateY(0) scale(1)}
+}
+#emblema-iphone{left:6%;top:24%;width:26%}
+#emblema-watch{left:37%;top:24%;width:26%}
+#emblema-altro{left:68%;top:24%;width:26%}
+
 /* ---------- un quadro della Hall of Fame ----------
    Flex e non grid+place-items: con la griglia la riga si dimensiona sul
    contenuto e "max-height" non limita niente, cosi' un quadro alto usciva

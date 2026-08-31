@@ -127,6 +127,7 @@ all'inizio della S4 e non cambia più per tutta la sessione.
 | `obj_targa_hall_of_fame` | S1 | **Non serve piu'**: la Hall of Fame usa immagini gia' complete (`bg_halloffame_*`), una per vincitore, invece di un template con testo sovrapposto |
 | `obj_lucchetto_zona4` | S1, S8 | **2 frame** (chiuso/che si apre): mostrato sopra Peter finché `run.locked === false`, poi sostituito dal frame "aperto" con un piccolo effetto una tantum al momento dello sblocco |
 | `obj_tavolino_buzzer_peter` | S1, S8 | **2 frame** (non premuto/premuto), da tagliare a metà dal file consegnato — sono due immagini identiche affiancate, split orizzontale semplice |
+| `prop_emblema_categoria_iphone` · `prop_emblema_categoria_watch` · `prop_emblema_categoria_altro` | S5 | I tre emblemi che si accendono nei pannelli del fondale `bg_palco_schermo_categorie`, uno per macroargomento, alla prima scelta. Tagliati da un unico foglio consegnato (`prop_productcategory.png`) e ridotti a 420px di lato lungo: a schermo sono larghi ~100pt. Non c'entrano con `prop_schermo_slide_categoria_*`, che sono le slide mostrate durante le domande |
 | `obj_clicker` | S5 | **2 frame** (integro/inceppato), usato durante il micro-evento "il clicker si inceppa" |
 | `obj_gobbo_teleprompter` | S6 | Cornice UI del recap — il testo scorrevole delle scelte è HTML/UI vera, non grafica |
 | `obj_slide_compleanno` | S5 | Immagine intera mostrata per un attimo sullo schermo del palco durante il relativo micro-evento |

@@ -9,13 +9,23 @@
      il browser continua a chiedere la versione vecchia degli asset -->
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <meta name="description" content="FantaLiberty: visual novel interattiva. Steve Jobs Theater, WWDC 26.">
-<link rel="stylesheet" href="./game/engine.css?v=82">
+<link rel="stylesheet" href="./game/engine.css?v=83">
 </head>
 <body>
 <div id="stage">
   <img id="bg" alt="">
   <img id="bg2" alt="">
   <div id="sky"></div>
+
+  <!-- I tre pannelli dello schermo del palco (S5) si accendono uno per volta,
+       quando il giocatore sceglie un macroargomento. Layer suo, non #propwrap:
+       li' durante le domande c'e' gia' la slide della categoria. Sta sopra il
+       fondale e sotto i personaggi, e non prende tocchi. -->
+  <div id="emblemi" aria-hidden="true">
+    <img id="emblema-iphone" alt="">
+    <img id="emblema-watch" alt="">
+    <img id="emblema-altro" alt="">
+  </div>
 
   <!-- carrellata: le inquadrature che si ingrandiscono e si dissolvono una
        nell'altra (la discesa verso il palco in S2) -->
@@ -231,7 +241,7 @@
   </div>
 </div>
 
-<script src="./game/engine.js?v=82"></script>
+<script src="./game/engine.js?v=83"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -300,7 +310,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=82', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=83', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e
