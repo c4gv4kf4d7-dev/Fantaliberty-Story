@@ -622,7 +622,7 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 
 /* la scheda prende il posto del box del dialogo, in fondo, e resta stretta e
    centrata: nome, una riga di descrizione, il bottone. Niente altro. */
-#carta{display:none;flex-direction:column;align-items:center;gap:10px;
+#carta{display:none;flex-direction:column;align-items:center;gap:8px;
  width:100%;max-width:23em;margin:0 auto;position:relative;z-index:4}
 #carta.on{display:flex}
 /* mentre si sceglie lo stile il box del dialogo non serve: la scheda lo sostituisce */
@@ -638,8 +638,15 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #carnome{background:#1b1f33;border:3px solid #fff;border-radius:10px;padding:10px 18px;
  color:#fff;font-size:clamp(9px,3vw,15px);text-align:center;letter-spacing:.04em;
  box-shadow:0 4px 0 rgba(0,0,0,.5)}
-#cardesc{color:#e8ecff;font-size:clamp(7px,2.15vw,11px);line-height:1.9;text-align:center;
- text-shadow:0 2px 8px rgba(0,0,0,.95);max-width:20em}
+/* La descrizione sta su due righe: 'max-width' in em si calcolava sul font
+   PICCOLO di questo elemento, non su quello della scheda, e veniva fuori una
+   colonna da tre parole per riga. Qui la larghezza e' quella della scheda. */
+#cardesc{color:#e8ecff;font-size:clamp(7px,2.05vw,10px);line-height:1.85;text-align:center;
+ text-shadow:0 2px 8px rgba(0,0,0,.95);width:100%}
+/* la battuta dello stile: e' lui che parla, quindi ha un'aria diversa dalla
+   riga di descrizione — piu' chiara di tinta, un filo piu' piccola */
+#carbattuta{color:#ffd98a;font-size:clamp(6px,1.85vw,9px);line-height:1.9;text-align:center;
+ text-shadow:0 2px 8px rgba(0,0,0,.95);width:100%;margin-top:-2px}
 /* il perk resta possibile (S8 lo usera'), ma in S3 lo step non lo chiede */
 #carperk{display:none;background:rgba(20,26,44,.85);border:2px solid rgba(255,255,255,.32);
  border-radius:8px;padding:8px 11px;color:#cfe0ff;font-size:clamp(6px,1.9vw,10px);

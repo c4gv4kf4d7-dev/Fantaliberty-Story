@@ -115,7 +115,15 @@ cose da non annullare per sbaglio:
    disegni da 1024px rimpiccioliti a ~400: a pixel duri il ridimensionamento
    è un nearest-neighbour e il contorno si sgrana. `#carImg` è l'unica
    eccezione al resto del gioco (pixelato), non una svista;
-3. **niente meccaniche sulla scheda.** Il perk del quiz si spiega a S8, non
+3. **sulla scheda ci sta chi e', non cosa fa.** Una riga di descrizione e una
+   battuta sua fra virgolette (`battuta` in `story.stili`): lo stile si deve
+   vendere da solo, e' l'unica cosa su cui si sceglie. Le due righe stanno su
+   una riga ciascuna e i quattro cartellini vengono alti uguali — se si
+   allungano, saltano a due righe e il carosello balla a ogni freccia.
+   Attenzione a `max-width` in em qui: si calcola sul font piccolo
+   dell'elemento, non su quello della scheda, e con un valore in em la
+   descrizione veniva incolonnata a tre parole per riga;
+4. **niente meccaniche sulla scheda.** Il perk del quiz si spiega a S8, non
    qui: il carosello lo rimostra solo se lo step chiede `etichettaPerk` (S3
    non lo chiede). A S8 lo dice Peter, con una battuta per stile (`by:
    "stile"`) prima di cominciare: e' l'unico posto dove il perk viene
@@ -130,6 +138,17 @@ palco sono ritagliate strette attorno alla figura, quindi a `object-fit:contain`
 riempiono l'inquadratura invece di lasciare margini vuoti, e sono le stesse che
 il giocatore si vedra' addosso in S5 — quello che scegli e' quello che avrai.
 `idle_camerino` resta dichiarato in `story.stili` ma non lo usa piu' nessuno.
+
+Lo stesso sporco ce l'aveva **Susan** (schegge chiuse nella crocchia e sul
+padiglione della cuffia). Sui personaggi pero' il filtro delle toppe grandi non
+si puo' usare: li' il bianco pieno e' anche il bianco degli occhi, i denti, la
+foto sul badge e la suola delle scarpe. Va usato solo `--bordi`, che due guardie
+tengono buono — quanto la scheggia sta **in dentro** (una scheggia resta entro
+30 px dal profilo, occhi e denti stanno a 100-210) e quanta **compagnia chiara**
+ha attaccata (una suola fa parte della scarpa, 1900 px di chiaro; una scheggia
+in mezzo ai capelli scuri ne ha 300). Con `--isola` si abbassa la soglia del
+chiaro: **200 solo su chi ha i capelli scuri** (Susan, i quattro stili), mai su
+Peter, che i capelli li ha bianchi e ci perderebbe le ciocche.
 
 Gli sprite hanno due difetti di ritaglio diversi, e servono due passate:
 `tools/togli_bianchi.py` da solo prende le **toppe grandi** di fondo chiuse
@@ -350,6 +369,27 @@ Tre misure che sembrano dettagli e non lo sono:
 Chi aggiunge una classe nuova al fondale via `bgFx` la deve aggiungere anche
 all'elenco che `applicaFx()` toglie: una classe che non viene tolta resta
 addosso al fondale per tutte le scene dopo.
+
+## Il genere del giocatore non c'entra con lo stile
+
+Il genere lo sceglie chi gioca a [S0.03] e vive in `VN.state.genere`; lo stile
+si sceglie dopo, in camerino, e i quattro sprite hanno un aspetto loro. Le due
+cose sono **indipendenti apposta**: si puo' essere maschile e vestirsi da Drip.
+Quindi ogni parola declinata riferita al giocatore passa da
+`{g:maschile|femminile}` — vale per i dialoghi, per i bottoni che preme lui
+("Si', sono {g:pronto|pronta}"), per le modali di conferma e per i testi della
+banca domande, che passano tutti da `fmt()`.
+
+Il presidio e' in `npm test`: cerca un elenco di parole declinate in contesti
+che nel gioco riguardano sempre il giocatore ("sei/sono + aggettivo", le
+esclamazioni tipo "Bravo!", "Sicuro?") e fallisce se ne trova una fuori da
+`{g:...}`. Chi ne incontra una nuova la aggiunge all'elenco insieme alla
+correzione.
+
+Nel menu di sviluppo (`?dev`) il genere parte da **femminile** con lo stile
+**showman**: e' una coppia mista di proposito, serve a far saltare fuori
+proprio questi errori. Non e' un difetto del gioco vero, dove il genere lo
+decide chi gioca.
 
 ## Apple Campus Run: e' una pagina, non una scena
 

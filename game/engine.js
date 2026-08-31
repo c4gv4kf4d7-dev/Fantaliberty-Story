@@ -1353,6 +1353,7 @@
         id: k,
         nome: o.nome || k,
         desc: o.desc || '',
+        battuta: o.battuta || '',
         perk: (o.perk && o.perk.testo) || '',
         img: (o.pose && o.pose[st.posa]) || o.img || ''
       };
@@ -1379,6 +1380,10 @@
       }
       el.carnome.textContent = fmt(o.nome);
       el.cardesc.textContent = fmt(o.desc);
+      // la battuta: e' lo stile che si presenta con la sua voce. Non e' una
+      // meccanica, e' il motivo per cui uno lo sceglie.
+      el.carbattuta.textContent = o.battuta ? fmt(o.battuta) : '';
+      el.carbattuta.style.display = o.battuta ? 'block' : 'none';
       // Il perk e' una meccanica del quiz: in S3 non c'entra e confondeva la
       // scheda. Compare solo se lo step chiede esplicitamente un'etichetta.
       var vuoiPerk = !!(st.etichettaPerk && o.perk);
@@ -4360,7 +4365,8 @@
       cardchiudi: $('cardchiudi'),
       carosello: $('carosello'), carImg: $('carImg'), carta: $('carta'),
       cprev: $('cprev'), cnext: $('cnext'), cdots: $('cdots'),
-      carnome: $('carnome'), cardesc: $('cardesc'), carperk: $('carperk'), carok: $('carok')
+      carnome: $('carnome'), cardesc: $('cardesc'), carbattuta: $('carbattuta'),
+      carperk: $('carperk'), carok: $('carok')
     };
     el.avatar.innerHTML = '';
     el.avatar.classList.remove('on', 'entra');

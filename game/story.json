@@ -914,7 +914,7 @@
           "by": "stile",
           "text": {
             "hawaiano": "Ok. Relax. Ottimo. Proprio quello che mi serviva in una situazione del genere.",
-            "showman": "Perfetto. Uno che non avra' problemi a parlare. Il problema sara' farlo smettere.",
+            "showman": "Perfetto. {g:Uno|Una} che non avra' problemi a parlare. Il problema sara' farlo smettere.",
             "drip": "Va bene. Non ho idea di cosa significhi, ma evidentemente tu si'.",
             "ingegnere": "Ingegnere. Perfetto. Finalmente qualcuno che puo' spiegarmi perche' tutto sta andando storto.",
             "*": "Bene. Adesso muoviti, che ci aspettano."
@@ -1032,7 +1032,7 @@
           "t": "say",
           "who": "susan",
           "incuffia": true,
-          "text": "Ricordati una cosa: nessuno sa che sei il sostituto."
+          "text": "Ricordati una cosa: nessuno sa che sei {g:il sostituto|la sostituta}."
         },
         {
           "t": "say",
@@ -1166,7 +1166,7 @@
           "daFare": "Facoltativa non giocata",
           "bottone": "CONFERMA LE PREVISIONI",
           "lock": {
-            "text": "Sicuro? Dopo questo le tue previsioni sono definitive.",
+            "text": "{g:Sicuro|Sicura}? Dopo questo le tue previsioni sono definitive.",
             "si": "Si', confermo",
             "no": "Fammi rileggere"
           },
@@ -1556,7 +1556,7 @@
                   "h": "23%",
                   "conferma": {
                     "text": "Cominciamo il quiz?",
-                    "si": "Si', sono pronto",
+                    "si": "Si', sono {g:pronto|pronta}",
                     "no": "Fra poco"
                   },
                   "goto": "quiz"
@@ -2112,7 +2112,8 @@
   "stili": {
     "hawaiano": {
       "nome": "Hawaiano",
-      "desc": "Non sa che ore sono, ma sa sempre cosa dire.",
+      "desc": "Arriva tardi, scalzo. La platea lo perdona.",
+      "battuta": "«Se sbaglio rifaccio. Nessun dramma.»",
       "perk": {
         "id": "seconda_chance",
         "testo": "un tentativo fallito non si conta, una volta per livello."
@@ -2138,7 +2139,8 @@
     },
     "showman": {
       "nome": "Showman",
-      "desc": "Crede a tutto cio' che dice, per davvero.",
+      "desc": "Non ha mai avuto un dubbio in vita sua.",
+      "battuta": "«Non devi sapere tutto. Devi dirlo bene.»",
       "perk": {
         "id": "tutto_sbloccato",
         "testo": "tutte le difficolta' sbloccate da subito, in ordine libero."
@@ -2164,7 +2166,8 @@
     },
     "drip": {
       "nome": "Drip",
-      "desc": "Non le importa, ma lo fa con piu' stile di te.",
+      "desc": "Sembra capitata li' per caso. Non e' cosi'.",
+      "battuta": "«Meta' sono sbagliate. Quelle le tolgo.»",
       "perk": {
         "id": "cinquanta",
         "testo": "un 50/50 per livello: elimina due risposte sbagliate."
@@ -2190,7 +2193,8 @@
     },
     "ingegnere": {
       "nome": "Ingegnere",
-      "desc": "Ha gia' letto le specifiche che tu non sapevi esistessero.",
+      "desc": "Ha letto le specifiche. Tutte, note comprese.",
+      "battuta": "«Dammi tre secondi e ti dico anche perche'.»",
       "perk": {
         "id": "tempo",
         "testo": "+3 secondi su ogni domanda."
@@ -2253,7 +2257,7 @@
     ],
     "_nota_esiti": "I tre pool qui sotto sono la conseguenza di un micro-evento, uno per esito. Il giocatore non vede numeri: capisce come e' andata solo da come gliela racconta Susan. Non aggiungere qui niente che dica quanto vale.",
     "improvvisazione": [
-      "Bravissimo. Hai appena improvvisato e nessuno se n'e' accorto.\nCredo.",
+      "{g:Bravissimo|Bravissima}. Hai appena improvvisato e nessuno se n'e' accorto.\nCredo.",
       "Ok...\nSta funzionando.\nNon dirlo ad alta voce. Porta sfortuna."
     ],
     "caos": [

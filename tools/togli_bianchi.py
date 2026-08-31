@@ -84,6 +84,32 @@ FR_VICINANZA = 5       # px dalla trasparenza: piu' dentro di cosi' e' disegno
 FR_ORLO = 130          # il filetto lasciato dal ritaglio, attaccato al buco
 FR_ORLO_NEUTRO = 48
 
+# Le schegge chiuse dentro i capelli sono piu' in dentro dei cinque pixel di
+# FR_VICINANZA (dentro una crocchia si arriva a venticinque), quindi la regola
+# del contorno non le prende, e `toppe()` non si puo' usare qui: sui personaggi
+# il bianco pieno e' anche il bianco degli occhi, i denti, la foto del badge e
+# la suola delle scarpe, e li cancellerebbe tutti. Quello che separa gli uni
+# dagli altri e' **quanto stanno in dentro**: una scheggia di fondo resta a
+# ridosso del profilo (fin qui ~25 px), gli occhi e i denti stanno in mezzo
+# alla faccia (100-210 px). Con trenta pixel di margine non si toccano.
+# Quanto chiaro dev'essere una scheggia. 235 e' la soglia prudente, quella da
+# usare di default: sopra ci sta solo il fondo. Con --isola 200 si prendono
+# anche le schegge gia' smangiate da una passata precedente, ma a quel punto
+# entrano nel mirino anche le ciocche BIANCHE di Peter, che sono chiare, sottili
+# e circondate di scuro esattamente come un residuo. Su di lui va lasciata a
+# 235; su Susan e sui quattro stili, che hanno i capelli scuri, 200 e' sicuro.
+FR_ISOLA = 235
+FR_ISOLA_NEUTRO = 12
+FR_ISOLA_AREA = 400    # piu' grande di cosi' e' disegno, non una scheggia
+FR_ISOLA_DENTRO = 30   # px: fin dove puo' arrivare una scheggia dal profilo
+# ...e non basta ancora: la suola bianca di una scarpa e i capelli bianchi di
+# Peter sono bianco pieno, chiusi nel disegno e a ridosso del profilo, esatto
+# come una scheggia. Li separa la **compagnia**: una suola e' la parte piu'
+# chiara di un oggetto chiaro grande (la scarpa: 1900 px di chiaro attaccato),
+# una scheggia in mezzo ai capelli scuri non ha nulla di chiaro attorno (300).
+FR_ISOLA_ALONE = 190   # cosa conta come "chiaro" per misurare la compagnia
+FR_ISOLA_COMPAGNIA = 700   # oltre questa, e' un pezzo di disegno: si lascia
+
 
 def toppe(a):
     """La maschera del bianco di sfondo rimasto dentro, alone compreso."""
@@ -122,13 +148,41 @@ def _intorno_scuro(a):
     return dentro, np.divide(scuro, np.maximum(tot, 1))
 
 
+def isole_vicine(a, dentro):
+    """Le schegge di bianco pieno chiuse nel disegno ma a ridosso del profilo."""
+    rgb = a[..., :3].astype(int)
+    puro = dentro & (rgb.min(axis=2) >= FR_ISOLA) & \
+        ((rgb.max(axis=2) - rgb.min(axis=2)) <= FR_ISOLA_NEUTRO)
+    lab, n = label(puro)
+    if n == 0:
+        return np.zeros(dentro.shape, bool)
+    dist = distance_transform_edt(dentro)
+    # la "compagnia": quanto chiaro c'e' attaccato all'isola, isola compresa
+    lab_chiaro, _ = label(dentro & (rgb.min(axis=2) >= FR_ISOLA_ALONE))
+    aree_chiaro = np.bincount(lab_chiaro.ravel())
+    tenute = []
+    for i in range(1, n + 1):
+        isola = lab == i
+        area = int(isola.sum())
+        if area < 4 or area > FR_ISOLA_AREA:
+            continue
+        if dist[isola].max() > FR_ISOLA_DENTRO:
+            continue
+        etichette = np.unique(lab_chiaro[isola])
+        compagnia = int(aree_chiaro[etichette[etichette > 0]].sum())
+        if compagnia > FR_ISOLA_COMPAGNIA:
+            continue
+        tenute.append(i)
+    return np.isin(lab, tenute) if tenute else np.zeros(dentro.shape, bool)
+
+
 def frangia(a):
     """Toglie i residui di fondo sul contorno. Torna la maschera di cio' che ha tolto."""
     dentro, quota = _intorno_scuro(a)
     rgb = a[..., :3].astype(int)
     chiara = (rgb.min(axis=2) >= FR_CHIARO) & ((rgb.max(axis=2) - rgb.min(axis=2)) <= FR_NEUTRO)
     vicino = distance_transform_edt(dentro) <= FR_VICINANZA
-    tolto = dentro & chiara & (quota > FR_QUOTA_SCURA) & vicino
+    tolto = (dentro & chiara & (quota > FR_QUOTA_SCURA) & vicino) | isole_vicine(a, dentro)
     if not tolto.any():
         return tolto
     a[tolto] = [0, 0, 0, 0]
@@ -206,6 +260,9 @@ def main():
     ap.add_argument("--controlla", action="store_true",
                     help="elenca chi ha ancora bianco dentro, senza toccare nulla")
     ap.add_argument("--prova", action="store_true", help="mostra cosa toglierebbe senza scrivere")
+    ap.add_argument("--isola", type=int, metavar="N",
+                    help="quanto chiaro dev'essere una scheggia per essere tolta "
+                         "(default %d; 200 solo su chi ha i capelli scuri)" % FR_ISOLA)
     ap.add_argument("--bordi", action="store_true",
                     help="modalita' frangia: i puntini e i filetti di fondo sul contorno "
                          "(fra le ciocche dei capelli, lungo le gambe), non le toppe grandi")
@@ -215,6 +272,8 @@ def main():
 
     if args.anteprima:
         os.makedirs(args.anteprima, exist_ok=True)
+    if args.isola:
+        globals()["FR_ISOLA"] = args.isola
 
     sorgenti = args.sorgenti
     if args.controlla and not sorgenti:
