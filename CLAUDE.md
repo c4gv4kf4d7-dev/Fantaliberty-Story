@@ -368,6 +368,27 @@ Chi aggiunge una classe nuova al fondale via `bgFx` la deve aggiungere anche
 all'elenco che `applicaFx()` toglie: una classe che non viene tolta resta
 addosso al fondale per tutte le scene dopo.
 
+## Il genere del giocatore non c'entra con lo stile
+
+Il genere lo sceglie chi gioca a [S0.03] e vive in `VN.state.genere`; lo stile
+si sceglie dopo, in camerino, e i quattro sprite hanno un aspetto loro. Le due
+cose sono **indipendenti apposta**: si puo' essere maschile e vestirsi da Drip.
+Quindi ogni parola declinata riferita al giocatore passa da
+`{g:maschile|femminile}` — vale per i dialoghi, per i bottoni che preme lui
+("Si', sono {g:pronto|pronta}"), per le modali di conferma e per i testi della
+banca domande, che passano tutti da `fmt()`.
+
+Il presidio e' in `npm test`: cerca un elenco di parole declinate in contesti
+che nel gioco riguardano sempre il giocatore ("sei/sono + aggettivo", le
+esclamazioni tipo "Bravo!", "Sicuro?") e fallisce se ne trova una fuori da
+`{g:...}`. Chi ne incontra una nuova la aggiunge all'elenco insieme alla
+correzione.
+
+Nel menu di sviluppo (`?dev`) il genere parte da **femminile** con lo stile
+**showman**: e' una coppia mista di proposito, serve a far saltare fuori
+proprio questi errori. Non e' un difetto del gioco vero, dove il genere lo
+decide chi gioca.
+
 ## Il linguaggio: mai "schedina bloccata"
 
 Al giocatore non si dice mai "schedina bloccata", "la schedina e' chiusa",
