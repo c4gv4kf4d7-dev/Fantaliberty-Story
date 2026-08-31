@@ -2243,10 +2243,10 @@
 
         var stats = global.document.createElement('div');
         stats.className = 'msStats';
-        msRiga(stats, 'DOMANDE', s.core.filter(function (d) {
+        msRiga(stats, 'PREVISIONI', s.core.filter(function (d) {
           return !!(s.date.core || {})[d.id];
         }).length, s.core.length);
-        msRiga(stats, 'FACOLTATIVE', s.extraGiocate.length, s.quotaExtra);
+        msRiga(stats, 'OPZIONALI', s.extraGiocate.length, s.quotaExtra);
         b.appendChild(stats);
 
         var stato = global.document.createElement('div');

@@ -551,13 +551,18 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 .monnum b{font-size:clamp(8px,3vw,13px)}
 .monnum span{font-size:clamp(6px,2.2vw,10px);color:#8fe8b4}
 
-/* due righe di conteggio ("DOMANDE 4/4", "FACOLTATIVE 2/3"): piu' leggibili
-   di un elenco di risposte, che a quella larghezza non ci starebbe */
-.msStats{flex:none;display:flex;flex-direction:column;gap:3px;width:100%}
-.msRiga{display:flex;justify-content:space-between;gap:6px;
- font-size:clamp(5.5px,2vw,9px);letter-spacing:.04em}
-.msEtichetta{color:rgba(234,255,242,.6)}
-.msValore{color:#eafff2}
+/* due righe di conteggio ("PREVISIONI 4/4", "OPZIONALI 2/3"): piu' leggibili
+   di un elenco di risposte, che a quella larghezza non ci starebbe.
+   Etichetta sopra il valore, non affiancata: sullo schermo di un monitor
+   (36% della larghezza del telefono, meno ancora su quelli tagliati ai
+   bordi) una parola lunga come "PREVISIONI" affiancata al suo numero non
+   ci sta su una riga sola — un flex item non si stringe sotto la sua
+   larghezza naturale (min-width:auto di default) e usciva dal bordo, che
+   con overflow:hidden la tagliava invece di andare a capo. */
+.msStats{flex:none;display:flex;flex-direction:column;gap:6px;width:100%}
+.msRiga{display:flex;flex-direction:column;align-items:center;gap:1px}
+.msEtichetta{color:rgba(234,255,242,.55);font-size:clamp(4.5px,1.5vw,7px);letter-spacing:.03em}
+.msValore{color:#eafff2;font-size:clamp(6px,2vw,9px)}
 
 .monstato{flex:none;font-size:clamp(5.5px,2vw,9px);letter-spacing:.08em;color:#8fe8b4;text-align:center}
 .monschermo:not(.fatta) .monstato{color:#ffd98a}
