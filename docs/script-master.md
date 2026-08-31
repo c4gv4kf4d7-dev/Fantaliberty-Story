@@ -184,8 +184,7 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
 
 [S1.02] FRANCESCA — indica la tenda (tono neutro, NO SPOILER)
   Asset: bg_lobby_z1_tenda + chr_francesca_indica_tenda
-  "Quando sei pronto vai pure verso la tenda ed entra. Da quel momento...
-   sei a teatro."
+  "Quando sei pronto/a, vai verso la tenda. Da lì in poi... sei a teatro."
   → [S1.HUB]
 
 [S1.HUB] HUB LOBBY — 4 zone, swipe orizzontale libero, nessun ordine forzato
@@ -221,8 +220,13 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
       → Non ancora: resta in [S1.HUB]
 
   [S1.ZONA2] Hall of Fame
-    Targhe cliccabili (albo d'oro edizioni precedenti, dato esterno non hardcoded)
-    FRANCESCA: "Ogni anno qualcuno giura di aver 'solo tirato a indovinare'."
+    La parete con i tre vincitori delle edizioni passate (2024, 2025, 2026).
+    Ogni quadro si apre per conto suo, uno alla volta, e si chiude tornando
+    nella zona: non e' una scena, non tocca la partita.
+    FRANCESCA: "La Hall of Fame. Qui finiscono quelli che per un anno possono
+                dire di averci visto lungo."
+    (nessuna seconda battuta prima delle immagini: la zona la presenta questa
+     riga, il resto lo dice il disegno)
 
   [S1.ZONA3] Regolamento
     FRANCESCA:
@@ -310,8 +314,8 @@ più avanti in `[S5]`. Salvare in `run.flags.sfacciato_s2 = true/false`.
 ```
 [S3.01] SUSAN — dialogo
   Asset: bg_camerino + chr_susan_guarda_orologio
-  "Scegli il tuo stile e cambiati. Veloce. Ho una prova generale da
-   salvare e tu sei ufficialmente il mio problema numero due."
+  "Scegli uno stile e cambiati. Veloce. Ho una prova generale da salvare
+   e tu sei il problema numero due."
   → [S3.02]
 
 [S3.02] SCHERMATA STILE — carosello, 4 opzioni
@@ -370,7 +374,7 @@ più avanti in `[S5]`. Salvare in `run.flags.sfacciato_s2 = true/false`.
   Asset: bg_dietro_le_quinte + chr_susan.duo_spinta_X (X = stile scelto)
   Stessa composizione della coppia scene_X_push: sostituisce
   chr_susan_spinta_in_scena (rimosso dal cast, non piu' usato da nessuna scena).
-  "Le luci sono calde. Non guardare in alto. Vai."
+  "Vai."
   → effetto sipario (split animato di bg_palco_sipario_chiuso) → [S4.03]
 
 [S4.03] SUSAN — passa in regia, prima battuta in cuffia
@@ -380,8 +384,9 @@ più avanti in `[S5]`. Salvare in `run.flags.sfacciato_s2 = true/false`.
   (pausa)
   "Se senti qualcuno parlare nell'auricolare, sono io.
    Se senti qualcun altro, probabilmente è un problema."
-  "Le luci sono calde. Non guardare in alto.
-   E soprattutto, se qualcosa va storto... continua a parlare."
+  "Il pubblico è caldo. Se qualcosa va storto... tu continua a parlare."
+  (unica battuta della sequenza su pubblico e imprevisti: niente luci calde,
+   niente "non guardare in alto")
 
 [S4.04] SUSAN — ultimo briefing
   "Ricordati una cosa: nessuno sa che sei il sostituto."
@@ -399,7 +404,8 @@ più avanti in `[S5]`. Salvare in `run.flags.sfacciato_s2 = true/false`.
 
 ```
 [S5.INTERMEZZO.R1] → intermezzo di regia R1
-[S5.INTERMEZZO.R2] → intermezzo di regia R2
+  (uno solo prima del primo macroargomento: R2, la luce per Craig, è stata
+   tolta per non allungare l'apertura)
   Asset: bg_palco_platea_piena + chr_indicatore_regia + stile_X_idle_palco
   ↓
 [S5.HUB] GRIGLIA 3 MACROARGOMENTI, ordine libero
@@ -478,7 +484,7 @@ numeri, niente "bene"/"male" espliciti, solo come Susan racconta com'è andata.
 
 Elenco e testi in `game/domande.json` (`micro_eventi`, `eventi_personali`,
 `intermezzi`, `intermezzi_riserva`). Cinque micro-eventi generali, uno personale
-per stile mostrato al massimo una volta a run, cinque intermezzi fissi (R1-R2
+per stile mostrato al massimo una volta a run, quattro intermezzi fissi (R1
 prima del primo macroargomento, R3-R5 dopo ciascuno dei tre completati, in ordine
 di completamento) più quattro di riserva.
 
@@ -500,8 +506,8 @@ Indice degli id in `docs/indice-domande.md`.
 ```
 [S6.01] SUSAN
   Asset: bg_palco_luci_calate + chr_indicatore_regia + stile_X_idle_palco
-  "Ultimo giro. Da adesso non si torna indietro. Prenditi il tempo che vuoi.
-   Nessuno ha fretta." (pausa) "Io sì. Ma fai con calma."
+  "Ultimo giro. Da qui non si torna indietro. Prenditi il tuo tempo."
+  (pausa) "Io invece no. Ma fai con calma."
   → [S6.02]
 
 [S6.02] SCHERMATA RECAP
@@ -591,15 +597,15 @@ Indice degli id in `docs/indice-domande.md`.
   Tono gentile e incoraggiante, ironico senza pungere.
 
     [POST-L01] "Ah, eccoti. Allora, com'è andata?"
-    [POST-L02] "Hai fatto le tue previsioni. Adesso non resta che aspettare il
-                keynote e scoprire quanto eri lontano dalla realtà."
+    [POST-L02] "Hai completato le tue previsioni. Adesso aspettiamo il keynote
+                e scopriamo quanto ci hai preso."
     [POST-L03] "Ma non abbiamo finito."
-    [POST-L04] "Puoi ancora mettere alla prova quello che sai sul mondo Apple."
-    [POST-L05] "Vai da Peter e prova a rispondere ai suoi quiz."
-    [POST-L06] "Ogni risposta giusta può aiutarti a moltiplicare i punti delle
-                tue previsioni."
-    [POST-L07] "Quindi sì, conoscere tutti quei dettagli inutilmente specifici
-                potrebbe finalmente tornarti utile."
+    [POST-L04] "Vai da Peter e mettiti alla prova con i suoi quiz sul mondo
+                Apple."
+    [POST-L05] "Le risposte giuste possono moltiplicare i punti delle tue
+                previsioni."
+    [POST-L06] "Quindi sì, quei dettagli inutilmente specifici potrebbero
+                finalmente servirti."
 
   Poi → [S1.HUB], che qui si apre direttamente sulla ZONA4 (Peter): è quello che
   resta da fare. Niente tutorial dello swipe — la lobby è già stata girata — e
@@ -622,7 +628,9 @@ Indice degli id in `docs/indice-domande.md`.
 ```
 [S8.01] PETER — prima volta
   Asset: bg_lobby_z4_quiz_aperta + chr_peter_alza_occhi
-  "Hai fatto un keynote intero, ma conosci quelli passati? Vediamo."
+  "Hai fatto il keynote. Ora vediamo quanto conosci quelli passati."
+  "Ci sono 3 livelli di difficoltà e hai due tentativi... sei pronto/a?"
+  (la meccanica dei moltiplicatori NON si rispiega qui: sta nel regolamento)
 
 [S8.HUB] Selezione livello
   SE run.style == showman: tutti e 3 i livelli sbloccati, ordine libero
@@ -632,21 +640,27 @@ Indice degli id in `docs/indice-domande.md`.
   Asset: bg_lobby_z4_quiz_aperta + chr_peter_guarda_orologio (timer sotto i 3s)
          → chr_peter_annuisce (giusta) / chr_peter_scuote_testa (sbagliata)
 
-  1. Pesca N domande dal pool del livello (mai le stesse del tentativo
+  1. ENTRARE nel livello consuma subito il tentativo (attempts += 1) e lo
+     salva: chi esce a metà — chiude l'app, ricarica — non se lo ritrova
+     intatto. Prima si contava a fine livello, ed era aggirabile.
+  2. Pesca N domande dal pool del livello (mai le stesse del tentativo
      precedente per lo stesso giocatore/livello — per questo i pool sono due)
-  2. Per ogni domanda: timer parte al render, risposta o timeout
+  3. Per ogni domanda: timer parte al render, risposta o timeout
      drip     → 1x per livello il 50/50
      hawaiano → il primo fallimento per livello non consuma il tentativo
-  3. Fine → punteggio
+                (glielo restituisce: attempts -= 1)
+  4. Fine → punteggio
      SE punteggio >= soglia: passed = true, mult_bank += (1° tentativo ?
        valore pieno : metà)
-     ALTRIMENTI: attempts += 1; sotto 2 si riprova con l'altro pool,
-       da 2 in poi il livello è chiuso per questa run
+     ALTRIMENTI: sotto i 2 tentativi si riprova con l'altro pool, da 2 in poi
+       il livello è chiuso per questa run. Se così si chiude anche la strada ai
+       livelli successivi, la griglia lo dice ("fuori portata") e Peter smette
+       di chiedere da dove cominciare
 
 [S8.FINALE] assegnazione moltiplicatori — apribile solo nelle 24h prima del keynote
-  Asset: bg_lobby_z4_quiz_aperta + chr_peter_applauso_ironico (punteggio pieno)
-  PETER: "Hai fatto punti per giorni e ora devi decidere dove metterli.
-          Interessante: hai puntato tutto sulla categoria di cui eri meno sicuro."
+  Asset: bg_lobby_z4_quiz_aperta + chr_peter_alza_occhi
+  Nessuna battuta attorno al pannello: la meccanica è nel regolamento e
+  ripeterla qui allungava soltanto. Peter è in scena e basta.
   Distribuisci run.mult_bank su iphone/watch/altro. Nessun tetto per categoria
   oltre al totale accumulato. Conferma → run.multipliers, irreversibile.
 ```

@@ -560,6 +560,7 @@
     chiudiCountdown();
     chiudiQuiz();
     chiudiRegole();
+    chiudiQuadro();
     chiudiEmail();
     chiudiTransizioni();
     if (el.modal) el.modal.classList.remove('on');
@@ -2485,6 +2486,16 @@
     var lista = mescola(pools[iPool] || []);
     if (!lista.length) return next();
 
+    /* Il tentativo si consuma QUI, non alla fine. Contandolo a fine livello,
+       chi vedeva che stava andando male poteva chiudere l'app prima dell'ultima
+       risposta e ritrovarsi il tentativo intatto: il salvataggio era fermo alla
+       griglia. Adesso entrare in un livello costa il tentativo, punto — anche
+       se poi si esce, per qualunque motivo. */
+    s.tentativi = s.tentativi + 1;
+    var tentativo = s.tentativi;
+    VN.progressed = true;
+    VN.saveNow();
+
     var i = 0, giuste = 0;
     var cinquantaUsato = false;
     var msTotali = secondiQuiz() * 1000;
@@ -2594,7 +2605,7 @@
       chiudiTimer();
       hideUI();
       var passato = giuste >= cfg.soglia;
-      var primo = s.tentativi === 0;
+      var primo = tentativo === 1;
       var assorbito = false;
 
       if (passato) {
@@ -2602,10 +2613,11 @@
         s.vinto = primo ? cfg.mult1 : cfg.mult2;
         VN.state.mult_bank = Number((bancaMult() + s.vinto).toFixed(2));
       } else if (perkStile() === 'seconda_chance' && !s.seconda) {
+        // il perk dell'hawaiano restituisce il tentativo appena speso: e' il
+        // giro che "non si conta", quindi gliene restano comunque due veri
         s.seconda = true;
+        s.tentativi = s.tentativi - 1;
         assorbito = true;
-      } else {
-        s.tentativi = s.tentativi + 1;
       }
       VN.progressed = true;
       VN.saveNow();
@@ -2720,6 +2732,37 @@
     el.multwrap.classList.add('on');
     pending = null;
     righe();
+  }
+
+  /* ---------------- un quadro della Hall of Fame [S1.ZONA2] ----------------
+     Come il regolamento: si apre sopra la lobby, si chiude, e il giocatore
+     resta dov'era. Non e' una scena e non tocca la partita.
+
+     Un quadro alla volta: i tre vincitori si guardano uno per uno, non tutti
+     insieme dentro la stessa schermata. L'immagine si assegna con apparira(),
+     altrimenti riaprendo la galleria si vedrebbe per un fotogramma il quadro
+     di prima. */
+  function mostraQuadro(h, done) {
+    if (!el.quadrowrap) return done && done();
+    var src = assetUrl('bg', h.quadro);   // assetUrl applica gia' la base
+    el.quadroImg.alt = fmt(h.alt || h.label || '');
+    apparira(el.quadroImg, src, el.quadrowrap);
+    el.quadrochiudi.textContent = fmt(h.chiudi || 'Chiudi');
+    el.quadrochiudi.onclick = function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      chiudiQuadro();
+      if (done) done();
+    };
+    el.quadrowrap.classList.add('on');
+    // il fondale passa fuori fuoco, come nel camerino e nel regolamento: il
+    // quadro si stacca dalla parete invece di confondercisi dentro
+    if (el.bg) el.bg.classList.add('sfoca');
+  }
+
+  function chiudiQuadro() {
+    if (!el.quadrowrap) return;
+    el.quadrowrap.classList.remove('on', 'attesa');
+    if (el.bg) el.bg.classList.remove('sfoca');
   }
 
   /* ---------------- il regolamento [S1.ZONA3] ----------------
@@ -3015,6 +3058,8 @@
         // un pannello da leggere (il regolamento): si apre sopra la lobby e si
         // chiude da solo, senza cambiare scena e senza toccare la partita
         if (h.apre) return mostraRegole(h.apre, null);
+        // un quadro da guardare (la Hall of Fame): stessa cosa, un'immagine sola
+        if (h.quadro) return mostraQuadro(h, null);
         if (h.say) {                      // commento e basta: si resta nell'hub
           var righe = [{ who: h.who || zones[cur].who, text: h.say }].concat(h.after || []);
           var k = 0;
@@ -3057,7 +3102,8 @@
     el.hub.ontouchstart = function (e) { x0 = e.touches && e.touches[0] ? e.touches[0].clientX : null; };
     el.hub.ontouchend = function (e) {
       if (x0 == null) return;
-      if (el.regole && el.regole.classList.contains('on')) { x0 = null; return; }
+      if ((el.regole && el.regole.classList.contains('on')) ||
+          (el.quadrowrap && el.quadrowrap.classList.contains('on'))) { x0 = null; return; }
       var t = e.changedTouches && e.changedTouches[0];
       var dx = t ? t.clientX - x0 : 0;
       x0 = null;
@@ -3068,6 +3114,8 @@
 
     hubTasti = function (k) {
       if (uscito) return false;
+      if (el.regole && el.regole.classList.contains('on')) return false;
+      if (el.quadrowrap && el.quadrowrap.classList.contains('on')) return false;
       if (k === 'ArrowLeft') { entra(cur - 1, -1); return true; }
       if (k === 'ArrowRight') { entra(cur + 1, 1); return true; }
       return false;
@@ -3706,6 +3754,10 @@
       if (!n || typeof n !== 'object') return;
       if (Array.isArray(n)) return raccogli(n);
       if (n.bg) precarica(assetUrl('bg', n.bg));
+      // i quadri della Hall of Fame: si aprono da un tocco, quindi non c'e'
+      // nessun nero a coprire l'attesa. Scaricati insieme alla zona, sono gia'
+      // li' quando il giocatore ne tocca uno.
+      if (n.quadro) precarica(assetUrl('bg', n.quadro));
       var chi = n.who || n.char;
       if (chi) {
         var c = cast(chi);
@@ -3810,7 +3862,9 @@
   }
 
   function applicaFx(node, fx) {
-    node.classList.remove('zoom', 'zoomlento', 'blur');
+    // l'elenco dev'essere completo: una classe di fx che non viene tolta qui
+    // resta addosso al fondale per tutte le scene dopo
+    node.classList.remove('zoom', 'zoomlento', 'blur', 'basso');
     if (fx) String(fx).split(' ').forEach(function (f) { if (f) node.classList.add(f); });
   }
 
@@ -3961,7 +4015,7 @@
         if (primo) {
           var cfg = VN.quiz.livelli[primo];
           st.quiz = {};
-          st.quiz[primo] = { passato: true, tentativi: 0, pool: 0, seconda: false, vinto: cfg.mult1 };
+          st.quiz[primo] = { passato: true, tentativi: 1, pool: 0, seconda: false, vinto: cfg.mult1 };
           st.mult_bank = cfg.mult1;
         }
       }
@@ -4099,6 +4153,7 @@
       quizbar: $('quizbar'), qinfo: $('qinfo'), qtimer: $('qtimer'), qbar: $('qbar'), qsec: $('qsec'),
       multwrap: $('multwrap'), multrighe: $('multrighe'), multresto: $('multresto'), multok: $('multok'),
       regole: $('regole'), regtit: $('regtit'), regcorpo: $('regcorpo'), regok: $('regok'),
+      quadrowrap: $('quadrowrap'), quadroImg: $('quadroImg'), quadrochiudi: $('quadrochiudi'),
       emailwrap: $('emailwrap'), emailbox: $('emailbox'), emailtit: $('emailtit'),
       emailtesto: $('emailtesto'), emaillabel: $('emaillabel'), emailin: $('emailin'),
       emailerr: $('emailerr'), emailnota: $('emailnota'), emailprivacy: $('emailprivacy'),
@@ -4124,6 +4179,7 @@
     chiudiCountdown();
     chiudiQuiz();
     chiudiRegole();
+    chiudiQuadro();
     chiudiEmail();
     chiudiTransizioni();
     if (el.modal) el.modal.classList.remove('on');
@@ -4138,7 +4194,7 @@
            e.target.closest('#griglia') || e.target.closest('#recapwrap') ||
            e.target.closest('#countdown') || e.target.closest('#cardwrap') ||
            e.target.closest('#multwrap') || e.target.closest('#regole') ||
-           e.target.closest('#emailwrap') ||
+           e.target.closest('#emailwrap') || e.target.closest('#quadrowrap') ||
            e.target.closest('#propwrap'))) return;
       VN.step();
     };
@@ -4155,6 +4211,7 @@
           (el.countdown && el.countdown.classList.contains('on')) ||
           (el.multwrap && el.multwrap.classList.contains('on')) ||
           (el.regole && el.regole.classList.contains('on')) ||
+          (el.quadrowrap && el.quadrowrap.classList.contains('on')) ||
           (el.emailwrap && el.emailwrap.classList.contains('on')) ||
           (el.modal && el.modal.classList.contains('on'))) return;
       VN.step();

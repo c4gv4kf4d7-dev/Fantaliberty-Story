@@ -256,6 +256,12 @@ apposta: le domande sul passato Apple hanno risposta verificabile, quindi
 Peter annuisce o scuote la testa. Chi tocca S8 non deve "sistemare" quel
 feedback per uniformità con S5.
 
+**Il tentativo si paga entrando, non uscendo.** Appena si entra in un livello
+il tentativo e' consumato e salvato: chi vede che sta andando male e chiude
+l'app non se lo ritrova intatto. Contarlo a fine livello — com'era prima — lo
+rendeva aggirabile. L'unico che ne recupera uno e' l'hawaiano, e solo col suo
+perk (`seconda_chance`), che glielo restituisce.
+
 Altre due cose di S8 che sembrano dettagli e non lo sono:
 - **il testo di una domanda non passa dal typewriter** — il timer parte al
   render, scrivere a macchina sarebbe una penalità invisibile;
@@ -287,6 +293,32 @@ Tre cose da non rompere:
    una riga sola, con l'email dentro se c'e'. Se cambia il payload cambia anche
    l'elenco nel regolamento (e la colonna in `docs/backend.sql`).
 
+## La Hall of Fame (zona 2) e' una piccola galleria, non una scena
+
+La parete (`bg_halloffame_frontale`) ha gia' dentro i tre quadri dei vincitori
+delle edizioni passate, con nomi e targhe disegnati: non e' un template. Ogni
+quadro si apre **da solo** con `"quadro"` nell'hotspot, sopra la lobby, e alla
+chiusura il giocatore e' dov'era — come il regolamento, non tocca la partita.
+Mai mostrarli tutti e tre insieme dopo il tocco, e mai una seconda battuta
+generica prima di aprirli: la zona la presenta una riga sola di Francesca.
+
+Tre misure che sembrano dettagli e non lo sono:
+
+1. **`"bgFx": "basso"`** taglia il fondale in alto invece che in basso. I
+   quadri stanno nella meta' bassa dell'immagine e con il taglio normale
+   finivano sotto il box del dialogo, cioe' fuori dal layer degli hotspot
+   (`#hub` arriva al 66% dell'altezza: le coordinate degli hotspot sono
+   **relative a quel riquadro**, non allo schermo).
+2. **Le tre aree sono misurate su quell'inquadratura li'.** Se la parete viene
+   ridisegnata o cambia il taglio, vanno rimisurate — il modo piu' rapido e'
+   disegnarle a schermo con un `outline` e guardarle.
+3. **Francesca e' piu' piccola e in un angolo** (`scala`, `bottom`, `right`
+   nella zona). Alla misura normale dell'hub copriva il terzo quadro.
+
+Chi aggiunge una classe nuova al fondale via `bgFx` la deve aggiungere anche
+all'elenco che `applicaFx()` toglie: una classe che non viene tolta resta
+addosso al fondale per tutte le scene dopo.
+
 ## Il linguaggio: mai "schedina bloccata"
 
 Al giocatore non si dice mai "schedina bloccata", "la schedina e' chiusa",
@@ -317,6 +349,19 @@ Tre cose da non rompere:
    esattamente il payload per Supabase; i 30 giorni di conservazione sono
    una promessa mantenuta a mano (procedura SQL in fondo a
    `docs/backend.sql`). Se cambia il payload, cambia anche il testo.
+
+## Dialoghi: se una meccanica e' gia' spiegata, non si rispiega
+
+L'utente ha fatto un giro di sfoltimento sui dialoghi (agosto 2026): via la
+domanda di regia su Craig, via la spiegazione dei moltiplicatori in bocca a
+Peter, via la scena di commento dopo il pannello dei moltiplicatori, battute
+piu' corte in camerino, dietro le quinte, teleprompter e lobby.
+
+La regola che ne resta, per le prossime volte: **quando una battuta serve solo
+a spiegare una meccanica gia' spiegata altrove** (il regolamento, l'interfaccia
+stessa), nell'ordine — si toglie, oppure si riduce a una riga sola, oppure la
+si lascia spiegare all'interfaccia. Il ritmo vale piu' della completezza: si
+legge su un telefono.
 
 ## Errori già fatti (per non ripeterli)
 

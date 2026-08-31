@@ -41,6 +41,11 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 /* fuori fuoco: l'fx 'blur' della regia, e la versione forte che S3 mette sul
    camerino mentre si sceglie lo stile (li' il fondale e' solo un'atmosfera) */
 #bg.blur{filter:blur(5px)}
+/* Il fondale e' tagliato in alto invece che in basso. Serve alla parete della
+   Hall of Fame: i quadri stanno nella meta' bassa dell'immagine, e con il
+   taglio normale (dall'alto) finivano sotto il box del dialogo e fuori dal
+   layer degli hotspot, che arriva al 66% dell'altezza. */
+#bg.basso,#bg2.basso{object-position:center bottom}
 #bg.sfoca{filter:blur(7px) brightness(.6) saturate(.9)}
 @keyframes bgfade{from{opacity:0}to{opacity:1}}
 
@@ -788,6 +793,24 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #cardazioni{display:flex;flex-direction:column;gap:8px;width:100%;max-width:22em;
  margin-top:14px}
 #cardazioni .ch{text-align:center;text-decoration:none;display:block}
+
+/* ---------- un quadro della Hall of Fame ----------
+   Flex e non grid+place-items: con la griglia la riga si dimensiona sul
+   contenuto e "max-height" non limita niente, cosi' un quadro alto usciva
+   dallo schermo portandosi via il bottone (stessa trappola del regolamento). */
+#quadrowrap{position:absolute;inset:0;z-index:7;display:none;flex-direction:column;
+ align-items:center;justify-content:center;gap:14px;background:rgba(4,5,10,.9);
+ padding:6vw calc(5vw + env(safe-area-inset-left,0px))
+ calc(5vw + env(safe-area-inset-bottom,0px))}
+#quadrowrap.on{display:flex}
+/* finche' l'immagine giusta non e' decodificata non si mostra niente: senza
+   questo comparirebbe per un attimo il quadro aperto la volta prima */
+#quadrowrap.attesa{visibility:hidden}
+/* l'immagine prende quello che resta dopo il bottone, non il 100% dell'altezza:
+   con "max-height:100%" si prendeva tutto e il bottone le finiva sopra */
+#quadroImg{flex:1 1 auto;min-height:0;max-width:100%;object-fit:contain;
+ border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.7)}
+#quadrochiudi{flex:none;text-align:center;min-width:12em}
 
 /* ---------- modale di conferma ----------
    Per i passi senza ritorno. Copre la scena: finche' e' aperta non si tocca

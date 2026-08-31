@@ -19,7 +19,9 @@ Uno sfondo intero per schermata, sempre presente sotto ogni altra cosa.
 | `bg_esterno_ingresso` | S0 | L'ingresso del teatro: Lucas accoglie il giocatore |
 | `bg_macintosh` | S0 | Registrazione e consegna del badge. Il Mac non e' piu' un oggetto sovrapposto (`prop_mac_terminale`): sta dentro il fondale, e il terminale si incolla in pixel allo schermo disegnato qui (`ancoraTerminale()` in engine.js, step `prop` con `"fondale": true`). Se l'immagine viene ridisegnata, ricontrollare le coordinate del vetro in `SCHERMO_FONDALE` |
 | `bg_lobby_z1_tenda` | S1 | Zona 1 della lobby. Ha l'hotspot ENTRA al centro. **L'apertura si anima in codice** (fade o split delle due metà dell'immagine), non serve un secondo fondale "tenda aperta" |
-| `bg_lobby_z2_hall_of_fame` | S1 | Zona 2. Sopra ci vanno le targhe (`obj_targa_hall_of_fame`) come layer cliccabili |
+| `bg_halloffame_frontale` | S1 | Zona 2, la parete della Hall of Fame con i tre quadri dei vincitori gia' dentro l'immagine: non e' un template, i nomi sono disegnati. Le tre aree toccabili in `story.json` sono misurate su questa immagine — se viene ridisegnata, ricontrollarle |
+| `bg_halloffame_fabio` · `bg_halloffame_michael` · `bg_halloffame_nicola` | S1 | I tre quadri singoli, uno per edizione (2024, 2025, 2026). Si aprono uno alla volta dal tocco sul quadro corrispondente (`"quadro"` nell'hotspot), sopra la lobby: non sono scene e non toccano la partita |
+| `bg_lobby_z2_hall_of_fame` | S1 | La vecchia parete vuota della zona 2. Non piu' usata dal gioco: l'ha sostituita `bg_halloffame_frontale` |
 | `bg_lobby_z3_regolamento` | S1 | Zona 3. Il cartellone illuminato del regolamento: la lastra bianca è **vuota di proposito**, il testo è UI vera che si apre sopra (non va disegnato nell'immagine). Ha preso il posto di `bg_lobby_z3_premi`, la vecchia teca dei premi |
 | `bg_lobby_z4_quiz_bloccata` | S1 | Zona 4 prima del lock. Sopra: `obj_tavolino_buzzer_peter` + Peter addormentato |
 | `bg_lobby_z4_quiz_aperta` | S8 | Stessa zona, generata come derivato diretto della bloccata con le luci alzate — va usata al posto della precedente non appena `run.locked === true` |
@@ -122,7 +124,7 @@ all'inizio della S4 e non cambia più per tutta la sessione.
 |---|---|---|
 | `obj_terminale_accrediti` | S0 | Il Macintosh vintage. **Lo schermo CRT è vuoto/generico nell'immagine** — il testo dei 6 campi del form è HTML/UI vera sovrapposta, non parte della grafica |
 | `obj_badge` | S0, S7 | Template riutilizzabile: nome e foto/avatar restano placeholder vuoti nell'immagine, riempiti via codice. Riusato identico nella card condivisibile finale |
-| `obj_targa_hall_of_fame` | S1 | Template unico, il testo per edizione (anno, vincitore) è overlay dinamico, non richiede una nuova immagine per ogni edizione |
+| `obj_targa_hall_of_fame` | S1 | **Non serve piu'**: la Hall of Fame usa immagini gia' complete (`bg_halloffame_*`), una per vincitore, invece di un template con testo sovrapposto |
 | `obj_lucchetto_zona4` | S1, S8 | **2 frame** (chiuso/che si apre): mostrato sopra Peter finché `run.locked === false`, poi sostituito dal frame "aperto" con un piccolo effetto una tantum al momento dello sblocco |
 | `obj_tavolino_buzzer_peter` | S1, S8 | **2 frame** (non premuto/premuto), da tagliare a metà dal file consegnato — sono due immagini identiche affiancate, split orizzontale semplice |
 | `obj_clicker` | S5 | **2 frame** (integro/inceppato), usato durante il micro-evento "il clicker si inceppa" |
