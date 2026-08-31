@@ -151,6 +151,11 @@ difetto ("mi rispiega cos'e' la Hall of Fame ogni volta").
 Toccare un hotspot in una zona muta fa **rientrare** chi risponde: senza
 quello, Francesca parlerebbe fuori campo e sembrerebbe la regia in cuffia.
 
+Chi e' **scenografia** invece non se ne va mai: Peter dorme al suo tavolino e
+deve restarci anche quando la zona non parla piu'. Lo dice `"resta": true`
+nella zona (le due zone del quiz ce l'hanno). Senza, tornando li' il tavolino
+era vuoto e non si capiva piu' dove fosse il quiz.
+
 **Le frecce per cambiare zona (`#hubnav`) stanno dentro `#boxwrap`.** Quindi in
 una zona muta non si spegne il contenitore (`in`), che porterebbe via anche
 quelle e lascerebbe il giocatore senza comandi visibili: si spegne solo il
@@ -212,6 +217,13 @@ qualcosa che non e' ancora pronto. Si puo' stringere la vite con
 rilanciarlo.
 
 ## Animazioni CSS: due classi sullo stesso nodo si combattono
+
+Vale anche al contrario, ed e' la stessa trappola: **un'animazione
+`forwards` non si spegne togliendo la classe che accende il nodo.** `#avatar`
+si vede per `.on`, ma `.entra` finisce a opacita' piena e ce la lascia: per
+mesi lo step che nascondeva il giocatore toglieva solo `on`, e il giocatore
+restava a schermo davanti alla sagoma del CEO. Si tolgono **insieme**
+(`spegniIo()`).
 
 Regola (violata due volte con lo stesso sintomo — il personaggio sparisce
 con lo sprite giusto caricato): **`#npc` porta una sola animazione alla

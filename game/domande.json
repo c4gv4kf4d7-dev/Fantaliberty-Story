@@ -15,10 +15,10 @@
         {
           "id": "IPHONE.C1",
           "diff": 4,
-          "q": "Il prezzo dell'iPhone 18 Pro rispetto al 17 Pro",
+          "q": "Il prezzo dell'iPhone 18 Pro",
           "opzioni": [
             {
-              "label": "Nessun aumento, resta a 1.239€",
+              "label": "Nessun aumento",
               "tipo": "controcorrente",
               "pt": 6,
               "battute": {
@@ -493,7 +493,7 @@
         {
           "id": "WATCH.C1",
           "diff": 2,
-          "q": "Il grande annuncio salute",
+          "q": "Il grande annuncio riguardo la salute",
           "opzioni": [
             {
               "label": "Alert pressione/ipertensione ampliati",
@@ -1051,7 +1051,7 @@
       ]
     }
   },
-  "_nota_intermezzi": "Le 4 domande di regia non hanno battute per stile: il personaggio risponde a Susan in cuffia, sottovoce, non le annuncia alla platea. R1 va prima del primo macroargomento, R3-R5 dopo ciascuno dei tre completati (in ordine di completamento, non fisso per categoria).",
+  "_nota_intermezzi": "Le 3 domande di regia non hanno battute per stile: il personaggio risponde a Susan in cuffia, sottovoce, non le annuncia alla platea. R1 va prima del primo macroargomento, le altre dopo ciascun macroargomento completato (in ordine di completamento). Sono meno dei macroargomenti piu' l'apertura, quindi l'ultimo giro pesca dalla riserva: e' esattamente a questo che serve.",
   "intermezzi": [
     {
       "id": "R1",
@@ -1068,20 +1068,6 @@
         {
           "label": "Qualcun altro",
           "val": 3
-        }
-      ]
-    },
-    {
-      "id": "R3",
-      "q": "Ho la regia pronta sul primo piano. Serve o no?",
-      "opzioni": [
-        {
-          "label": "Sì, momento commozione",
-          "val": 2
-        },
-        {
-          "label": "No",
-          "val": 1
         }
       ]
     },

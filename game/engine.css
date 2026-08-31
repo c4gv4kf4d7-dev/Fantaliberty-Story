@@ -424,11 +424,16 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
    Il nome della zona resta nell'aria-label, per chi naviga con VoiceOver. */
 .hspot{position:absolute;border:0;background:transparent;padding:0;cursor:pointer;
  -webkit-tap-highlight-color:transparent;overflow:visible}
+/* Il puntino e' bianco su bianco quando la zona e' chiara — sul cartellone
+   illuminato del regolamento spariva. L'alone scuro sotto la luce lo stacca
+   anche li', senza cambiarlo dove il fondale e' gia' scuro. */
 .hspot i{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;
- border-radius:50%;background:#fff;box-shadow:0 0 12px 3px rgba(255,255,255,.75);
+ border-radius:50%;background:#fff;
+ box-shadow:0 0 0 3px rgba(10,14,28,.45), 0 0 12px 3px rgba(255,255,255,.75);
  animation:puntino 2.2s ease-in-out infinite}
 .hspot i::before,.hspot i::after{content:"";position:absolute;inset:-3px;border-radius:50%;
- border:2px solid rgba(255,255,255,.9);animation:onda 2.2s ease-out infinite}
+ border:2px solid rgba(255,255,255,.9);box-shadow:0 0 0 1px rgba(10,14,28,.35);
+ animation:onda 2.2s ease-out infinite}
 .hspot i::after{animation-delay:1.1s}
 @keyframes puntino{0%,100%{opacity:.55;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
 @keyframes onda{0%{opacity:.8;transform:scale(.6)}100%{opacity:0;transform:scale(3.4)}}
@@ -465,7 +470,7 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 /* l'oggetto di un micro-evento: in alto, piccolo. Non e' il soggetto della
    scena, e' la cosa che e' appena andata storta. Slot separato da #propwrap,
    che durante il keynote tiene la slide del macroargomento attivo. */
-#evpropwrap{position:absolute;left:50%;top:6%;width:36%;max-width:240px;
+#evpropwrap{position:absolute;left:50%;top:16%;width:52%;max-width:340px;
  transform:translateX(-50%);display:none;z-index:2;pointer-events:none}
 #evpropwrap.on{display:block;animation:pop .5s ease}
 #evprop{width:100%;display:block;image-rendering:pixelated;
