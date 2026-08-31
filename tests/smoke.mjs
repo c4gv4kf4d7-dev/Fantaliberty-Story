@@ -735,7 +735,8 @@ assert.equal(VN.state.sfacciato, false);
   assert.ok($('boxwrap').classList.contains('carta'), 'e il box del dialogo lascia il posto alla scheda');
   assert.equal(dots().length, 4, 'quattro stili');
   assert.equal($('carnome').textContent, 'Hawaiano', 'si parte dal primo dello script');
-  assert.match($('cardesc').textContent, /Non sa che ore sono/);
+  assert.match($('cardesc').textContent, /Arriva tardi/);
+  assert.match($('carbattuta').textContent, /Se sbaglio rifaccio/, 'e la sua battuta');
   // Il perk e' una meccanica del quiz: sulla scheda del camerino non ci va, e
   // lo step di S3 infatti non chiede 'etichettaPerk'. Il dato resta in
   // story.stili per S8 — qui si controlla solo che non finisca a schermo.
