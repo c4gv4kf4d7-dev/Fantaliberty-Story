@@ -1056,3 +1056,31 @@ html.inattesa, html.inattesa body{background:#0a0a0f;overflow:hidden}
   color:#f2f2f7;opacity:.9}
 #gate .gateSub b{display:inline-block;margin-top:.7em;font-weight:400;
   font-size:1.5em;color:#ff9f57}
+
+/* ===== Selettore dei volumi =====
+   Il bottone sta in alto a destra, piccolo e spento: deve essere trovabile
+   quando lo si cerca e invisibile quando non lo si cerca. Sta sopra tutto
+   tranne il sipario e i cartelli a schermo pieno. */
+#audiobtn{position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);right:8px;
+  z-index:6;width:30px;height:30px;padding:0;border:0;border-radius:8px;
+  background:rgba(10,10,15,.45);color:#f2f2f7;font-size:13px;line-height:30px;
+  opacity:.5;cursor:pointer;transition:opacity .2s}
+#audiobtn:hover,#audiobtn:focus-visible{opacity:1}
+#curtain.on ~ #audiobtn{opacity:.28}
+
+#audiowrap{position:absolute;inset:0;z-index:7;display:none;
+  align-items:center;justify-content:center;background:rgba(6,6,12,.72);
+  padding:24px}
+#audiowrap.on{display:flex}
+#audiobox{width:min(88%,300px);max-height:100%;overflow:auto;
+  background:#14141f;border:2px solid #3a3a52;border-radius:12px;padding:18px 16px;
+  text-align:center;color:#f2f2f7}
+#audiobox h2{margin:0 0 16px;font-size:11px;letter-spacing:.18em;color:#ffd88c}
+#audiobox label{display:block;margin:14px 0 6px;font-size:8px;letter-spacing:.1em;
+  color:#a9a9c0;text-align:left}
+#audiobox input[type=range]{width:100%;margin:0 0 4px;accent-color:#ff9f57;
+  height:22px}
+#audiobox button{width:100%;margin-top:12px;padding:10px;border:2px solid #3a3a52;
+  border-radius:8px;background:#1e1e2e;color:#f2f2f7;font:inherit;font-size:8px;
+  letter-spacing:.1em;cursor:pointer}
+#audiobox #audiook{border-color:#ff9f57;color:#ffd88c}

@@ -22,7 +22,7 @@
   gtag('js', new Date());
   gtag('config', 'G-SYX1RZLNNE');
 </script>
-<link rel="stylesheet" href="./game/engine.css?v=101">
+<link rel="stylesheet" href="./game/engine.css?v=104">
 </head>
 <body>
 <div id="stage">
@@ -255,6 +255,22 @@
        toccare #curtain, che serve all'intro e viene spento a ogni cambio scena -->
   <div id="nero"></div>
 
+  <!-- Selettore dei volumi: un bottone piccolo in un angolo, e un pannello con
+       due cursori. Musica ed effetti separati perche' danno fastidio in momenti
+       diversi. La scelta resta nel browser, non nella partita. -->
+  <button id="audiobtn" aria-label="Audio">&#128266;</button>
+  <div id="audiowrap">
+    <div id="audiobox">
+      <h2>AUDIO</h2>
+      <label for="volmus">Musica</label>
+      <input id="volmus" type="range" min="0" max="100" step="5" value="60">
+      <label for="volsfx">Effetti</label>
+      <input id="volsfx" type="range" min="0" max="100" step="5" value="80">
+      <button id="audiomuto">SILENZIA TUTTO</button>
+      <button id="audiook">CHIUDI</button>
+    </div>
+  </div>
+
   <!-- pannello di sviluppo: si apre solo con ?dev nell'indirizzo -->
   <div id="dev"></div>
   <div id="flash"></div>
@@ -285,8 +301,8 @@
   </div>
 </div>
 
-<script src="./game/analytics.js?v=101"></script>
-<script src="./game/engine.js?v=101"></script>
+<script src="./game/analytics.js?v=104"></script>
+<script src="./game/engine.js?v=104"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -376,7 +392,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=101', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=104', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e

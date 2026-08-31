@@ -690,6 +690,7 @@
     senzaSalto = false;
     VN.scene = sc; VN.sceneId = id; VN.i = 0;
     trackLocationScena(id);
+    musicaScena(id);          // cambia solo se la scena nuova chiede un altro brano
     if (sc.bg) setBg(sc.bg, sc.bgFx, sc.dissolvenza);
     // gli asset della scena nuova si chiedono subito: se questa si apre al
     // buio, arrivano mentre non si vede niente
@@ -1798,6 +1799,7 @@
           hideUI();
           VN.progressed = true;
           // core: punti gia' calcolati nella banca. extra e intermezzi: val secco
+          suona('scelta');
           segna(VN.state.categoria, tipo, d.id, o.label, o.pt != null ? o.pt : (o.val || 0));
           VN.saveNow();
           annuncia(d, o);
@@ -1821,7 +1823,9 @@
     }
 
     function dopoRisposta() {
-      platea(aCaso(VN.story.reazioni || (VN.banca && VN.banca.reazioni_platea)));
+      var reazione = aCaso(VN.story.reazioni || (VN.banca && VN.banca.reazioni_platea));
+      if (reazione && /applaus/i.test(JSON.stringify(reazione))) suona('applausi', 0.7);
+      platea(reazione);
       var ev = pescaEvento();
       i++;
       if (ev) return mostraEvento(ev, intro);
@@ -2331,6 +2335,7 @@
       if (uscito) return;
       uscito = true;
       chiudiEmail();
+      suona('previsioni_inviate');
       invia();                       // il POST non blocca il gioco
       VN.saveNow();
       next();
@@ -2847,6 +2852,7 @@
       VN.progressed = true;
       var giusta = scelto === d.ok;
       if (giusta) giuste++;
+      suona(giusta ? 'quiz_giusta' : 'quiz_sbagliata');
       showChar({ who: 'peter', body: giusta ? 'annuisce' : 'scuote_testa', height: st.height, bottom: st.bottom });
       setSpeaker(st.who || 'peter');
       var testo = giusta ? (st.giusta || 'Esatto.')
@@ -2884,6 +2890,7 @@
       // Ogni tentativo che finisce le sue domande, mai le risposte date.
       ga('quiz_level_complete', { quiz_level: liv, result: passato ? 'passed' : 'failed' });
 
+      suona(passato ? 'quiz_livello' : 'quiz_fallito');
       showChar({ who: 'peter', body: passato ? 'applauso_ironico' : 'scuote_testa', height: st.height, bottom: st.bottom });
       setSpeaker(st.who || 'peter');
       var testo = passato
@@ -3009,6 +3016,7 @@
   var HOF_EDIZIONI = { halloffame_fabio: '2024', halloffame_michael: '2025', halloffame_nicola: '2026' };
 
   function mostraQuadro(h, done) {
+    suona('apri');
     if (!el.quadrowrap) return done && done();
     var src = assetUrl('bg', h.quadro);   // assetUrl applica gia' la base
     if (HOF_EDIZIONI[h.quadro]) ga('hall_of_fame_edition_opened', { edition: HOF_EDIZIONI[h.quadro] });
@@ -3027,6 +3035,7 @@
   }
 
   function chiudiQuadro() {
+    if (el.quadrowrap && el.quadrowrap.classList.contains('on')) suona('chiudi');
     if (!el.quadrowrap) return;
     el.quadrowrap.classList.remove('on', 'attesa');
     if (el.bg) el.bg.classList.remove('sfoca');
@@ -3578,6 +3587,7 @@
       b.onclick = function (ev) {
         if (ev && ev.stopPropagation) ev.stopPropagation();
         if (o.spento) return;
+        suona('scelta');
         hideUI();
         if (o._do) return o._do();
         VN.progressed = true;
@@ -3914,6 +3924,232 @@
   }
 
   /* ---------------- asset ---------------- */
+  /* ================= audio: musica di scena ed effetti =================
+
+     Tre regole, e vengono dalle richieste dell'utente:
+
+     1. **La musica non riparte a ogni scena.** Cambia solo quando la scena
+        nuova chiede un brano diverso, e allora il vecchio sfuma mentre il
+        nuovo entra. Scene diverse che condividono il brano (i quattro momenti
+        dell'atto 1, la griglia e le domande) non se ne accorgono nemmeno.
+     2. **Niente suono sul tocco che manda avanti il dialogo.** Un clic ogni
+        due secondi per un'ora di gioco e' rumore, non feedback. Gli effetti
+        stanno solo sui momenti che contano: una scelta, una risposta del quiz,
+        le previsioni spedite, un pannello che si apre.
+     3. **Il volume lo decide chi gioca**, e la scelta gli resta addosso: sta
+        in un suo posto del browser (fl_audio), non nel salvataggio della
+        partita, cosi' sopravvive anche a "ricomincia da capo".
+
+     Su iPhone il browser non fa suonare niente finche' la persona non tocca lo
+     schermo: la prima musica resta in attesa (musaAttesa) e parte al primo
+     tocco vero, non a un timer. */
+  var AUDIO_CHIAVE = 'fl_audio';
+  var audio = { mus: 0.6, sfx: 0.8, muto: false };
+  var musNodo = null, musNome = null, musFade = null, musAttesa = null;
+  var audioSbloccato = false;
+  var sfxCache = {};
+
+  // Senza <audio> (jsdom nei test, o un browser antico) l'audio semplicemente
+  // non esiste: il gioco va avanti identico, muto.
+  // In jsdom l'elemento <audio> esiste ma non sa suonare (play e pause sono
+  // "not implemented" e sporcano l'uscita dei test): si riconosce dallo stesso
+  // segnale che usa siDecodifica(), cioe' un browser vero.
+  var CI_SONO_SUONI = typeof global.Audio === 'function'
+    && typeof global.Image === 'function'
+    && typeof new global.Image().decode === 'function';
+
+  function cfgAudio() { return (VN.story && VN.story.audio) || {}; }
+
+  function leggiAudio() {
+    var st = store();
+    if (!st) return;
+    try {
+      var d = JSON.parse(st.getItem(AUDIO_CHIAVE) || 'null');
+      if (d) {
+        if (typeof d.mus === 'number') audio.mus = d.mus;
+        if (typeof d.sfx === 'number') audio.sfx = d.sfx;
+        audio.muto = !!d.muto;
+      }
+    } catch (e) {}
+  }
+  function salvaAudio() {
+    var st = store();
+    if (st) { try { st.setItem(AUDIO_CHIAVE, JSON.stringify(audio)); } catch (e) {} }
+  }
+
+  function volumeMusica() { return audio.muto ? 0 : audio.mus; }
+
+  /* Una dissolvenza vera: il volume si muove a passi piccoli. Non si usa una
+     transizione CSS perche' il volume di un <audio> non e' una proprieta' CSS,
+     e non si usa un solo salto perche' uno stacco secco sulla musica si sente
+     come un errore. */
+  function sfuma(nodo, da, a, ms, poi) {
+    if (musFade && musFade.nodo === nodo) clearInterval(musFade.id);
+    var passo = 50, t = 0;
+    nodo.volume = Math.max(0, Math.min(1, da));
+    var id = setInterval(function () {
+      t += passo;
+      var k = Math.min(1, t / Math.max(1, ms));
+      nodo.volume = Math.max(0, Math.min(1, da + (a - da) * k));
+      if (k >= 1) {
+        clearInterval(id);
+        if (musFade && musFade.id === id) musFade = null;
+        if (poi) poi();
+      }
+    }, passo);
+    musFade = { id: id, nodo: nodo };
+  }
+
+  function fermaMusica(ms) {
+    if (!musNodo) return;
+    var vecchio = musNodo;
+    musNodo = null; musNome = null;
+    sfuma(vecchio, vecchio.volume, 0, ms == null ? (cfgAudio().fade || {}).uscita || 900 : ms,
+      function () { try { vecchio.pause(); } catch (e) {} });
+  }
+
+  /* Il brano della scena. Se e' gia' quello che sta suonando non si tocca
+     niente: e' la regola 1. */
+  function musicaScena(id) {
+    if (!CI_SONO_SUONI) return;
+    var mappa = cfgAudio().musica || {};
+    var file = mappa[id];
+    if (!file) return fermaMusica();
+    if (file === musNome && musNodo) return;      // stesso brano: continua
+
+    var fade = cfgAudio().fade || {};
+    var entrata = fade.entrata || 1200;
+    fermaMusica(fade.uscita || 900);
+
+    var nodo = new global.Audio(withBase('music/' + file));
+    nodo.loop = true;
+    nodo.preload = 'auto';
+    nodo.volume = 0;
+    musNodo = nodo; musNome = file;
+
+    var parti = function () {
+      if (musNodo !== nodo) return;               // scena cambiata nel frattempo
+      try {
+        var p = nodo.play();
+        if (p && p.catch) p.catch(function () { musAttesa = parti; });
+      } catch (e) {}                              // jsdom non sa suonare: non e' un errore
+      sfuma(nodo, 0, volumeMusica(), entrata);
+    };
+    if (audioSbloccato) parti(); else musAttesa = parti;
+  }
+
+  /* Un effetto. "quale" e' una chiave di story.audio.effetti, non un nome di
+     file: i file si cambiano senza toccare il codice. Se la chiave porta un
+     elenco (gli applausi) se ne pesca uno a caso, cosi' la platea non applaude
+     sempre nello stesso modo. */
+  function suona(quale, volume) {
+    if (!CI_SONO_SUONI || audio.muto || !audioSbloccato) return;
+    var mappa = cfgAudio().effetti || {};
+    var file = mappa[quale];
+    if (Array.isArray(file)) file = file[Math.floor(Math.random() * file.length)];
+    if (!file) return;
+    var nodo = sfxCache[file];
+    if (!nodo) {
+      nodo = new global.Audio(withBase('sfx/' + file));
+      nodo.preload = 'auto';
+      sfxCache[file] = nodo;
+    }
+    try {
+      nodo.currentTime = 0;
+      nodo.volume = Math.max(0, Math.min(1, audio.sfx * (volume == null ? 1 : volume)));
+      var p = nodo.play();
+      if (p && p.catch) p.catch(function () {});
+    } catch (e) {}
+  }
+
+  /* Il primo tocco della persona sblocca l'audio: prima di quello il browser
+     del telefono rifiuta qualunque riproduzione, e insistere non serve. */
+  function sbloccaAudio() {
+    if (audioSbloccato) return;
+    audioSbloccato = true;
+    if (musAttesa) { var f = musAttesa; musAttesa = null; f(); }
+  }
+
+  function aggiornaVolumi() {
+    if (musNodo) {
+      if (musFade) { clearInterval(musFade.id); musFade = null; }
+      musNodo.volume = volumeMusica();
+      if (audio.muto) { try { musNodo.pause(); } catch (e) {} }
+      else if (musNodo.paused && audioSbloccato) { try { musNodo.play(); } catch (e) {} }
+    }
+  }
+
+  /* ---------------- il selettore dei volumi ----------------
+     Un bottone piccolo in un angolo, e un pannello con due cursori: musica ed
+     effetti, separati perche' sono due fastidi diversi (la musica in ufficio,
+     gli effetti di notte). Il pannello si chiude toccando fuori, come le altre
+     finestre del gioco, e non tocca la partita. */
+  function aggiornaBottoneAudio() {
+    if (!el.audiobtn) return;
+    el.audiobtn.textContent = audio.muto || (!audio.mus && !audio.sfx) ? '🔇' : '🔊';
+    el.audiobtn.setAttribute('aria-label', audio.muto ? 'Riattiva l\'audio' : 'Audio');
+  }
+
+  function apriAudio() {
+    if (!el.audiowrap) return;
+    suona('apri');
+    el.audiowrap.classList.add('on');
+    var righe = el.audiowrap.querySelectorAll('input[type=range]');
+    righe[0].value = Math.round(audio.mus * 100);
+    righe[1].value = Math.round(audio.sfx * 100);
+    if (el.audiomuto) el.audiomuto.textContent = audio.muto ? 'RIATTIVA L\'AUDIO' : 'SILENZIA TUTTO';
+  }
+  function chiudiAudio() {
+    if (el.audiowrap) el.audiowrap.classList.remove('on');
+  }
+
+  function montaAudio() {
+    leggiAudio();
+    aggiornaBottoneAudio();
+    if (!el.audiobtn) return;
+    el.audiobtn.onclick = function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      sbloccaAudio();
+      if (el.audiowrap.classList.contains('on')) { suona('chiudi'); chiudiAudio(); }
+      else apriAudio();
+    };
+    el.audiowrap.onclick = function (ev) {
+      if (ev.target === el.audiowrap) { suona('chiudi'); chiudiAudio(); }
+      else if (ev.stopPropagation) ev.stopPropagation();
+    };
+    var righe = el.audiowrap.querySelectorAll('input[type=range]');
+    righe[0].oninput = function () {
+      audio.mus = this.value / 100; audio.muto = false;
+      aggiornaVolumi(); aggiornaBottoneAudio(); salvaAudio();
+    };
+    righe[1].oninput = function () {
+      audio.sfx = this.value / 100; audio.muto = false;
+      aggiornaBottoneAudio(); salvaAudio();
+    };
+    // l'effetto di prova si sente quando si lascia il cursore: durante il
+    // trascinamento sarebbe una raffica
+    righe[1].onchange = function () { suona('scelta'); };
+    if (el.audiomuto) {
+      el.audiomuto.onclick = function (ev) {
+        if (ev && ev.stopPropagation) ev.stopPropagation();
+        audio.muto = !audio.muto;
+        aggiornaVolumi(); aggiornaBottoneAudio(); salvaAudio();
+        el.audiomuto.textContent = audio.muto ? 'RIATTIVA L\'AUDIO' : 'SILENZIA TUTTO';
+      };
+    }
+    if (el.audiook) {
+      el.audiook.onclick = function (ev) {
+        if (ev && ev.stopPropagation) ev.stopPropagation();
+        suona('chiudi'); chiudiAudio();
+      };
+    }
+  }
+
+  // introspezione per le verifiche automatiche: quale brano sta suonando
+  VN.audio = { suona: suona, musica: musicaScena, stato: audio,
+    suonando: function () { return musNodo && !musNodo.paused ? musNome : null; },
+    volume: function () { return musNodo ? musNodo.volume : 0; } };
+
   function withBase(rel) {
     if (!rel) return '';
     if (rel.indexOf('data:') === 0 || rel.indexOf('http') === 0) return rel;   // build single-file
@@ -4563,7 +4799,9 @@
       carosello: $('carosello'), carImg: $('carImg'), carta: $('carta'),
       cprev: $('cprev'), cnext: $('cnext'), cdots: $('cdots'),
       carnome: $('carnome'), cardesc: $('cardesc'), carbattuta: $('carbattuta'),
-      carperk: $('carperk'), carok: $('carok')
+      carperk: $('carperk'), carok: $('carok'),
+      audiobtn: $('audiobtn'), audiowrap: $('audiowrap'), audiomuto: $('audiomuto'),
+      audiook: $('audiook')
     };
     el.avatar.innerHTML = '';
     el.avatar.classList.remove('on', 'entra');
@@ -4585,6 +4823,12 @@
     if (el.modal) el.modal.classList.remove('on');
     bgCorrente = null;
 
+    // Il primo tocco della persona e' l'unico momento in cui il browser del
+    // telefono accetta di far partire un suono: da li' in poi si puo'.
+    global.document.addEventListener('pointerdown', sbloccaAudio, { once: true });
+    global.document.addEventListener('keydown', sbloccaAudio, { once: true });
+    montaAudio();
+
     el.stage.onclick = function (e) {
       if (e && e.target && e.target.closest &&
           (e.target.closest('#choices') || e.target.closest('#inputform') ||
@@ -4595,7 +4839,8 @@
            e.target.closest('#countdown') || e.target.closest('#cardwrap') ||
            e.target.closest('#multwrap') || e.target.closest('#regole') ||
            e.target.closest('#emailwrap') || e.target.closest('#quadrowrap') ||
-           e.target.closest('#runwrap') || e.target.closest('#propwrap'))) return;
+           e.target.closest('#runwrap') || e.target.closest('#propwrap') ||
+           e.target.closest('#audiowrap') || e.target.closest('#audiobtn'))) return;
       VN.step();
     };
     global.document.onkeydown = function (e) {

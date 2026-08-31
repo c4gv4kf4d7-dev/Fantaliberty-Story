@@ -521,6 +521,45 @@ il quiz e' roba sua e ne va fiero, la corsa gliel'hanno messa li' e non gli va
 giu' ("Dentro. Il. Campus. Di corsa."). E' l'unico posto dove il gioco dice
 che le sfide sono due — togliendo quelle battute non lo dice piu' nessuno.
 
+## L'audio: tre regole, e una che vale piu' delle altre
+
+I file stanno in `assets/music` (sottofondo per scena) e `assets/sfx` (effetti).
+Quale suona dove sta in `story.audio` dentro `story.json`, non nel motore: il
+motore chiama una **chiave** (`scelta`, `quiz_giusta`, `applausi`), cosi' un
+suono si cambia senza toccare il codice. Una chiave puo' portare un elenco —
+gli applausi — e allora se ne pesca uno a caso, cosi' la platea non applaude
+sempre uguale.
+
+1. **Niente suono sul tocco che manda avanti il dialogo.** E' la richiesta
+   esplicita dell'utente, e ha ragione: un clic ogni due secondi per un'ora di
+   gioco e' rumore, non feedback. Gli effetti stanno solo dove succede qualcosa
+   — una scelta, una risposta del quiz, le previsioni spedite, un pannello che
+   si apre. `npm test` controlla che dentro `VN.step` non ci finisca un `suona`.
+2. **La musica non riparte a ogni scena.** `musicaScena()` confronta il brano
+   chiesto con quello che sta suonando: se e' lo stesso non tocca niente. Le
+   quattro scene dell'atto 1 condividono il brano, e il giocatore non deve
+   sentire uno stacco passando dall'ingresso alla registrazione. Quando cambia
+   davvero, il vecchio sfuma mentre il nuovo entra (`sfuma()`, non una
+   transizione CSS: il volume di un `<audio>` non e' una proprieta' CSS).
+3. **Il primo suono aspetta il primo tocco.** Sul telefono il browser rifiuta
+   qualunque riproduzione prima che la persona tocchi lo schermo: la prima
+   musica resta in `musAttesa` e parte al primo `pointerdown`. Insistere con un
+   timer non serve a niente.
+
+I volumi (musica ed effetti separati, piu' il muto) stanno in `fl_audio`, **non
+nel salvataggio della partita**: chi ricomincia da capo non si ritrova la
+musica riaccesa. Il selettore e' il bottone in alto a destra.
+
+In `npm test` l'audio non esiste (jsdom ha `<audio>` ma non sa suonare, e
+`play`/`pause` sporcano l'uscita): `CI_SONO_SUONI` lo riconosce con lo stesso
+segnale di `siDecodifica()`, e il gioco gira identico, muto.
+
+**I file si preparano con `tools/prepara_audio.py`**, non si committano come
+escono dal programma di montaggio: i 42 MB consegnati sono diventati 9,5 MB
+(MP3 mono, volume pareggiato con `loudnorm`, silenzio iniziale tagliato,
+copertina buttata — un MP3 con dentro un disegno pesa il triplo dell'audio).
+Chi aggiunge un file lo mette nella mappa dello script e rilancia.
+
 ## Il linguaggio: mai "schedina bloccata"
 
 Al giocatore non si dice mai "schedina bloccata", "la schedina e' chiusa",
