@@ -208,14 +208,13 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
   passaggio. Tornandoci, Francesca sparisce e il box non compare: chi ha già
   fatto il giro gira in silenzio. Unica eccezione la tenda: dal secondo
   passaggio in poi Francesca ricompare lì e basta —
-    FRANCESCA: "Sei pronto? Dietro questa tenda comincia lo show.
-                Da qui in poi si gioca sul serio."
+    FRANCESCA: "Sei pronto? Dietro questa tenda comincia lo show."
   Toccare un hotspot in una zona già vista fa comunque rientrare il personaggio
   che risponde.
 
   [S1.ZONA1] Tenda d'ingresso
     Hotspot ENTRA (attivo solo dopo il tutorial)
-      → MODALE "Entrare in sala? Sì / Non ancora"
+      → MODALE "Vuoi entrare nel teatro? Sì, entro / Non ancora"
       → Sì: effetto in codice (fade o split-scroll di bg_lobby_z1_tenda) → [S2.01]
       → Non ancora: resta in [S1.HUB]
 
@@ -287,7 +286,7 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
 
    Tu sei l'unico essere umano qui dentro...
 
-   Congratulazioni: fai l'host."
+   Congratulazioni! Fai l'host."
   → [S2.03]
 
 [S2.03] SCELTA — SOLO TONO, nessun effetto su stato o punteggio
@@ -302,7 +301,7 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
   Tap 1: "Ottimo, hai detto sì."
   Tap 2: "Ora vai in camerino, ultima porta a destra. Hai quattro minuti e ne
           hai già persi due."
-  Tap 3: "Vai. Io intanto provo a evitare che crolli il resto."
+  Tap 3: "Io intanto provo a evitare che crolli il resto."
   → [S3.01]
 ```
 
@@ -316,8 +315,8 @@ più avanti in `[S5]`. Salvare in `run.flags.sfacciato_s2 = true/false`.
 ```
 [S3.01] SUSAN — dialogo
   Asset: bg_camerino + chr_susan_guarda_orologio
-  "Scegli uno stile e cambiati. Veloce. Ho una prova generale da salvare
-   e tu sei il problema numero due."
+  "Scegli uno stile e cambiati. Veloce. Ho un Keynote da salvare
+   e tu non sarai il problema numero due."
   → [S3.02]
 
 [S3.02] SCHERMATA STILE — carosello, 4 opzioni
@@ -384,17 +383,15 @@ più avanti in `[S5]`. Salvare in `run.flags.sfacciato_s2 = true/false`.
          + chr_indicatore_regia + stile_X_idle_palco
   "Ok. Tra trenta secondi andiamo."
   (pausa)
-  "Se senti qualcuno parlare nell'auricolare, sono io.
-   Se senti qualcun altro, probabilmente è un problema."
   "Il pubblico è caldo. Se qualcosa va storto... tu continua a parlare."
   (unica battuta della sequenza su pubblico e imprevisti: niente luci calde,
    niente "non guardare in alto")
 
 [S4.04] SUSAN — ultimo briefing
-  "Ricordati una cosa: nessuno sa che sei il sostituto."
+  "Ricorda una cosa: nessuno sa chi sei."
   (pausa)
   "Quindi, tecnicamente, non puoi deludere nessuno."
-  "Vai. Io intanto provo a evitare che crolli il resto."
+  "Io intanto provo a evitare che crolli il resto."
   → [S5.INTERMEZZO.R1]
 ```
 
@@ -518,7 +515,7 @@ Indice degli id in `docs/indice-domande.md`.
 ```
 [S6.01] SUSAN
   Asset: bg_palco_luci_calate + chr_indicatore_regia + stile_X_idle_palco
-  "Ultimo giro. Da qui non si torna indietro. Prenditi il tuo tempo."
+  "Ok, da qui non si torna indietro. Ti seguo dalla regia."
   (pausa) "Io invece no. Ma fai con calma."
   → [S6.02]
 
@@ -549,7 +546,7 @@ Indice degli id in `docs/indice-domande.md`.
 ```
 [S7.01] SUSAN
   Asset: bg_palco_platea_piena + chr_susan_sollievo → chr_susan_sguardo_in_alto
-  "Ha funzionato. Ha funzionato." (guarda in alto) "...eccolo, è arrivato."
+  "Wow! Ce l'abbiamo fatta!" (guarda in alto) "...eccolo, è arrivato."
 
 [S7.02] Sagoma alla porta
   Asset: bg_finale_porta_illuminata + fx_fascio_luce_porta
@@ -612,8 +609,8 @@ Indice degli id in `docs/indice-domande.md`.
     [POST-L02] "Hai completato le tue previsioni. Adesso aspettiamo il keynote
                 e scopriamo quanto ci hai preso."
     [POST-L03] "Ma non abbiamo finito."
-    [POST-L04] "Vai da Peter: ha due sfide per te. Una gliel'hanno messa lì e
-                non gli va giù, ma quello te lo racconta lui."
+    [POST-L04] "Vai da Peter: ha due sfide per te. Una metterà alla prova la
+                tua mente, l'altra... i tuoi pollici."
     [POST-L05] "Le risposte giuste possono moltiplicare i punti delle tue
                 previsioni."
     [POST-L06] "Quindi sì, quei dettagli inutilmente specifici potrebbero
@@ -649,11 +646,10 @@ Indice degli id in `docs/indice-domande.md`.
   "Hai fatto il keynote. Ora vediamo quanto conosci quelli passati."
 
   [S8.01b] posa chr_peter_sbuffa — presenta l'altra sfida, malvolentieri
-  "Quest'anno però le sfide sono due. E una delle due non l'ho scelta io."
-  [S8.01c] "Hanno messo un gioco dove corri dentro il campus a raccogliere
-            cerchietti. Dentro. Il. Campus. Di corsa."
-  [S8.01d] "Punti per la prontezza del pollice, non per quello che sai.
-            Comunque è lì sotto: fai pure, non ti guarda nessuno."
+  "Hanno anche messo un gioco dove corri dentro il campus a raccogliere
+   cerchietti."
+  [S8.01d] "Punti per la prontezza del pollice, non una mia idea ma...
+            fai pure, non ti guarda nessuno."
   (è l'unico posto dove il gioco dice che le sfide sono due. Il quiz è roba
    sua e ne va fiero; la corsa gliel'hanno messa lì. Torna a
    chr_peter_alza_occhi quando ritorna sul quiz: la faccia dice quello che
@@ -664,8 +660,8 @@ Indice degli id in `docs/indice-domande.md`.
     showman   → i livelli sono già aperti tutti e tre
     drip      → una volta per livello Peter toglie due risposte sbagliate
     ingegnere → tre secondi in più su ogni domanda
-  "Da me invece sono 3 livelli e due tentativi, con il tempo che scorre.
-   Sei pronto/a?"
+  "3 livelli di difficoltà e due tentativi, con il tempo che scorre.
+   Quante ne sai?"
   (il perk si spiega QUI e solo qui — in S3, sulla scheda del carosello, era
    una meccanica del quiz arrivata troppo presto. La meccanica dei
    moltiplicatori invece non si rispiega: sta nel regolamento)
@@ -676,8 +672,9 @@ Indice degli id in `docs/indice-domande.md`.
   Sotto la griglia, insieme ai moltiplicatori e all'uscita: APPLE CAMPUS RUN
   → [S9]. Non è un quarto livello e non sta dentro la griglia: i tre pannelli
   dicono a che punto sono i livelli, un quarto che non è un livello toglierebbe
-  loro quel significato.
-  Al ritorno dalla corsa, al posto di "Da dove vuoi cominciare?":
+  loro quel significato. Nessuna battuta fissa "da dove vuoi cominciare?":
+  la griglia parla da sola.
+  Al ritorno dalla corsa:
   "Rieccoti. Hai corso, bravissimo/a. Le domande sono ancora qui, quando ti va
    di usare anche la testa."
 

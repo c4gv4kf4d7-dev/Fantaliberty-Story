@@ -1055,7 +1055,7 @@
   "intermezzi": [
     {
       "id": "R1",
-      "q": "Prima che tu vada avanti. Scommessa tra noi due: chi entra per primo?",
+      "q": "Prima che inizi. Scommessa tra noi due: chi si fa vedere stasera?",
       "opzioni": [
         {
           "label": "Tim Cook",
@@ -1091,7 +1091,7 @@
     },
     {
       "id": "R5",
-      "q": "Ultima. In scaletta c'è un nome che non conosco. Secondo te entra davvero o lo tagliano?",
+      "q": "Ultima. In scaletta c'è un ospite che non conosco. Secondo te entra davvero?",
       "opzioni": [
         {
           "label": "Sì, ospite esterno",
@@ -1169,7 +1169,7 @@
   "micro_eventi": [
     {
       "id": "CLICKER",
-      "testo": "Il clicker non risponde.\nPremi di nuovo. Niente.",
+      "testo": "Ops... clicker non risponde.\nPremi di nuovo. Niente.",
       "asset": "props/prop_clicker_inceppato.webp",
       "opzioni": [
         {
@@ -1208,7 +1208,7 @@
     },
     {
       "id": "SLIDE",
-      "testo": "Sullo schermo compare una foto di compleanno completamente fuori posto.",
+      "testo": "Sullo schermo compare la foto di compleanno di Vanessa del team iOS.",
       "asset": "props/prop_slide_compleanno.webp",
       "opzioni": [
         {
@@ -1227,7 +1227,7 @@
     },
     {
       "id": "NOTIFICA",
-      "testo": "Il tuo iPhone vibra sul leggio.\nUna notifica compare sullo schermo.\n«Susan: NON GUARDARE IL TELEFONO.»",
+      "testo": "Il tuo iPhone vibra sul leggio.\nUna notifica dal gruppo \"Amiche della Zumba\".\nSusan: «NON PROVARE A GUARDARLO!»",
       "banner": "susan",
       "opzioni": [
         {

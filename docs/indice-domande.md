@@ -10,27 +10,27 @@ Rinominarli rompe la corrispondenza con le schedine bloccate.
 
 | id | categoria | tipo | difficolta' | opzioni | domanda |
 |---|---|---|---|---|---|
-| `IPHONE.C1` | iPhone | core | 4 | 3 | Il prezzo dell'iPhone 18 Pro rispetto al 17 Pro |
+| `IPHONE.C1` | iPhone | core | 4 | 3 | Il prezzo dell'iPhone 18 Pro |
 | `IPHONE.C2` | iPhone | core | 3 | 4 | Il colore nuovo di quest'anno |
 | `IPHONE.C3` | iPhone | core | 4 | 3 | L'apertura variabile su quali modelli arriva? |
 | `IPHONE.C4` | iPhone | core | 3 | 3 | Come si chiama il pieghevole? |
 | `IPHONE.C5` | iPhone | core | 5 | 4 | Quando e dove si può comprare il pieghevole? |
 | `IPHONE.C6` | iPhone | core | 4 | 4 | Il prezzo di partenza del pieghevole in Italia |
-| `IPHONE.E1` | iPhone | extra | — | 3 | Che fine fa la Dynamic Island? |
+| `IPHONE.E1` | iPhone | extra | — | 3 | La Dynamic Island: la rimpiccioliscono, la lasciano o la fanno sparire? |
 | `IPHONE.E2` | iPhone | extra | — | 3 | Come si sblocca il pieghevole? |
 | `IPHONE.E3` | iPhone | extra | — | 3 | Che fine fa il Camera Control? |
 | `IPHONE.E4` | iPhone | extra | — | 2 | Apple presenta un accessorio dedicato al pieghevole? |
 | `IPHONE.E5` | iPhone | extra | — | 3 | Quanti modelli di iPhone salgono sul palco? |
 | `IPHONE.E6` | iPhone | extra | — | 2 | Dicono esplicitamente che non c'è la piega? |
-| `WATCH.C1` | Watch | core | 2 | 3 | Il grande annuncio salute |
+| `WATCH.C1` | Watch | core | 2 | 3 | Il grande annuncio riguardo la salute |
 | `WATCH.C2` | Watch | core | 1 | 3 | Il design |
 | `WATCH.C3` | Watch | core | 2 | 4 | Il prezzo del Series 12 rispetto al Series 11 |
 | `WATCH.E1` | Watch | extra | — | 2 | Funzioni satellitari Ultra annunciate? |
 | `WATCH.E2` | Watch | extra | — | 3 | Come chiamano il chip nuovo? |
 | `WATCH.E3` | Watch | extra | — | 2 | Esce un Apple Watch SE nuovo? |
-| `WATCH.E4` | Watch | extra | — | 3 | Nuovi cinturini/materiali? |
+| `WATCH.E4` | Watch | extra | — | 3 | Secondo te creano una nuova linea di cinturini? |
 | `WATCH.E5` | Watch | extra | — | 2 | Ospite esterno per la parte salute? |
-| `ALTRO.C1` | Altro | core | 3 | 3 | Gli AirPods 5 salgono sul palco? |
+| `ALTRO.C1` | Altro | core | 3 | 3 | Ok, AirPods. Ne vediamo di nuove stasera? |
 | `ALTRO.C2` | Altro | core | 2 | 2 | Viene presentata la nuova Apple TV? |
 | `ALTRO.C3` | Altro | core | 2 | 3 | Le AirPods con le fotocamere |
 | `ALTRO.E1` | Altro | extra | — | 2 | Nuovo HomePod mini? |
@@ -46,11 +46,9 @@ Non hanno battute per stile: il personaggio risponde in cuffia, non alla platea.
 
 | id | domanda | opzioni |
 |---|---|---|
-| `R1` | Prima che tu vada avanti. Scommessa tra noi due: chi entra per primo? | 3 |
-| `R2` | Domanda da regia: preparo la luce per Craig o no? Perché a me nessuno dice niente. | 3 |
-| `R3` | Ho la regia pronta sul primo piano. Serve o no? | 2 |
+| `R1` | Prima che inizi. Scommessa tra noi due: chi si fa vedere stasera? | 3 |
 | `R4` | Quanto dura stasera? Devo dirlo al catering. | 3 |
-| `R5` | Ultima. In scaletta c'è un nome che non conosco. Secondo te entra davvero o lo tagliano? | 2 |
+| `R5` | Ultima. In scaletta c'è un ospite che non conosco. Secondo te entra davvero? | 2 |
 
 Piu' 4 intermezzi di riserva.
 
@@ -68,7 +66,7 @@ Tetto moltiplicatore cumulativo: **0.6x**. Timer 10s per domanda (13s con il per
 
 Domande il cui dato storico non e' stato confermato da fonte diretta:
 
-`L3`, `L5`, `L2b`, `L7b`, `L10b`
+`L5`, `L2b`, `L7b`, `L10b`
 
 ---
 

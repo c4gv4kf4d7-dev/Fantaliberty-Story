@@ -2748,7 +2748,11 @@
       gaOnce('quiz_complete', 'quiz_complete', params);
     }
     var riga = (!restaQualcosa && st.finito) ? st.finito : (testoDi(st) || st.text);
+    // Senza riga la griglia parla da sola: si toglie la battuta di prima (di
+    // solito l'ultima cosa detta da Peter prima di arrivare qui), altrimenti
+    // resterebbe a schermo dietro la griglia come se fosse ancora valida.
     if (riga) typeKeep(fmt(riga));
+    else { stopTyping(); el.txt.textContent = ''; el.arrow.style.opacity = 0; }
     if (azioni.length) showChoices({ options: azioni, colonne: false });
   }
 

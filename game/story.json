@@ -422,7 +422,7 @@
           "who": "lucas",
           "var": "nome",
           "max": 14,
-          "text": "Ti registro al terminale. Come ti chiamiamo? Nome vero o soprannome, decidi tu.",
+          "text": "Ti registro al terminale. Come ti chiamiamo? Nome o soprannome, decidi tu.",
           "_nota": "Il nome vero non serve: e' l'etichetta con cui il gioco si rivolge al giocatore e con cui compare in classifica. Il regolamento (zona 3 della lobby) lo chiama nickname, e deve restare coerente con quello che si chiede qui."
         },
         {
@@ -521,7 +521,7 @@
           "t": "list",
           "who": "lucas",
           "var": "device",
-          "text": "Ultima cosa: che iPhone usi? Mi serve per adattare lo schermo.",
+          "text": "Ultima cosa: che iPhone usi? Ti adatto lo schermo.",
           "placeholder": "Scegli il modello",
           "classeCorpo": "disp-",
           "gruppi": [
@@ -828,7 +828,7 @@
         {
           "t": "say",
           "who": "susan",
-          "text": "Congratulazioni: fai l'host."
+          "text": "Congratulazioni! Fai l'host."
         },
         {
           "t": "choice",
@@ -877,7 +877,7 @@
         {
           "t": "say",
           "who": "susan",
-          "text": "Vai. Io intanto provo a evitare che crolli il resto."
+          "text": "Io intanto provo a evitare che crolli il resto."
         }
       ],
       "next": "camerino"
@@ -898,7 +898,7 @@
         {
           "t": "say",
           "who": "susan",
-          "text": "Scegli uno stile e cambiati. Veloce. Ho una prova generale da salvare e tu sei il problema numero due."
+          "text": "Scegli uno stile e cambiati. Veloce. Ho un Keynote da salvare e tu non sarai il problema numero due."
         },
         {
           "t": "carosello",
@@ -1035,19 +1035,13 @@
           "t": "say",
           "who": "susan",
           "incuffia": true,
-          "text": "Se senti qualcuno parlare nell'auricolare, sono io.\nSe senti qualcun altro, probabilmente e' un problema."
-        },
-        {
-          "t": "say",
-          "who": "susan",
-          "incuffia": true,
           "text": "Il pubblico e' caldo. Se qualcosa va storto... tu continua a parlare."
         },
         {
           "t": "say",
           "who": "susan",
           "incuffia": true,
-          "text": "Ricordati una cosa: nessuno sa che sei {g:il sostituto|la sostituta}."
+          "text": "Ricorda una cosa: nessuno sa chi sei."
         },
         {
           "t": "say",
@@ -1165,7 +1159,7 @@
           "t": "say",
           "who": "susan",
           "incuffia": true,
-          "text": "Ultimo giro. Da qui non si torna indietro. Prenditi il tuo tempo."
+          "text": "Ok, da qui non si torna indietro. Ti seguo dalla regia."
         },
         {
           "t": "say",
@@ -1331,7 +1325,7 @@
         {
           "t": "say",
           "who": "francesca",
-          "text": "Vai da Peter: ha due sfide per te. Una gliel'hanno messa li' e non gli va giu', ma quello te lo racconta lui.",
+          "text": "Vai da Peter: ha due sfide per te. Una mettera' alla prova la tua mente, l'altra... i tuoi pollici.",
           "se": [
             {
               "var": "locked",
@@ -1399,11 +1393,11 @@
               "bg": "lobby_z1_tenda",
               "who": "francesca",
               "body": "indica_tenda",
-              "say": "La tenda e' quella. Di la' c'e' la sala, e non si torna indietro.",
+              "say": "La tenda e' quella. Di la' c'e' il teatro.",
               "ritorno": {
                 "who": "francesca",
                 "body": "indica_tenda",
-                "say": "Sei {g:pronto|pronta}? Dietro questa tenda comincia lo show. Da qui in poi si gioca sul serio.",
+                "say": "Sei {g:pronto|pronta}? Dietro questa tenda comincia lo show.",
                 "_nota": "Dalla seconda volta sulla zona tenda in poi. Nelle altre zone non c'e' 'ritorno': chi ha gia' fatto il giro le rivede in silenzio, senza Francesca e senza box."
               },
               "hotspots": [
@@ -1416,7 +1410,7 @@
                   "richiede": "swipe",
                   "bloccato": "Aspetta, non correre: prima fatti un giro. Scorri con il dito, o usa le frecce qui sotto.",
                   "conferma": {
-                    "text": "Entrare in sala? Da qui in poi non si torna in lobby.",
+                    "text": "Vuoi entrare nel teatro?",
                     "si": "Si', entro",
                     "no": "Non ancora"
                   },
@@ -1640,7 +1634,7 @@
             "var": "quiz_visto",
             "is": false
           },
-          "text": "Quest'anno pero' le sfide sono due. E una delle due non l'ho scelta io."
+          "text": "Hanno anche messo un gioco dove corri dentro il campus a raccogliere cerchietti."
         },
         {
           "t": "say",
@@ -1649,16 +1643,7 @@
             "var": "quiz_visto",
             "is": false
           },
-          "text": "Hanno messo un gioco dove corri dentro il campus a raccogliere cerchietti. Dentro. Il. Campus. Di corsa."
-        },
-        {
-          "t": "say",
-          "who": "peter",
-          "se": {
-            "var": "quiz_visto",
-            "is": false
-          },
-          "text": "Punti per la prontezza del pollice, non per quello che sai. Comunque e' li' sotto: fai pure, non ti guarda nessuno."
+          "text": "Punti per la prontezza del pollice, non una mia idea ma... fai pure, non ti guarda nessuno."
         },
         {
           "t": "show",
@@ -1695,7 +1680,7 @@
             "var": "quiz_visto",
             "is": false
           },
-          "text": "Da me invece sono 3 livelli e due tentativi, con il tempo che scorre. Sei pront{g:o|a}?"
+          "text": "3 livelli di difficolta' e due tentativi, con il tempo che scorre. Quante ne sai?"
         },
         {
           "t": "set",
@@ -1705,7 +1690,6 @@
         {
           "t": "quizhub",
           "who": "peter",
-          "text": "Da dove vuoi cominciare?",
           "goto": "quiz_livello",
           "gotoMult": "moltiplicatori",
           "etichettaChiuso": "prima l'altro",
@@ -1770,7 +1754,7 @@
           "t": "quizmult",
           "who": "peter",
           "height": "44%",
-          "text": "Distribuisci quello che hai vinto. Poi non si tocca piu'.",
+          "text": "Distribuisci quello che hai vinto per dare un boost alle tue previsioni.",
           "resto": "Ancora da distribuire:",
           "restoFatto": "Assegnati. E non si tornano indietro.",
           "bottone": "CONFERMA",
@@ -1805,7 +1789,7 @@
         {
           "t": "say",
           "who": "susan",
-          "text": "Ha funzionato. Ha funzionato."
+          "text": "Wow! Ce l'abbiamo fatta!"
         },
         {
           "t": "show",
@@ -2045,7 +2029,7 @@
         {
           "t": "say",
           "who": "lucas",
-          "text": "Ciao! Io sono Lucas... ti stavamo aspettando allo Steve Jobs Theater!"
+          "text": "Ciao! Io sono Lucas... {g:benvenuto|benvenuta} allo Steve Jobs Theater!"
         }
       ],
       "next": "registrazione",
@@ -2079,10 +2063,10 @@
           "who": "lucas",
           "by": "anni",
           "text": {
-            "0": "Da poco in Apple, quindi. Allora questo e' uno dei tuoi primi Keynote: guardati intorno stasera, e' una cosa che ti ricordi per sempre.",
+            "0": "Da poco in Apple, quindi. Allora questo e' uno dei tuoi primi Keynote: guardati intorno stasera, lo ricorderai.",
             "1": "Qualche anno alle spalle: abbastanza per sapere come gira, non abbastanza da {g:esserti stufato|esserti stufata}. Il momento migliore, secondo me.",
             "2": "Dagli otto ai dodici anni: i Keynote li hai gia' visti tutti. Ma da qui dentro e' un'altra storia, fidati.",
-            "3": "Piu' di dodici anni. Tu c'eri quando certe cose le annunciavano ancora su un palco piccolo. Stasera goditela.",
+            "3": "Piu' di dodici anni. Tu c'eri quando certe cose le annunciavano ancora su un palco piccolo. Goditela stasera.",
             "*": "Comunque sia andata finora, stasera si riparte da zero come tutti."
           }
         },

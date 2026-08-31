@@ -686,7 +686,7 @@ assert.match(txt(), /un piccolo problema/);
 VN.step();
 assert.match(txt(), /unico essere umano/);
 VN.step();
-assert.match(txt(), /fai l'host/);
+assert.match(txt(), /fai l'host/i);
 VN.step();
 
 // [S2.03] tre opzioni, solo tono: nessuna tocca il punteggio
@@ -869,9 +869,9 @@ assert.equal(VN.state.sfacciato, false);
   assert.ok($('voce').getAttribute('src').includes('chr_indicatore_regia'));
   assert.match(txt(), /Tra trenta secondi andiamo/);
   VN.step();
-  assert.match(txt(), /sono io/, 'e ti avvisa che la voce in cuffia e\' la sua');
-  VN.step(); VN.step();
-  assert.match(txt(), /nessuno sa che sei .*sostitut/, '[S4.04] ultimo briefing');
+  assert.match(txt(), /pubblico e' caldo/);
+  VN.step();
+  assert.match(txt(), /nessuno sa chi sei/, '[S4.04] ultimo briefing');
   VN.step(); VN.step();
   assert.match(txt(), /crolli il resto/, 'e torna al suo di lavoro');
 
@@ -901,7 +901,7 @@ assert.equal(VN.state.sfacciato, false);
 
   // [S5.INTERMEZZO.R1]: una sola scommessa di regia prima di cominciare — la
   // seconda (la luce per Craig) e' stata tolta per non allungare l'apertura
-  assert.match(txt(), /chi entra per primo/, 'primo intermezzo');
+  assert.match(txt(), /chi si fa vedere stasera/, 'primo intermezzo');
   assert.equal($('nametxt').textContent, 'Susan');
   scegli(1);                                                   // John Ternus, val 2
   assert.equal(VN.state.punti, 2, 'gli intermezzi valgono il "val" secco');
@@ -1125,7 +1125,7 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
     VN.state.categoria = 'watch';
     // si tira avanti finche' non compare la narrazione del clicker
     for (let g = 0; g < 60; g++) {
-      if (txt().includes('Il clicker non risponde')) {
+      if (txt().includes('clicker non risponde')) {
         // la narrazione si legge da sola: se la battuta della regia le scrivesse
         // sopra nello stesso istante, il giocatore non saprebbe mai cos'e'
         // successo (ed e' quello che faceva la prima versione)
@@ -2518,8 +2518,7 @@ function giocaLivello(liv, stile, giuste) {
   const celle = cellePerLivello();
   assert.ok(celle[0].classList.contains('fatta'), 'Base bruciato resta chiuso');
   assert.equal(celle[1].classList.contains('fatta'), false, 'ma Avanzato e\' ancora giocabile');
-  const stepQ = story.scenes.quiz.steps.find((x) => x.t === 'quizhub');
-  assert.equal($('txt').textContent, stepQ.text, 'e Peter chiede ancora da dove cominciare');
+  assert.equal($('txt').textContent, '', 'e la griglia parla da sola: nessun prompt finche\' resta qualcosa da giocare');
 }
 
 /* 10d-ter. il tentativo si paga entrando, non uscendo: chi molla a meta' non se
