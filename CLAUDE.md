@@ -327,6 +327,33 @@ registrate, concluse**. Le variabili interne restano `locked` e compagnia: la
 regola riguarda il testo che si legge a schermo (dialoghi, bottoni, modali,
 countdown, card, regolamento, HTML).
 
+## Lo schermo del palco si accende da solo (S5)
+
+I tre pannelli di `bg_palco_schermo_categorie` si riempiono con l'emblema del
+macroargomento (`prop_emblema_categoria_*`) **alla prima scelta** di quella
+categoria, non a domande finite. Sono due informazioni diverse e vanno tenute
+separate: i bottoni della griglia dicono a che punto sono le domande
+(`categoriaFinita()`), lo schermo dice dove il giocatore e' gia' stato
+(`VN.state.categorie_visitate`, che entra nel salvataggio).
+
+Quattro cose da non rompere:
+
+1. **Non e' interfaccia, e' scenografia.** Gli emblemi stanno in un layer suo
+   (`#emblemi`), non dentro i `.gcell` e **non in `#propwrap`** — li' durante
+   le domande c'e' gia' la slide della categoria, e riusare lo slot le fa a
+   pugni. Il layer sta sotto personaggi e box (z-index 0 contro 1 e 2) e non
+   prende tocchi.
+2. **Vivono su un fondale solo.** Si accendono e si spengono da `setBg()`: su
+   qualunque altro fondale — la platea durante le domande, per dire — resterebbero
+   appesi in aria. Con la dissolvenza arrivano insieme al fondale nuovo, non prima.
+3. **Le posizioni sono in percentuale dello schermo, non dell'immagine.** Il
+   fondale e' ritagliato in `cover`: le percentuali del file sorgente non
+   corrispondono. Si misurano guardando il gioco a 390x844.
+4. **`azzeraVars()` copia, non condivide.** `categorie_visitate` e' un oggetto
+   dentro `story.vars`: assegnandolo per riferimento, una partita nuova si
+   ritroverebbe addosso quella di prima e scriverebbe dentro i dati della
+   storia. Vale per qualunque variabile composta che si aggiunga li'.
+
 ## La platea non avra' mai i suoi layer
 
 `pla_*` (idle, applausi, risata, silenzio, coro) **non si disegnano**: e' una

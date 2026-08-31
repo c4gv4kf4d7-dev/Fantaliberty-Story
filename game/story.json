@@ -49,7 +49,10 @@
       "slide_watch": "props/prop_schermo_slide_categoria_watch.webp",
       "slide_altro": "props/prop_schermo_slide_categoria_altro.webp",
       "clicker": "props/prop_clicker_inceppato.webp",
-      "gobbo": "props/prop_gobbo_teleprompter.webp"
+      "gobbo": "props/prop_gobbo_teleprompter.webp",
+      "emblema_categoria_iphone": "props/prop_emblema_categoria_iphone.webp",
+      "emblema_categoria_watch": "props/prop_emblema_categoria_watch.webp",
+      "emblema_categoria_altro": "props/prop_emblema_categoria_altro.webp"
     },
     "chars": {},
     "platea": {
@@ -276,7 +279,8 @@
     "mult_bank": 0,
     "moltiplicatori": null,
     "email": null,
-    "post_lobby_visto": false
+    "post_lobby_visto": false,
+    "categorie_visitate": {}
   },
   "scenes": {
     "arrivo": {
