@@ -63,6 +63,21 @@ personaggio o una scena, la storia di Git esplode (è già successo: 19 MB di
 quale elemento del gioco**. Consultalo prima di collegare un asset nuovo a
 `story.json`.
 
+## La registrazione: il Mac sta dentro il fondale
+
+`bg_macintosh` ha il Mac gia' disegnato: la registrazione **non** appoggia
+`prop_mac_terminale` sopra la scena. Il terminale (i sei campi) lo incolla il
+motore sopra il vetro del CRT calcolando i pixel veri dell'immagine disegnata
+(`SCHERMO_FONDALE` + `ancoraTerminale()`): con le percentuali dello stage il
+testo finiva fuori dal vetro su ogni finestra di forma diversa dal telefono,
+perche' il fondale e' `cover` e viene ingrandito e tagliato.
+
+Tre cose che vanno insieme, e che sono gia' state smontate una volta per
+sbaglio (poi rimesse): lo step `prop` con `"fondale": true`, la classe CSS
+`#propwrap.fondale` e Lucas piu' piccolo e in basso (`height`/`bottom`/`right`
+nello step `show`) — alla misura piena copre lo schermo. Se il fondale viene
+ridisegnato, `SCHERMO_FONDALE` va rimisurato.
+
 ## Personaggi: prima di dire che manca l'arte, controlla il nome
 
 Il manifest asset consegna **uno sprite intero per posa**, senza head/neck.

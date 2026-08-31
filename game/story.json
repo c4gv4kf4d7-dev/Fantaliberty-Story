@@ -344,8 +344,7 @@
     },
     "registrazione": {
       "title": "Atto 1 — Registrazione",
-      "bg": "esterno_ingresso",
-      "bgFx": "blur",
+      "bg": "macintosh",
       "terminal": [
         {
           "key": "NOME:",
@@ -402,14 +401,16 @@
         {
           "t": "show",
           "who": "lucas",
-          "body": "neutro"
+          "body": "neutro",
+          "height": "40%",
+          "bottom": "12%",
+          "right": "-8%",
+          "_nota": "Piu' piccolo e piu' in basso del solito: lo schermo del Mac sta dentro il fondale, e con la misura piena (56%) Lucas ci finiva davanti e copriva il terminale."
         },
         {
           "t": "prop",
-          "id": "mac_terminale",
-          "show": true,
-          "size": "64%",
-          "top": "4%"
+          "fondale": true,
+          "show": true
         },
         {
           "t": "wait",
@@ -739,7 +740,12 @@
         },
         {
           "t": "prop",
+          "fondale": true,
           "show": false
+        },
+        {
+          "t": "fx",
+          "name": "blur"
         },
         {
           "t": "wait",
@@ -749,7 +755,8 @@
       "next": "badge",
       "uccelli": 0,
       "foglie": 2,
-      "pulviscolo": 8
+      "pulviscolo": 8,
+      "_nota": "Il Mac non e' un oggetto sovrapposto: sta dentro il fondale, e il terminale si incolla allo schermo disegnato li' (step prop con \"fondale\": true). Le domande le fa come sempre la box di dialogo; il terminale e' solo l'eco di quello che si risponde. A stampa finita il fondale va fuori fuoco e si passa al badge."
     },
     "aggancio": {
       "title": "S2 — L'aggancio",
@@ -2039,7 +2046,7 @@
     },
     "badge": {
       "title": "Atto 1 — Il badge",
-      "bg": "esterno_ingresso",
+      "bg": "macintosh",
       "steps": [
         {
           "t": "fx",
@@ -2083,7 +2090,9 @@
       ],
       "next": "lobby",
       "foglie": 3,
-      "pulviscolo": 10
+      "pulviscolo": 10,
+      "bgFx": "blur",
+      "_nota": "Stesso fondale della registrazione, tenuto fuori fuoco: il badge e i coriandoli si staccano, e non si vede un cambio di posto fra la stampa e la consegna."
     }
   },
   "carrellate": {
