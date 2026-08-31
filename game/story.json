@@ -1161,18 +1161,18 @@
           "t": "say",
           "who": "susan",
           "incuffia": true,
+          "text": "Questo e' il tuo Keynote. O almeno la versione che hai deciso di prevedere."
+        },
+        {
+          "t": "say",
+          "who": "susan",
+          "incuffia": true,
           "text": "Ok, da qui non si torna indietro."
         },
         {
           "t": "bg",
           "id": "control_room_monitors",
           "dissolvenza": true
-        },
-        {
-          "t": "say",
-          "who": "susan",
-          "incuffia": true,
-          "text": "Questo e' il tuo Keynote. O almeno la versione che hai deciso di prevedere."
         },
         {
           "t": "monitor",
