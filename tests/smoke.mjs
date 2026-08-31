@@ -2759,8 +2759,12 @@ function apriMoltiplicatori(stato, extra) {
   const inCartella = (cart) => new Set(fs.readdirSync(path.join(ROOT, 'assets', cart)));
   const musiche = inCartella('music'), effetti = inCartella('sfx');
   for (const [scena, file] of Object.entries(a.musica)) {
-    assert.ok(story.scenes[scena], `story.audio.musica: la scena ${scena} non esiste`);
-    assert.ok(musiche.has(file), `manca assets/music/${file} (scena ${scena})`);
+    // "corsa" non e' una scena: e' Apple Campus Run, che musicaScena() tratta
+    // come una chiave in piu' per pescare un brano a caso a ogni apertura.
+    assert.ok(story.scenes[scena] || scena === 'corsa', `story.audio.musica: la scena ${scena} non esiste`);
+    for (const f of [].concat(file)) {
+      assert.ok(musiche.has(f), `manca assets/music/${f} (scena ${scena})`);
+    }
   }
   for (const [quale, file] of Object.entries(a.effetti)) {
     for (const f of [].concat(file)) {
