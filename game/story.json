@@ -18,7 +18,6 @@
     "bg": {
       "esterno_vialetto": "bg/bg_esterno_vialetto.webp",
       "esterno_ingresso": "bg/bg_esterno_ingresso.webp",
-      "macintosh": "bg/bg_macintosh.webp",
       "camerino": "bg/bg_camerino.webp",
       "backstage_corridoio": "bg/bg_backstage_corridoio.webp",
       "lobby": "bg/bg_lobby.webp",
@@ -336,8 +335,8 @@
     },
     "registrazione": {
       "title": "Atto 1 — Registrazione",
-      "bg": "macintosh",
-      "_nota": "Il Mac non e' piu' un oggetto sovrapposto: sta dentro il fondale, e il terminale si incolla allo schermo disegnato li' (step prop con \"fondale\": true). Le domande le fa come sempre la box di dialogo; il terminale e' solo l'eco di quello che si risponde. A stampa finita il fondale va fuori fuoco e si passa al badge.",
+      "bg": "esterno_ingresso",
+      "bgFx": "blur",
       "terminal": [
         {
           "key": "NOME:",
@@ -394,16 +393,14 @@
         {
           "t": "show",
           "who": "lucas",
-          "body": "neutro",
-          "height": "40%",
-          "bottom": "12%",
-          "right": "-8%",
-          "_nota": "Piu' piccolo e piu' in basso del solito: lo schermo del Mac ora e' dentro il fondale, e con la misura piena (56%) Lucas ci finiva davanti e copriva il terminale."
+          "body": "neutro"
         },
         {
           "t": "prop",
-          "fondale": true,
-          "show": true
+          "id": "mac_terminale",
+          "show": true,
+          "size": "64%",
+          "top": "4%"
         },
         {
           "t": "wait",
@@ -733,12 +730,7 @@
         },
         {
           "t": "prop",
-          "fondale": true,
           "show": false
-        },
-        {
-          "t": "fx",
-          "name": "blur"
         },
         {
           "t": "wait",
@@ -1971,9 +1963,7 @@
     },
     "badge": {
       "title": "Atto 1 — Il badge",
-      "bg": "macintosh",
-      "bgFx": "blur",
-      "_nota": "Stesso fondale della registrazione, tenuto fuori fuoco: il badge e i coriandoli si staccano, e non si vede un cambio di posto fra la stampa e la consegna.",
+      "bg": "esterno_ingresso",
       "steps": [
         {
           "t": "fx",

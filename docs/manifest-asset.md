@@ -16,8 +16,7 @@ Uno sfondo intero per schermata, sempre presente sotto ogni altra cosa.
 | File | Scena | Uso |
 |---|---|---|
 | `bg_esterno_vialetto` | S0 | Primo frame assoluto del gioco, prima di qualunque interazione |
-| `bg_esterno_ingresso` | S0 | L'ingresso del teatro: Lucas accoglie il giocatore |
-| `bg_macintosh` | S0 | Registrazione e consegna del badge. Il Mac non e' piu' un oggetto sovrapposto (`prop_mac_terminale`): sta dentro il fondale, e il terminale si incolla in pixel allo schermo disegnato qui (`ancoraTerminale()` in engine.js, step `prop` con `"fondale": true`). Se l'immagine viene ridisegnata, ricontrollare le coordinate del vetro in `SCHERMO_FONDALE` |
+| `bg_esterno_ingresso` | S0 | Dietro Lucas e il terminale durante la registrazione |
 | `bg_lobby_z1_tenda` | S1 | Zona 1 della lobby. Ha l'hotspot ENTRA al centro. **L'apertura si anima in codice** (fade o split delle due metà dell'immagine), non serve un secondo fondale "tenda aperta" |
 | `bg_halloffame_frontale` | S1 | Zona 2, la parete della Hall of Fame con i tre quadri dei vincitori gia' dentro l'immagine: non e' un template, i nomi sono disegnati. Le tre aree toccabili in `story.json` sono misurate su questa immagine — se viene ridisegnata, ricontrollarle |
 | `bg_halloffame_fabio` · `bg_halloffame_michael` · `bg_halloffame_nicola` | S1 | I tre quadri singoli, uno per edizione (2024, 2025, 2026). Si aprono uno alla volta dal tocco sul quadro corrispondente (`"quadro"` nell'hotspot), sopra la lobby: non sono scene e non toccano la partita |

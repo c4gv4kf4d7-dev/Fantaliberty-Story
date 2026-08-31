@@ -31,7 +31,11 @@
     display:flex; justify-content:space-between; align-items:flex-start;
     padding:14px 16px; font-weight:700; color:#2a2a28;
     text-shadow:0 1px 0 rgba(255,255,255,.7);
+    transition:opacity .25s;
   }
+  /* cuori e punteggio non hanno senso prima di cominciare, e dietro al
+     velo della schermata iniziale si intravedevano */
+  #hud.spento{ opacity:0; }
   /* la colonna si dimensiona sul testo piu' largo, non sul numero:
      con un punteggio a una cifra "record" traboccava fuori schermo */
   #segna{ display:flex; flex-direction:column; align-items:flex-end; }
@@ -70,6 +74,51 @@
     color:#2a2a28; opacity:.45; font-weight:600;
   }
 
+  /* ---- schermata iniziale, alla maniera dei cabinati ----
+     Press Start 2P e' il font del gioco vero, sta gia' nel repo. E'
+     bellissimo per un titolo e illeggibile per una frase: il corpo del
+     testo resta in caratteri normali. */
+  @font-face{
+    font-family:'Press Start 2P';
+    src:url('../../assets/font/press-start-2p.woff2') format('woff2');
+    font-display:swap;
+  }
+  #veloStart{
+    background:linear-gradient(180deg, rgba(22,22,26,.90), rgba(22,22,26,.96));
+    backdrop-filter:blur(4px); color:#f4f4f0; gap:0;
+  }
+  #titolo{
+    font-family:'Press Start 2P', monospace; line-height:1.75;
+    text-align:center; margin-bottom:26px;
+  }
+  #titolo .r1{ display:block; font-size:22px; color:#f4f4f0;
+               text-shadow:4px 4px 0 #c0453f; }
+  #titolo .r2{ display:block; font-size:22px; color:#f4f4f0;
+               text-shadow:4px 4px 0 #79c245; }
+  #titolo .r3{ display:block; font-size:40px; margin-top:10px; color:#f0b722;
+               text-shadow:5px 5px 0 #4aa8cc; }
+  #veloStart p{ color:#cfcfc8; max-width:20em; }
+  #veloStart p + p{ margin-top:10px; }
+
+  /* Il bottone e' un tasto vero: ha uno spessore sotto, e premendolo
+     scende. Senza quello sembra un collegamento, non un pulsante. */
+  #btnVia{
+    font-family:'Press Start 2P', monospace; font-size:22px; letter-spacing:2px;
+    margin-top:30px; padding:20px 42px; border-radius:0; cursor:pointer;
+    background:#79c245; color:#12210a; border:4px solid #12210a;
+    box-shadow:0 8px 0 #3f7a1e, 0 8px 0 4px #12210a;
+    transition:transform .05s, box-shadow .05s;
+    animation:lampeggiaTasto 1.6s steps(1,end) infinite;
+  }
+  #btnVia:active{
+    transform:translateY(6px);
+    box-shadow:0 2px 0 #3f7a1e, 0 2px 0 4px #12210a;
+  }
+  @keyframes lampeggiaTasto{
+    0%,70%{ background:#79c245 } 71%,100%{ background:#9ade63 }
+  }
+  #veloStart small{ margin-top:26px; color:#7c7c76; }
+
   .velo{
     position:absolute; inset:0; pointer-events:auto;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -77,13 +126,21 @@
     background:rgba(238,238,233,.86); backdrop-filter:blur(3px);
   }
   .velo[hidden]{ display:none !important; }
-  .velo h1{ margin:0; font-size:30px; color:#1d1d1b; letter-spacing:-.5px; }
+  .velo h1{ margin:0; font-family:'Press Start 2P', monospace; font-size:22px;
+            color:#1d1d1b; letter-spacing:0; }
   .velo p{ margin:0; font-size:15px; line-height:1.5; color:#4a4a46; max-width:19em; }
-  .velo .big{ font-size:52px; font-weight:800; color:#1d1d1b; margin:4px 0; }
+  .velo .big{ font-family:'Press Start 2P', monospace; font-size:38px;
+              color:#1d1d1b; margin:14px 0 6px; }
   .velo button{
-    margin-top:10px; padding:14px 30px; font-size:17px; font-weight:700;
-    border:0; border-radius:999px; background:#1d1d1b; color:#fff; cursor:pointer;
-    font-family:inherit;
+    font-family:'Press Start 2P', monospace; font-size:15px; letter-spacing:1px;
+    margin-top:18px; padding:16px 30px; border-radius:0; cursor:pointer;
+    background:#f0b722; color:#2a1d00; border:4px solid #2a1d00;
+    box-shadow:0 7px 0 #a97c12, 0 7px 0 4px #2a1d00;
+    transition:transform .05s, box-shadow .05s;
+  }
+  .velo button:active{
+    transform:translateY(5px);
+    box-shadow:0 2px 0 #a97c12, 0 2px 0 4px #2a1d00;
   }
   .velo small{ font-size:12px; color:#8a8a84; }
 
@@ -137,10 +194,10 @@
   </div>
 
   <div class="velo" id="veloStart">
-    <h1>Corsa nel corridoio</h1>
-    <p>Corri nel corridoio, prendi gli anelli, evita i carrelli.<br>
-       Ti spiego il resto strada facendo.</p>
-    <button id="btnVia">Via</button>
+    <h1 id="titolo"><span class="r1">APPLE</span><span class="r2">CAMPUS</span><span class="r3">RUN</span></h1>
+    <p>Corri nel campus, raccogli tutti gli anelli ed evita gli ostacoli.</p>
+    <p>Ogni anello vale punti: più ne collezioni, più in alto salirai in classifica.</p>
+    <button id="btnVia">PLAY</button>
     <small>prototipo — non è il gioco vero</small>
   </div>
 
@@ -151,10 +208,10 @@
     </div>
 
   <div class="velo" id="veloFine" hidden>
-    <h1>Sbam.</h1>
+    <h1>SBAM</h1>
     <div class="big" id="finePunti">0</div>
     <p id="fineNota"></p>
-    <button id="btnAncora">Ancora</button>
+    <button id="btnAncora">ANCORA</button>
   </div>
 </div></div>
 
@@ -1054,6 +1111,7 @@ function via(){
   S.imparate = {}; S.collezione = {}; riprendi();
   document.getElementById('veloStart').hidden = true;
   document.getElementById('veloFine').hidden  = true;
+  document.getElementById('hud').classList.remove('spento');
 }
 function finisci(){
   S.fase = 'fine'; S.scossa = 0.5;
@@ -1071,6 +1129,7 @@ function finisci(){
   document.getElementById('fineNota').textContent =
     S.punti >= record ? 'Nuovo record.' : 'Il record resta ' + record + '.';
   document.getElementById('veloFine').hidden = false;
+  document.getElementById('hud').classList.add('spento');
 }
 document.getElementById('btnVia').onclick    = via;
 document.getElementById('btnAncora').onclick = via;
