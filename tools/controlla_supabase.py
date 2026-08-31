@@ -45,6 +45,29 @@ def esiste(cfg, colonna):
         except Exception:
             return False, testo[:120]
 
+# La classifica della corsa e' una tabella a parte, e a differenza delle
+# schedine si deve poter LEGGERE: senza la policy di select la classifica
+# risponde una lista vuota e il gioco crede che non ci sia nessuno.
+def controlla_classifica(cfg):
+    base = cfg['url'].rstrip('/') + '/rest/v1/runner_leaderboard'
+    req = urllib.request.Request(base + '?select=player_id,player_name,best_score&limit=1',
+        headers={'apikey': cfg['chiave'], 'Authorization': 'Bearer ' + cfg['chiave']})
+    try:
+        urllib.request.urlopen(req, timeout=20)
+        print('  runner_leaderboard  ok (esiste e si legge)')
+        return True
+    except Exception as e:
+        testo = e.read().decode() if hasattr(e, 'read') else str(e)
+        try:
+            testo = json.loads(testo).get('message', testo)
+        except Exception:
+            pass
+        print('  runner_leaderboard  MANCA  (' + testo[:90] + ')')
+        print('    -> la classifica della corsa non funziona. Il blocco SQL sta')
+        print('       in fondo a docs/backend.sql.')
+        return False
+
+
 def main():
     cfg = json.load(open(os.path.join(ROOT, 'game', 'backend.json'), encoding='utf-8'))
     if not cfg.get('url') or not cfg.get('chiave'):
@@ -58,6 +81,10 @@ def main():
         print('  %-10s %s' % (c, 'ok' if ok else 'MANCA  (' + msg + ')'))
         if not ok: mancanti.append(c)
     print()
+    ok_classifica = controlla_classifica(cfg)
+    print()
+    if not mancanti and not ok_classifica:
+        return 1
     if not mancanti:
         print('Tutte le colonne ci sono: la schedina viene accettata.')
         return 0

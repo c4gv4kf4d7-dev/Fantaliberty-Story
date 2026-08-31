@@ -3290,8 +3290,18 @@
         if (corsaAttesa) { global.clearTimeout(corsaAttesa); corsaAttesa = null; }
         el.runchiudi.hidden = true;
         try {
-          el.runframe.contentWindow.postMessage(
-            { fl: 'gioco', tipo: 'apri', esci: etichetta }, '*');
+          /* Insieme al nome del posto da cui si torna, la corsa riceve
+             l'identita' che il giocatore ha gia' (il nome scelto in [S0] e
+             l'id della partita) e dove sta il database. Non c'e' un secondo
+             sistema di identita': la corsa non chiede niente a nessuno, riusa
+             quello che il gioco sa gia'. Senza queste due cose la corsa gira
+             identica, solo senza classifica globale. */
+          el.runframe.contentWindow.postMessage({
+            fl: 'gioco', tipo: 'apri', esci: etichetta,
+            playerId: idPartita(),
+            playerName: VN.state.nome || '',
+            backend: VN.backend || null
+          }, '*');
         } catch (err) { /* niente: resta la via di sicurezza */ }
         return;
       }

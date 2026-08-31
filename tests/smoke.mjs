@@ -2848,6 +2848,52 @@ function apriMoltiplicatori(stato, extra) {
     'il campo del terminale suona come una tastiera mentre si scrive');
 }
 
+/* ---------- la classifica dell'Apple Campus Run ---------- */
+{
+  const corsa = fs.readFileSync(path.join(ROOT, 'game', 'runner', 'index.html'), 'utf8');
+  const motore = fs.readFileSync(path.join(ROOT, 'game', 'engine.js'), 'utf8');
+
+  // l'identita' non si chiede due volte: la corsa riceve quella del gioco
+  assert.match(motore, /playerId: idPartita\(\)/,
+    'il gioco passa alla corsa l\'identita\' che il giocatore ha gia\'');
+  assert.match(motore, /playerName: VN\.state\.nome/,
+    'e il nome scelto in [S0], non uno nuovo');
+  assert.doesNotMatch(corsa, /prompt\(|nickname|inserisci il tuo nome/i,
+    'la corsa non deve chiedere un nome per conto suo');
+
+  // una riga per giocatore, e dentro solo il migliore
+  assert.match(corsa, /resolution=merge-duplicates/,
+    'il punteggio riscrive la riga del giocatore invece di aggiungerne una');
+  assert.match(corsa, /if \(p > suServer\)/,
+    'si scrive solo se il punteggio nuovo batte il record sul server');
+  assert.match(corsa, /order=best_score\.desc,updated_at\.asc/,
+    'a parita\' di punteggio e\' davanti chi ci e\' arrivato prima');
+  assert.match(corsa, /limit=10/, 'si scaricano le prime dieci, non tutta la tabella');
+  assert.match(corsa, /count=exact/,
+    'la posizione si fa contare al database invece di scaricare tutti i punteggi');
+
+  // il gioco non si ferma mai per colpa della classifica
+  assert.match(corsa, /catch \(e\) \{\s*\n\s*CLA\.fallita = true;/,
+    'se il database non risponde la corsa continua');
+  assert.ok(corsa.indexOf('claAggiorna(S.punti | 0);') > corsa.indexOf("veloFine').hidden = false"),
+    'la classifica parte DOPO aver mostrato il game over: ANCORA resta premibile');
+  assert.doesNotMatch(corsa, /alert\(/, 'niente finestre del browser per un errore di rete');
+
+  // il record del telefono resta come riserva
+  assert.match(corsa, /const RECORD = 'fl_runner_record'/,
+    'il record locale non si tocca: serve quando il server non c\'e\'');
+
+  // la tabella e i suoi permessi sono documentati
+  const sql = fs.readFileSync(path.join(ROOT, 'docs', 'backend.sql'), 'utf8');
+  assert.match(sql, /create table if not exists public\.runner_leaderboard/,
+    'la tabella della classifica sta in docs/backend.sql');
+  for (const p2 of ['for select to anon', 'for insert to anon', 'for update to anon']) {
+    assert.ok(sql.includes(p2), `manca la policy "${p2}" per la classifica`);
+  }
+  assert.match(sql, /new\.best_score < old\.best_score/,
+    'il database impedisce da solo che un punteggio peggiore sovrascriva il record');
+}
+
 /* ---------- il cartello di attesa sul dominio pubblico ---------- */
 {
   const src = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
