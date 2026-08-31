@@ -182,8 +182,14 @@
     tId = null;
   }
 
+  /* Alcune schermate si guardano e basta: il cartello d'apertura si scrive fino
+     in fondo, e il tocco durante la scrittura non fa niente (ma nemmeno passa
+     oltre: mangerebbe il tap che serve dopo). */
+  var senzaSalto = false;
+
   function skip() {
     if (!typing) return false;
+    if (senzaSalto) return true;
     stopTyping();
     (typeTarget || el.txt).textContent = curLine;
     typing = false;
@@ -218,9 +224,8 @@
     el.logo.className = 'on';
     if (!VN.speed) { el.logo.className = ''; return done(); }
 
-    /* Va da sola, ma il tocco deve funzionare lo stesso — e deve vedersi che
-       funziona: senza la freccia le prime due schermate sembravano bloccate,
-       e chi le ha gia' viste non aveva modo di passare oltre. */
+    /* Si guarda e basta: niente freccia e niente tocco che salta. E' corta
+       apposta — se si allunga, torna la voglia di saltarla. */
     var timers = [];
     var finita = false;
     var chiudi = function () {
@@ -229,11 +234,8 @@
       timers.forEach(clearTimeout);
       el.logo.className = '';
       el.curtainArrow.style.opacity = 0;
-      pending = null;
       done();
     };
-    el.curtainArrow.style.opacity = 1;
-    pending = chiudi;
 
     timers.push(setTimeout(accendi, nero));
 
@@ -280,7 +282,7 @@
 
     if (!VN.speed) { el.boot.classList.remove('on'); return done(); }
 
-    // come la sigla: va da sola, ma un tocco la salta e la freccia lo dice
+    // come la sigla: si guarda e basta, nessun tocco da aspettare
     var timers = [];
     var finito = false;
     var chiudi = function () {
@@ -291,11 +293,8 @@
       el.boot.classList.remove('on');
       el.curtainTxt.innerHTML = '';
       el.curtainArrow.style.opacity = 0;
-      pending = null;
       done();
     };
-    el.curtainArrow.style.opacity = 1;
-    pending = chiudi;
 
     // il blocco in corso e' grigio, quelli fatti sono pieni: come una barra vera
     var passo = caricamento / blocchi, n = 0;
@@ -434,10 +433,14 @@
 
   /* "subito": a fine sequenza chiama done() invece di aspettare un tocco. Il
      cartello d'apertura aspetta il giocatore; i titoli di coda vanno da soli. */
-  function typeLines(lines, done, subito) {
+  function typeLines(lines, done, subito, cfg) {
     el.curtainTxt.innerHTML = '';
     el.curtainArrow.style.opacity = 0;
     var i = 0, nodi = [];
+    // "ritmo": moltiplicatore sulla velocita' di scrittura e sulle pause. 0.9 =
+    // un decimo piu' svelto. "senzaSalto": il tocco non accelera niente.
+    var ritmo = (cfg && cfg.ritmo) || 1;
+    senzaSalto = !!(cfg && cfg.senzaSalto);
 
     // il cursore segue la riga che si sta scrivendo e continua a lampeggiare
     // anche nelle pause: sembra qualcuno che sta scrivendo davvero
@@ -466,6 +469,7 @@
 
     function fine() {
       revealUI = null;
+      senzaSalto = false;              // finito di scrivere, il tocco torna a valere
       if (subito) { pending = null; el.curtainArrow.style.opacity = 0; return done(); }
       pending = done;
       el.curtainArrow.style.opacity = 1;
@@ -482,18 +486,19 @@
       var tick = function (ts) {
         if (!typing) return;
         if (!t0) t0 = ts;
-        var want = Math.min(line.length, Math.floor((ts - t0) / VN.speed));
+        var want = Math.min(line.length, Math.floor((ts - t0) / (VN.speed * ritmo)));
         if (want !== shown) { shown = want; node.textContent = line.slice(0, shown); }
         if (shown >= line.length) {
           typing = false; tId = null;
-          return setTimeout(prossima, lines[k].pausa != null ? lines[k].pausa : 420);
+          return setTimeout(prossima, (lines[k].pausa != null ? lines[k].pausa : 420) * ritmo);
         }
         tId = global.requestAnimationFrame(tick);
       };
       tId = global.requestAnimationFrame(tick);
     }
 
-    revealUI = completaTutto;
+    // il tocco durante la scrittura la completa, dove e' permesso
+    revealUI = senzaSalto ? null : completaTutto;
     prossima();
   }
 
@@ -637,6 +642,7 @@
     }
     gen++;              // da qui in poi i seguiti della scena di prima non contano piu'
     pending = null;
+    senzaSalto = false;
     VN.scene = sc; VN.sceneId = id; VN.i = 0;
     if (sc.bg) setBg(sc.bg, sc.bgFx, sc.dissolvenza);
     // gli asset della scena nuova si chiedono subito: se questa si apre al
@@ -871,7 +877,10 @@
         // cartello d'apertura — ogni blocco compare, resta, sfuma, e arriva il
         // prossimo. Va da solo, un tocco salta tutto.
         if (st.blocchi) return titoliDiCoda(st, perScena(next));
-        typeLines(righeTitolo(st.lines), perScena(next));
+        // "ritmo" accorcia scrittura e pause; "senzaSalto" fa si' che il tocco
+        // non lo completi a meta': si legge tutto, poi la freccia
+        typeLines(righeTitolo(st.lines), perScena(next), false,
+          { ritmo: st.ritmo, senzaSalto: st.senzaSalto !== false });
         return;
 
       case 'show':

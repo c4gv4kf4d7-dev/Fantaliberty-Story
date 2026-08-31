@@ -1823,15 +1823,29 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.ok(avanti.indexOf('setTimeout') < avanti.indexOf("classList.add('sfumato')"),
     'la dissolvenza arriva DOPO l\'attesa: il blocco non sparisce sotto il dito');
 
-  /* Le prime due schermate (sigla e barra di avvio) vanno da sole, ma il tocco
-     deve poterle saltare — e deve vedersi che si puo': senza la freccia
-     sembravano bloccate. */
+  /* Le prime due schermate (sigla e barra di avvio) si guardano e basta: niente
+     freccia e niente tocco che salta. Sono corte apposta — se si allungano,
+     torna la voglia di saltarle. */
   const sigla = src.slice(src.indexOf('function sigla'), src.indexOf('function boot'));
   const avvio = src.slice(src.indexOf('function boot'), src.indexOf('function righeTitolo'));
   [['sigla', sigla], ['boot', avvio]].forEach(([nome, corpo]) => {
-    assert.match(corpo, /curtainArrow\.style\.opacity = 1/, `${nome}: la freccia si vede`);
-    assert.match(corpo, /pending = chiudi/, `${nome}: e il tocco la salta`);
+    assert.doesNotMatch(corpo, /curtainArrow\.style\.opacity = 1/, `${nome}: nessuna freccia`);
+    assert.doesNotMatch(corpo, /pending = /, `${nome}: e nessun tocco da aspettare`);
   });
+  const apertura = story.scenes.arrivo.steps;
+  const durata = (t, campi) => campi.reduce((n, k) => n + (apertura.find((x) => x.t === t)[k] || 0), 0);
+  assert.ok(durata('logo', ['nero', 'accensione', 'fisso', 'uscita']) <= 4000,
+    'la sigla sta sotto i quattro secondi');
+  assert.ok(durata('boot', ['ms', 'cursore']) <= 3200, 'e la barra di avvio pure');
+
+  /* Il cartello d'apertura si scrive fino in fondo: il tocco durante la
+     scrittura non lo completa a meta'. Finito, arriva la freccia. */
+  const cartello = apertura.find((x) => x.t === 'title');
+  assert.equal(cartello.ritmo, 0.9, 'il cartello si scrive un decimo piu\' svelto');
+  assert.match(src, /if \(senzaSalto\) return true;/,
+    'il tocco durante una scrittura senza salto non fa niente');
+  assert.match(src, /senzaSalto: st\.senzaSalto !== false/,
+    'e il cartello d\'apertura nasce cosi\'');
   assert.doesNotMatch(coda.slice(coda.indexOf('function avanti'), coda.indexOf('function attendiUltimo')),
     /done\(\)/, 'il tocco NON chiude la sequenza: passa al blocco dopo');
   assert.match(coda, /pending = chiudi;[\s\S]{0,80}curtainArrow\.style\.opacity = 1/,

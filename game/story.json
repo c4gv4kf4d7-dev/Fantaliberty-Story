@@ -20,6 +20,7 @@
     "bg": {
       "esterno_vialetto": "bg/bg_esterno_vialetto.webp",
       "esterno_ingresso": "bg/bg_esterno_ingresso.webp",
+      "macintosh": "bg/bg_macintosh.webp",
       "camerino": "bg/bg_camerino.webp",
       "backstage_corridoio": "bg/bg_backstage_corridoio.webp",
       "lobby": "bg/bg_lobby.webp",
@@ -296,16 +297,18 @@
         {
           "t": "logo",
           "img": "ui/logo_studio.png",
-          "nero": 1000,
-          "accensione": 1000,
-          "fisso": 2000,
-          "uscita": 900
+          "nero": 800,
+          "accensione": 800,
+          "fisso": 1600,
+          "uscita": 720,
+          "_nota": "Sigla dello studio: va da sola e non si salta. Tempi accorciati del 20% rispetto alla prima versione."
         },
         {
           "t": "boot",
           "blocchi": 9,
-          "ms": 2200,
-          "cursore": 1600
+          "ms": 1760,
+          "cursore": 1280,
+          "_nota": "La barra di avvio: come la sigla, va da sola e non si salta. Tempi accorciati del 20%."
         },
         {
           "t": "title",
@@ -322,7 +325,9 @@
               "text": "-1 ora al Keynote.",
               "big": true
             }
-          ]
+          ],
+          "ritmo": 0.9,
+          "_nota": "Il cartello d'apertura. \"ritmo\": 0.9 = scrittura e pause piu' svelte del 10%. Il tocco non lo completa a meta' (senzaSalto e' il comportamento normale di questo step): si legge tutto, poi arriva la freccia e il tocco vale."
         },
         {
           "t": "fx",

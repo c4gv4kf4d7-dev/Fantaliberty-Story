@@ -532,11 +532,13 @@ legge su un telefono.
   toccando di continuo — cambiarli tocca `titoliDiCoda` in `engine.js` e i
   `tieni` dei blocchi in `story.json`.
 
-- **Le due schermate d'avvio (sigla e barra) vanno da sole, ma si saltano
-  con un tocco**, e la freccia lo dice: senza, sembravano bloccate e chi le
-  aveva già viste non aveva modo di passare oltre. Chi ne aggiunge una
-  automatica faccia lo stesso — `pending` + freccia, e i timer annullati
-  quando si salta.
+- **Le due schermate d'avvio (sigla e barra) si guardano e basta**: niente
+  freccia, niente tocco che salta. Sono corte apposta (~4s e ~3s): se si
+  allungano, torna la voglia di saltarle. Anche il cartello d'apertura non si
+  salta finché non ha finito di scriversi — il tocco durante la scrittura non
+  fa niente (`senzaSalto` in `typeLines`, e `skip()` che si ferma prima) — e
+  solo dopo arriva la freccia. `ritmo` sullo step `title` scala insieme
+  velocità di scrittura e pause.
 - **Le sostituzioni di stringhe lunghe su questo file falliscono in
   silenzio.** Apostrofi curvi e accenti spesso non combaciano e
   `str.replace`/`Edit` non protestano. **Dopo ogni modifica a CLAUDE.md,
