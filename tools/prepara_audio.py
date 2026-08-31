@@ -34,6 +34,7 @@ MUSICA = {
     'previsioni.mp3':              'mus_previsioni.mp3',
     ' musica quiz .wav':           'mus_quiz.mp3',
     'lobby ritorno endgame.mp3':   'mus_lobby_finale.mp3',
+    "l'aggancio.mp3":              'mus_aggancio.mp3',
 }
 EFFETTI = {
     '8 bit studios.wav':                       'sfx_logo.mp3',

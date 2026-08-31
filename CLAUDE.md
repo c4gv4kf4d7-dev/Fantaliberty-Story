@@ -535,6 +535,11 @@ sempre uguale.
    gioco e' rumore, non feedback. Gli effetti stanno solo dove succede qualcosa
    — una scelta, una risposta del quiz, le previsioni spedite, un pannello che
    si apre. `npm test` controlla che dentro `VN.step` non ci finisca un `suona`.
+   **Il tocco secco (`tap`) sta in un posto solo**: entrare in un livello del
+   quiz, dove vuol dire "comincia". Nel terminale della registrazione non si
+   clicca: si scrive: `tastiera()` suona un colpo di tasti al massimo ogni
+   140 ms mentre si digita (non uno per lettera), `tastiera_intro` quando il
+   campo si accende e `invio` quando si conferma.
 2. **La musica non riparte a ogni scena.** `musicaScena()` confronta il brano
    chiesto con quello che sta suonando: se e' lo stesso non tocca niente. Le
    quattro scene dell'atto 1 condividono il brano, e il giocatore non deve
@@ -546,9 +551,26 @@ sempre uguale.
    musica resta in `musAttesa` e parte al primo `pointerdown`. Insistere con un
    timer non serve a niente.
 
+**Gli applausi arrivano dopo l'annuncio, non sul tocco.** Il giocatore sceglie
+un pronostico, il personaggio lo annuncia, e **poi** (420 ms) la platea
+reagisce: e' la reazione a quello che ha sentito, non un rumore di conferma del
+bottone. Le varianti corte girano a caso e non si ripetono due volte di fila
+(`ultimoSfx`); quelle lunghe stanno solo ai momenti grossi — l'apertura dei
+pronostici e i tre macroargomenti chiusi.
+
 I volumi (musica ed effetti separati, piu' il muto) stanno in `fl_audio`, **non
 nel salvataggio della partita**: chi ricomincia da capo non si ritrova la
-musica riaccesa. Il selettore e' il bottone in alto a destra.
+musica riaccesa. Il selettore e' il bottone in alto a destra. Due trappole gia'
+prese:
+
+- **la musica parte a 0.3, non a 0.6.** E' un tappeto sotto la voce. Il valore
+  salvato porta una `v`: cambiando `AUDIO_VERSIONE` chi aveva gia' giocato
+  riparte dalla taratura nuova, altrimenti la modifica non la vede nessuno di
+  quelli che hanno gia' toccato il selettore.
+- **il pannello non si chiude mentre si trascina un cursore.** Il dito che
+  parte dalla manopola e finisce fuori dal riquadro faceva sparire il pannello
+  a meta' regolazione, e sembrava che il cursore fosse rotto. La percentuale
+  scritta di fianco all'etichetta serve a vedere che si sta muovendo.
 
 In `npm test` l'audio non esiste (jsdom ha `<audio>` ma non sa suonare, e
 `play`/`pause` sporcano l'uscita): `CI_SONO_SUONI` lo riconosce con lo stesso

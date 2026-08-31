@@ -690,6 +690,12 @@
     senzaSalto = false;
     VN.scene = sc; VN.sceneId = id; VN.i = 0;
     trackLocationScena(id);
+    /* Lo stacco di transizione solo sui cambi di POSTO dichiarati in
+       story.audio.transizioni (la lobby, il palco, il camerino...), e solo se
+       si arriva davvero da un'altra parte: rientrare nella stessa scena dopo un
+       pannello non e' un viaggio. */
+    var daAltrove = VN.sceneId && VN.sceneId !== id;
+    if (daAltrove && (cfgAudio().transizioni || []).indexOf(id) >= 0) suona('transizione', 0.8);
     musicaScena(id);          // cambia solo se la scena nuova chiede un altro brano
     if (sc.bg) setBg(sc.bg, sc.bgFx, sc.dissolvenza);
     // gli asset della scena nuova si chiedono subito: se questa si apre al
@@ -905,6 +911,7 @@
         el.boxwrap.classList.remove('in');
         el.hint.style.opacity = 0;
         scopriCartello();
+        suona('logo');            // "8 bit studios": la sigla dello studio
         sigla(st, perScena(next));
         return;
 
@@ -1427,6 +1434,7 @@
   }
 
   function showCarosello(st) {
+    suona('apri');
     var opts = opzioniCarosello(st);
     if (!opts.length) return next();
 
@@ -1607,8 +1615,18 @@
     // sbaglio.
     var ePronostici = (st.var || 'categoria') === 'categoria';
     if (!chiavi.length) return next();
+    if (ePronostici && !VN.state.__aperturaPlatea) {
+      VN.state.__aperturaPlatea = true;
+      suona('applausi_apertura', 0.7);       // il pubblico saluta l'inizio dei pronostici
+    }
     if (ePronostici) gaOnce('predictions_started', 'predictions_started', {});
+    var finite = chiavi.filter(categoriaFinita).length;
+    if (ePronostici && finite > (VN.state.__finiteViste || 0)) {
+      VN.state.__finiteViste = finite;
+      if (finite < chiavi.length) suona('traguardo');   // un macroargomento chiuso
+    }
     if (chiavi.every(categoriaFinita)) {
+      suona('applausi_lungo', 0.75);          // tutti e tre: e' la fine dello show
       chiudiGriglia();
       if (ePronostici) gaOnce('predictions_complete', 'predictions_complete', { completed_categories: chiavi.length });
       return next();
@@ -1634,6 +1652,7 @@
         if (ev && ev.stopPropagation) ev.stopPropagation();
         if (uscito || fatta) return;
         uscito = true;
+        suona('scelta');
         VN.progressed = true;
         VN.state[st.var || 'categoria'] = k;
         // il pannello sullo schermo si accende adesso, alla scelta, non a
@@ -1810,6 +1829,12 @@
     }
 
     function annuncia(d, o) {
+      /* Il pronostico e' stato annunciato: la platea reagisce. Non e' il tocco
+         sulla risposta a farla applaudire — e' l'annuncio, un attimo dopo,
+         quando il personaggio ha finito di dirlo. Le varianti corte girano a
+         caso: venti domande con lo stesso applauso sarebbero venti volte la
+         stessa registrazione. */
+      setTimeout(perScena(function () { suona('applausi', 0.55); }), 420);
       // la posa alterna a caso fra le due, cosi' venti domande di fila non
       // sembrano venti volte la stessa inquadratura
       mostraIo({ posa: Math.random() < 0.5 ? 'annuncio' : 'indica_schermo' });
@@ -1824,7 +1849,6 @@
 
     function dopoRisposta() {
       var reazione = aCaso(VN.story.reazioni || (VN.banca && VN.banca.reazioni_platea));
-      if (reazione && /applaus/i.test(JSON.stringify(reazione))) suona('applausi', 0.7);
       platea(reazione);
       var ev = pescaEvento();
       i++;
@@ -2636,6 +2660,8 @@
         if (ev && ev.stopPropagation) ev.stopPropagation();
         if (uscito || chiuso || !aperto) return;
         uscito = true;
+        suona('tap');           // si entra in un livello: l'unico posto in cui
+                                // il tocco secco vuol dire "comincia"
         VN.progressed = true;
         VN.state.livello = liv;
         gaOnce('quiz_level_started:' + liv, 'quiz_level_started', { quiz_level: liv });
@@ -2890,6 +2916,8 @@
       // Ogni tentativo che finisce le sue domande, mai le risposte date.
       ga('quiz_level_complete', { quiz_level: liv, result: passato ? 'passed' : 'failed' });
 
+      // il livello passato e' un traguardo; il fallito e' quello di Peter, e
+      // suona solo a fine livello: su ogni risposta sbagliata sarebbe pesante
       suona(passato ? 'quiz_livello' : 'quiz_fallito');
       showChar({ who: 'peter', body: passato ? 'applauso_ironico' : 'scuote_testa', height: st.height, bottom: st.bottom });
       setSpeaker(st.who || 'peter');
@@ -3060,6 +3088,7 @@
   var corsaAscolto = null, corsaAttesa = null;
 
   function apriCorsa(cfg, done) {
+    suona('apri');
     cfg = cfg || {};
     if (!el.runwrap || !el.runframe) return done && done();
     var etichetta = fmt(cfg.esci || 'Torna al gioco');
@@ -3154,6 +3183,7 @@
      Il fondale va sfocato, come nel camerino: cosi' il pannello si stacca dal
      cartellone invece di confondercisi dentro. */
   function mostraRegole(id, done) {
+    suona('apri');
     var r = VN.story[id || 'regolamento'];
     if (!r) return done && done();
 
@@ -3289,6 +3319,7 @@
   }
 
   function chiudiRegole() {
+    if (el.regole && el.regole.classList.contains('on')) suona('chiudi');
     if (!el.regole) return;
     el.regole.classList.remove('on');
     el.regcorpo.innerHTML = '';
@@ -3305,6 +3336,16 @@
      resta disattivata finche' il giocatore non ha scorso almeno una volta —
      altrimenti entra in sala senza accorgersi che la lobby era visitabile. */
   function showHub(st) {
+    /* Il brusio della gente si sente entrando in lobby, una volta per partita:
+       e' l'arrivo in un posto pieno di persone, non un tappeto che gira in
+       continuazione. Chi torna dopo le previsioni sente invece il ritorno. */
+    if (!VN.state.__folla) {
+      VN.state.__folla = true;
+      suona('folla_lobby', 0.5);
+    } else if (VN.state.locked && !VN.state.__ritorno) {
+      VN.state.__ritorno = true;
+      suona('ritorno_lobby', 0.8);
+    }
     var zones = (st.zones || []).filter(function (z) { return condizioneOk(z.when); });
     if (!zones.length) return next();
 
@@ -3616,6 +3657,7 @@
     el.ti.value = '';
     el.tok.disabled = true;
     el.ti.oninput = function () {
+      tastiera();                       // un colpo di tasti, non uno per lettera
       var v = el.ti.value.replace(re, '').slice(0, max);
       el.ti.value = v;
       VN.state[st.var] = v;
@@ -3626,12 +3668,14 @@
     el.tok.onclick = function (ev) {
       if (ev && ev.stopPropagation) ev.stopPropagation();
       if (el.tok.disabled) return;
+      suona('invio');                   // il campo del terminale si conferma
       VN.progressed = true;
       hideUI();
       termCursorOff();
       next();
     };
     el.inputform.classList.add('on');
+    suona('tastiera_intro', 0.7);       // il terminale si accende
     setTimeout(function () { try { el.ti.focus(); } catch (e) {} }, 80);
   }
 
@@ -3673,6 +3717,7 @@
     el.tselok.onclick = function (ev) {
       if (ev && ev.stopPropagation) ev.stopPropagation();
       if (el.tselok.disabled) return;
+      suona('invio');
       var scelta = el.tsel.options[el.tsel.selectedIndex];
       VN.state[st.var] = el.tsel.value;
       VN.state['__label_' + st.var] = scelta.textContent;
@@ -3861,6 +3906,8 @@
      resta leggibile e la scena non mostra un'icona di immagine rotta. */
   function mostraBadge(st) {
     if (!el.badgewrap) return;
+    suona('notifica');          // la tessera arriva: e' l'unico momento in cui
+                                // una notifica ha senso nella storia
     el.badgeName.textContent = fmt(st.nome || '{NOME}');
     el.badgewrap.classList.remove('senzaimg');
 
@@ -3944,10 +3991,15 @@
      schermo: la prima musica resta in attesa (musaAttesa) e parte al primo
      tocco vero, non a un timer. */
   var AUDIO_CHIAVE = 'fl_audio';
-  var audio = { mus: 0.6, sfx: 0.8, muto: false };
+  // La musica sta sotto la voce e sotto gli effetti: e' un tappeto, non un
+  // brano che si ascolta. La versione serve a far ripartire dai valori nuovi
+  // chi aveva gia' salvato i suoi: senza, chi ha giocato prima si ritrova la
+  // musica alta come prima e la modifica non si vede.
+  var AUDIO_VERSIONE = 2;
+  var audio = { mus: 0.3, sfx: 0.8, muto: false, v: AUDIO_VERSIONE };
   var musNodo = null, musNome = null, musFade = null, musAttesa = null;
   var audioSbloccato = false;
-  var sfxCache = {};
+  var sfxCache = {}, ultimoSfx = {};
 
   // Senza <audio> (jsdom nei test, o un browser antico) l'audio semplicemente
   // non esiste: il gioco va avanti identico, muto.
@@ -3965,6 +4017,7 @@
     if (!st) return;
     try {
       var d = JSON.parse(st.getItem(AUDIO_CHIAVE) || 'null');
+      if (d && d.v !== AUDIO_VERSIONE) d = null;      // valori di un'altra taratura
       if (d) {
         if (typeof d.mus === 'number') audio.mus = d.mus;
         if (typeof d.sfx === 'number') audio.sfx = d.sfx;
@@ -3973,6 +4026,7 @@
     } catch (e) {}
   }
   function salvaAudio() {
+    audio.v = AUDIO_VERSIONE;
     var st = store();
     if (st) { try { st.setItem(AUDIO_CHIAVE, JSON.stringify(audio)); } catch (e) {} }
   }
@@ -4046,7 +4100,15 @@
     if (!CI_SONO_SUONI || audio.muto || !audioSbloccato) return;
     var mappa = cfgAudio().effetti || {};
     var file = mappa[quale];
-    if (Array.isArray(file)) file = file[Math.floor(Math.random() * file.length)];
+    if (Array.isArray(file)) {
+      // varianti dello stesso suono: si pesca a caso, evitando quella appena
+      // usata — due volte di fila lo stesso file si sente come un difetto
+      var scelte = file.length > 1
+        ? file.filter(function (f) { return f !== ultimoSfx[quale]; })
+        : file;
+      file = scelte[Math.floor(Math.random() * scelte.length)];
+      ultimoSfx[quale] = file;
+    }
     if (!file) return;
     var nodo = sfxCache[file];
     if (!nodo) {
@@ -4060,6 +4122,18 @@
       var p = nodo.play();
       if (p && p.catch) p.catch(function () {});
     } catch (e) {}
+  }
+
+  /* La tastiera del terminale: un colpo di tasti ogni tanto, non uno per
+     lettera. Chi scrive "Lorenzo" deve sentire qualcuno che digita, non una
+     mitragliatrice: si suona al massimo ogni 140 ms, alternando le due
+     varianti, e a volume basso perche' e' un rumore di fondo. */
+  var ultimoTasto = 0;
+  function tastiera() {
+    var ora = Date.now();
+    if (ora - ultimoTasto < 140) return;
+    ultimoTasto = ora;
+    suona('tastiera', 0.45);
   }
 
   /* Il primo tocco della persona sblocca l'audio: prima di quello il browser
@@ -4090,6 +4164,11 @@
     el.audiobtn.setAttribute('aria-label', audio.muto ? 'Riattiva l\'audio' : 'Audio');
   }
 
+  function mostraPercentuali() {
+    if (el.volmusval) el.volmusval.textContent = Math.round(audio.mus * 100) + '%';
+    if (el.volsfxval) el.volsfxval.textContent = Math.round(audio.sfx * 100) + '%';
+  }
+
   function apriAudio() {
     if (!el.audiowrap) return;
     suona('apri');
@@ -4097,6 +4176,7 @@
     var righe = el.audiowrap.querySelectorAll('input[type=range]');
     righe[0].value = Math.round(audio.mus * 100);
     righe[1].value = Math.round(audio.sfx * 100);
+    mostraPercentuali();
     if (el.audiomuto) el.audiomuto.textContent = audio.muto ? 'RIATTIVA L\'AUDIO' : 'SILENZIA TUTTO';
   }
   function chiudiAudio() {
@@ -4113,18 +4193,24 @@
       if (el.audiowrap.classList.contains('on')) { suona('chiudi'); chiudiAudio(); }
       else apriAudio();
     };
+    /* Chiudere toccando fuori, ma NON mentre si trascina un cursore: il dito
+       che parte dalla manopola e finisce fuori dal riquadro faceva sparire il
+       pannello a meta' regolazione, e sembrava che il cursore non funzionasse. */
+    var partitoDentro = false;
+    el.audiowrap.onpointerdown = function (ev) { partitoDentro = ev.target !== el.audiowrap; };
     el.audiowrap.onclick = function (ev) {
-      if (ev.target === el.audiowrap) { suona('chiudi'); chiudiAudio(); }
+      if (ev.target === el.audiowrap && !partitoDentro) { suona('chiudi'); chiudiAudio(); }
       else if (ev.stopPropagation) ev.stopPropagation();
+      partitoDentro = false;
     };
     var righe = el.audiowrap.querySelectorAll('input[type=range]');
-    righe[0].oninput = function () {
+    righe[0].oninput = righe[0].onchange = function () {
       audio.mus = this.value / 100; audio.muto = false;
-      aggiornaVolumi(); aggiornaBottoneAudio(); salvaAudio();
+      aggiornaVolumi(); aggiornaBottoneAudio(); mostraPercentuali(); salvaAudio();
     };
-    righe[1].oninput = function () {
+    righe[1].oninput = righe[1].onchange = function () {
       audio.sfx = this.value / 100; audio.muto = false;
-      aggiornaBottoneAudio(); salvaAudio();
+      aggiornaBottoneAudio(); mostraPercentuali(); salvaAudio();
     };
     // l'effetto di prova si sente quando si lascia il cursore: durante il
     // trascinamento sarebbe una raffica
@@ -4133,7 +4219,7 @@
       el.audiomuto.onclick = function (ev) {
         if (ev && ev.stopPropagation) ev.stopPropagation();
         audio.muto = !audio.muto;
-        aggiornaVolumi(); aggiornaBottoneAudio(); salvaAudio();
+        aggiornaVolumi(); aggiornaBottoneAudio(); mostraPercentuali(); salvaAudio();
         el.audiomuto.textContent = audio.muto ? 'RIATTIVA L\'AUDIO' : 'SILENZIA TUTTO';
       };
     }
@@ -4801,7 +4887,7 @@
       carnome: $('carnome'), cardesc: $('cardesc'), carbattuta: $('carbattuta'),
       carperk: $('carperk'), carok: $('carok'),
       audiobtn: $('audiobtn'), audiowrap: $('audiowrap'), audiomuto: $('audiomuto'),
-      audiook: $('audiook')
+      audiook: $('audiook'), volmusval: $('volmusval'), volsfxval: $('volsfxval')
     };
     el.avatar.innerHTML = '';
     el.avatar.classList.remove('on', 'entra');

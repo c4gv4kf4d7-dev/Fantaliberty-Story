@@ -1084,3 +1084,7 @@ html.inattesa, html.inattesa body{background:#0a0a0f;overflow:hidden}
   border-radius:8px;background:#1e1e2e;color:#f2f2f7;font:inherit;font-size:8px;
   letter-spacing:.1em;cursor:pointer}
 #audiobox #audiook{border-color:#ff9f57;color:#ffd88c}
+/* il cursore deve essere facile da prendere col dito: la manopola nativa e'
+   piccola, e con una riga alta 22px meta' dei trascinamenti mancavano */
+#audiobox input[type=range]{height:34px;touch-action:pan-x}
+#audiobox label span{float:right;color:#ff9f57}
