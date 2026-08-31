@@ -51,6 +51,29 @@
   var hubTasti = null;     // frecce della tastiera mentre l'hub e' aperto
   var current = { who: null, body: null, head: null };   // NPC in scena
 
+  /* ---------------- Google Analytics 4 ----------------
+     Ogni evento di gioco passa da qui, mai da una chiamata a gtag() sparsa nel
+     resto del file (game/analytics.js e' l'unico punto che tocca window.gtag).
+     Se lo script di Analytics non e' caricato — test headless, sviluppo senza
+     rete, adblock — global.FLAnalytics semplicemente non esiste e ga()/gaOnce()
+     non fanno niente: il gioco non se ne accorge.
+
+     La deduplica "una volta per partita" (game_start, quiz_started, ecc.) vive
+     dentro VN.state._ga, quindi segue lo stesso salvataggio di tutto il resto:
+     sopravvive a un refresh o a una riapertura nei giorni fra la registrazione
+     e il keynote, e si azzera da sola con una partita nuova perche' azzeraVars()
+     rimpiazza VN.state per intero. E' la persistenza gia' presente nel
+     progetto, non un meccanismo a parte. */
+  function ga(eventName, params) {
+    if (global.FLAnalytics) global.FLAnalytics.track(eventName, params || {});
+  }
+  function gaOnce(chiave, eventName, params) {
+    var g = VN.state._ga || (VN.state._ga = {});
+    if (g[chiave]) return;
+    g[chiave] = true;
+    ga(eventName, params);
+  }
+
   /* ---------------- testo: interpolazione ---------------- */
   // {nome} valore · {NOME} maiuscolo · {label:anni} etichetta scelta
   // {g:uno|una} variante per la variabile di genere (m|f), nell'ordine di
@@ -595,6 +618,28 @@
      niente (hide, wait, set, nero, luce) si saltano: possono stare prima senza
      voler dire che la scena parte illuminata. */
   var INVISIBILI = { hide: 1, wait: 1, set: 1, nero: 1, luce: 1 };
+
+  /* Le "location" di Analytics non sono le scene dello script (sono di piu' e
+     hanno nomi narrativi diversi): e' una lettura a parte, pensata per chi
+     guarda i dati, non per chi scrive lo story. La Hall of Fame non e' una
+     scena ma una zona dell'hub della lobby: la sua location_opened parte da
+     entra(), non da qui. */
+  var LOCATION_SCENA = {
+    lobby: 'lobby', camerino: 'camerino', keynote: 'palco',
+    argomenti: 'platea', teleprompter: 'teleprompter', quiz: 'quiz_area'
+  };
+  function trackLocationScena(id) {
+    var loc = LOCATION_SCENA[id];
+    if (!loc) return;
+    gaOnce('loc:' + loc, 'location_opened', { location_name: loc });
+    // La lobby e' il primo posto in cui il giocatore ha davvero in mano il
+    // gioco (arrivo/registrazione/badge sono onboarding): e' li' che comincia
+    // per davvero l'esperienza, non al semplice caricamento della pagina.
+    if (id === 'lobby') gaOnce('game_start', 'game_start', { entry_point: 'lobby' });
+    if (id === 'teleprompter') gaOnce('teleprompter_started', 'teleprompter_started', {});
+    if (id === 'quiz') gaOnce('quiz_started', 'quiz_started', {});
+  }
+
   function apreSulNero(sc) {
     var steps = sc.steps || [];
     for (var i = 0; i < steps.length; i++) {
@@ -644,6 +689,7 @@
     pending = null;
     senzaSalto = false;
     VN.scene = sc; VN.sceneId = id; VN.i = 0;
+    trackLocationScena(id);
     if (sc.bg) setBg(sc.bg, sc.bgFx, sc.dissolvenza);
     // gli asset della scena nuova si chiedono subito: se questa si apre al
     // buio, arrivano mentre non si vede niente
@@ -1502,6 +1548,11 @@
     var t = c[tipo] || (c[tipo] = {});
     t[id] = { v: valore, p: punti || 0 };
     VN.state.punti = totale();
+    // Solo il fatto che la categoria e' completa, mai la risposta data: niente
+    // contenuto delle previsioni verso Analytics.
+    if (tipo === 'core' && categoriaFinita(categoria)) {
+      gaOnce('prediction_completed:' + categoria, 'prediction_completed', { category: categoria });
+    }
   }
 
   // Il totale si ricalcola dalle risposte invece di essere accumulato: in S6 le
@@ -1549,8 +1600,18 @@
   function showGriglia(st) {
     var argomenti = VN.story[st.da || 'argomenti'] || {};
     var chiavi = Object.keys(argomenti);
+    // Questa griglia esiste in story.json una volta sola, per i macroargomenti
+    // dei pronostici (var "categoria"): gli eventi di Analytics restano legati
+    // a quell'uso, cosi' un domani un'altra griglia non li erediterebbe per
+    // sbaglio.
+    var ePronostici = (st.var || 'categoria') === 'categoria';
     if (!chiavi.length) return next();
-    if (chiavi.every(categoriaFinita)) { chiudiGriglia(); return next(); }
+    if (ePronostici) gaOnce('predictions_started', 'predictions_started', {});
+    if (chiavi.every(categoriaFinita)) {
+      chiudiGriglia();
+      if (ePronostici) gaOnce('predictions_complete', 'predictions_complete', { completed_categories: chiavi.length });
+      return next();
+    }
 
     var uscito = false;
     el.griglia.innerHTML = '';
@@ -1582,6 +1643,7 @@
         VN.state.pescate = null;                 // le facoltative si pescano al bivio
         VN.saveNow();
         if (primaVolta) aggiornaEmblemi(k);
+        if (primaVolta && ePronostici) gaOnce('category_selected:' + k, 'category_selected', { category: k });
         chiudiGriglia();
         hideUI();
         goScene(st.goto);
@@ -2122,6 +2184,7 @@
         VN.state.locked = true;
         VN.state.punti = totale();
         VN.progressed = true;
+        gaOnce('teleprompter_complete', 'teleprompter_complete', {});
         // Non si spedisce ancora: subito dopo c'e' la schermata dell'email, e
         // una partita spedita due volte sarebbe due righe nella tabella. La
         // partita va in coda, e la spedisce lo step 'email' (o il prossimo
@@ -2261,6 +2324,9 @@
       }
       VN.state.email = v;
       VN.progressed = true;
+      // Solo il fatto che l'invio e' andato a buon fine: l'indirizzo non parte
+      // mai verso Analytics.
+      gaOnce('email_submitted', 'email_submitted', { method: 'optional_results_email' });
       esci();
     };
 
@@ -2307,6 +2373,14 @@
   var cId = null;
   function showCountdown(st) {
     var quando = quandoKeynote();
+    // Il countdown e' l'ultimo posto in cui il gioco lascia il giocatore dopo
+    // aver chiuso la parte narrativa: non punteggio, non nome, non email — solo
+    // se le due fasi principali sono state completate. quiz_completed si legge
+    // dal registro di gaOnce, che e' gia' la fonte di verita' su quiz_complete.
+    gaOnce('game_complete', 'game_complete', {
+      predictions_completed: !!VN.state.locked,
+      quiz_completed: !!(VN.state._ga && VN.state._ga.quiz_complete)
+    });
 
     function aggiorna() {
       var m = quando ? mancano(quando - Date.now()) : null;
@@ -2530,6 +2604,7 @@
         uscito = true;
         VN.progressed = true;
         VN.state.livello = liv;
+        gaOnce('quiz_level_started:' + liv, 'quiz_level_started', { quiz_level: liv });
         chiudiGriglia();
         hideUI();
         goScene(st.goto);
@@ -2590,6 +2665,14 @@
     var restaQualcosa = ordine.some(function (liv) {
       return livelloAperto(liv, ordine) && !livelloChiuso(liv);
     });
+    // "Conclude definitivamente il quiz": non resta piu' nessun livello da
+    // giocare, passato o bruciato che sia. Il livello piu' alto superato segue
+    // l'ordine della scaletta (ordine e' gia' dal piu' facile al piu' difficile).
+    if (!restaQualcosa) {
+      var superati = ordine.filter(function (liv) { return statoQuiz(liv).passato; });
+      var params = superati.length ? { highest_level_completed: superati[superati.length - 1] } : {};
+      gaOnce('quiz_complete', 'quiz_complete', params);
+    }
     var riga = (!restaQualcosa && st.finito) ? st.finito : (testoDi(st) || st.text);
     if (riga) typeKeep(fmt(riga));
     if (azioni.length) showChoices({ options: azioni, colonne: false });
@@ -2769,6 +2852,8 @@
       }
       VN.progressed = true;
       VN.saveNow();
+      // Ogni tentativo che finisce le sue domande, mai le risposte date.
+      ga('quiz_level_complete', { quiz_level: liv, result: passato ? 'passed' : 'failed' });
 
       showChar({ who: 'peter', body: passato ? 'applauso_ironico' : 'scuote_testa', height: st.height, bottom: st.bottom });
       setSpeaker(st.who || 'peter');
@@ -2890,9 +2975,14 @@
      insieme dentro la stessa schermata. L'immagine si assegna con apparira(),
      altrimenti riaprendo la galleria si vedrebbe per un fotogramma il quadro
      di prima. */
+  // Non i nomi dei vincitori (dati personali): solo l'edizione, dall'id del
+  // quadro che l'hotspot dichiara in story.json.
+  var HOF_EDIZIONI = { halloffame_fabio: '2024', halloffame_michael: '2025', halloffame_nicola: '2026' };
+
   function mostraQuadro(h, done) {
     if (!el.quadrowrap) return done && done();
     var src = assetUrl('bg', h.quadro);   // assetUrl applica gia' la base
+    if (HOF_EDIZIONI[h.quadro]) ga('hall_of_fame_edition_opened', { edition: HOF_EDIZIONI[h.quadro] });
     el.quadroImg.alt = fmt(h.alt || h.label || '');
     apparira(el.quadroImg, src, el.quadrowrap);
     el.quadrochiudi.textContent = fmt(h.chiudi || 'Chiudi');
@@ -3199,6 +3289,12 @@
       var z = zones[cur];
       var primaVolta = !visti[z.id];
       visti[z.id] = true;
+      // La Hall of Fame e' una zona dell'hub, non una scena: non passa da
+      // trackLocationScena(), quindi la sua location_opened parte da qui.
+      if (primaVolta && z.id === 'hall_of_fame') {
+        gaOnce('loc:hall_of_fame', 'location_opened', { location_name: 'hall_of_fame' });
+        gaOnce('hall_of_fame_opened', 'hall_of_fame_opened', {});
+      }
 
       // Dal secondo passaggio in poi la guida non ripete cos'e' la zona: o la
       // zona dichiara una battuta di ritorno (la tenda: "sei pronto?"), oppure

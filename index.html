@@ -9,6 +9,19 @@
      il browser continua a chiedere la versione vecchia degli asset -->
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <meta name="description" content="FantaLiberty: visual novel interattiva. Steve Jobs Theater, WWDC 26.">
+<!-- Google tag (gtag.js) — Google Analytics 4. Sta qui in testa apposta (parte
+     prima di tutto il resto): raccoglie da solo le visite e i parametri UTM
+     del QR code (utm_source, utm_medium, utm_campaign, utm_content), senza
+     bisogno di codice nostro. E' invisibile al giocatore: nessun banner,
+     nessun popup. Se la rete non lo fa arrivare, il resto della pagina non se
+     ne accorge — vedi game/analytics.js per come il motore lo usa. -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SYX1RZLNNE"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-SYX1RZLNNE');
+</script>
 <link rel="stylesheet" href="./game/engine.css?v=99">
 </head>
 <body>
@@ -272,6 +285,7 @@
   </div>
 </div>
 
+<script src="./game/analytics.js?v=99"></script>
 <script src="./game/engine.js?v=99"></script>
 <script>
 (function () {
