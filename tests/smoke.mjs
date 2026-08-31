@@ -667,7 +667,8 @@ assert.equal(VN.state.punti, puntiPrima, 'il tono non da\' punti');
 
 // [S2.04] il corridoio arriva sulla battuta del camerino, non due battute prima
 assert.match(txt(), /Ottimo, hai detto/, 'prima il si\', ancora in sala');
-assert.ok($('bg').getAttribute('src').includes('sala_teatro'), 'e ancora il fondale della sala');
+assert.ok($('bg').getAttribute('src').includes('palco_vuoto'),
+  'e ancora il palco vuoto, dove la discesa e\' andata a finire');
 VN.step();
 assert.ok($('bg').getAttribute('src').includes('backstage_corridoio'), 'si passa al corridoio');
 assert.ok($('npcBody').getAttribute('src').includes('chr_susan_indica_camerino'));
@@ -1761,6 +1762,23 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
                          src.indexOf('function typeLines'));
   assert.match(coda, /veloce = true/, 'il tocco mette la sequenza in modalita\' veloce');
   assert.match(coda, /TIENI_VELOCE/, 'e i blocchi restano comunque a schermo, solo meno');
+  /* Il tocco non fa sfumare subito il blocco che si sta leggendo: mette in
+     modalita' veloce e aspetta lo stesso TIENI_VELOCE. Prima il blocco spariva
+     sotto il dito, che e' l'opposto di "accelera". */
+  const avanti = coda.slice(coda.indexOf('function avanti'), coda.indexOf('function attendiUltimo'));
+  assert.ok(avanti.indexOf('TIENI_VELOCE') > 0, 'il blocco toccato resta il tempo di leggerlo');
+  assert.ok(avanti.indexOf('setTimeout') < avanti.indexOf("classList.add('sfumato')"),
+    'la dissolvenza arriva DOPO l\'attesa: il blocco non sparisce sotto il dito');
+
+  /* Le prime due schermate (sigla e barra di avvio) vanno da sole, ma il tocco
+     deve poterle saltare — e deve vedersi che si puo': senza la freccia
+     sembravano bloccate. */
+  const sigla = src.slice(src.indexOf('function sigla'), src.indexOf('function boot'));
+  const avvio = src.slice(src.indexOf('function boot'), src.indexOf('function righeTitolo'));
+  [['sigla', sigla], ['boot', avvio]].forEach(([nome, corpo]) => {
+    assert.match(corpo, /curtainArrow\.style\.opacity = 1/, `${nome}: la freccia si vede`);
+    assert.match(corpo, /pending = chiudi/, `${nome}: e il tocco la salta`);
+  });
   assert.doesNotMatch(coda.slice(coda.indexOf('function avanti'), coda.indexOf('function attendiUltimo')),
     /done\(\)/, 'il tocco NON chiude la sequenza: passa al blocco dopo');
   assert.match(coda, /pending = chiudi;[\s\S]{0,80}curtainArrow\.style\.opacity = 1/,
@@ -1779,6 +1797,9 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
 {
   const passo = story.scenes.finale.steps.find((st) => st.t === 'email');
   assert.match(passo.titolo, /DOVE TI TROVIAMO/);
+  // snella: niente etichetta sopra il campo, lo dice gia' il segnaposto
+  assert.equal(passo.label, undefined, 'niente etichetta sopra il campo');
+  assert.match(passo.placeholder, /@/, 'il segnaposto dice da solo cosa si scrive');
   assert.match(passo.nota, /Lorenzo e Michael/, 'la nota ironica e\' quella concordata');
   assert.match(passo.salta, /spezzare loro il cuore/, 'e il salto e\' dichiarato');
 
@@ -2030,6 +2051,34 @@ function apriQuizHub(stile) {
   // niente striscia della categoria sopra la scena delle domande
   assert.equal((story.scenes.argomento.steps || []).some((x) => x.t === 'prop'), false,
     'nessun prop sopra la scena durante le previsioni');
+}
+
+/* ---------- 9-quater. il giocatore non attraversa le scene ----------
+   Ogni scena che vuole la figura del giocatore la dichiara come primo step. Se
+   una se ne dimentica non deve ritrovarsela addosso: e' cosi' che restava a
+   schermo in lobby, davanti a Francesca, dopo le previsioni. */
+{
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'countdown' });
+  VN.state.stile = 'drip'; VN.state.genere = 'm'; VN.state.nome = 'Tester';
+  // com'e' a schermo quando il giocatore e' in scena: acceso e con addosso
+  // l'animazione d'ingresso, che da sola basta a tenerlo visibile
+  $('avatar').classList.add('on', 'entra');
+  [...$('cdbtn').querySelectorAll('.ch')]
+    .find((b) => /lobby/i.test(b.textContent))
+    .onclick({ stopPropagation() {} });
+  assert.equal(VN.sceneId, 'lobby', 'si cambia scena davvero');
+  assert.equal($('avatar').classList.contains('on'), false,
+    'cambiando scena la figura del giocatore si spegne');
+  assert.equal($('avatar').classList.contains('entra'), false, 'animazione compresa');
+
+  // le scene che la vogliono la rimettono da sole, come primo step
+  const conIo = ['quinte', 'keynote', 'argomenti', 'argomento', 'teleprompter', 'finale'];
+  conIo.forEach((n) => {
+    const passi = story.scenes[n].steps.slice(0, 2);
+    assert.ok(passi.some((x) => x.t === 'io'),
+      `scena ${n}: usa la figura del giocatore, quindi deve dichiararla subito`);
+  });
 }
 
 /* ---------- 9-bis. gli emblemi sullo schermo del palco (S5) ----------

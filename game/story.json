@@ -40,7 +40,8 @@
       "lobby_z2_hall_of_fame_parete": "bg/bg_halloffame_frontale.webp",
       "halloffame_fabio": "bg/bg_halloffame_fabio.webp",
       "halloffame_michael": "bg/bg_halloffame_michael.webp",
-      "halloffame_nicola": "bg/bg_halloffame_nicola.webp"
+      "halloffame_nicola": "bg/bg_halloffame_nicola.webp",
+      "palco_vuoto": "bg/bg_palco_vuoto.webp"
     },
     "props": {
       "mac_terminale": "props/prop_mac_terminale.webp",
@@ -783,8 +784,9 @@
         },
         {
           "t": "bg",
-          "id": "sala_teatro",
-          "fx": "zoom"
+          "id": "palco_vuoto",
+          "fx": "zoom",
+          "_nota": "Dove la discesa va a finire: il palco vuoto, visto da chi ci sta sopra. Prima era di nuovo la sala dall'alto, cioe' il punto da cui la carrellata era appena partita."
         },
         {
           "t": "show",
@@ -1534,7 +1536,9 @@
                 }
               ],
               "resta": true,
-              "_nota": "Peter e' scenografia, non la guida: nella zona gia' vista resta in scena (\"resta\": true) invece di uscire come fa Francesca. Senza, tornando sulla zona il tavolino era vuoto e non si capiva piu' dove fosse il quiz."
+              "_nota": "Peter e' scenografia, non la guida: nella zona gia' vista resta in scena (\"resta\": true) invece di uscire come fa Francesca. Senza, tornando sulla zona il tavolino era vuoto e non si capiva piu' dove fosse il quiz.",
+              "scala": 0.62,
+              "bottom": "16%"
             },
             {
               "id": "quiz_aperto",
@@ -1562,7 +1566,9 @@
                 }
               ],
               "resta": true,
-              "_nota": "Peter e' scenografia, non la guida: nella zona gia' vista resta in scena (\"resta\": true) invece di uscire come fa Francesca. Senza, tornando sulla zona il tavolino era vuoto e non si capiva piu' dove fosse il quiz."
+              "_nota": "Peter e' scenografia, non la guida: nella zona gia' vista resta in scena (\"resta\": true) invece di uscire come fa Francesca. Senza, tornando sulla zona il tavolino era vuoto e non si capiva piu' dove fosse il quiz.",
+              "scala": 0.62,
+              "bottom": "16%"
             }
           ],
           "tutorialSe": {
@@ -1791,10 +1797,9 @@
         },
         {
           "t": "email",
-          "_nota": "[S7.03b] Facoltativa: si continua anche senza. Qui parte anche la spedizione della partita, messa in coda al momento del blocco.",
+          "_nota": "[S7.03b] L'email e' facoltativa e non deve diventarlo: campo vuoto + CONTINUA vale come saltare, e il salto e' un bottone dichiarato. La schermata sta volutamente stretta: titolo, una riga di richiesta, il campo, la battuta, e i due modi di andare avanti. L'etichetta sopra il campo l'ha tolta il segnaposto.",
           "titolo": "DOVE TI TROVIAMO?",
           "testo": "Quando avremo i risultati finali, possiamo mandarteli via email.",
-          "label": "La tua email",
           "placeholder": "nome@esempio.com",
           "nota": "Non devi lasciarla per forza. Pero' Lorenzo e Michael ci hanno lavorato parecchio, quindi ecco. Pensaci.",
           "privacy": "La useremo solo per inviarti i risultati di FantaLiberty Story.",
