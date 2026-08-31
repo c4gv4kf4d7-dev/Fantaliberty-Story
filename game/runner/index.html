@@ -201,7 +201,7 @@
 
   <div class="ui">
     <div id="hud">
-      <div id="vite"><span>♥</span><span>♥</span></div>
+      <div id="vite"><span>♥</span><span>♥</span><span>♥</span></div>
       <div id="segna"><div id="punti">0</div><div id="record">record 0</div></div>
     </div>
     <div id="fps"></div>
@@ -367,6 +367,11 @@ const PRONTI = Promise.all([
   carica('salto',     'run_pg_salto.webp')
 ]);
 
+/* Quanti cuori si hanno in partenza. Sta qui e non sparso nel codice perche'
+   lo sanno in tre: lo stato iniziale, la fila di cuori in alto a sinistra e la
+   ricarica, che col cuore pieno vale punti invece di curare. */
+const VITE = 3;
+
 /* ---------- stato ---------- */
 const S = {
   fase:'attesa',      // attesa | corsa | fine
@@ -387,7 +392,10 @@ const S = {
   scivola:0,
   salto:0,            // quanto manca alla fine del salto          // quanto manca alla fine della scivolata
   traguardo:0,        // l'ultimo migliaio gia' festeggiato
-  vite:2,
+  vite:VITE,
+  vitaData:false,     // il cuore di questo livello e' gia' uscito
+  vitaQuota:0,        // ...e a che punteggio, dentro il livello, deve uscire
+  annuncio:null,      // "LIVELLO n" appena si supera la riga del traguardo
   intoccabile:0,     // dopo un colpo si lampeggia e non si muore due volte
   scossa:0
 };
@@ -419,11 +427,25 @@ const ANELLI = {
 function anello(colore, z, corsia){
   S.cose.push({ tipo:'anello', anello:colore, z, corsia });
 }
-/* La ricarica compare di rado, e piu' spesso quando serve davvero:
-   trovarla col cuore pieno e' un premio sprecato. */
+/* ---------- la ricarica ----------
+   Uno per livello, e uno solo: il livello e' un tratto con un cuore dentro,
+   e chi lo perde se lo tiene fino al prossimo traguardo. Lasciarla al caso
+   voleva dire che due partite uguali non avevano la stessa difficolta'.
+
+   A che punto del livello esca e' invece a caso (VITA_PRIMA..VITA_DOPO), se
+   no si imparerebbe dove aspettarla — e trovarla sempre al metro giusto la
+   farebbe smettere di essere una fortuna. */
+const VITA_PRIMA = 120, VITA_DOPO = 600;
+
+function nuovaQuotaVita(){
+  S.vitaData = false;
+  S.vitaQuota = S.punti + VITA_PRIMA + Math.random() * (VITA_DOPO - VITA_PRIMA);
+}
+
 function forseVita(z, corsia){
-  const probabilita = S.vite >= 2 ? 0.07 : 0.34;
-  if (Math.random() < probabilita) S.cose.push({ tipo:'vita', z, corsia });
+  if (S.vitaData || S.punti < S.vitaQuota) return;
+  S.vitaData = true;
+  S.cose.push({ tipo:'vita', z, corsia });
 }
 /* ---------- le chicche ----------
    Regola, e va tenuta: il carrello e' l'unica cosa che toglie un cuore.
@@ -483,7 +505,9 @@ function controllaTraguardo(){
   const quanti = (S.punti / OGNI_TRAGUARDO) | 0;
   if (quanti <= S.traguardo) return;
   S.traguardo = quanti;
-  S.cose.push({ tipo:'traguardo', z:1.15, corsia:0, quota:quanti * OGNI_TRAGUARDO });
+  S.cose.push({ tipo:'traguardo', z:1.15, corsia:0, quota:quanti * OGNI_TRAGUARDO,
+                livello: quanti + 1 });
+  nuovaQuotaVita();      // livello nuovo, cuore nuovo da trovare
 }
 
 function corsiaDiversa(da){
@@ -501,13 +525,18 @@ function genera(){
     S.prossimo = 0.7;
     return;
   }
+  /* Il cuore si prova a ogni gruppo, non solo in quelli comodi: e' uno per
+     livello e chi lo perde se lo tiene fino al traguardo dopo, quindi non
+     puo' dipendere da quale gruppo esce a caso. Esce in una corsia diversa
+     da quella del gruppo, cosi' non si appiccica mai a un ostacolo. */
+  forseVita(NASCE + 0.34, corsiaDiversa(c));
+
   const r = Math.random();
 
   if (r < 0.26){
     // FILA VERDE: nessun ostacolo, si corre dritti e si incassa
     const n = 4 + (Math.random()*2 | 0);
     for (let i=0; i<n; i++) anello('verde', NASCE + i*PASSO_ANELLI, c);
-    forseVita(NASCE + 0.34, corsiaDiversa(c));
     forseChicca(NASCE + 0.20, c);            // in mezzo alla fila comoda
     S.prossimo = 0.62;
 
@@ -516,7 +545,6 @@ function genera(){
     const d = corsiaDiversa(c);
     for (let i=0; i<3; i++) anello('blu', NASCE + i*PASSO_ANELLI, c);
     for (let i=0; i<3; i++) anello('blu', NASCE + 0.42 + i*PASSO_ANELLI, d);
-    forseVita(NASCE + 0.5, c);
     forseChicca(NASCE + 0.16, corsiaDiversa(c));
     S.prossimo = 0.75;
 
@@ -580,7 +608,7 @@ const LEZIONI = {
     corpo: '<p><b class="verde">Anello verde 10</b> · <b class="blu">blu 25</b> · ' +
            '<b class="rosso">rosso 50</b><br>' +
            'I prodotti nelle bolle: <b class="verde">100 a testa</b><br>' +
-           'Il cuore ti ridà un tentativo<br><br>' +
+           'Il cuore ti ridà un tentativo: <b>uno per livello</b><br><br>' +
            'Carrelli e cartelli ti costano un cuore.<br>' +
            'L\'arcobaleno si passa <b>al centro, scivolando</b>.</p>'
   }
@@ -833,12 +861,15 @@ function passo(ora){
 }
 
 function aggiorna(dt){
-  /* La velocita' non sale di continuo ma A SCALINI, uno per traguardo:
+  /* La velocita' non sale di continuo ma A SCALINI, uno per traguardo.
+     Dieci scalini, non sei: fermandosi al sesto il gioco smetteva di
+     complicarsi a 6000 punti e da li' in poi si andava avanti a memoria —
+     ci si arrivava a 10.000 senza piu' incontrare niente di nuovo.
      salire sempre un pochino diventa subito ingestibile e non si capisce
      perche'. Cosi' invece ogni scalino e' un momento riconoscibile, e in
      mezzo c'e' un tratto in cui si prende la mano. */
-  const scalino = Math.min(6, (S.punti / OGNI_TRAGUARDO) | 0);
-  const voluta = 0.62 + scalino * 0.17;
+  const scalino = Math.min(10, (S.punti / OGNI_TRAGUARDO) | 0);
+  const voluta = 0.62 + scalino * 0.20;
   S.velocita += (voluta - S.velocita) * Math.min(1, dt * 1.6);
   const avanti = S.velocita * dt;
   S.distanza += avanti;
@@ -849,6 +880,7 @@ function aggiorna(dt){
   if (S.intoccabile > 0) S.intoccabile -= dt;
   if (S.scivola > 0) S.scivola -= dt;
   if (S.salto > 0) S.salto -= dt;
+  if (S.annuncio){ S.annuncio.vita -= dt / 1.4; if (S.annuncio.vita <= 0) S.annuncio = null; }
 
   controllaTraguardo();
   S.prossimo -= avanti;
@@ -857,7 +889,11 @@ function aggiorna(dt){
   for (const c of S.cose){
     c.z -= avanti;
     if (c.presa) continue;
-    if (c.tipo === 'traguardo') continue;        // si attraversa
+    if (c.tipo === 'traguardo'){
+      // si attraversa: niente collisione, ma il passaggio si annuncia
+      if (c.z < 0 && !c.passato){ c.passato = true; S.annuncio = { testo: 'LIVELLO ' + c.livello, vita: 1 }; }
+      continue;
+    }
     if (c.tipo === 'arco'){
       if (c.z < 0.10 && c.z > -0.02 && !c.presa){
         const dentro = Math.abs(S.corsiaVista) < 0.45;   // corsia di mezzo
@@ -882,7 +918,7 @@ function aggiorna(dt){
         S.raccolti += ANELLI[c.anello].valore;
       } else if (c.tipo === 'vita'){
         c.presa = true;
-        if (S.vite < 2){ S.vite++; mostraVite('guarito'); segnale(c, '+♥', true); }
+        if (S.vite < VITE){ S.vite++; mostraVite('guarito'); segnale(c, '+♥', true); }
         else { S.raccolti += 25; segnale(c, '+25', true); }   // col cuore pieno vale punti
       } else if (c.tipo === 'chicca'){
         c.presa = true;
@@ -1022,8 +1058,55 @@ function disegna(){
       const s = 320 * q.scala;
       const su = s * (2.1 + 0.10 * Math.sin(S.distanza * 3 + c.z * 5));
       const cx = q.x, cy = q.y - su + s/2;
+      const entra = Math.min(1, (1.25 - c.z) * 3);       // entra sfumando
+
+      /* La riga sul pavimento. La stella in alto dice CHE si e' arrivati a
+         mille punti, ma non si attraversa niente: passa per aria e il
+         cambio di livello resta una cosa che succede altrove. La riga
+         invece si vede arrivare, ci si corre dentro e si sorpassa — ed e'
+         li' che la velocita' cambia. Pulsa perche' non e' pavimento: e'
+         una cosa che aspetta di essere superata.
+
+         E' un trapezio, non una linea: fra la profondita' del traguardo e
+         una un filo piu' vicina. Una linea di spessore fisso a fondo
+         corridoio sarebbe spessa uguale che sotto i piedi, e la
+         prospettiva si romperebbe.
+
+         Larga quanto il pavimento, NON quanto la pista misurata: la pista
+         arriva fin sotto il vetro, e presa tutta la riga passava oltre i
+         montanti e finiva a galleggiare sul prato. I montanti stanno a
+         corsia 1.6 — la riga si ferma a 1.3, dentro il corridoio, dove il
+         pavimento e' pavimento. */
+      {
+        /* Da lontano il trapezio si schiaccerebbe a un filo di un pixel:
+           lo spessore in profondita' cresce con la distanza, cosi' a
+           schermo resta piu' o meno alto uguale per tutta la corsa. */
+        const spessore = 0.05 + c.z * 0.16;
+        const zVicino = Math.max(0.002, c.z - spessore);
+        const RIGA = 1.3;
+        const A0 = proietta(c.z, -RIGA),   A1 = proietta(c.z, RIGA);
+        const B0 = proietta(zVicino, -RIGA), B1 = proietta(zVicino, RIGA);
+        const yA = A0.y, yB = B0.y;
+        const battito = 0.5 + 0.5 * Math.sin(S.distanza * 11);
+        ctx.save();
+        ctx.globalAlpha = entra * (0.55 + 0.45 * battito);
+        const g = ctx.createLinearGradient(0, yA, 0, yB);
+        g.addColorStop(0,   'rgba(240,190,80,.10)');
+        g.addColorStop(0.5, 'rgba(255,228,158,.95)');
+        g.addColorStop(1,   'rgba(240,190,80,.10)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.moveTo(A0.x, yA);
+        ctx.lineTo(A1.x, yA);
+        ctx.lineTo(B1.x, yB);
+        ctx.lineTo(B0.x, yB);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
       ctx.save();
-      ctx.globalAlpha = Math.min(1, (1.25 - c.z) * 3);   // entra sfumando
+      ctx.globalAlpha = entra;
       const alone = ctx.createRadialGradient(cx, cy, s*0.25, cx, cy, s*0.95);
       alone.addColorStop(0, 'rgba(240,190,80,.55)');
       alone.addColorStop(1, 'rgba(240,190,80,0)');
@@ -1086,14 +1169,37 @@ function disegna(){
 
   if (S.fase !== 'attesa') personaggio();
   disegnaSegnali(S.fase === 'corsa' ? 0.016 : 0);
+  annuncio();
   ctx.restore();
+}
+
+/* Il livello raggiunto, scritto a schermo per un attimo dopo che si e'
+   passata la riga. Non sta nel corridoio ma sopra tutto, in alto: nel
+   corridoio l'unico posto al centro e' quello dove corre il personaggio, e
+   qualunque scritta li' finisce dietro di lui. */
+function annuncio(){
+  const a = S.annuncio;
+  if (!a) return;
+  const t = a.vita;                       // 1 -> appena passato, 0 -> sparito
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, t * 2.2);
+  ctx.translate(W/2, H * 0.30 - (1 - t) * 40);
+  ctx.scale(1 + (1 - t) * 0.12, 1 + (1 - t) * 0.12);
+  ctx.font = 'bold 46px system-ui, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.lineWidth = 10; ctx.strokeStyle = 'rgba(60,40,0,.55)';
+  ctx.strokeText(a.testo, 0, 0);
+  ctx.fillStyle = '#ffe49e';
+  ctx.fillText(a.testo, 0, 0);
+  ctx.restore();
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
 }
 
 /* ---------- inizio e fine ---------- */
 function mostraVite(effetto){
   const box = document.getElementById('vite');
   box.innerHTML = '';
-  for (let i=0; i<2; i++){
+  for (let i=0; i<VITE; i++){
     const c = document.createElement('span');
     c.textContent = '♥';
     if (i >= S.vite) c.className = 'spenta';
@@ -1132,7 +1238,9 @@ function via(){
   S.fase = 'corsa'; S.corsia = 0; S.corsiaVista = 0;
   S.velocita = 0.62; S.distanza = 0; S.punti = 0; S.raccolti = 0;
   S.cose = []; S.prossimo = 0.4; S.respiro = false; S.scossa = 0; SEGNALI.length = 0;
-  S.vite = 2; S.intoccabile = 0; S.traguardo = 0; S.scivola = 0; S.salto = 0; mostraVite(null);
+  S.vite = VITE; S.intoccabile = 0; S.traguardo = 0; S.scivola = 0; S.salto = 0;
+  S.annuncio = null;
+  nuovaQuotaVita(); mostraVite(null);
   S.imparate = {}; S.collezione = {}; riprendi();
   document.getElementById('veloStart').hidden = true;
   document.getElementById('veloFine').hidden  = true;

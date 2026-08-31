@@ -736,9 +736,15 @@ Due porte, nessun passaggio in mezzo:
 
 Come si gioca: corsa senza fine dentro il corridoio vetrato del campus, tre
 corsie, swipe per cambiare corsia, saltare e scivolare. Anelli e prodotti
-Apple danno punti, gli ostacoli tolgono vite (due), l'icona Salute ne
-restituisce una. Si riprova quante volte si vuole. Il record resta nel
-salvataggio (run.runner_record).
+Apple danno punti, gli ostacoli tolgono cuori (se ne parte con tre). Si
+riprova quante volte si vuole. Il record resta nel salvataggio
+(run.runner_record).
+
+Ogni mille punti si cambia livello: si attraversa una riga dorata che pulsa
+sul pavimento, sotto la stella del traguardo, e da lì in poi si corre più
+veloce (dieci scalini, fino a 10.000 punti). In ogni livello c'è **un solo
+cuore di ricarica**, in un punto a caso del tratto: chi lo perde se lo tiene
+fino al traguardo dopo.
 
 IN SOSPESO: come i punti della corsa entrano nella classifica dei pronostici.
 Finché non è deciso, il record si tiene e basta — non tocca né i punti né i
