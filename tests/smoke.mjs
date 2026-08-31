@@ -2749,6 +2749,56 @@ function apriMoltiplicatori(stato, extra) {
   delete window.fetch;
 }
 
+/* ---------- audio: musica per scena ed effetti sui momenti che contano ---- */
+{
+  const a = story.audio;
+  assert.ok(a && a.musica && a.effetti, 'story.audio dichiara musica ed effetti');
+
+  // i file dichiarati devono esistere davvero: un nome sbagliato non si vede
+  // giocando (il browser scarica un 404 e resta muto, in silenzio)
+  const inCartella = (cart) => new Set(fs.readdirSync(path.join(ROOT, 'assets', cart)));
+  const musiche = inCartella('music'), effetti = inCartella('sfx');
+  for (const [scena, file] of Object.entries(a.musica)) {
+    assert.ok(story.scenes[scena], `story.audio.musica: la scena ${scena} non esiste`);
+    assert.ok(musiche.has(file), `manca assets/music/${file} (scena ${scena})`);
+  }
+  for (const [quale, file] of Object.entries(a.effetti)) {
+    for (const f of [].concat(file)) {
+      assert.ok(effetti.has(f), `manca assets/sfx/${f} (effetto ${quale})`);
+    }
+  }
+
+  // gli effetti chiamati dal motore devono essere tutti dichiarati, e nessun
+  // effetto deve stare sul tocco che manda avanti il dialogo
+  const motore = fs.readFileSync(path.join(ROOT, 'game', 'engine.js'), 'utf8');
+  for (const m of motore.matchAll(/suona\('([a-z_]+)'/g)) {
+    assert.ok(a.effetti[m[1]], `il motore suona '${m[1]}' ma story.audio.effetti non ce l'ha`);
+  }
+  const dentroStep = motore.split('VN.step = function ()')[1] || '';
+  assert.doesNotMatch(dentroStep.slice(0, 2000), /suona\(/,
+    'nessun suono sul tocco che manda avanti il dialogo: sarebbe un clic ogni due secondi');
+
+  // il peso: la musica arriva mentre si gioca, ma non deve far aspettare
+  for (const f of musiche) {
+    if (!f.endsWith('.mp3')) continue;
+    const kb = fs.statSync(path.join(ROOT, 'assets/music', f)).size / 1024;
+    assert.ok(kb < 2200, `assets/music/${f} pesa ${Math.round(kb)} KB: troppo per un sottofondo`);
+  }
+  for (const f of effetti) {
+    if (!f.endsWith('.mp3')) continue;
+    const kb = fs.statSync(path.join(ROOT, 'assets/sfx', f)).size / 1024;
+    assert.ok(kb < 600, `assets/sfx/${f} pesa ${Math.round(kb)} KB: un effetto arriva in ritardo`);
+  }
+
+  // il selettore dei volumi e la sua parte di pagina
+  const pagina = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  for (const id of ['audiobtn', 'audiowrap', 'volmus', 'volsfx', 'audiomuto', 'audiook']) {
+    assert.ok(pagina.includes(`id="${id}"`), `manca #${id}: il selettore dei volumi non si monta`);
+  }
+  assert.match(motore, /AUDIO_CHIAVE = 'fl_audio'/,
+    'i volumi stanno in un posto loro, non nel salvataggio della partita');
+}
+
 /* ---------- il cartello di attesa sul dominio pubblico ---------- */
 {
   const src = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');

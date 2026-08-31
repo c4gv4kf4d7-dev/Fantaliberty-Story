@@ -1,19 +1,13 @@
 # Musica
 
-I brani lunghi che suonano sotto una scena e si ripetono: lobby, palco, quiz,
-countdown, titoli di coda.
+Un brano per momento del gioco, in loop sotto la scena. Quale suona dove sta in
+`story.audio.musica` dentro `game/story.json`: la chiave e' l'id della scena.
 
-Nomi: `mus_<dove>.mp3` — `mus_lobby.mp3`, `mus_palco.mp3`, `mus_quiz.mp3`.
+I file qui dentro sono gia' passati da `tools/prepara_audio.py`: MP3 mono a
+80 kbps, volume pareggiato a -20 LUFS, niente copertina. Gli originali (WAV e
+MP3 da 42 MB in tutto) sono nella storia di Git, non nel repo di oggi.
 
-Cosa serve sapere prima di caricare:
-
-- **MP3 o M4A/AAC.** L'OGG su iPhone non parte, e il gioco si prova sul
-  telefono. Se hai solo OGG o WAV, va convertito.
-- **Leggeri.** Un brano di sottofondo sta sotto il mezzo megabyte: e' roba che
-  si scarica mentre si gioca, e il gioco non deve aspettarla. Mono a 96 kbps
-  basta e avanza per una musichetta di sottofondo.
-- **Il giro deve chiudersi.** Se il brano si ripete, la fine e l'inizio devono
-  combaciare: se non combaciano si sente un colpo a ogni ripetizione. Si
-  misura, e si sistema tagliando.
-
-Non c'e' ancora niente qui dentro: la cartella aspetta i file.
+Per aggiungerne uno: mettilo qui col suo nome, aggiungilo alla mappa in
+`tools/prepara_audio.py`, lancia `python3 tools/prepara_audio.py` e collegalo
+alla scena in `story.json`. `npm test` controlla che il file dichiarato esista
+davvero e che non sia troppo pesante.
