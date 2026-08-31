@@ -3696,7 +3696,7 @@
       next();
     };
     el.inputform.classList.add('on');
-    suona('tastiera_intro', 0.7);       // il terminale si accende
+    suona('tastiera_intro', 0.42);      // il terminale si accende (volume -40%)
     setTimeout(function () { try { el.ti.focus(); } catch (e) {} }, 80);
   }
 
@@ -3775,9 +3775,7 @@
      I quattro numeri sono il vetro dello schermo misurato su bg_macintosh
      (852x1846: x 252-577, y 792-1025), rientrato di poco per non far toccare
      il testo alla cornice. */
-  // h ridotta del 40% (era 0.108): il pannello del terminale era troppo alto
-  // sul vetro del Mac.
-  var SCHERMO_FONDALE = { x: 0.305, y: 0.437, w: 0.358, h: 0.0648 };
+  var SCHERMO_FONDALE = { x: 0.305, y: 0.437, w: 0.358, h: 0.108 };
 
   function ancoraTerminale() {
     var s = el && el.screen;
@@ -4160,7 +4158,7 @@
     var ora = Date.now();
     if (ora - ultimoTasto < 140) return;
     ultimoTasto = ora;
-    suona('tastiera', 0.45);
+    suona('tastiera', 0.27);   // volume -40%
   }
 
   /* Il primo tocco della persona sblocca l'audio: prima di quello il browser
