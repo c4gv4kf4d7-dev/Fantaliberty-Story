@@ -9,7 +9,7 @@
      il browser continua a chiedere la versione vecchia degli asset -->
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <meta name="description" content="FantaLiberty: visual novel interattiva. Steve Jobs Theater, WWDC 26.">
-<link rel="stylesheet" href="./game/engine.css?v=97">
+<link rel="stylesheet" href="./game/engine.css?v=98">
 </head>
 <body>
 <div id="stage">
@@ -272,7 +272,7 @@
   </div>
 </div>
 
-<script src="./game/engine.js?v=97"></script>
+<script src="./game/engine.js?v=98"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -290,7 +290,10 @@
   var DOMINI_PUBBLICI = ['fantaliberty.com', 'www.fantaliberty.com'];
   var APERTURA = Date.parse('2026-09-02T00:00:00+02:00');
   function siApre() {
-    if (params.has('apri')) return true;                 // ?apri -> scavalca il cartello
+    // Le porte di servizio scavalcano il cartello: ?apri, il menu di sviluppo
+    // e il salto a una scena servono a provare il gioco anche dal dominio
+    // pubblico, che e' l'unico indirizzo che l'utente ha in mano.
+    if (params.has('apri') || params.has('dev') || params.get('scene')) return true;
     if (DOMINI_PUBBLICI.indexOf(location.hostname) < 0) return true;
     return Date.now() >= APERTURA;
   }
@@ -359,7 +362,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=97', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=98', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e

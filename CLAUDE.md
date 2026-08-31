@@ -596,8 +596,10 @@ niente immagine da scaricare. Tre cose da sapere:
 2. **Vale solo su `fantaliberty.com` / `www.fantaliberty.com`** (elenco
    `DOMINI_PUBBLICI` in `index.html`). L'indirizzo di sviluppo (github.io) e la
    build offline da `file://` restano aperti — se qualcuno allarga l'elenco,
-   blocca anche il proprio modo di provare il gioco. `?apri` scavalca il
-   cartello.
+   blocca anche il proprio modo di provare il gioco. Scavalcano il cartello
+   `?apri`, `?dev` e `?scene=` — l'utente il gioco lo prova dal dominio
+   pubblico, non dall'indirizzo github.io: chi tocca quel controllo non deve
+   togliere quelle porte.
 3. **Si toglie da solo** a `APERTURA` (2 settembre 2026, ora italiana): non
    serve un altro deploy per aprire il sito, ma spostare la data e' una
    modifica sola in `index.html`.

@@ -2701,8 +2701,10 @@ function apriMoltiplicatori(stato, extra) {
   const data = /var APERTURA = Date.parse\('([^']+)'\)/.exec(src);
   assert.ok(data && !Number.isNaN(Date.parse(data[1])),
     'il cartello si toglie da solo a una data valida');
-  assert.ok(src.includes("params.has('apri')"),
-    'resta una scorciatoia per vedere il gioco sul dominio pubblico');
+  for (const porta of ["params.has('apri')", "params.has('dev')", "params.get('scene')"]) {
+    assert.ok(src.includes(porta),
+      `il cartello lascia passare ${porta}: sono le porte di servizio sul dominio pubblico`);
+  }
   assert.ok(/id="gate"[^>]*hidden/.test(src),
     'il cartello parte nascosto: lo accende solo il controllo sul dominio');
 }
