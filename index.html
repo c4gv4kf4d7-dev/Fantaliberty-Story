@@ -22,7 +22,7 @@
   gtag('js', new Date());
   gtag('config', 'G-SYX1RZLNNE');
 </script>
-<link rel="stylesheet" href="./game/engine.css?v=104">
+<link rel="stylesheet" href="./game/engine.css?v=106">
 </head>
 <body>
 <div id="stage">
@@ -262,9 +262,9 @@
   <div id="audiowrap">
     <div id="audiobox">
       <h2>AUDIO</h2>
-      <label for="volmus">Musica</label>
-      <input id="volmus" type="range" min="0" max="100" step="5" value="60">
-      <label for="volsfx">Effetti</label>
+      <label for="volmus">Musica <span id="volmusval">30%</span></label>
+      <input id="volmus" type="range" min="0" max="100" step="5" value="30">
+      <label for="volsfx">Effetti <span id="volsfxval">80%</span></label>
       <input id="volsfx" type="range" min="0" max="100" step="5" value="80">
       <button id="audiomuto">SILENZIA TUTTO</button>
       <button id="audiook">CHIUDI</button>
@@ -301,8 +301,8 @@
   </div>
 </div>
 
-<script src="./game/analytics.js?v=104"></script>
-<script src="./game/engine.js?v=104"></script>
+<script src="./game/analytics.js?v=106"></script>
+<script src="./game/engine.js?v=106"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -392,7 +392,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=104', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=106', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e

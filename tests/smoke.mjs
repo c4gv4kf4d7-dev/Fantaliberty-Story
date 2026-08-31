@@ -2797,6 +2797,30 @@ function apriMoltiplicatori(stato, extra) {
   }
   assert.match(motore, /AUDIO_CHIAVE = 'fl_audio'/,
     'i volumi stanno in un posto loro, non nel salvataggio della partita');
+
+  // la musica e' un tappeto sotto la voce, non un brano che si ascolta
+  const partenza = /var audio = \{ mus: ([0-9.]+)/.exec(motore);
+  assert.ok(partenza && Number(partenza[1]) <= 0.35,
+    `la musica parte a ${partenza && partenza[1]}: e' un sottofondo, deve stare indietro`);
+  assert.match(motore, /AUDIO_VERSIONE = \d+/,
+    'la taratura dei volumi ha una versione: senza, chi ha gia' + "'" + ' giocato non vede il cambio');
+
+  // le varianti servono a non sentire due volte di fila lo stesso file
+  for (const k of ['scelta', 'applausi', 'tastiera']) {
+    assert.ok(Array.isArray(a.effetti[k]) && a.effetti[k].length >= 2,
+      `${k} deve avere piu' varianti: lo stesso file due volte di fila si sente`);
+  }
+  assert.match(motore, /ultimoSfx\[quale\]/,
+    'la variante appena usata non si ripesca subito');
+
+  // le scene che meritano lo stacco di transizione esistono davvero
+  for (const scena of a.transizioni || []) {
+    assert.ok(story.scenes[scena], `story.audio.transizioni: la scena ${scena} non esiste`);
+  }
+
+  // il terminale si scrive a macchina: il tocco secco non e' il suo suono
+  assert.match(motore, /el\.ti\.oninput = function \(\) \{\n\s*tastiera\(\);/,
+    'il campo del terminale suona come una tastiera mentre si scrive');
 }
 
 /* ---------- il cartello di attesa sul dominio pubblico ---------- */

@@ -2482,10 +2482,10 @@
     "bottone": "HO CAPITO"
   },
   "audio": {
-    "_nota": "Musica per scena ed effetti per momento. I nomi sono i file dentro assets/music e assets/sfx. La musica non riparte se la scena nuova chiede lo stesso brano: cambia solo quando cambia davvero, con una dissolvenza. Un effetto sta SOLO sui momenti che contano: nessun suono sul tocco che manda avanti il dialogo.",
+    "_nota": "Musica per scena ed effetti per momento. Il motore chiama una CHIAVE, non un file: un suono si cambia qui senza toccare il codice. Una chiave con un elenco pesca a caso, cosi' due volte di fila non suonano uguali. Regola che vale su tutto: nessun effetto sul tocco che manda avanti il dialogo — si legge in silenzio, e il suono arriva solo dove succede qualcosa.",
     "fade": {
-      "entrata": 1200,
-      "uscita": 900
+      "entrata": 1400,
+      "uscita": 1000
     },
     "musica": {
       "arrivo": "mus_atto1.mp3",
@@ -2493,7 +2493,7 @@
       "registrazione": "mus_atto1.mp3",
       "badge": "mus_atto1.mp3",
       "lobby": "mus_lobby.mp3",
-      "aggancio": "mus_atto1.mp3",
+      "aggancio": "mus_aggancio.mp3",
       "camerino": "mus_camerino.mp3",
       "quinte": "mus_camerino.mp3",
       "keynote": "mus_previsioni.mp3",
@@ -2507,30 +2507,51 @@
       "countdown": "mus_lobby_finale.mp3"
     },
     "effetti": {
-      "logo": "sfx_logo.mp3",
-      "scrittura": "sfx_typing_intro.mp3",
-      "campo": "sfx_enter.mp3",
-      "scelta": "sfx_scelta.mp3",
+      "scelta": [
+        "sfx_scelta.mp3",
+        "sfx_scelta2.mp3"
+      ],
       "apri": "sfx_apri.mp3",
       "chiudi": "sfx_chiudi.mp3",
+      "tap": "sfx_tap.mp3",
       "transizione": "sfx_transizione.mp3",
+      "tastiera": [
+        "sfx_typing.mp3",
+        "sfx_typing2.mp3"
+      ],
+      "tastiera_intro": "sfx_typing_intro.mp3",
+      "invio": "sfx_enter.mp3",
+      "folla_lobby": "sfx_folla_lobby.mp3",
+      "ritorno_lobby": "sfx_ritorno_lobby.mp3",
       "notifica": "sfx_notifica.mp3",
+      "traguardo": "sfx_traguardo.mp3",
+      "previsioni_inviate": "sfx_previsioni_inviate.mp3",
       "applausi": [
-        "sfx_applausi1.mp3",
         "sfx_applausi2.mp3",
         "sfx_applausi3.mp3",
         "sfx_applausi4.mp3",
         "sfx_applausi5.mp3"
       ],
-      "applausi_lungo": "sfx_applausi_lungo2.mp3",
+      "applausi_apertura": "sfx_applausi1.mp3",
+      "applausi_lungo": [
+        "sfx_applausi_lungo.mp3",
+        "sfx_applausi_lungo2.mp3"
+      ],
       "delusione": "sfx_delusione.mp3",
       "quiz_giusta": "sfx_quiz_giusta.mp3",
       "quiz_sbagliata": "sfx_errore.mp3",
       "quiz_livello": "sfx_quiz_livello.mp3",
       "quiz_fallito": "sfx_quiz_fallito.mp3",
-      "previsioni_inviate": "sfx_previsioni_inviate.mp3",
-      "ritorno_lobby": "sfx_ritorno_lobby.mp3",
-      "traguardo": "sfx_traguardo.mp3"
-    }
+      "logo": "sfx_logo.mp3"
+    },
+    "transizioni": [
+      "lobby",
+      "aggancio",
+      "camerino",
+      "quinte",
+      "keynote",
+      "finale",
+      "countdown"
+    ]
   }
 }
