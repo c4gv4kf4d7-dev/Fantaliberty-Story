@@ -215,11 +215,15 @@ function controllaHub(id, st) {
       assert.ok(c.bodies?.[body], `scena ${id}, zona ${z.id}: posa "${body}" non dichiarata per ${z.who}`);
     }
     for (const h of z.hotspots || []) {
-      assert.ok(h.goto || h.say || h.set || h.apre,
+      assert.ok(h.goto || h.say || h.set || h.apre || h.quadro,
         `scena ${id}, zona ${z.id}: hotspot "${h.label}" non fa niente`);
       // "apre" mostra un pannello da leggere sopra la lobby: dev'esserci
       if (h.apre) assert.ok(story[h.apre],
         `scena ${id}: hotspot apre "${h.apre}", che non e' un blocco di story.json`);
+      // "quadro" apre un'immagine sola (i vincitori della Hall of Fame): idem,
+      // dev'essere un fondale dichiarato, altrimenti si apre un riquadro vuoto
+      if (h.quadro) assert.ok(story.assets.bg[h.quadro],
+        `scena ${id}: hotspot quadro "${h.quadro}" non dichiarato in assets.bg`);
       if (h.goto) { assert.ok(story.scenes[h.goto], `scena ${id}: hotspot verso "${h.goto}" inesistente`); usciteTotali++; }
       if (h.richiede) assert.equal(h.richiede, 'swipe',
         `scena ${id}: "richiede" accetta solo "swipe", non "${h.richiede}"`);
@@ -722,7 +726,7 @@ assert.equal(VN.state.sfacciato, false);
   VN.state.genere = 'f';
   const dots = () => [...$('cdots').querySelectorAll('.cdot')];
 
-  assert.match(txt(), /Scegli il tuo stile/, 'Susan apre la scena');
+  assert.match(txt(), /Scegli uno stile/, 'Susan apre la scena');
   assert.ok($('npcBody').getAttribute('src').includes('chr_susan_guarda_orologio'));
   VN.step();
 
@@ -807,7 +811,7 @@ assert.equal(VN.state.sfacciato, false);
   assert.equal($('avatar').classList.contains('on'), false, 'ancora nascosto: siamo su duo_spinta');
   assert.ok($('npcBody').getAttribute('src').includes('scene_showman_push'),
     'la posa "duo_spinta_{stile}" si risolve sullo stile scelto');
-  assert.match(txt(), /Non guardare in alto/);
+  assert.equal(txt(), 'Vai.', 'la spinta finale, senza la battuta sulle luci');
   VN.step();
 
   // Susan (nella coppia) esce di scena col push; l'avatar torna da solo,
@@ -861,15 +865,15 @@ assert.equal(VN.state.sfacciato, false);
   assert.ok(story.regia.apertura.includes(txt()), 'la battuta d\'apertura viene dal pool');
   VN.step();
 
-  // [S5.INTERMEZZO.R1/R2]: due scommesse di regia prima di cominciare
+  // [S5.INTERMEZZO.R1]: una sola scommessa di regia prima di cominciare — la
+  // seconda (la luce per Craig) e' stata tolta per non allungare l'apertura
   assert.match(txt(), /chi entra per primo/, 'primo intermezzo');
   assert.equal($('nametxt').textContent, 'Susan');
   scegli(1);                                                   // John Ternus, val 2
   assert.equal(VN.state.punti, 2, 'gli intermezzi valgono il "val" secco');
-  assert.match(txt(), /la luce per Craig/, 'secondo intermezzo');
-  scegli(0);                                                   // val 3
-  assert.equal(VN.state.punti, 5);
-  assert.equal(VN.state.intermezzi, 2, 'gli intermezzi si consumano in ordine');
+  assert.equal(VN.state.intermezzi, 1, 'gli intermezzi si consumano in ordine');
+  assert.equal(banca.intermezzi.some((i) => /Craig/.test(i.q)), false,
+    'la domanda su Craig non e\' piu\' nella banca');
 
   // [S5.HUB]: tre macroargomenti, nessuno ancora fatto
   assert.equal(VN.sceneId, 'argomenti');
@@ -1204,7 +1208,7 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
     assert.equal(Object.keys(VN.state.picks[k].extra).length, banca.categorie[k].n_extra_da_pescare,
       `${k}: le facoltative pescate non sono state giocate tutte`);
   }
-  assert.equal(VN.state.intermezzi, 5, 'cinque intermezzi: due all\'inizio e uno per macroargomento');
+  assert.equal(VN.state.intermezzi, 4, 'quattro intermezzi: uno all\'inizio e uno per macroargomento');
   assert.ok(VN.state.punti > 0, 'il punteggio si accumula');
   // il sacchetto degli eventi non si ripete: ogni evento al massimo una volta
   assert.ok(VN.state.eventi_sacchetto, 'il sacchetto degli eventi e\' stato creato');
@@ -1378,7 +1382,8 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   // uno swipe: si passa alla Hall of Fame
   $('hnext').onclick({ stopPropagation() {} });
   assert.ok(dots()[1].classList.contains('sel'), 'seconda zona');
-  assert.ok($('bg').getAttribute('src').includes('hall_of_fame'), 'fondale della zona 2');
+  assert.ok($('bg').getAttribute('src').includes('halloffame_frontale'),
+    'fondale della zona 2: la parete con i tre quadri');
   assert.match(txt(), /Hall of Fame/);
   assert.ok($('npcBody').getAttribute('src').includes('chr_francesca_presenta'),
     'Francesca c\'e\' anche qui, e presenta la parete');
@@ -1388,10 +1393,25 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.ok($('bg').classList.contains('vaiSx'), 'il fondale scorre');
   assert.equal($('npc').classList.contains('vaiSx'), false, 'il personaggio no');
   assert.ok($('npc').classList.contains('in'), 'ed entra con la sua animazione');
-  // l'hotspot che commenta e basta non fa uscire dall'hub
-  spots()[0].onclick({ stopPropagation() {} });
-  assert.equal(VN.sceneId, 'lobby');
-  assert.match(txt(), /albo d'oro/);
+  /* La Hall of Fame e' una piccola galleria: tre quadri, uno per vincitore, e
+     ognuno si apre per conto suo. Guardarli non e' una scena e non deve toccare
+     la partita, come il regolamento. */
+  assert.equal(spots().length, 3, 'tre quadri, uno per edizione');
+  const primaDeiQuadri = JSON.stringify(VN.state);
+  spots()[1].onclick({ stopPropagation() {} });
+  assert.equal(VN.sceneId, 'lobby', 'aprire un quadro non cambia scena');
+  assert.ok($('quadrowrap').classList.contains('on'), 'si apre la visuale del quadro');
+  assert.ok($('quadroImg').getAttribute('src').includes('halloffame_michael'),
+    'e dentro c\'e\' il vincitore che ho toccato, lui solo');
+  $('quadrochiudi').onclick({ stopPropagation() {} });
+  assert.equal($('quadrowrap').classList.contains('on'), false, 'si chiude');
+  assert.ok($('hub').classList.contains('on'), 'e si torna nella Hall of Fame');
+  spots()[2].onclick({ stopPropagation() {} });
+  assert.ok($('quadroImg').getAttribute('src').includes('halloffame_nicola'),
+    'ogni quadro ha la sua visuale');
+  $('quadrochiudi').onclick({ stopPropagation() {} });
+  assert.equal(JSON.stringify(VN.state), primaDeiQuadri,
+    'guardare i quadri non tocca la partita');
 
   // zona 4: Peter dorme finche' i pronostici non sono chiusi
   $('hnext').onclick({ stopPropagation() {} });
@@ -1431,11 +1451,12 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.ok($('boxwrap').classList.contains('in'), 'le frecce restano a schermo');
   assert.ok($('hubnav').classList.contains('on'), 'la barra delle zone e\' accesa');
   assert.equal($('npc').classList.contains('in'), false, 'Francesca non e\' piu\' in scena');
-  // ma se tocchi qualcosa, rientra e risponde
+  // ...e i quadri restano guardabili anche nella zona muta: non serve una
+  // battuta per aprirli, li apre il tocco
   spots()[0].onclick({ stopPropagation() {} });
-  assert.ok($('npc').classList.contains('in'), 'al tocco il personaggio rientra');
-  assert.equal($('boxwrap').classList.contains('muto'), false, 'e il fumetto torna');
-  assert.match(txt(), /albo d'oro/);
+  assert.ok($('quadrowrap').classList.contains('on'), 'il quadro si apre lo stesso');
+  assert.ok($('quadroImg').getAttribute('src').includes('halloffame_fabio'));
+  $('quadrochiudi').onclick({ stopPropagation() {} });
   $('hprev').onclick({ stopPropagation() {} });
   assert.match(txt(), /Dietro questa tenda/, 'e sulla tenda la battuta si ripete');
 
@@ -1893,7 +1914,7 @@ for (const [cat, c] of Object.entries(domande.categorie)) {
 assert.equal(idsDomande.size, 29, '29 domande: 12 core + 17 facoltative');
 assert.equal(nOpzioni, 79, '79 opzioni in totale');
 assert.equal(nBattute, 316, '316 battute: una per opzione per ciascuno dei 4 stili');
-assert.equal(domande.intermezzi.length, 5, '5 intermezzi di regia fissi');
+assert.equal(domande.intermezzi.length, 4, '4 intermezzi di regia fissi');
 assert.equal(Object.keys(domande.eventi_personali).length, 4, 'un evento personale per stile');
 for (const s of STILI) assert.ok(domande.eventi_personali[s], `manca l'evento personale di ${s}`);
 
@@ -2138,6 +2159,30 @@ function giocaLivello(liv, stile, giuste) {
   assert.equal($('txt').textContent, stepQ.text, 'e Peter chiede ancora da dove cominciare');
 }
 
+/* 10d-ter. il tentativo si paga entrando, non uscendo: chi molla a meta' non se
+   lo ritrova intatto. Prima il conteggio stava in fondo al livello e il
+   salvataggio era fermo alla griglia, quindi bastava chiudere l'app davanti a
+   una domanda andata male. */
+{
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'quiz' });
+  VN.state.stile = 'ingegnere'; VN.state.locked = true; VN.state.quiz_visto = true;
+  VN.step();
+  cellePerLivello()[0].onclick({ stopPropagation() {} });
+  assert.equal(VN.state.quiz.base.tentativi, 1, 'entrare nel livello costa il tentativo');
+  assert.equal(VN.readSave().state.quiz.base.tentativi, 1,
+    'ed e\' gia\' nel salvataggio: chiudere l\'app adesso non lo restituisce');
+
+  // due risposte e via, come chi se ne va a meta'
+  rispondiQuiz(false); rispondiQuiz(false);
+  assert.equal(VN.state.quiz.base.tentativi, 1, 'il tentativo resta uno solo, non due');
+
+  // ripartendo da quel salvataggio, il livello ha davvero un tentativo in meno
+  VN.boot(story, { speed: 0, banca, quiz });
+  [...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // Riprendi
+  assert.equal(VN.state.quiz.base.tentativi, 1, 'e al rientro il conto e\' quello');
+}
+
 /* 10e. il perk dell'hawaiano: il primo fallimento di ogni livello non conta */
 {
   giocaLivello('base', 'hawaiano', { fn: () => false });
@@ -2192,15 +2237,29 @@ function giocaLivello(liv, stile, giuste) {
   assert.match($('qinfo').textContent, /2\/5 · giuste 0\/3/, 'la domanda scaduta non fa punto');
 }
 
+/* Niente piu' battute attorno al pannello dei moltiplicatori: si apre gia' al
+   primo giro di step, quindi la banca dev'esserci PRIMA. Ci si arriva da un
+   salvataggio, che e' poi la strada vera — il giocatore assegna il giorno del
+   keynote, riaprendo il gioco.
+   "locked" resta false apposta: con i pronostici gia' chiusi la ripresa porta
+   al countdown, e al pannello serve solo la banca. */
+function apriMoltiplicatori(stato, extra) {
+  VN.clearSave();
+  dom.window.localStorage.setItem('fl_nexus_save_v1', JSON.stringify({
+    v: story.meta.version, scene: 'moltiplicatori', i: 0,
+    state: { nome: 'Franca', genere: 'f', stile: 'showman', locked: false,
+             picks: {}, quiz: {}, moltiplicatori: null, ...stato }
+  }));
+  VN.boot(story, { speed: 0, banca, quiz, ...(extra || {}) });
+  [...$('choices').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // Riprendi
+  assert.equal(VN.sceneId, 'moltiplicatori');
+}
+
 /* 10h. i moltiplicatori [S8.FINALE]: si distribuisce tutto o non si conferma ---- */
 {
-  VN.clearSave();
-  VN.boot(story, { speed: 0, banca, quiz, scene: 'moltiplicatori' });
-  VN.state.stile = 'showman';
-  VN.state.locked = true;
-  VN.state.mult_bank = 0.3;
-  VN.step(); VN.step();                        // le due battute di Peter
-  assert.ok($('multwrap').classList.contains('on'), 'la schermata dei moltiplicatori e\' aperta');
+  apriMoltiplicatori({ mult_bank: 0.3 });
+  assert.ok($('multwrap').classList.contains('on'),
+    'la schermata dei moltiplicatori si apre subito, senza spiegazioni');
 
   const righe = () => [...$('multrighe').querySelectorAll('.mriga')];
   assert.equal(righe().length, 3, 'una riga per macroargomento');
@@ -2231,20 +2290,14 @@ function giocaLivello(liv, stile, giuste) {
   [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // confermo
   assert.deepEqual({ ...VN.state.moltiplicatori }, { iphone: 0.3, watch: 0, altro: 0 },
     'i moltiplicatori sono scritti nello stato');
-  assert.match($('txt').textContent, /hai puntato tutto sulla categoria/,
-    'e Peter ha da ridire, come da script');
-  VN.step();
-  VN.step();
-  assert.equal(VN.sceneId, 'countdown', 'finito il quiz si torna al countdown');
+  assert.equal(VN.sceneId, 'countdown',
+    'confermato, si va dritti al countdown: nessuna scena di commento');
 }
 
 /* 10i. gia' assegnati: la schermata resta consultabile, ma non si tocca ---- */
 {
   VN.clearSave();
-  VN.boot(story, { speed: 0, banca, quiz, scene: 'moltiplicatori' });
-  VN.state.mult_bank = 0.3;
-  VN.state.moltiplicatori = { iphone: 0.2, watch: 0.1, altro: 0 };
-  VN.step(); VN.step();
+  apriMoltiplicatori({ mult_bank: 0.3, moltiplicatori: { iphone: 0.2, watch: 0.1, altro: 0 } });
   const righe = [...$('multrighe').querySelectorAll('.mriga')];
   assert.equal(righe[0].querySelector('.mval').textContent, '×1.20', 'rilegge quello che c\'e\'');
   assert.ok(righe[0].querySelector('.mpiu').disabled, 'i tasti sono spenti');
@@ -2259,10 +2312,9 @@ function giocaLivello(liv, stile, giuste) {
   VN.clearSave();
   let spedito = null;
   window.fetch = (url, opt) => { spedito = JSON.parse(opt.body); return Promise.resolve({ ok: true }); };
-  VN.boot(story, { speed: 0, banca, quiz, backend: { url: 'https://esempio', chiave: 'x' }, scene: 'moltiplicatori' });
-  VN.state.mult_bank = 0.15;
-  VN.state.quiz = { base: { passato: true, tentativi: 0, pool: 0, seconda: false, vinto: 0.1 } };
-  VN.step(); VN.step();
+  apriMoltiplicatori({ mult_bank: 0.15,
+    quiz: { base: { passato: true, tentativi: 1, pool: 0, seconda: false, vinto: 0.1 } } },
+    { backend: { url: 'https://esempio', chiave: 'x' } });
   const righe = [...$('multrighe').querySelectorAll('.mriga')];
   for (let k = 0; k < 3; k++) righe[2].querySelector('.mpiu').onclick({ stopPropagation() {} });
   $('multok').onclick({ stopPropagation() {} });

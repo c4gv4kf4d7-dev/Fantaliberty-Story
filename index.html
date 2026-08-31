@@ -9,7 +9,7 @@
      il browser continua a chiedere la versione vecchia degli asset -->
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <meta name="description" content="FantaLiberty: visual novel interattiva. Steve Jobs Theater, WWDC 26.">
-<link rel="stylesheet" href="./game/engine.css?v=81">
+<link rel="stylesheet" href="./game/engine.css?v=82">
 </head>
 <body>
 <div id="stage">
@@ -197,6 +197,14 @@
     </div>
   </div>
 
+  <!-- un quadro della Hall of Fame. Si apre da solo, uno per volta: le tre
+       si guardano uno alla volta, non tutti insieme dopo il tocco.
+       Non e' una scena e non tocca la partita, come il regolamento. -->
+  <div id="quadrowrap">
+    <img id="quadroImg" alt="">
+    <button id="quadrochiudi" class="ch">Chiudi</button>
+  </div>
+
   <!-- la card da salvare: composta su una canvas e mostrata come immagine, cosi'
        su iPhone si tiene premuto per salvarla (il link di download li' apre solo
        una scheda) -->
@@ -223,7 +231,7 @@
   </div>
 </div>
 
-<script src="./game/engine.js?v=81"></script>
+<script src="./game/engine.js?v=82"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -292,7 +300,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=81', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=82', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e

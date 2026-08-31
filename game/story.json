@@ -36,7 +36,11 @@
       "finale_porta_illuminata": "bg/bg_finale_porta_illuminata.webp",
       "finale_porta_vicino": "bg/bg_finale_porta_vicino.webp",
       "countdown_nero": "bg/bg_countdown_nero.webp",
-      "finale_porta_pollice": "bg/bg_finale_porta_pollice.webp"
+      "finale_porta_pollice": "bg/bg_finale_porta_pollice.webp",
+      "lobby_z2_hall_of_fame_parete": "bg/bg_halloffame_frontale.webp",
+      "halloffame_fabio": "bg/bg_halloffame_fabio.webp",
+      "halloffame_michael": "bg/bg_halloffame_michael.webp",
+      "halloffame_nicola": "bg/bg_halloffame_nicola.webp"
     },
     "props": {
       "mac_terminale": "props/prop_mac_terminale.webp",
@@ -877,7 +881,7 @@
         {
           "t": "say",
           "who": "susan",
-          "text": "Scegli il tuo stile e cambiati. Veloce. Ho una prova generale da salvare e tu sei ufficialmente il mio problema numero due."
+          "text": "Scegli uno stile e cambiati. Veloce. Ho una prova generale da salvare e tu sei il problema numero due."
         },
         {
           "t": "carosello",
@@ -976,7 +980,7 @@
         {
           "t": "say",
           "who": "susan",
-          "text": "Le luci sono calde. Non guardare in alto. Vai."
+          "text": "Vai."
         },
         {
           "t": "hide"
@@ -1020,7 +1024,7 @@
           "t": "say",
           "who": "susan",
           "incuffia": true,
-          "text": "Le luci sono calde. Non guardare in alto.\nE soprattutto, se qualcosa va storto... continua a parlare."
+          "text": "Il pubblico e' caldo. Se qualcosa va storto... tu continua a parlare."
         },
         {
           "t": "say",
@@ -1057,11 +1061,6 @@
           "who": "susan",
           "incuffia": true,
           "pool": "apertura"
-        },
-        {
-          "t": "intermezzo",
-          "who": "susan",
-          "incuffia": true
         },
         {
           "t": "intermezzo",
@@ -1161,13 +1160,13 @@
           "t": "say",
           "who": "susan",
           "incuffia": true,
-          "text": "Ultimo giro. Da adesso non si torna indietro. Prenditi il tempo che vuoi.\nNessuno ha fretta."
+          "text": "Ultimo giro. Da qui non si torna indietro. Prenditi il tuo tempo."
         },
         {
           "t": "say",
           "who": "susan",
           "incuffia": true,
-          "text": "Io si'. Ma fai con calma."
+          "text": "Io invece no. Ma fai con calma."
         },
         {
           "t": "recap",
@@ -1214,7 +1213,7 @@
         {
           "t": "say",
           "who": "francesca",
-          "text": "Eccoti, {NOME}. Io sono Francesca, e da qui in poi la lobby e' tua: girala tutta, tocca quello che ti incuriosisce.",
+          "text": "Eccoti, {NOME}. Io sono Francesca, e questa e' la lobby: girala tutta, tocca cio' che ti incuriosisce.",
           "se": {
             "var": "locked",
             "is": false
@@ -1241,7 +1240,7 @@
         {
           "t": "say",
           "who": "francesca",
-          "text": "Quando sei {g:pronto|pronta} vai pure verso la tenda ed entra. Da quel momento... sei a teatro.",
+          "text": "Quando sei pront{g:o|a}, vai verso la tenda. Da li' in poi... sei a teatro.",
           "se": {
             "var": "locked",
             "is": false
@@ -1282,7 +1281,7 @@
         {
           "t": "say",
           "who": "francesca",
-          "text": "Hai fatto le tue previsioni. Adesso non resta che aspettare il keynote e scoprire quanto eri lontan{g:o|a} dalla realta'.",
+          "text": "Hai completato le tue previsioni. Adesso aspettiamo il keynote e scopriamo quanto ci hai preso.",
           "se": [
             {
               "var": "locked",
@@ -1298,21 +1297,6 @@
           "t": "say",
           "who": "francesca",
           "text": "Ma non abbiamo finito.",
-          "se": [
-            {
-              "var": "locked",
-              "is": true
-            },
-            {
-              "var": "post_lobby_visto",
-              "is": false
-            }
-          ]
-        },
-        {
-          "t": "say",
-          "who": "francesca",
-          "text": "Puoi ancora mettere alla prova quello che sai sul mondo Apple.",
           "se": [
             {
               "var": "locked",
@@ -1342,7 +1326,7 @@
         {
           "t": "say",
           "who": "francesca",
-          "text": "Vai da Peter e prova a rispondere ai suoi quiz.",
+          "text": "Vai da Peter e mettiti alla prova con i suoi quiz sul mondo Apple.",
           "se": [
             {
               "var": "locked",
@@ -1357,7 +1341,7 @@
         {
           "t": "say",
           "who": "francesca",
-          "text": "Ogni risposta giusta puo' aiutarti a moltiplicare i punti delle tue previsioni.",
+          "text": "Le risposte giuste possono moltiplicare i punti delle tue previsioni.",
           "se": [
             {
               "var": "locked",
@@ -1372,7 +1356,7 @@
         {
           "t": "say",
           "who": "francesca",
-          "text": "Quindi si', conoscere tutti quei dettagli inutilmente specifici potrebbe finalmente tornarti utile.",
+          "text": "Quindi si', quei dettagli inutilmente specifici potrebbero finalmente servirti.",
           "se": [
             {
               "var": "locked",
@@ -1467,24 +1451,44 @@
             },
             {
               "id": "hall_of_fame",
-              "bg": "lobby_z2_hall_of_fame",
+              "bg": "lobby_z2_hall_of_fame_parete",
               "who": "francesca",
               "body": "presenta",
-              "say": "La Hall of Fame. Ogni anno qualcuno giura di aver 'solo tirato a indovinare'.",
+              "say": "La Hall of Fame. Qui finiscono quelli che per un anno possono dire di averci visto lungo.",
               "hotspots": [
                 {
-                  "label": "LE TARGHE",
-                  "x": "34%",
-                  "y": "48%",
-                  "w": "60%",
-                  "h": "20%",
-                  "who": "francesca",
-                  "say": "Le targhe delle edizioni passate. Vuote, per ora: l'albo d'oro di quest'anno si scrive stasera.",
-                  "react": {
-                    "level": "micro"
-                  }
+                  "label": "FABIO RUSSO, EDIZIONE 2024",
+                  "x": "6%",
+                  "y": "51%",
+                  "w": "28%",
+                  "h": "44%",
+                  "quadro": "halloffame_fabio",
+                  "alt": "Fabio Russo, vincitore FantaLiberty edizione 2024"
+                },
+                {
+                  "label": "MICHAEL MARCHETTI, EDIZIONE 2025",
+                  "x": "36%",
+                  "y": "51%",
+                  "w": "28%",
+                  "h": "44%",
+                  "quadro": "halloffame_michael",
+                  "alt": "Michael Marchetti, vincitore FantaLiberty edizione 2025"
+                },
+                {
+                  "label": "NICOLA STOLFI, EDIZIONE 2026",
+                  "x": "67%",
+                  "y": "51%",
+                  "w": "28%",
+                  "h": "44%",
+                  "quadro": "halloffame_nicola",
+                  "alt": "Nicola Stolfi, vincitore FantaLiberty edizione 2026"
                 }
-              ]
+              ],
+              "_nota": "La zona si guarda come una piccola galleria: la parete con i tre vincitori delle edizioni passate, e ogni quadro si apre per conto suo. Niente seconda battuta prima delle immagini — la zona la presenta Francesca con una riga sola, il resto lo dice il disegno. Due misure da non perdere: \"bgFx\": \"basso\" taglia il fondale in alto invece che in basso (i quadri stanno nella meta' bassa dell'immagine e senza questo finivano sotto il box del dialogo), e le tre aree sono misurate su quella inquadratura li'. Francesca e' piu' piccola e in un angolo apposta: alla misura normale copriva il terzo quadro.",
+              "scala": 0.62,
+              "bottom": "0%",
+              "right": "-8%",
+              "bgFx": "basso"
             },
             {
               "id": "regolamento",
@@ -1601,7 +1605,7 @@
             "var": "quiz_visto",
             "is": false
           },
-          "text": "Hai fatto un keynote intero, ma conosci quelli passati? Vediamo."
+          "text": "Hai fatto il keynote. Ora vediamo quanto conosci quelli passati."
         },
         {
           "t": "say",
@@ -1610,16 +1614,7 @@
             "var": "quiz_visto",
             "is": false
           },
-          "text": "Tre livelli. Due tentativi a testa, e al secondo giro le domande non sono quelle del primo: non provare a impararle sbagliando apposta."
-        },
-        {
-          "t": "say",
-          "who": "peter",
-          "se": {
-            "var": "quiz_visto",
-            "is": false
-          },
-          "text": "E non ti do punti: quelli li hai gia' chiusi. Ti do moltiplicatori. Dove metterli lo decidi tu, il giorno del keynote."
+          "text": "Ci sono 3 livelli di difficolta' e hai due tentativi... sei pront{g:o|a}?"
         },
         {
           "t": "set",
@@ -1672,7 +1667,7 @@
     "moltiplicatori": {
       "title": "S8 — I moltiplicatori",
       "bg": "lobby_z4_quiz_aperta",
-      "_nota": "[S8.FINALE]. Ci si arriva solo dalla griglia, che apre la voce nelle 24 ore prima del keynote. Confermare e' irreversibile come il lock di S6, e come quello fa partire un invio al server.",
+      "_nota": "[S8.FINALE]. Ci si arriva solo dalla griglia, che apre la voce nelle 24 ore prima del keynote. Confermare e' irreversibile come il lock di S6, e come quello fa partire un invio al server. Niente battute attorno al pannello: la meccanica e' spiegata nel regolamento, e ripeterla qui allungava soltanto.",
       "steps": [
         {
           "t": "hide"
@@ -1683,16 +1678,6 @@
           "body": "alza_occhi",
           "height": "44%",
           "bottom": "34%"
-        },
-        {
-          "t": "say",
-          "who": "peter",
-          "text": "Hai fatto punti per giorni e ora devi decidere dove metterli."
-        },
-        {
-          "t": "say",
-          "who": "peter",
-          "text": "Il moltiplicatore vale su tutto quello che hai pronosticato in quel macroargomento. Puoi anche darlo tutto a uno solo: sono affari tuoi."
         },
         {
           "t": "quizmult",
@@ -1708,23 +1693,6 @@
             "si": "Si', confermo",
             "no": "Fammi ripensare"
           }
-        },
-        {
-          "t": "show",
-          "who": "peter",
-          "body": "applauso_ironico",
-          "height": "44%",
-          "bottom": "34%"
-        },
-        {
-          "t": "say",
-          "who": "peter",
-          "text": "Interessante: hai puntato tutto sulla categoria di cui eri meno {g:sicuro|sicura}."
-        },
-        {
-          "t": "say",
-          "who": "peter",
-          "text": "Adesso non resta che guardarlo, il keynote. Buona fortuna, {NOME}."
         }
       ],
       "next": "countdown"
