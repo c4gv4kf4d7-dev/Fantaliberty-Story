@@ -2580,13 +2580,19 @@
   // di JavaScript (0.30000000000000004 dopo due somme).
   function mult(n) { return Number(n || 0).toFixed(2); }
 
-  // [S8.FINALE] si apre solo nelle 24 ore prima del keynote. Senza una data
-  // valida in meta.keynote non si blocca niente: meglio un gioco giocabile che
-  // una schermata irraggiungibile.
+  /* [S8.FINALE] Quando si possono assegnare i moltiplicatori.
+
+     Di default: appena se ne vince uno. La finestra delle ultime ore prima del
+     keynote c'era per fare attesa, ma teneva la schermata spenta per tutti i
+     giorni in cui il quiz si gioca davvero: quello che si era vinto non si
+     poteva mettere da nessuna parte, e la parte finale del quiz non la vedeva
+     nessuno. Se un giorno la si rivuole, basta rimettere "finestra_ore" in
+     game/quiz.json: senza quella chiave non si blocca niente. */
   function finestraMult() {
+    var ore = VN.quiz && VN.quiz.finestra_ore;
+    if (!ore) return true;
     var q = quandoKeynote();
     if (!q) return true;
-    var ore = (VN.quiz && VN.quiz.finestra_ore) || 24;
     return Date.now() >= q - ore * 3600000;
   }
 

@@ -702,13 +702,21 @@ Indice degli id in `docs/indice-domande.md`.
        livelli successivi, la griglia lo dice ("fuori portata") e Peter smette
        di chiedere da dove cominciare
 
-[S8.FINALE] assegnazione moltiplicatori — apribile solo nelle 24h prima del keynote
+[S8.FINALE] assegnazione moltiplicatori — apribile appena se ne vince uno
+  (la finestra delle 24h prima del keynote teneva la schermata spenta per
+   tutti i giorni in cui il quiz si gioca: si torna a metterla scrivendo
+   "finestra_ore" in game/quiz.json, senza quella chiave non blocca niente)
   Asset: bg_lobby_z4_quiz_aperta + chr_peter_alza_occhi
   Nessuna battuta attorno al pannello: la meccanica è nel regolamento e
   ripeterla qui allungava soltanto. Peter è in scena e basta.
   Distribuisci run.mult_bank su iphone/watch/altro. Nessun tetto per categoria
   oltre al totale accumulato. Conferma → run.multipliers, irreversibile.
 ```
+
+Le domande girano fra prodotti, persone, tecnologia, storia, design, software e
+cultura dei keynote: le date restano dove sono iconiche, ma non sono il formato
+dominante. Base = i prodotti che si conoscono, Avanzato = ecosistema e figure
+chiave, Leggenda = storia e curiosita' meno note.
 
 Livelli, soglie, timer, perk e le 44 domande (due pool per livello) in
 `game/quiz.json`.
