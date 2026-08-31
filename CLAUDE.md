@@ -312,6 +312,36 @@ testa va su `height` piccola con `bottom`/`right` per farlo entrare da un
 lato, non a schermo pieno). Il test non se ne accorge, si vede solo negli
 screenshot.
 
+## I punteggi: il conto finale non lo fa il gioco
+
+L'app salva e spedisce la **somma secca** delle risposte (`totale()`), e basta.
+Moltiplicatore pool, moltiplicatori del quiz e bonus si applicano **a mano dopo
+il keynote del 9 settembre**, sui dati arrivati a Supabase: la formula completa
+sta in `docs/script-master.md`, e chi la cambia deve cambiarla li'.
+
+Tre cose tarate insieme (agosto 2026, misurate con
+`tools/simula_partite.py`, che fa giocare 30 giocatori finti):
+
+- **bonus controcorrente +1, non +2.** Con +2 chi rischiava su ogni domanda
+  chiudeva il 16% sopra chi andava sul sicuro solo per l'etichetta scelta. Ora
+  il vantaggio del pronostico coraggioso arriva dal **moltiplicatore pool**
+  (×1.5 se l'hai scelto in pochi), che e' la parte giusta: paga l'aver visto
+  bene, non l'aver scelto la casella marcata "controcorrente". Se si tocca il
+  bonus, i `pt` di `domande.json` vanno ricalcolati — `npm test` li ricontrolla
+  uno per uno dalla formula.
+- **micro-eventi ±1, non ±3.** A ±3 la fortuna spostava 3,7 posizioni in
+  classifica, quanto tutto il quiz di Peter (3,9). A ±1 sposta 1,7 e il quiz
+  5,4.
+- **niente bonus per gli intermezzi completati.** La vecchia formula ne
+  chiedeva cinque, il giro ne fa giocare quattro (uno all'apertura del keynote,
+  uno per macroargomento): era un bonus che nessuno poteva prendere.
+
+I **bonus personali** (`rookieBonus` sugli anni in Apple, `deviceBonus` sulla
+generazione dell'iPhone, insieme al massimo +2) si calcolano da `anni` e
+`device`, che il giocatore ha gia' dato alla registrazione e che sono gia' nel
+payload: non aggiungono domande e non cambiano il regolamento. Valgono poco
+apposta — servono a sciogliere i quasi pari merito, non a decidere chi vince.
+
 ## Il quiz di Peter è l'eccezione dichiarata alla regola d'oro
 
 In S5 la reazione della platea non correla **mai** con la risposta (se lo

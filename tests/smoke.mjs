@@ -1033,7 +1033,7 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
     }
   }
   vistiPerPosizione.forEach((visti, i) => {
-    assert.deepEqual([...visti].sort((a, b) => a - b), [-3, 0, 3],
+    assert.deepEqual([...visti].sort((a, b) => a - b), [-1, 0, 1],
       `la risposta in posizione ${i + 1} non ha visto tutti e tre gli esiti: il mapping non e' davvero casuale`);
   });
 }
@@ -1980,7 +1980,7 @@ assert.match(txt(), /^Ecco il tuo badge, LUCA\./, 'percorso rapido fino al badge
    controllo — un punteggio trascritto male dallo script master non passa. */
 const domande = banca;
 const STILI = ['hawaiano', 'showman', 'drip', 'ingegnere'];
-const BONUS = { consenso: 0, plausibile: 1, controcorrente: 2 };
+const BONUS = { consenso: 0, plausibile: 1, controcorrente: 1 };
 const idsDomande = new Set();
 let nOpzioni = 0, nBattute = 0;
 

@@ -757,11 +757,11 @@ moltiplicatori.
 
 ```
 Punteggio domanda core = difficoltà (1-5) + bonus opzione
-  consenso +0 · plausibile +1 · controcorrente +2
+  consenso +0 · plausibile +1 · controcorrente +1
 
 Punteggio facoltativa/intermezzo = valore secco dell'opzione (1, 2 o 3)
 
-Punteggio micro-evento = permutazione runtime opaca di +3 / 0 / -3
+Punteggio micro-evento = permutazione runtime opaca di +1 / 0 / -1
 
 Moltiplicatore pool = opzione scelta da <10% dei giocatori  ×1.5
                                         10-30%             ×1.25
@@ -771,9 +771,25 @@ Punteggio finale per domanda =
   min(10, punteggio_base × pool × moltiplicatore_quiz)
 
 Bonus completamento = +1 per ogni categoria con tutte e 3 le facoltative
-  completate (max +3), +1 se tutti e 5 gli intermezzi completati.
-  Massimo totale: +4
+  completate (max +3)
+
+Bonus personali (piccoli, servono a sciogliere i quasi pari merito)
+  rookieBonus, da "anni" chiesto in [S0]:
+    0-2 anni +1 · 3-7 anni +0.5 · 8-12 anni +0.25 · più di 12 anni 0
+  deviceBonus, dalla generazione dell'iPhone scelto in [S0]:
+    17 / Air 0 · 16 +0.25 · 15 +0.5 · 14 e 13 +0.75 · 12 e precedenti +1
+  Tetto: rookieBonus + deviceBonus ≤ +2
 ```
+
+Il conto finale (pool, moltiplicatori del quiz, bonus) **non lo fa il gioco**:
+l'app salva e spedisce solo la somma secca delle risposte. La classifica si
+calcola a mano dopo il keynote del 9 settembre, sui dati arrivati a Supabase —
+`anni` e `device` sono gia' nel payload, i bonus personali non chiedono niente
+di nuovo al giocatore.
+
+Il bonus del completamento degli intermezzi non esiste piu': il giro ne fa
+giocare quattro (uno all'apertura del keynote, uno per macroargomento) e un
+bonus che nessuno poteva prendere era solo un numero scritto in un documento.
 
 `npm test` ricalcola i punteggi delle core da questa formula e li confronta con
 quelli scritti in `game/domande.json`.

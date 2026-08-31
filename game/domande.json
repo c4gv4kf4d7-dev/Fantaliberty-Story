@@ -1,10 +1,10 @@
 {
   "_nota": "Banca domande dei pronostici [S5]. Fonte: docs/script-master.md. Gli id sono STABILI: non rinominarli tra revisioni, altrimenti si rompe la corrispondenza con le run gia' salvate in run.picks. Ogni opzione ha una battuta unica per ciascuno dei 4 stili: non sono template generici, sono scritte una per una.",
   "_formule": {
-    "core": "punti = diff (1-5) + bonus tipo (consenso 0, plausibile 1, controcorrente 2)",
+    "core": "punti = diff (1-5) + bonus tipo (consenso 0, plausibile 1, controcorrente 1)",
     "extra": "punti = val secco dell'opzione (1, 2 o 3), nessuna difficolta'",
     "intermezzi": "come extra: val secco",
-    "micro_eventi": "micro-challenge opache: a ogni attivazione le tre opzioni ricevono una permutazione casuale di +3, 0 e -3; il valore non viene mostrato"
+    "micro_eventi": "micro-challenge opache: a ogni attivazione le tre opzioni ricevono una permutazione casuale di +1, 0 e -1; il valore non viene mostrato"
   },
   "categorie": {
     "iphone": {
@@ -20,7 +20,7 @@
             {
               "label": "Nessun aumento",
               "tipo": "controcorrente",
-              "pt": 6,
+              "pt": 5,
               "battute": {
                 "hawaiano": "Stesso prezzo dell'anno scorso. Vedete, a volte le cose belle capitano davvero. Come un'onda perfetta senza dover aspettare la bassa marea.",
                 "showman": "STESSO PREZZO. Avete sentito bene. STESSO. PREZZO.",
@@ -82,7 +82,7 @@
             {
               "label": "Un colore che torna dal passato",
               "tipo": "controcorrente",
-              "pt": 5,
+              "pt": 4,
               "battute": {
                 "hawaiano": "Torna un colore vecchio. Le cose belle non passano mai di moda, tipo un ukulele buono.",
                 "showman": "TORNA UN CLASSICO! Chi se lo ricordava alzi la mano!",
@@ -93,7 +93,7 @@
             {
               "label": "Nessun colore davvero nuovo",
               "tipo": "controcorrente",
-              "pt": 5,
+              "pt": 4,
               "battute": {
                 "hawaiano": "Niente colori nuovi quest'anno. Va bene lo stesso, non tutti i giorni servono onde grosse.",
                 "showman": "NESSUN colore nuovo! Ma sapete che c'è? Non ne avevate bisogno!",
@@ -133,7 +133,7 @@
             {
               "label": "Su nessuno dei due",
               "tipo": "controcorrente",
-              "pt": 6,
+              "pt": 5,
               "battute": {
                 "hawaiano": "Su nessuno dei due, quest'anno. Ci sarà tempo, come per aspettare l'onda giusta.",
                 "showman": "SU NESSUNO! Il colpo di scena che non vi aspettavate!",
@@ -173,7 +173,7 @@
             {
               "label": "Un terzo nome imprevisto",
               "tipo": "controcorrente",
-              "pt": 5,
+              "pt": 4,
               "battute": {
                 "hawaiano": "Un nome che nessuno aveva previsto. Bella sorpresa, come trovare un'onda vuota di sabato.",
                 "showman": "UN NOME CHE NESSUNO DI VOI AVEVA IN LISTA! Sorpresa totale!",
@@ -213,7 +213,7 @@
             {
               "label": "In vendita subito, Italia esclusa",
               "tipo": "controcorrente",
-              "pt": 7,
+              "pt": 6,
               "battute": {
                 "hawaiano": "Da noi non arriva subito. Peccato. Ma arriverà, come tutte le cose buone.",
                 "showman": "NON in Italia, per ora! Ingiusto? Forse! Vero comunque!",
@@ -224,7 +224,7 @@
             {
               "label": "Non presentato a settembre",
               "tipo": "controcorrente",
-              "pt": 7,
+              "pt": 6,
               "battute": {
                 "hawaiano": "Non se ne parla oggi. Ci sarà un altro giorno, come per ogni bel surf.",
                 "showman": "NON OGGI! Ma tornerà, fidatevi!",
@@ -242,7 +242,7 @@
             {
               "label": "Sotto i 2.000€",
               "tipo": "controcorrente",
-              "pt": 6,
+              "pt": 5,
               "battute": {
                 "hawaiano": "Sotto i duemila euro. Onestamente non me l'aspettavo, tipo trovare parcheggio gratis in spiaggia ad agosto.",
                 "showman": "SOTTO I DUEMILA EURO! Un prezzo che nessuno aveva previsto!",
@@ -275,7 +275,7 @@
             {
               "label": "2.600€ o più",
               "tipo": "controcorrente",
-              "pt": 6,
+              "pt": 5,
               "battute": {
                 "hawaiano": "Caro. Molto caro. Ma bello, eh. Come una vacanza alle Hawaii fuori stagione.",
                 "showman": "OLTRE I DUEMILASEICENTO EURO! Il prezzo più alto di sempre!",
@@ -509,7 +509,7 @@
             {
               "label": "Glicemia",
               "tipo": "controcorrente",
-              "pt": 4,
+              "pt": 3,
               "battute": {
                 "hawaiano": "Ora legge anche la glicemia. Roba seria, questa. Più seria di un cambio di marea improvviso.",
                 "showman": "MONITORAGGIO DELLA GLICEMIA! Non pensavo l'avrei detto stasera, ma eccolo!",
@@ -561,7 +561,7 @@
             {
               "label": "Restyling vero della cassa",
               "tipo": "controcorrente",
-              "pt": 3,
+              "pt": 2,
               "battute": {
                 "hawaiano": "Cambia proprio la forma. Fa strano, ma mi piace. Come cambiare spot di surf dopo anni.",
                 "showman": "RESTYLING COMPLETO! Non lo riconoscerete più!",
@@ -601,7 +601,7 @@
             {
               "label": "Aumento di almeno 100€",
               "tipo": "controcorrente",
-              "pt": 4,
+              "pt": 3,
               "battute": {
                 "hawaiano": "Cento euro in più. Fa un po' effetto, ma ok. Come una scottatura leggera.",
                 "showman": "CENTO EURO IN PIÙ! Un salto vero, non ve lo nascondo!",
@@ -612,7 +612,7 @@
             {
               "label": "In calo",
               "tipo": "controcorrente",
-              "pt": 4,
+              "pt": 3,
               "battute": {
                 "hawaiano": "Costa meno di prima. Roba rara, questa. Come trovare l'onda perfetta al primo tentativo.",
                 "showman": "IL PREZZO SCENDE! Non capita spesso, godetevelo!",
@@ -858,7 +858,7 @@
             {
               "label": "Sì, già in vendita",
               "tipo": "controcorrente",
-              "pt": 4,
+              "pt": 3,
               "battute": {
                 "hawaiano": "Le AirPods con le telecamere, disponibili oggi. Roba pazzesca, onestamente, come vedere un'onda perfetta senza preavviso.",
                 "showman": "AIRPODS CON FOTOCAMERE, GIÀ IN VENDITA! Il futuro è arrivato prima del previsto!",
