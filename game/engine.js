@@ -879,9 +879,9 @@
       case 'intermezzo':
         return showIntermezzo(st);
 
-      // S6: il recap modificabile e il blocco della schedina
-      case 'recap':
-        return showRecap(st);
+      // S6: il riepilogo modificabile nella sala regia e il blocco della schedina
+      case 'monitor':
+        return showMonitor(st);
 
       // S8: il quiz di Peter — scelta del livello, un livello, i moltiplicatori
       case 'quizhub':
@@ -1745,10 +1745,11 @@
   }
 
   function chiudiRecap() {
-    if (!el.recap) return;
-    el.recap.classList.remove('on');
-    el.recap.innerHTML = '';
-    el.boxwrap.classList.remove('recap');
+    if (!el.monitorwrap) return;
+    el.monitorwrap.classList.remove('on');
+    if (el.mondettaglio) el.mondettaglio.classList.remove('on');
+    if (el.mongriglia) el.mongriglia.innerHTML = '';
+    if (el.monlista) el.monlista.innerHTML = '';
   }
 
   /* ---------------- il giro di una domanda [S5.DOMANDA] ----------------
@@ -2105,90 +2106,159 @@
 
   /* ================ S6: teleprompter e blocco ================ */
 
-  // Tutte le domande della banca, indicizzate per id: al recap servono il testo
-  // della domanda e le opzioni, che nelle risposte non ci sono.
-  function domandaPerId(id) {
-    var b = (VN.banca && VN.banca.categorie) || {};
-    for (var cat in b) {
-      var trovata = (b[cat].core || []).concat(b[cat].extra || [])
-        .filter(function (d) { return d.id === id; })[0];
-      if (trovata) return { d: trovata, cat: cat, tipo: (b[cat].core || []).indexOf(trovata) >= 0 ? 'core' : 'extra' };
-    }
-    return null;
+  // Quanto manca a un macroargomento: le core sono sempre tutte gia' fatte
+  // (la griglia di S5 non cede il turno finche' non lo sono), quindi quello
+  // che puo' ancora mancare sono solo le facoltative pescate.
+  function statoCategoria(argomenti, cat) {
+    var c = (VN.banca && VN.banca.categorie && VN.banca.categorie[cat]) || {};
+    var date = (VN.state.picks || {})[cat] || {};
+    var core = c.core || [];
+    var extra = c.extra || [];
+    var quotaExtra = c.n_extra_da_pescare || 0;
+    var extraGiocate = Object.keys(date.extra || {});
+    var totale = core.length + quotaExtra;
+    var fatte = core.filter(function (d) { return !!(date.core || {})[d.id]; }).length + extraGiocate.length;
+    return {
+      id: cat, nome: fmt((argomenti[cat] || {}).nome || cat),
+      core: core, extra: extra, quotaExtra: quotaExtra, extraGiocate: extraGiocate, date: date,
+      totale: totale, fatte: fatte,
+      percento: totale ? Math.round(fatte / totale * 100) : 100
+    };
   }
 
-  /* ---------------- il recap [S6.02] ----------------
-     Tutte le risposte, per macroargomento, ognuna ancora modificabile. Le
-     facoltative che il giocatore ha saltato compaiono come righe vuote: si
-     possono completare adesso, e se il pescaggio non era stato fatto si fa ora.
-     Sotto, il bottone rosso che chiude la schedina. */
-  function showRecap(st) {
+  /* ---------------- [S6] il riepilogo nella sala regia ----------------
+     Le previsioni per macroargomento, come tre monitor: la vista generale
+     mostra a colpo d'occhio quanto manca a ciascuno (di solito niente: le
+     core sono gia' tutte fatte), il tocco apre il dettaglio con le singole
+     risposte — ancora tutte modificabili — e le facoltative rimaste da
+     pescare. Il bottone che chiude la schedina sta nella vista generale, non
+     nel dettaglio: e' un gesto sulla plancia, non su un monitor solo. */
+  function showMonitor(st) {
+    var argomenti = VN.story[st.da || 'argomenti'] || {};
+    var chiavi = Object.keys(argomenti);
     var uscito = false;
+    // segna quali categorie erano gia' complete PRIMA di aprire questa
+    // schermata: il suono di completamento e' per quello che succede qui
+    // dentro, non per rifare notare cio' che era gia' a posto
+    var completatePrima = {};
+    chiavi.forEach(function (k) {
+      if (statoCategoria(argomenti, k).percento >= 100) completatePrima[k] = true;
+    });
 
-    function righe() {
-      el.recap.innerHTML = '';
-      var argomenti = VN.story[st.da || 'argomenti'] || {};
-      Object.keys(argomenti).forEach(function (cat) {
-        var c = (VN.banca && VN.banca.categorie && VN.banca.categorie[cat]) || {};
-        var date = (VN.state.picks || {})[cat] || {};
+    // L'anello di completamento: un cerchio pieno color panello e uno
+    // conico verde sopra, con un buco al centro che lascia vedere solo la
+    // corona. "--pct" parte da 0 e si anima verso il valore vero un istante
+    // dopo il mount, cosi' la transizione CSS ha un "prima" da cui partire.
+    function anello(pct) {
+      var d = global.document.createElement('div');
+      d.className = 'monanello';
+      d.style.setProperty('--pct', 0);
+      var buco = global.document.createElement('div');
+      buco.className = 'monbuco';
+      var num = global.document.createElement('div');
+      num.className = 'monnum';
+      d.appendChild(buco);
+      d.appendChild(num);
+      setTimeout(function () { d.style.setProperty('--pct', pct); }, 30);
+      return { nodo: d, num: num };
+    }
 
-        var h = global.document.createElement('div');
-        h.className = 'rtit';
-        h.textContent = fmt(argomenti[cat].nome || cat);
-        el.recap.appendChild(h);
-
-        (c.core || []).forEach(function (d) { riga(cat, 'core', d, (date.core || {})[d.id]); });
-
-        // le facoltative: quelle giocate, poi i posti ancora liberi
-        var giocate = Object.keys(date.extra || {});
-        giocate.forEach(function (id) {
-          var q = (c.extra || []).filter(function (d) { return d.id === id; })[0];
-          if (q) riga(cat, 'extra', q, date.extra[id]);
-        });
-        var mancano = (c.n_extra_da_pescare || 0) - giocate.length;
-        for (var k = 0; k < mancano; k++) vuota(cat);
+    function griglia() {
+      el.mongriglia.innerHTML = '';
+      chiavi.forEach(function (k) {
+        var s = statoCategoria(argomenti, k);
+        if (s.percento >= 100 && !completatePrima[k]) {
+          completatePrima[k] = true;
+          suona('traguardo');   // un effetto positivo, non un applauso
+        }
+        var b = global.document.createElement('button');
+        b.className = 'moncard' + (s.percento >= 100 ? ' fatta' : '');
+        var tit = global.document.createElement('div');
+        tit.className = 'montit';
+        tit.textContent = s.nome;
+        b.appendChild(tit);
+        var an = anello(s.percento);
+        an.num.innerHTML = '<b>' + s.fatte + '/' + s.totale + '</b><span>' + s.percento + '%</span>';
+        b.appendChild(an.nodo);
+        var stato = global.document.createElement('div');
+        stato.className = 'monstato';
+        stato.textContent = s.percento >= 100 ? (st.completato || 'COMPLETATO')
+          : (st.daFinire || (s.totale - s.fatte) + ' da completare');
+        b.appendChild(stato);
+        b.onclick = function (ev) {
+          if (ev && ev.stopPropagation) ev.stopPropagation();
+          if (uscito) return;
+          apriDettaglio(k);
+        };
+        el.mongriglia.appendChild(b);
       });
     }
 
-    function riga(cat, tipo, d, risposta) {
-      var b = global.document.createElement('button');
-      b.className = 'rriga';
-      b.innerHTML = '<span class="rq"></span><span class="rv"></span>';
-      b.querySelector('.rq').textContent = fmt(d.q);
-      b.querySelector('.rv').textContent = risposta ? fmt(risposta.v) : '—';
-      b.onclick = function (ev) {
-        if (ev && ev.stopPropagation) ev.stopPropagation();
-        if (uscito) return;
-        chiedi(cat, tipo, d);
-      };
-      el.recap.appendChild(b);
+    function apriDettaglio(cat) {
+      dettaglio(cat);
+      el.mondettaglio.classList.add('on');
     }
 
-    // Un posto ancora libero fra le facoltative: al tocco si pesca (se non era
-    // gia' stato fatto) e si risponde adesso.
-    function vuota(cat) {
+    function dettaglio(cat) {
+      var s = statoCategoria(argomenti, cat);
+      el.montesta.innerHTML = '';
+      var tit = global.document.createElement('div');
+      tit.className = 'montit';
+      tit.textContent = s.nome;
+      el.montesta.appendChild(tit);
+      var an = anello(s.percento);
+      an.num.innerHTML = '<b>' + s.fatte + '/' + s.totale + '</b><span>' + s.percento + '%</span>';
+      el.montesta.appendChild(an.nodo);
+
+      el.monlista.innerHTML = '';
+      s.core.forEach(function (d) { riga(s, 'core', d, (s.date.core || {})[d.id]); });
+      s.extraGiocate.forEach(function (id) {
+        var q = s.extra.filter(function (d) { return d.id === id; })[0];
+        if (q) riga(s, 'extra', q, s.date.extra[id]);
+      });
+      var mancano = s.quotaExtra - s.extraGiocate.length;
+      for (var i = 0; i < mancano; i++) vuota(s);
+    }
+
+    function riga(s, tipo, d, risposta) {
       var b = global.document.createElement('button');
-      b.className = 'rriga vuota';
-      b.innerHTML = '<span class="rq"></span><span class="rv">+</span>';
-      b.querySelector('.rq').textContent = fmt(st.daFare || 'Domanda facoltativa non giocata');
+      b.className = 'monriga';
+      b.innerHTML = '<span class="monq"></span><span class="monv"></span>';
+      b.querySelector('.monq').textContent = fmt(d.q);
+      b.querySelector('.monv').textContent = risposta ? fmt(risposta.v) : '—';
       b.onclick = function (ev) {
         if (ev && ev.stopPropagation) ev.stopPropagation();
         if (uscito) return;
-        var c = (VN.banca && VN.banca.categorie && VN.banca.categorie[cat]) || {};
-        var gia = Object.keys(((VN.state.picks || {})[cat] || {}).extra || {});
-        var libere = (c.extra || []).filter(function (d) { return gia.indexOf(d.id) < 0; });
+        chiedi(s.id, tipo, d);
+      };
+      el.monlista.appendChild(b);
+    }
+
+    // Un posto ancora libero fra le facoltative: al tocco si pesca (se non
+    // era gia' stato fatto) e si risponde adesso.
+    function vuota(s) {
+      var b = global.document.createElement('button');
+      b.className = 'monriga monvuota';
+      b.innerHTML = '<span class="monq"></span><span class="monv">+</span>';
+      b.querySelector('.monq').textContent = fmt(st.daFare || 'Previsione mancante');
+      b.onclick = function (ev) {
+        if (ev && ev.stopPropagation) ev.stopPropagation();
+        if (uscito) return;
+        var libere = s.extra.filter(function (d) { return s.extraGiocate.indexOf(d.id) < 0; });
         if (!libere.length) return;
-        chiedi(cat, 'extra', mescola(libere)[0]);
+        chiedi(s.id, 'extra', mescola(libere)[0]);
       };
-      el.recap.appendChild(b);
+      el.monlista.appendChild(b);
     }
 
-    // Rispondere di nuovo a una domanda: le stesse opzioni di prima, e il
-    // punteggio si ricalcola da solo perche' e' derivato dalle risposte.
+    // Rispondere di nuovo (o per la prima volta a una facoltativa): le stesse
+    // opzioni della domanda vera, e il punteggio si ricalcola da solo perche'
+    // e' derivato dalle risposte. Si torna alla vista generale, non al
+    // dettaglio: e' li' che si vede il progresso appena aggiornato.
     function chiedi(cat, tipo, d) {
-      el.recap.classList.remove('on');
-      el.boxwrap.classList.remove('recap');
-      setSpeaker(st.who, st.incuffia);
+      el.monitorwrap.classList.remove('on');
+      el.boxwrap.classList.add('in');
+      setSpeaker(st.who, st.incuffia !== false);
       var apri = function () {
         el.choices.innerHTML = '';
         (d.opzioni || []).forEach(function (o) {
@@ -2198,10 +2268,11 @@
           b.onclick = function (ev) {
             if (ev && ev.stopPropagation) ev.stopPropagation();
             hideUI();
+            suona('tap');
             segna(cat, tipo, d.id, o.label, o.pt != null ? o.pt : (o.val || 0));
             VN.progressed = true;
             VN.saveNow();
-            apriRecap();
+            apriMonitor();
           };
           el.choices.appendChild(b);
         });
@@ -2211,20 +2282,23 @@
       revealUI = apri;
     }
 
-    function apriRecap() {
+    function apriMonitor() {
       hideUI();
-      righe();
-      setSpeaker(st.who, st.incuffia);
-      el.txt.textContent = fmt(st.text || '');
-      el.arrow.style.opacity = 0;
-      el.boxwrap.classList.add('in', 'recap');
-      el.recap.classList.add('on');
-      el.blocca.textContent = fmt(st.bottone || 'CONFERMA LE PREVISIONI');
+      el.boxwrap.classList.remove('in');
+      el.mondettaglio.classList.remove('on');
+      griglia();
+      el.monitorwrap.classList.add('on');
       pending = null;
     }
 
+    el.mondietro.onclick = function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      el.mondettaglio.classList.remove('on');
+    };
+
     /* ---------------- il blocco [S6.03] ---------------- */
-    el.blocca.onclick = function (ev) {
+    el.monconferma.textContent = fmt(st.bottone || 'CONFERMA IL TUO KEYNOTE');
+    el.monconferma.onclick = function (ev) {
       if (ev && ev.stopPropagation) ev.stopPropagation();
       if (uscito) return;
       mostraModale(st.lock || { text: 'Sicuro? Dopo questo le tue previsioni sono definitive.' }, function () {
@@ -2238,8 +2312,7 @@
         // partita va in coda, e la spedisce lo step 'email' (o il prossimo
         // avvio, se il giocatore chiude li').
         accoda(payload());
-        el.recap.classList.remove('on');
-        el.boxwrap.classList.remove('recap');
+        chiudiRecap();
         hideUI();
         VN.saveNow();
         if (st.goto) return goScene(st.goto);
@@ -2247,7 +2320,7 @@
       }, null);
     };
 
-    apriRecap();
+    apriMonitor();
   }
 
   /* ---------------- invio al server ----------------
@@ -4920,7 +4993,8 @@
       platea: $('platea'), plateaImg: $('plateaImg'),
       ospitewrap: $('ospitewrap'), ospite: $('ospite'), griglia: $('griglia'),
       evpropwrap: $('evpropwrap'), evprop: $('evprop'),
-      recap: $('recap'), blocca: $('blocca'),
+      monitorwrap: $('monitorwrap'), mongriglia: $('mongriglia'), monconferma: $('monconferma'),
+      mondettaglio: $('mondettaglio'), mondietro: $('mondietro'), montesta: $('montesta'), monlista: $('monlista'),
       quizbar: $('quizbar'), qinfo: $('qinfo'), qtimer: $('qtimer'), qbar: $('qbar'), qsec: $('qsec'),
       multwrap: $('multwrap'), multrighe: $('multrighe'), multresto: $('multresto'), multok: $('multok'),
       regole: $('regole'), regtit: $('regtit'), regcorpo: $('regcorpo'), regok: $('regok'),
@@ -4975,7 +5049,7 @@
            e.target.closest('#listform') || e.target.closest('#hubnav') ||
            e.target.closest('#hubspots') || e.target.closest('#modal') ||
            e.target.closest('#carta') || e.target.closest('#carosello') ||
-           e.target.closest('#griglia') || e.target.closest('#recapwrap') ||
+           e.target.closest('#griglia') || e.target.closest('#monitorwrap') ||
            e.target.closest('#countdown') || e.target.closest('#cardwrap') ||
            e.target.closest('#multwrap') || e.target.closest('#regole') ||
            e.target.closest('#emailwrap') || e.target.closest('#quadrowrap') ||
@@ -4992,7 +5066,7 @@
       if (el.inputform.classList.contains('on') || el.choices.classList.contains('on') ||
           (el.listform && el.listform.classList.contains('on')) ||
           (el.griglia && el.griglia.classList.contains('on')) ||
-          (el.recap && el.recap.classList.contains('on')) ||
+          (el.monitorwrap && el.monitorwrap.classList.contains('on')) ||
           (el.countdown && el.countdown.classList.contains('on')) ||
           (el.multwrap && el.multwrap.classList.contains('on')) ||
           (el.regole && el.regole.classList.contains('on')) ||

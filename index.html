@@ -130,12 +130,6 @@
          livelli vanno letti prima delle azioni che ci stanno sotto. -->
     <div id="griglia"></div>
     <div id="choices"></div>
-    <!-- il recap di S6: tutte le risposte, ancora modificabili, e il bottone
-         rosso che chiude le previsioni -->
-    <div id="recapwrap">
-      <div id="recap"></div>
-      <button id="blocca">CONFERMA LE PREVISIONI</button>
-    </div>
     <!-- [S8.FINALE]: quello che si e' vinto al quiz si spalma sui tre
          macroargomenti. Nessun tetto per categoria, solo il totale. -->
     <div id="multwrap">
@@ -208,6 +202,19 @@
       <div id="cdtempo"></div>
       <div id="cdpunti"></div>
       <div id="cdbtn"></div>
+    </div>
+  </div>
+
+  <!-- [S6] il riepilogo delle previsioni nella sala regia: tre monitor, uno
+       per macroargomento. Sta fuori da #boxwrap come #regole e #quadrowrap:
+       gli serve tutto lo schermo, non il terzo in basso della dialogo. -->
+  <div id="monitorwrap">
+    <div id="mongriglia"></div>
+    <button id="monconferma">CONFERMA IL TUO KEYNOTE</button>
+    <div id="mondettaglio">
+      <button id="mondietro">&#9664; Monitor</button>
+      <div id="montesta"></div>
+      <div id="monlista"></div>
     </div>
   </div>
 

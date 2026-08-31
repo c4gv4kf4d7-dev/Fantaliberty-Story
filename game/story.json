@@ -43,7 +43,9 @@
       "halloffame_fabio": "bg/bg_halloffame_fabio.webp",
       "halloffame_michael": "bg/bg_halloffame_michael.webp",
       "halloffame_nicola": "bg/bg_halloffame_nicola.webp",
-      "palco_vuoto": "bg/bg_palco_vuoto.webp"
+      "palco_vuoto": "bg/bg_palco_vuoto.webp",
+      "control_room_susan": "bg/bg_control_room_susan.webp",
+      "control_room_monitors": "bg/bg_control_room_monitors.webp"
     },
     "props": {
       "mac_terminale": "props/prop_mac_terminale.webp",
@@ -1147,33 +1149,38 @@
     },
     "teleprompter": {
       "title": "S6 — Il teleprompter",
-      "bg": "palco_luci_calate",
+      "bg": "control_room_susan",
       "dissolvenza": true,
-      "_nota": "[S6.01]-[S6.03]. Il recap e' UI vera, non un'immagine: obj_gobbo_teleprompter fa da cornice. Il blocco e' irreversibile e fa partire l'invio.",
+      "_nota": "[S6.01]-[S6.03]. Il giocatore lascia il palco: si passa alla sala regia, dove Susan segue lo show da tre monitor — uno per macroargomento. Il riepilogo e' UI vera, sovrapposta al fondale control_room_monitors, non un'immagine fissa. Il blocco e' irreversibile e fa partire l'invio.",
       "steps": [
         {
           "t": "io",
-          "posa": "idle_palco"
+          "hide": true
         },
         {
           "t": "say",
           "who": "susan",
           "incuffia": true,
-          "text": "Ok, da qui non si torna indietro. Ti seguo dalla regia."
+          "text": "Ok, da qui non si torna indietro."
+        },
+        {
+          "t": "bg",
+          "id": "control_room_monitors",
+          "dissolvenza": true
         },
         {
           "t": "say",
           "who": "susan",
           "incuffia": true,
-          "text": "Io invece no. Ma fai con calma."
+          "text": "Questo e' il tuo Keynote. O almeno la versione che hai deciso di prevedere."
         },
         {
-          "t": "recap",
+          "t": "monitor",
           "who": "susan",
           "da": "argomenti",
-          "text": "Rileggi tutto. Tocca una riga per cambiarla.",
-          "daFare": "Facoltativa non giocata",
-          "bottone": "CONFERMA LE PREVISIONI",
+          "daFare": "Previsione mancante",
+          "completato": "COMPLETATO",
+          "bottone": "CONFERMA IL TUO KEYNOTE",
           "lock": {
             "text": "{g:Sicuro|Sicura}? Dopo questo le tue previsioni sono definitive.",
             "si": "Si', confermo",

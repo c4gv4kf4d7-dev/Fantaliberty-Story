@@ -502,35 +502,80 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  cursor:default;box-shadow:none}
 .gcell.fatta:hover{background:#1b1f33}
 
-/* ---------- recap del teleprompter (S6) ----------
-   Tutte le risposte in una lista che scorre, ognuna ancora toccabile, e sotto
-   il bottone rosso che chiude la schedina. Il box del dialogo si stringe per
-   fargli posto: qui il contenuto e' la lista, non la battuta. */
-#recapwrap{margin-top:10px;display:none;flex-direction:column;gap:8px;min-height:0}
-#recapwrap.on{display:flex}
-#boxwrap.recap{max-height:74%}
-#boxwrap.recap #box{height:auto;overflow:visible;font-size:clamp(7px,2vw,11px);line-height:1.6}
-#boxwrap.recap #recapwrap{display:flex}
-#recap{overflow-y:auto;display:flex;flex-direction:column;gap:5px;
- -webkit-overflow-scrolling:touch}
-.rtit{color:#ffd98a;font-size:clamp(7px,2vw,10px);margin-top:6px;letter-spacing:.08em}
-.rtit:first-child{margin-top:0}
-.rriga{background:#2a3050;border:2px solid rgba(255,255,255,.55);border-radius:7px;
- padding:8px 10px;color:#fff;font-family:inherit;cursor:pointer;text-align:left;
- display:flex;flex-direction:column;gap:4px}
-.rriga:hover,.rriga:focus{background:#3d466e;outline:none}
-.rq{font-size:clamp(6px,1.75vw,9px);opacity:.72;line-height:1.5}
-.rv{font-size:clamp(7px,2vw,10px);line-height:1.5}
-/* posto ancora libero fra le facoltative: si vede che manca qualcosa */
-.rriga.vuota{border-style:dashed;border-color:rgba(255,255,255,.3);background:rgba(0,0,0,.2)}
-.rriga.vuota .rv{color:#ffd98a;font-size:clamp(9px,2.6vw,13px)}
-/* il bottone che chiude la schedina: rosso, fisso in fondo, non si perde
-   scorrendo la lista */
-#blocca{flex:none;background:#8e2a2a;border:3px solid #ff9a9a;border-radius:8px;
+/* ---------- [S6] il riepilogo nella sala regia ----------
+   Tre monitor, uno per macroargomento, sopra il fondale control_room_monitors.
+   Sta fuori da #boxwrap (come #regole): gli serve tutto lo schermo. Il tocco
+   su un monitor apre il dettaglio, che copre la griglia; "torna" lo richiude.
+   Il bottone che chiude la schedina sta sulla griglia, non nel dettaglio. */
+#monitorwrap{position:absolute;inset:0;z-index:7;display:none;flex-direction:column;
+ justify-content:center;gap:16px;
+ padding:8vh calc(4vw + env(safe-area-inset-right,0px)) calc(4vh + env(safe-area-inset-bottom,0px))
+  calc(4vw + env(safe-area-inset-left,0px));
+ background:linear-gradient(rgba(4,6,12,.15), rgba(4,6,12,.55) 60%, rgba(4,6,12,.72))}
+#monitorwrap.on{display:flex}
+
+#mongriglia{display:flex;gap:8px}
+.moncard{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:8px;
+ background:rgba(10,14,24,.86);border:2px solid rgba(120,220,180,.4);border-radius:10px;
+ padding:10px 6px;color:#eafff2;font-family:inherit;cursor:pointer;
+ box-shadow:0 0 18px rgba(0,0,0,.5);
+ animation:monentra .5s cubic-bezier(.2,.9,.3,1) backwards}
+.moncard:nth-child(2){animation-delay:.08s}
+.moncard:nth-child(3){animation-delay:.16s}
+.moncard:hover,.moncard:focus{border-color:rgba(120,220,180,.8);outline:none}
+.moncard.fatta{border-color:#4ce08a;box-shadow:0 0 20px rgba(76,224,138,.35)}
+@keyframes monentra{from{opacity:0;transform:translateY(10px) scale(.94)}to{opacity:1;transform:none}}
+
+.montit{font-size:clamp(8px,2.6vw,12px);letter-spacing:.06em;color:#fff}
+
+/* l'anello: un cerchio pieno (il "buco", colore del pannello) sopra a un
+   conic-gradient verde. "--pct" e' 0-100 e si anima con una transizione CSS
+   sulla custom property — serve @property per interpolarla (Safari 16.4+,
+   Chrome/Edge): dove non e' supportata il cerchio compare gia' pieno, invece
+   di animarsi, senza spezzare niente. */
+@property --pct{syntax:'<number>';inherits:true;initial-value:0}
+.monanello{position:relative;width:clamp(46px,15vw,64px);aspect-ratio:1;border-radius:50%;
+ background:conic-gradient(#4ce08a calc(var(--pct,0)*1%), rgba(255,255,255,.14) 0);
+ transition:background 1s cubic-bezier(.2,.8,.2,1)}
+.monbuco{position:absolute;inset:14%;border-radius:50%;background:#10141f}
+.monnum{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+ justify-content:center;line-height:1.15;color:#eafff2}
+.monnum b{font-size:clamp(7px,2.1vw,10px)}
+.monnum span{font-size:clamp(5.5px,1.6vw,8px);color:#8fe8b4}
+
+.monstato{font-size:clamp(5.5px,1.6vw,8px);letter-spacing:.08em;color:#8fe8b4;text-align:center}
+.moncard:not(.fatta) .monstato{color:#ffd98a}
+
+/* il bottone che chiude la schedina: rosso, fisso sotto la griglia */
+#monconferma{flex:none;background:#8e2a2a;border:3px solid #ff9a9a;border-radius:8px;
  color:#fff;font-family:inherit;font-size:clamp(8px,2.3vw,12px);padding:12px 13px;
  cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.5);letter-spacing:.04em}
-#blocca:hover,#blocca:focus{background:#a83333;outline:none}
-#blocca:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.5)}
+#monconferma:hover,#monconferma:focus{background:#a83333;outline:none}
+#monconferma:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.5)}
+
+/* il dettaglio di un monitor: copre la griglia, non e' un pannello a parte */
+#mondettaglio{position:absolute;inset:0;display:none;flex-direction:column;gap:10px;
+ padding:8vh calc(4vw + env(safe-area-inset-right,0px)) calc(4vh + env(safe-area-inset-bottom,0px))
+  calc(4vw + env(safe-area-inset-left,0px));
+ background:#0a0d16}
+#mondettaglio.on{display:flex}
+#mondietro{align-self:flex-start;flex:none;background:none;border:0;color:#8fe8b4;
+ font-family:inherit;font-size:clamp(7px,2vw,10px);letter-spacing:.06em;cursor:pointer;
+ padding:4px 2px}
+#mondietro:hover,#mondietro:focus{color:#fff;outline:none}
+#montesta{flex:none;display:flex;flex-direction:column;align-items:center;gap:8px;
+ padding-bottom:10px;border-bottom:2px solid rgba(120,220,180,.3)}
+#monlista{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+ display:flex;flex-direction:column;gap:6px}
+.monriga{background:#1a2233;border:2px solid rgba(255,255,255,.35);border-radius:7px;
+ padding:8px 10px;color:#fff;font-family:inherit;cursor:pointer;text-align:left;
+ display:flex;flex-direction:column;gap:4px}
+.monriga:hover,.monriga:focus{background:#26314a;outline:none}
+.monq{font-size:clamp(6px,1.75vw,9px);opacity:.72;line-height:1.5}
+.monv{font-size:clamp(7px,2vw,10px);line-height:1.5;color:#eafff2}
+/* posto ancora libero fra le facoltative: si vede che manca qualcosa */
+.monriga.monvuota{border-style:dashed;border-color:rgba(255,217,138,.5);background:rgba(0,0,0,.25)}
+.monriga.monvuota .monv{color:#ffd98a;font-size:clamp(9px,2.6vw,13px)}
 
 /* ---------- quiz di Peter (S8) ----------
    Sopra il box: a che punto sei del livello e la barra del tempo. Sotto i tre
@@ -878,8 +923,11 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 
 /* ---------- modale di conferma ----------
    Per i passi senza ritorno. Copre la scena: finche' e' aperta non si tocca
-   altro, cosi' non si entra in sala per sbaglio con uno swipe storto. */
-#modal{position:absolute;inset:0;z-index:6;display:none;place-items:center;
+   altro, cosi' non si entra in sala per sbaglio con uno swipe storto. z-index
+   8, sopra ai pannelli a schermo pieno (#regole, #monitorwrap...): e' l'unico
+   posto dove serve una conferma SOPRA uno di quei pannelli, il riepilogo
+   delle previsioni nella sala regia. */
+#modal{position:absolute;inset:0;z-index:8;display:none;place-items:center;
  background:rgba(4,5,10,.72);padding:10vw}
 #modal.on{display:grid}
 #modalbox{background:#1b1f33;border:3px solid #fff;border-radius:12px;padding:20px 18px;

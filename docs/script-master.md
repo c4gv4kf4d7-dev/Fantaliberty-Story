@@ -510,29 +510,42 @@ Indice degli id in `docs/indice-domande.md`.
 
 ---
 
-# [S6] TELEPROMPTER / RECAP
+# [S6] TELEPROMPTER / SALA REGIA
 
 ```
-[S6.01] SUSAN
-  Asset: bg_palco_luci_calate + chr_indicatore_regia + stile_X_idle_palco
-  "Ok, da qui non si torna indietro. Ti seguo dalla regia."
-  (pausa) "Io invece no. Ma fai con calma."
+[S6.01] SUSAN — il giocatore lascia il palco
+  Asset: bg_control_room_susan (Susan alla console, tre monitor davanti a lei
+  — l'immagine ha già la figura disegnata dentro: niente sprite npc qui, la
+  battuta arriva in cuffia come il resto della regia)
+  "Ok, da qui non si torna indietro."
   → [S6.02]
 
-[S6.02] SCHERMATA RECAP
-  Asset: bg_palco_luci_calate + obj_gobbo_teleprompter (il testo è UI reale)
-  Lista di tutte le scelte per macroargomento (core + extra), ogni riga
-  modificabile (torna alla card originale).
-  Facoltative NON completate: riga vuota, cliccabile per completarle ORA
-  (il pescaggio a caso vale anche qui, se non già fatto).
-  Bottone rosso fisso: CONFERMA LE PREVISIONI → [S6.03]
+[S6.02] SUSAN — cambio fondale
+  Asset: bg_control_room_monitors, dissolvenza
+  "Questo è il tuo Keynote. O almeno la versione che hai deciso di prevedere."
+  → [S6.03]
 
-[S6.03] MODALE CONFERMA
+[S6.03] I TRE MONITOR — riepilogo modificabile
+  Asset: bg_control_room_monitors + UI reale sovrapposta (non è un'immagine
+  fissa): tre schede, una per macroargomento (iPhone, Watch, Altro).
+  Vista generale: nome della categoria, anello di completamento (fatte/totale,
+  percentuale), "COMPLETATO" a 100%. Le core sono sempre già tutte fatte (la
+  griglia di [S5.HUB] non cede il turno prima) — quello che può mancare sono
+  solo le facoltative pescate.
+  Tocco su un monitor → dettaglio: titolo, anello, elenco delle risposte date
+  (ogni riga riapre la card originale, come nel vecchio recap), righe
+  tratteggiate per le facoltative non ancora pescate ("Previsione mancante" —
+  al tocco pesca e fa rispondere subito, come un posto libero da riempire).
+  Rispondere (modifica o facoltativa nuova) riporta alla vista generale, non
+  al dettaglio: è lì che si vede il progresso aggiornato.
+  Bottone rosso fisso nella vista generale: CONFERMA IL TUO KEYNOTE → [S6.04]
+
+[S6.04] MODALE CONFERMA
   "Sicuro? Dopo questo le tue previsioni sono definitive."
   Sì → run.locked = true, run.submitted_at = TIMESTAMP SERVER,
        la run va in coda (il POST parte da [S7.03b], così è una riga sola con
        dentro l'email), sblocco [S1.ZONA4] → [S7.01]
-  No → [S6.02]
+  No → [S6.03]
 
   Nota di lessico: al giocatore non si dice mai "schedina bloccata" (né "la
   schedina è chiusa", "previsioni bloccate"). Si dice che le previsioni sono
