@@ -11,6 +11,7 @@ index.html              il gioco (shell + bootstrap)
 game/
   engine.css            stile pixel-art + animazioni (@keyframes, non transition)
   engine.js             motore VN data-driven (state machine, ~350 righe)
+  analytics.js         utility centralizzata per Google Analytics 4 (vedi docs/analytics.md)
   story.json            SCRIPT DEL GIOCO: scene, battute, scelte, asset  <- si edita qui
   domande.json          banca pronostici [S5]: 29 domande, 316 battute (una per stile)
   quiz.json             quiz di Peter [S8]: 44 domande, due pool per livello
@@ -36,6 +37,7 @@ docs/
   manifest-asset.md     quale file grafico serve in quale scena
   indice-domande.md     indice degli id, rigenerato da `npm run indice`
   backend.sql           schema e policy della tabella runs, da incollare in Supabase
+  analytics.md          Google Analytics 4: eventi, funnel, tracking QR (vedi game/analytics.js)
 tests/smoke.mjs         smoke test headless con jsdom
 archivio/wwdc26/        edizione precedente (classifica, previsioni, pagina di manutenzione)
 ```

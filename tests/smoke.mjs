@@ -2768,6 +2768,202 @@ function apriMoltiplicatori(stato, extra) {
     'il cartello parte nascosto: lo accende solo il controllo sul dominio');
 }
 
+/* ---------- 11. Google Analytics 4 ----------
+   game/analytics.js non e' mai caricato negli altri test di questo file: solo
+   engine.js lo e', per questo gli hook di GA sopra sono rimasti no-op silenziosi
+   in tutta la suite finora. Qui si accende il pezzo mancante (proprio come fa
+   index.html, engine dopo analytics) e si verifica il contrario: con
+   FLAnalytics presente, gli eventi partono nei punti giusti, una volta sola
+   dove richiesto, e senza mai portarsi dietro nome, email o risposte. */
+{
+  const srcHtml = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  assert.match(srcHtml, /googletagmanager\.com\/gtag\/js\?id=G-SYX1RZLNNE/, 'il tag gtag.js e\' installato');
+  assert.match(srcHtml, /gtag\('config', 'G-SYX1RZLNNE'\)/, 'con il Measurement ID giusto');
+  assert.equal((srcHtml.match(/googletagmanager\.com\/gtag\/js/g) || []).length, 1,
+    'il tag si carica una volta sola');
+  assert.match(srcHtml, /<script src="\.\/game\/analytics\.js/, 'analytics.js e\' collegato dalla pagina');
+  assert.ok(srcHtml.indexOf('game/analytics.js') < srcHtml.indexOf('game/engine.js'),
+    'analytics.js arriva prima di engine.js: engine.js lo usa da subito');
+
+  window.eval(fs.readFileSync(path.join(ROOT, 'game/analytics.js'), 'utf8'));
+  assert.ok(window.FLAnalytics, 'analytics.js si installa da solo su window');
+  assert.equal(window.FLAnalytics.id, 'G-SYX1RZLNNE');
+
+  // senza gtag non succede niente, e non si rompe niente
+  assert.doesNotThrow(() => window.FLAnalytics.track('prova', { a: 1 }),
+    'track() senza window.gtag non lancia niente');
+
+  let eventi = [];
+  window.gtag = (tipo, nome, params) => { if (tipo === 'event') eventi.push([nome, params || {}]); };
+  const conta = (nome) => eventi.filter(([n]) => n === nome).length;
+  // I parametri arrivano dal realm di jsdom (engine.js gira dentro dom.window):
+  // per deepEqual serve una copia vera nel realm di questo file, altrimenti
+  // Node li tratta come non "reference-equal" pur essendo identici.
+  const ultimo = (nome) => {
+    const p = eventi.filter(([n]) => n === nome).slice(-1)[0]?.[1];
+    return p ? { ...p } : p;
+  };
+  const nessunDatoPersonale = () => {
+    const vietate = /nome|email|punt|risp|pick/i;
+    for (const [nome, params] of eventi) {
+      for (const chiave of Object.keys(params || {})) {
+        assert.ok(!vietate.test(chiave), `${nome}: parametro "${chiave}" sembra un dato personale`);
+      }
+    }
+  };
+
+  /* ---- game_start + location_opened alla prima lobby, mai piu' dopo ---- */
+  eventi = [];
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'lobby' });
+  assert.equal(conta('game_start'), 1, 'game_start una volta sola, alla lobby');
+  assert.deepEqual(ultimo('game_start'), { entry_point: 'lobby' });
+  assert.equal(conta('location_opened'), 1, 'e una location_opened per la lobby');
+  assert.deepEqual(ultimo('location_opened'), { location_name: 'lobby' });
+
+  /* ---- la Hall of Fame: zona + quadro, e niente doppioni girando l'hub ---- */
+  VN.step(); VN.step(); VN.step();                    // le battute prima dell'hub
+  $('hnext').onclick({ stopPropagation() {} });        // -> zona 2, Hall of Fame
+  assert.equal(conta('hall_of_fame_opened'), 1, 'hall_of_fame_opened alla prima apertura della zona');
+  assert.deepEqual(ultimo('location_opened'), { location_name: 'hall_of_fame' });
+  const quadri = () => [...$('hubspots').querySelectorAll('.hspot')];
+  quadri()[0].onclick({ stopPropagation() {} });        // halloffame_fabio -> 2024
+  assert.deepEqual(ultimo('hall_of_fame_edition_opened'), { edition: '2024' });
+  $('quadrochiudi').onclick({ stopPropagation() {} });
+  quadri()[2].onclick({ stopPropagation() {} });        // halloffame_nicola -> 2026
+  assert.deepEqual(ultimo('hall_of_fame_edition_opened'), { edition: '2026' });
+  $('quadrochiudi').onclick({ stopPropagation() {} });
+  assert.equal(conta('hall_of_fame_edition_opened'), 2, 'un evento per ogni quadro aperto, anche ripetuto');
+  // giro completo dell'hub: si ripassa dalla Hall of Fame, niente evento in piu'
+  $('hnext').onclick({ stopPropagation() {} });
+  $('hnext').onclick({ stopPropagation() {} });
+  $('hnext').onclick({ stopPropagation() {} });
+  assert.equal(conta('hall_of_fame_opened'), 1, 'ma hall_of_fame_opened non si ripete');
+  assert.equal(conta('location_opened'), 2, 'due location_opened in tutto: lobby e hall_of_fame');
+
+  /* ---- pronostici: dalla griglia al blocco delle previsioni ---- */
+  eventi = [];
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'keynote' });
+  VN.state.genere = 'f'; VN.state.stile = 'ingegnere'; VN.state.nome = 'Franca';
+  {
+    const bottoni = () => [...$('choices').querySelectorAll('.ch')];
+    const celle = () => [...$('griglia').querySelectorAll('.gcell')];
+    let giri = 0;
+    while (VN.sceneId !== 'teleprompter' && giri++ < 900) {
+      if ($('griglia').classList.contains('on')) {
+        const libere = celle().filter((c) => !c.classList.contains('fatta'));
+        if (!libere.length) { VN.step(); continue; }
+        libere[0].onclick({ stopPropagation() {} });
+      } else if ($('choices').classList.contains('on')) {
+        bottoni()[0].onclick({ stopPropagation() {} });
+      } else {
+        VN.step();
+      }
+    }
+  }
+  assert.equal(VN.sceneId, 'teleprompter', 'si arriva al teleprompter');
+  assert.equal(conta('predictions_started'), 1, 'predictions_started una volta sola');
+  assert.equal(conta('category_selected'), 3, 'una per macroargomento, mai due volte lo stesso');
+  assert.deepEqual(new Set(eventi.filter(([n]) => n === 'category_selected').map(([, p]) => p.category)),
+    new Set(['iphone', 'watch', 'altro']));
+  assert.equal(conta('prediction_completed'), 3, 'una per macroargomento completato');
+  assert.equal(conta('predictions_complete'), 1, 'e il completamento di tutte, una volta sola');
+  assert.deepEqual(ultimo('predictions_complete'), { completed_categories: 3 });
+  assert.equal(conta('teleprompter_started'), 1, 'entrando nel teleprompter parte anche questo, una volta');
+  assert.equal(conta('teleprompter_complete'), 0, 'non ancora: le previsioni non sono bloccate');
+
+  // il blocco delle previsioni: la conferma nella modale, come nel resto del gioco
+  VN.step(); VN.step();                                // le due battute prima del recap
+  $('blocca').onclick({ stopPropagation() {} });
+  [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // Si', confermo
+  assert.equal(VN.state.locked, true);
+  assert.equal(conta('teleprompter_complete'), 1, 'teleprompter_complete al blocco');
+  assert.equal(VN.sceneId, 'finale');
+
+  /* ---- email facoltativa: solo un invio riuscito manda l'evento ---- */
+  eventi = [];
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'finale' });
+  VN.state.nome = 'Franca'; VN.state.locked = true;
+  {
+    let giri = 0;
+    while (!$('emailwrap').classList.contains('on') && giri++ < 60) VN.step();
+  }
+  assert.ok($('emailwrap').classList.contains('on'), 'schermata email raggiunta');
+  $('emailok').onclick({ stopPropagation() {} });        // campo vuoto = salto
+  assert.equal(conta('email_submitted'), 0, 'saltare col campo vuoto non manda l\'evento');
+
+  eventi = [];
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'finale' });
+  VN.state.nome = 'Franca'; VN.state.locked = true;
+  {
+    let giri = 0;
+    while (!$('emailwrap').classList.contains('on') && giri++ < 60) VN.step();
+  }
+  $('emailin').value = 'franca@esempio.com';
+  $('emailok').onclick({ stopPropagation() {} });
+  assert.equal(conta('email_submitted'), 1, 'email valida: l\'evento parte, una volta sola');
+  assert.deepEqual(ultimo('email_submitted'), { method: 'optional_results_email' });
+  nessunDatoPersonale();
+
+  /* ---- il quiz di Peter: griglia, livelli, e la fine della scaletta ---- */
+  eventi = [];
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'quiz' });
+  VN.state.stile = 'ingegnere';
+  VN.state.locked = true;
+  VN.state.quiz_visto = true;
+  VN.step(); VN.step(); VN.step();
+  assert.equal(conta('quiz_started'), 1, 'quiz_started una volta sola, alla griglia');
+  assert.equal(conta('location_opened'), 1, 'e la location "quiz_area"');
+  assert.deepEqual(ultimo('location_opened'), { location_name: 'quiz_area' });
+
+  const cellePerLivello = () => [...$('griglia').querySelectorAll('.gcell')];
+  const tutteQuiz = Object.values(quiz.pool).flat(2);
+  const rispondiQuizGiusto = () => {
+    const d = tutteQuiz.find((x) => x.q === $('txt').textContent);
+    assert.ok(d, `domanda a schermo non trovata nel pool: "${$('txt').textContent}"`);
+    const btns = [...$('choices').querySelectorAll('.ch')].filter((b) => !b.classList.contains('perk'));
+    btns[d.ok].onclick({ stopPropagation() {} });
+    VN.step();
+  };
+  for (const liv of ['base', 'avanzato', 'leggenda']) {
+    const cella = cellePerLivello().find((c) => c.dataset.livello === liv);
+    assert.ok(cella, `livello ${liv} in griglia`);
+    cella.onclick({ stopPropagation() {} });
+    assert.equal(VN.sceneId, 'quiz_livello', `si entra nel livello ${liv}`);
+    for (let k = 0; k < quiz.livelli[liv].domande; k++) rispondiQuizGiusto();
+    assert.ok(eventi.some(([n, p]) => n === 'quiz_level_complete' && p.quiz_level === liv && p.result === 'passed'),
+      `quiz_level_complete(${liv}, passed)`);
+    VN.step();                                          // torna alla griglia
+    assert.equal(VN.sceneId, 'quiz', 'si torna alla griglia');
+    VN.step(); VN.step(); VN.step();
+  }
+  assert.equal(conta('quiz_level_started'), 3, 'un quiz_level_started per livello, non di piu\'');
+  assert.equal(conta('quiz_complete'), 1, 'quiz_complete quando la scaletta e\' davvero finita');
+  assert.deepEqual(ultimo('quiz_complete'), { highest_level_completed: 'leggenda' });
+  nessunDatoPersonale();
+
+  /* ---- game_complete: solo al countdown, e riflette cosa e' stato fatto ---- */
+  eventi = [];
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'countdown', stato: { locked: false } });
+  assert.equal(conta('game_complete'), 1, 'game_complete al countdown, una volta sola');
+  assert.deepEqual(ultimo('game_complete'), { predictions_completed: false, quiz_completed: false });
+
+  eventi = [];
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'countdown',
+    stato: { locked: true, _ga: { quiz_complete: true } } });
+  assert.deepEqual(ultimo('game_complete'), { predictions_completed: true, quiz_completed: true },
+    'i due flag riflettono lo stato della partita, non un numero o un punteggio');
+  nessunDatoPersonale();
+
+  delete window.gtag;
+}
+
 if (todoAssets.size) console.log(`asset ancora da disegnare (${todoAssets.size}):`, [...todoAssets].join(', '));
 console.log(`banca domande: ${idsDomande.size} domande, ${nBattute} battute · quiz: ${idsQuiz.size} domande`);
 console.log('smoke test: OK');
