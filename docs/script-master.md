@@ -440,9 +440,12 @@ Tutti e 3 i macroargomenti completati → [S6.01]
 
 ```
 [S5.DOMANDA]
-  Asset: bg_palco_platea_piena + obj_schermo_slide_categoria (variante della
-  categoria attiva) + stile_X_annuncio / stile_X_indica_schermo (alternati a
-  caso) + reazione platea (assegnata a caso, MAI legata alla risposta)
+  Asset: bg_palco_platea_piena + stile_X_annuncio / stile_X_indica_schermo
+  (alternati a caso) + reazione platea (assegnata a caso, MAI legata alla
+  risposta)
+  Niente slide della categoria sopra la scena: la striscia orizzontale in alto
+  rubava spazio e ripeteva quello che diceva gia' la domanda. Dove il giocatore
+  e' gia' stato lo dice lo schermo del palco in [S5.HUB], con gli emblemi.
 
   1. SUSAN introduce la domanda dalla regia (riga corta, dal pool
      `regia.introDomanda`: "Tocca a te.", "Vai.", "Slide su."...)
@@ -489,9 +492,11 @@ numeri, niente "bene"/"male" espliciti, solo come Susan racconta com'è andata.
 
 Elenco e testi in `game/domande.json` (`micro_eventi`, `eventi_personali`,
 `intermezzi`, `intermezzi_riserva`). Cinque micro-eventi generali, uno personale
-per stile mostrato al massimo una volta a run, quattro intermezzi fissi (R1
-prima del primo macroargomento, R3-R5 dopo ciascuno dei tre completati, in ordine
-di completamento) più quattro di riserva.
+per stile mostrato al massimo una volta a run, tre intermezzi fissi (R1 prima
+del primo macroargomento, R4-R5 dopo un macroargomento completato, in ordine di
+completamento) più quattro di riserva: i giri da coprire sono quattro, quindi
+l'ultimo pesca dalla riserva — è esattamente a questo che serve. R2 (la luce per
+Craig) e R3 (il primo piano) sono state tolte per non allungare le previsioni.
 
 I micro-eventi non sono più passivi: ogni voce contiene tre `opzioni`. I valori
 editoriali indicano il tono previsto della battuta, ma il motore mescola a ogni

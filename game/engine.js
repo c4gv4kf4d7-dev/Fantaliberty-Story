@@ -1121,17 +1121,23 @@
     return (s.pose && s.pose[posa]) || '';
   }
 
+  /* "entra" e' un'animazione "forwards": finisce a opacita' piena e ce la
+     lascia, quindi togliere solo "on" non spegneva niente — il giocatore
+     restava a schermo davanti alla sagoma del CEO. Le due classi vanno via
+     insieme. E' la stessa trappola gia' documentata per #npc. */
+  function spegniIo() { el.avatar.classList.remove('on', 'entra'); }
+
   function mostraIo(st) {
-    if (st.hide) { el.avatar.classList.remove('on'); return; }
+    if (st.hide) { spegniIo(); return; }
     var src = posaStile(st.posa || 'idle_palco');
-    if (!src) { el.avatar.classList.remove('on'); return; }   // stile non ancora scelto
+    if (!src) { spegniIo(); return; }   // stile non ancora scelto
     el.avatar.innerHTML = '';
     var img = global.document.createElement('img');
     img.className = 'alayer';
     img.id = 'ioImg';
     img.src = withBase(src);
     // file dichiarato ma non consegnato: meglio nessuna figura che l'icona rotta
-    img.onerror = function () { el.avatar.classList.remove('on'); };
+    img.onerror = function () { spegniIo(); };
     el.avatar.appendChild(img);
     el.avatar.style.height = st.height || '';
     el.avatar.style.bottom = st.bottom || '';
@@ -3007,7 +3013,10 @@
       // Nell'hub il protagonista e' l'ambiente: il personaggio commenta da
       // bordo scena e non deve coprire quello che c'e' da toccare. Percio' qui
       // vale "scalaHub" del cast (piu' contenuta) invece di "scala".
-      var chiInScena = muta ? null : (ritorno ? (ritorno.who || z.who) : z.who);
+      // "resta": il personaggio della zona e' scenografia, non la guida — Peter
+      // dorme al suo tavolino e deve restarci anche quando la zona non parla
+      // piu'. Senza, tornando sulla zona il tavolino era vuoto.
+      var chiInScena = (muta && !z.resta) ? null : (ritorno ? (ritorno.who || z.who) : z.who);
       if (chiInScena) {
         showChar(perHub(ritorno
           ? { who: chiInScena, body: ritorno.body || z.body, height: z.height, bottom: z.bottom, right: z.right }

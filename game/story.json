@@ -1099,19 +1099,11 @@
     "argomento": {
       "title": "S5 — Pronostici",
       "bg": "palco_platea_piena",
-      "_nota": "Un macroargomento: tutte le core in sequenza fissa, poi il bivio della regia che pesca 3 facoltative dal pool, poi un intermezzo e si torna alla griglia. Da qui in poi Susan parla sempre in cuffia: e' in regia, non sul palco.",
+      "_nota": "Un macroargomento: tutte le core in sequenza fissa, poi il bivio della regia che pesca 3 facoltative dal pool, poi un intermezzo e si torna alla griglia. Da qui in poi Susan parla sempre in cuffia: e' in regia, non sul palco. Niente slide della categoria sopra la scena: la striscia orizzontale in alto rubava spazio e non diceva niente che non fosse gia' nella domanda — quello che il giocatore ha gia' fatto lo dice lo schermo del palco, con gli emblemi.",
       "steps": [
         {
           "t": "io",
           "posa": "idle_palco"
-        },
-        {
-          "t": "prop",
-          "id": "slide_{categoria}",
-          "show": true,
-          "size": "52%",
-          "top": "23%",
-          "_nota": "La slide del macroargomento attivo, sullo schermo dietro. L'id dipende dalla categoria scelta nella griglia."
         },
         {
           "t": "domande",
@@ -1139,10 +1131,6 @@
           "t": "intermezzo",
           "who": "susan",
           "incuffia": true
-        },
-        {
-          "t": "prop",
-          "show": false
         },
         {
           "t": "goto",
@@ -1503,12 +1491,12 @@
               "hotspots": [
                 {
                   "label": "IL REGOLAMENTO",
-                  "x": "30%",
-                  "y": "16%",
-                  "w": "60%",
-                  "h": "42%",
+                  "x": "28%",
+                  "y": "46%",
+                  "w": "42%",
+                  "h": "34%",
                   "apre": "regolamento",
-                  "_nota": "Il riquadro illuminato del cartellone, misurato sul fondale."
+                  "_nota": "Il riquadro illuminato del cartellone. Il segnale luminoso sta al centro dell'area: piu' in alto finiva sulla parte piu' chiara del cartellone e non si vedeva."
                 }
               ]
             },
@@ -1544,7 +1532,9 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "resta": true,
+              "_nota": "Peter e' scenografia, non la guida: nella zona gia' vista resta in scena (\"resta\": true) invece di uscire come fa Francesca. Senza, tornando sulla zona il tavolino era vuoto e non si capiva piu' dove fosse il quiz."
             },
             {
               "id": "quiz_aperto",
@@ -1570,7 +1560,9 @@
                   },
                   "goto": "quiz"
                 }
-              ]
+              ],
+              "resta": true,
+              "_nota": "Peter e' scenografia, non la guida: nella zona gia' vista resta in scena (\"resta\": true) invece di uscire come fa Francesca. Senza, tornando sulla zona il tavolino era vuoto e non si capiva piu' dove fosse il quiz."
             }
           ],
           "tutorialSe": {

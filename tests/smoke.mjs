@@ -1451,6 +1451,17 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.ok($('boxwrap').classList.contains('in'), 'le frecce restano a schermo');
   assert.ok($('hubnav').classList.contains('on'), 'la barra delle zone e\' accesa');
   assert.equal($('npc').classList.contains('in'), false, 'Francesca non e\' piu\' in scena');
+  // Peter pero' resta: e' scenografia, non la guida. Prima spariva e il
+  // tavolino del quiz restava vuoto.
+  $('hnext').onclick({ stopPropagation() {} });
+  $('hnext').onclick({ stopPropagation() {} });
+  assert.ok($('bg').getAttribute('src').includes('quiz_bloccata'), 'zona 4, gia' + '\' vista');
+  assert.equal(txt(), '', 'la zona non ripete la presentazione');
+  assert.ok($('npc').classList.contains('in'), 'ma Peter e\' ancora al suo tavolino');
+  assert.ok($('npcBody').getAttribute('src').includes('chr_peter_dorme'), 'e dorme, come prima');
+  $('hnext').onclick({ stopPropagation() {} });
+  $('hnext').onclick({ stopPropagation() {} });
+
   // ...e i quadri restano guardabili anche nella zona muta: non serve una
   // battuta per aprirli, li apre il tocco
   spots()[0].onclick({ stopPropagation() {} });
@@ -1914,7 +1925,10 @@ for (const [cat, c] of Object.entries(domande.categorie)) {
 assert.equal(idsDomande.size, 29, '29 domande: 12 core + 17 facoltative');
 assert.equal(nOpzioni, 79, '79 opzioni in totale');
 assert.equal(nBattute, 316, '316 battute: una per opzione per ciascuno dei 4 stili');
-assert.equal(domande.intermezzi.length, 4, '4 intermezzi di regia fissi');
+assert.equal(domande.intermezzi.length, 3, '3 intermezzi di regia fissi');
+// tre fissi e quattro macroargomenti-piu'-apertura da coprire: l'ultimo giro
+// pesca dalla riserva, che serve esattamente a questo
+assert.ok(domande.intermezzi_riserva.length >= 1, 'e almeno uno di riserva');
 assert.equal(Object.keys(domande.eventi_personali).length, 4, 'un evento personale per stile');
 for (const s of STILI) assert.ok(domande.eventi_personali[s], `manca l'evento personale di ${s}`);
 
@@ -1991,6 +2005,31 @@ function apriQuizHub(stile) {
   VN.state.locked = true;
   VN.step(); VN.step(); VN.step();          // le tre battute di presentazione
   return cellePerLivello();
+}
+
+/* ---------- 9-ter. due dettagli di scena ----------
+   Piccoli, ma si vedono solo a schermo. */
+{
+  /* Il giocatore deve sparire davvero quando la scena lo dice. "entra" e'
+     un'animazione forwards: finisce a opacita' piena e ce la lascia, quindi
+     togliere solo "on" non spegneva niente e il giocatore restava a schermo
+     davanti alla sagoma del CEO. */
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'finale' });
+  VN.state.stile = 'drip'; VN.state.genere = 'm'; VN.state.nome = 'Tester';
+  // com'e' a schermo quando il giocatore e' in scena: acceso E con l'animazione
+  // d'ingresso finita addosso
+  $('avatar').classList.add('on', 'entra');
+  const iNascondi = story.scenes.finale.steps.findIndex((x) => x.t === 'io' && x.hide);
+  assert.ok(iNascondi > 0, 'il finale nasconde il giocatore prima della porta');
+  while (VN.i <= iNascondi && VN.sceneId === 'finale') VN.step();
+  assert.equal($('avatar').classList.contains('on'), false, 'il giocatore e\' spento');
+  assert.equal($('avatar').classList.contains('entra'), false,
+    'e senza l\'animazione che lo teneva visibile lo stesso');
+
+  // niente striscia della categoria sopra la scena delle domande
+  assert.equal((story.scenes.argomento.steps || []).some((x) => x.t === 'prop'), false,
+    'nessun prop sopra la scena durante le previsioni');
 }
 
 /* ---------- 9-bis. gli emblemi sullo schermo del palco (S5) ----------

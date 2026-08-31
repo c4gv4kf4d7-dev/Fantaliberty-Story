@@ -131,7 +131,7 @@ all'inizio della S4 e non cambia più per tutta la sessione.
 | `obj_clicker` | S5 | **2 frame** (integro/inceppato), usato durante il micro-evento "il clicker si inceppa" |
 | `obj_gobbo_teleprompter` | S6 | Cornice UI del recap — il testo scorrevole delle scelte è HTML/UI vera, non grafica |
 | `obj_slide_compleanno` | S5 | Immagine intera mostrata per un attimo sullo schermo del palco durante il relativo micro-evento |
-| `obj_schermo_slide_categoria` | S5 | **3 varianti** (iPhone/Watch/Altro) — mostrate sullo schermo dietro il personaggio quando quel macroargomento è selezionato e attivo |
+| `obj_schermo_slide_categoria` | S5 | **3 varianti** (iPhone/Watch/Altro). **Non piu' usate**: la striscia sopra la scena durante le domande e' stata tolta. Restano dichiarate in `story.argomenti[].slide` e sul disco, se un giorno servisse rimetterle |
 | `obj_icone_categorie` | S5 | **9 file** (3 icone × 3 stati: attiva/completata/disabilitata) — sovrapposte sui 3 pannelli vuoti di `bg_palco_schermo_categorie`, lo stato cambia in base a `picks[categoria]` completo o no |
 | `obj_card_condivisibile` | S7 | Template finale: combina `stile_X_saluto_finale`, `obj_badge` compilato, nome e store — esportato client-side come immagine 1080×1920/1080×1350 |
 | `obj_zaino_rider` | S5 | **Ora è un personaggio pixel-art completo** (rider con zaino termico), non un oggetto isolato — appare solo nell'evento personale della Drip |
