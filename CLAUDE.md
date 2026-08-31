@@ -433,6 +433,21 @@ Quattro cose da non annullare per sbaglio:
 4. **Il record si tiene, i punti no.** `VN.state.runner_record` entra nel
    salvataggio; come i punti della corsa si sommino alla classifica dei
    pronostici **non e' deciso** — non inventarlo.
+5. **Il livello e' un tratto con un cuore dentro.** Ogni mille punti si
+   attraversa la riga dorata e la velocita' sale di uno scalino; dentro ogni
+   livello esce **un cuore di ricarica solo**, a un punto a caso del tratto
+   (`nuovaQuotaVita()`), e si prova a ogni gruppo — non solo in quelli
+   comodi, se no il cuore dipendeva da quale gruppo usciva a caso. Chi lo
+   perde se lo tiene fino al traguardo dopo: e' quello che rende un livello
+   una cosa da attraversare invece che un contatore.
+
+La riga sul pavimento non e' decorazione: la stella passa per aria e il
+cambio di livello restava una cosa che succedeva altrove. La riga si vede
+arrivare, ci si corre dentro, e li' cambia la velocita'. La scritta
+"LIVELLO n" pero' **non si disegna sulla riga**: al centro del corridoio
+corre il personaggio, e qualunque cosa scritta li' gli finisce dietro — sta
+a schermo, sopra tutto, per un secondo (`annuncio()`). E' la stessa ragione
+per cui il numero del traguardo sta sopra la stella e non sotto.
 
 La prospettiva del corridoio e' **misurata a mano**, non calcolata: due tabelle
 di coppie `[y,x]` tracciate su `run_corridoio_base.webp` con
