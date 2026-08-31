@@ -827,7 +827,19 @@ nell'occhiello fra braccio e busto. Per quelle c'e' `togli_bianchi.py`.
 python3 tools/togli_bianchi.py --controlla                 # chi ha bianco chiuso dentro
 python3 tools/togli_bianchi.py assets/stili/*.webp --anteprima shots/
 python3 tools/togli_bianchi.py assets/stili/*.webp
+
+python3 tools/togli_bianchi.py --bordi --prova assets/stili/*.webp   # i puntini sul contorno
+python3 tools/togli_bianchi.py --bordi assets/stili/*.webp
 ```
+
+`--bordi` e' la seconda passata, per un difetto diverso: non le toppe grandi ma
+i **puntini e i filetti** di fondo rimasti fra le ciocche dei capelli e lungo il
+profilo delle gambe. Li' il colore non basta a decidere — sono spesso sotto la
+soglia del bianco pieno — quindi il criterio e' **cosa hanno intorno**: un pixel
+chiaro e scialbo, con disegno scuro attorno, a meno di cinque pixel dalla
+trasparenza. Cosi' i jeans e le scarpe bianche della Drip, la camicia dello
+Showman, i denti e i riflessi negli occhi restano dove sono: sono chiari ma
+hanno intorno altro chiaro, o stanno in mezzo al disegno e non sul bordo.
 
 Toglie solo il bianco **quasi puro e neutro** (ogni canale >= 235, i tre canali
 entro 10 l'uno dall'altro): il bianco dipinto — la canottiera dell'Hawaiano, la

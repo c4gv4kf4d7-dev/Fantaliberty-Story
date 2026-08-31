@@ -131,7 +131,17 @@ riempiono l'inquadratura invece di lasciare margini vuoti, e sono le stesse che
 il giocatore si vedra' addosso in S5 — quello che scegli e' quello che avrai.
 `idle_camerino` resta dichiarato in `story.stili` ma non lo usa piu' nessuno.
 
-I quattro sprite avevano **residui di sfondo bianco chiusi dentro il disegno**
+Gli sprite hanno due difetti di ritaglio diversi, e servono due passate:
+`tools/togli_bianchi.py` da solo prende le **toppe grandi** di fondo chiuse
+dentro il disegno; `--bordi` prende i **puntini e i filetti sul contorno** (fra
+le ciocche dei capelli dell'Hawaiano e dello Showman, lungo le gambe). Il
+secondo non decide per colore ma per **intorno**: chiaro e scialbo, con disegno
+scuro attorno, a un passo dalla trasparenza. E' l'unico criterio che lascia in
+pace i jeans e le scarpe bianche della Drip, la camicia dello Showman e i denti
+— una prima versione che guardava solo il colore se li mangiava tutti, e si e'
+visto **solo** nell'anteprima in magenta. Guardarla sempre prima di scrivere.
+
+I quattro sprite avevano anche **residui di sfondo bianco chiusi dentro il disegno**
 (puntini fra le ciocche dei capelli, una chiazza fra le gambe, una fra l'asta
 del microfono e i pantaloni): sul fondale scuro si leggono come sporco. Si
 tolgono con `tools/togli_bianchi.py`, guardando **sempre** l'anteprima in
