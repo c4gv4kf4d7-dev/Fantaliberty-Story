@@ -535,11 +535,14 @@ sempre uguale.
    gioco e' rumore, non feedback. Gli effetti stanno solo dove succede qualcosa
    — una scelta, una risposta del quiz, le previsioni spedite, un pannello che
    si apre. `npm test` controlla che dentro `VN.step` non ci finisca un `suona`.
-   **Il tocco secco (`tap`) sta in un posto solo**: entrare in un livello del
-   quiz, dove vuol dire "comincia". Nel terminale della registrazione non si
-   clicca: si scrive: `tastiera()` suona un colpo di tasti al massimo ogni
-   140 ms mentre si digita (non uno per lettera), `tastiera_intro` quando il
-   campo si accende e `invio` quando si conferma.
+   **Il tocco secco (`tap`) segna un impegno preso**: entrare in un livello
+   del quiz ("comincia") e scegliere una risposta ai pronostici in S5 — li' ha
+   sostituito `scelta` (`sfx-ui-select`), che restava un rumore di clic da
+   mouse su una scelta che invece pesa. `scelta` resta sul resto delle scelte
+   di tono, dove il tocco non impegna a niente di misurabile. Nel terminale
+   della registrazione non si clicca: si scrive: `tastiera()` suona un colpo
+   di tasti al massimo ogni 140 ms mentre si digita (non uno per lettera),
+   `tastiera_intro` quando il campo si accende e `invio` quando si conferma.
 2. **La musica non riparte a ogni scena.** `musicaScena()` confronta il brano
    chiesto con quello che sta suonando: se e' lo stesso non tocca niente. Le
    quattro scene dell'atto 1 condividono il brano, e il giocatore non deve

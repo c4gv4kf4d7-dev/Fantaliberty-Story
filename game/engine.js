@@ -1838,7 +1838,7 @@
           hideUI();
           VN.progressed = true;
           // core: punti gia' calcolati nella banca. extra e intermezzi: val secco
-          suona('scelta');
+          suona('tap');
           segna(VN.state.categoria, tipo, d.id, o.label, o.pt != null ? o.pt : (o.val || 0));
           VN.saveNow();
           annuncia(d, o);
@@ -2680,8 +2680,7 @@
         if (ev && ev.stopPropagation) ev.stopPropagation();
         if (uscito || chiuso || !aperto) return;
         uscito = true;
-        suona('tap');           // si entra in un livello: l'unico posto in cui
-                                // il tocco secco vuol dire "comincia"
+        suona('tap');           // si entra in un livello: "comincia"
         VN.progressed = true;
         VN.state.livello = liv;
         gaOnce('quiz_level_started:' + liv, 'quiz_level_started', { quiz_level: liv });
