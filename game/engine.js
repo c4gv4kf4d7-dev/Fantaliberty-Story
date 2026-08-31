@@ -936,12 +936,18 @@
         // prossimo. Va da solo, un tocco salta tutto.
         if (st.blocchi) return titoliDiCoda(st, perScena(next));
         // "macchina": il cartello scrive a macchina, e si sente (sfx_typing3).
-        // Non tutti i cartelli ce l'hanno: solo dove lo dichiara lo step.
+        // Non tutti i cartelli ce l'hanno: solo dove lo dichiara lo step. Il
+        // file consegnato dura piu' della scrittura vera: parte con la prima
+        // riga e si ferma di netto appena la scrittura finisce, non quando
+        // finisce lui.
         if (st.macchina) suona('titoli_typing');
+        var doneScrittura = perScena(next);
         // "ritmo" accorcia scrittura e pause; "senzaSalto" fa si' che il tocco
         // non lo completi a meta': si legge tutto, poi la freccia
-        typeLines(righeTitolo(st.lines), perScena(next), false,
-          { ritmo: st.ritmo, senzaSalto: st.senzaSalto !== false });
+        typeLines(righeTitolo(st.lines), function () {
+          if (st.macchina) fermaSuono('titoli_typing');
+          doneScrittura();
+        }, false, { ritmo: st.ritmo, senzaSalto: st.senzaSalto !== false });
         return;
 
       case 'show':
@@ -4160,6 +4166,19 @@
     } catch (e) {}
   }
 
+  /* Ferma un effetto gia' partito, prima che la sua registrazione naturale
+     finisca da sola. Serve quando un file consegnato grezzo (piu' lungo di un
+     singolo "colpo") deve chiudersi in sincronia con qualcos'altro — la
+     scrittura a video di un cartello, o il tasto vero che arriva sopra
+     all'accensione del terminale — invece che a tempo suo. */
+  function fermaSuono(quale) {
+    var mappa = cfgAudio().effetti || {};
+    var file = mappa[quale];
+    if (Array.isArray(file)) file = ultimoSfx[quale] || file[0];
+    var nodo = file && sfxCache[file];
+    if (nodo) { try { nodo.pause(); nodo.currentTime = 0; } catch (e) {} }
+  }
+
   /* La tastiera del terminale: un colpo di tasti ogni tanto, non uno per
      lettera. Chi scrive "Lorenzo" deve sentire qualcuno che digita, non una
      mitragliatrice: si suona al massimo ogni 140 ms, alternando le due
@@ -4169,6 +4188,10 @@
     var ora = Date.now();
     if (ora - ultimoTasto < 140) return;
     ultimoTasto = ora;
+    // il primo tasto vero zittisce l'accensione del terminale: sfx_typing_intro
+    // dura piu' di un singolo colpo, e senza questo il tasto ci suonava sopra —
+    // due suoni di tastiera insieme, non uno.
+    fermaSuono('tastiera_intro');
     suona('tastiera', 0.27);   // volume -40%
   }
 
