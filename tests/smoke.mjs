@@ -839,7 +839,7 @@ assert.equal(VN.state.sfacciato, false);
   VN.step();
   assert.match(txt(), /sono io/, 'e ti avvisa che la voce in cuffia e\' la sua');
   VN.step(); VN.step();
-  assert.match(txt(), /nessuno sa che sei il sostituto/, '[S4.04] ultimo briefing');
+  assert.match(txt(), /nessuno sa che sei .*sostitut/, '[S4.04] ultimo briefing');
   VN.step(); VN.step();
   assert.match(txt(), /crolli il resto/, 'e torna al suo di lavoro');
 
@@ -1953,6 +1953,49 @@ assert.equal(domande.intermezzi.length, 3, '3 intermezzi di regia fissi');
 assert.ok(domande.intermezzi_riserva.length >= 1, 'e almeno uno di riserva');
 assert.equal(Object.keys(domande.eventi_personali).length, 4, 'un evento personale per stile');
 for (const s of STILI) assert.ok(domande.eventi_personali[s], `manca l'evento personale di ${s}`);
+
+/* ---------- 8b. il giocatore non ha un genere fisso ----------
+   Il genere lo sceglie chi gioca a [S0.03] e NON c'entra con lo stile: si puo'
+   benissimo essere maschile e vestirsi da Drip. Quindi ogni parola declinata
+   che si riferisce al giocatore deve passare da {g:maschile|femminile}, o
+   prima o poi qualcuno si sente dare della bugiarda avendo scelto lo Showman
+   (successo davvero, agosto 2026).
+
+   La lista e' di parole che nel gioco si riferiscono SEMPRE al giocatore: non
+   pretende di prendere tutti i casi possibili, presidia quelli visti. Chi ne
+   incontra uno nuovo lo aggiunge qui insieme alla correzione. */
+const DECLINATE = [
+  // esclamazioni rivolte a chi gioca: qui dentro sono sempre sue
+  /(^|[«"(.!?]\s*)(bravo|brava|bravissimo|bravissima)\b/i,
+  // predicati: "sei/sono/eri + aggettivo", cioe' il giocatore descritto
+  /\b(sei|sono|eri|sarai|sembri|ti senti)\s+(gia'\s+|molto\s+|davvero\s+)?(pronto|pronta|sicuro|sicura|bugiardo|bugiarda|coraggioso|coraggiosa|rilassato|rilassata|sveglio|sveglia|convinto|convinta|emozionato|emozionata|agitato|agitata|nato|nata|tornato|tornata|arrivato|arrivata)\b/i,
+  // "sei il sostituto", "sei la nuova": ruolo del giocatore
+  /\b(sei|sono)\s+(il|la|un|una)\s+(sostituto|sostituta|nuovo|nuova)\b/i,
+  // domanda secca di conferma, sempre al giocatore
+  /(^|[.!?]\s*)(sicuro|sicura)\s*\?/i,
+];
+const SENZA_G = /\{g:[^}]*\}/g;
+const declinateFuori = [];
+function frugaGenere(node, path) {
+  if (typeof node === 'string') {
+    // i percorsi degli asset e le note non sono testo che si legge a schermo
+    if (/_nota|\/note|\/pose\//.test(path) || /\.(webp|png|jpg)$/i.test(node)) return;
+    const nudo = node.replace(SENZA_G, ' ');
+    for (const re of DECLINATE) {
+      if (re.test(nudo)) declinateFuori.push(`${path}: "${node.slice(0, 70)}"`);
+    }
+  } else if (Array.isArray(node)) {
+    node.forEach((v, i) => frugaGenere(v, `${path}/${i}`));
+  } else if (node && typeof node === 'object') {
+    for (const [k, v] of Object.entries(node)) frugaGenere(v, `${path}/${k}`);
+  }
+}
+frugaGenere(story, 'story');
+frugaGenere(domande, 'domande');
+frugaGenere(quiz, 'quiz');
+assert.deepEqual(declinateFuori, [],
+  'parole declinate al maschile o al femminile fuori da {g:...}:\n  '
+  + declinateFuori.join('\n  '));
 
 /* ---------- 9. quiz di Peter (game/quiz.json) ---------- */
 const idsQuiz = new Set();

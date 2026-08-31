@@ -910,7 +910,7 @@
           "by": "stile",
           "text": {
             "hawaiano": "Ok. Relax. Ottimo. Proprio quello che mi serviva in una situazione del genere.",
-            "showman": "Perfetto. Uno che non avra' problemi a parlare. Il problema sara' farlo smettere.",
+            "showman": "Perfetto. {g:Uno|Una} che non avra' problemi a parlare. Il problema sara' farlo smettere.",
             "drip": "Va bene. Non ho idea di cosa significhi, ma evidentemente tu si'.",
             "ingegnere": "Ingegnere. Perfetto. Finalmente qualcuno che puo' spiegarmi perche' tutto sta andando storto.",
             "*": "Bene. Adesso muoviti, che ci aspettano."
@@ -1028,7 +1028,7 @@
           "t": "say",
           "who": "susan",
           "incuffia": true,
-          "text": "Ricordati una cosa: nessuno sa che sei il sostituto."
+          "text": "Ricordati una cosa: nessuno sa che sei {g:il sostituto|la sostituta}."
         },
         {
           "t": "say",
@@ -1162,7 +1162,7 @@
           "daFare": "Facoltativa non giocata",
           "bottone": "CONFERMA LE PREVISIONI",
           "lock": {
-            "text": "Sicuro? Dopo questo le tue previsioni sono definitive.",
+            "text": "{g:Sicuro|Sicura}? Dopo questo le tue previsioni sono definitive.",
             "si": "Si', confermo",
             "no": "Fammi rileggere"
           },
@@ -1551,7 +1551,7 @@
                   "h": "23%",
                   "conferma": {
                     "text": "Cominciamo il quiz?",
-                    "si": "Si', sono pronto",
+                    "si": "Si', sono {g:pronto|pronta}",
                     "no": "Fra poco"
                   },
                   "goto": "quiz"
@@ -2186,7 +2186,7 @@
     ],
     "_nota_esiti": "I tre pool qui sotto sono la conseguenza di un micro-evento, uno per esito. Il giocatore non vede numeri: capisce come e' andata solo da come gliela racconta Susan. Non aggiungere qui niente che dica quanto vale.",
     "improvvisazione": [
-      "Bravissimo. Hai appena improvvisato e nessuno se n'e' accorto.\nCredo.",
+      "{g:Bravissimo|Bravissima}. Hai appena improvvisato e nessuno se n'e' accorto.\nCredo.",
       "Ok...\nSta funzionando.\nNon dirlo ad alta voce. Porta sfortuna."
     ],
     "caos": [
