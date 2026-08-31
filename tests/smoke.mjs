@@ -2175,6 +2175,32 @@ function apriQuizHub(stile) {
     'nessun prop sopra la scena durante le previsioni');
 }
 
+/* ---------- 9-quinquies. la registrazione: il Mac sta nel fondale ----------
+   Non e' un oggetto appoggiato sopra la scena. Il terminale si incolla in pixel
+   allo schermo disegnato dentro bg_macintosh, perche' con le percentuali dello
+   stage il testo finiva fuori dal vetro su ogni finestra di forma diversa dal
+   telefono. E' gia' stato smontato una volta per sbaglio: questo lo presidia. */
+{
+  const reg = story.scenes.registrazione;
+  assert.equal(reg.bg, 'macintosh', 'la registrazione sta sul fondale col Mac dentro');
+  assert.equal(reg.bgFx, undefined, 'e a fuoco: il terminale si deve leggere');
+  const prop = reg.steps.filter((x) => x.t === 'prop');
+  assert.ok(prop.length && prop.every((x) => x.fondale === true),
+    'il Mac non torna un oggetto sovrapposto: gli step prop sono quelli "fondale"');
+  assert.ok(prop.some((x) => x.show === true) && prop.some((x) => x.show === false),
+    'il terminale si accende e a fine registrazione si spegne');
+  const lucas = reg.steps.find((x) => x.t === 'show' && x.who === 'lucas');
+  assert.ok(lucas.height && lucas.bottom,
+    'Lucas e\' piu\' piccolo e piu\' in basso, se no copre lo schermo');
+  assert.equal(story.scenes.badge.bg, 'macintosh', 'il badge resta nello stesso posto');
+  assert.equal(story.scenes.badge.bgFx, 'blur', 'fuori fuoco, cosi\' il badge si stacca');
+
+  const motore = fs.readFileSync(path.join(ROOT, 'game/engine.js'), 'utf8');
+  assert.match(motore, /SCHERMO_FONDALE/, 'il motore sa dov\'e\' il vetro del CRT');
+  assert.match(motore, /function ancoraTerminale/, 'e ci incolla il terminale in pixel');
+  assert.match(motore, /if \(st\.fondale\)/, 'lo step prop conosce la variante "fondale"');
+}
+
 /* ---------- 9-quater. il giocatore non attraversa le scene ----------
    Ogni scena che vuole la figura del giocatore la dichiara come primo step. Se
    una se ne dimentica non deve ritrovarsela addosso: e' cosi' che restava a
