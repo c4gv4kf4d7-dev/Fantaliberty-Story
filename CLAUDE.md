@@ -115,7 +115,15 @@ cose da non annullare per sbaglio:
    disegni da 1024px rimpiccioliti a ~400: a pixel duri il ridimensionamento
    è un nearest-neighbour e il contorno si sgrana. `#carImg` è l'unica
    eccezione al resto del gioco (pixelato), non una svista;
-3. **niente meccaniche sulla scheda.** Il perk del quiz si spiega a S8, non
+3. **sulla scheda ci sta chi e', non cosa fa.** Una riga di descrizione e una
+   battuta sua fra virgolette (`battuta` in `story.stili`): lo stile si deve
+   vendere da solo, e' l'unica cosa su cui si sceglie. Le due righe stanno su
+   una riga ciascuna e i quattro cartellini vengono alti uguali — se si
+   allungano, saltano a due righe e il carosello balla a ogni freccia.
+   Attenzione a `max-width` in em qui: si calcola sul font piccolo
+   dell'elemento, non su quello della scheda, e con un valore in em la
+   descrizione veniva incolonnata a tre parole per riga;
+4. **niente meccaniche sulla scheda.** Il perk del quiz si spiega a S8, non
    qui: il carosello lo rimostra solo se lo step chiede `etichettaPerk` (S3
    non lo chiede). A S8 lo dice Peter, con una battuta per stile (`by:
    "stile"`) prima di cominciare: e' l'unico posto dove il perk viene

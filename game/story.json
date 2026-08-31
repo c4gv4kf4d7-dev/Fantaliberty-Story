@@ -2041,7 +2041,8 @@
   "stili": {
     "hawaiano": {
       "nome": "Hawaiano",
-      "desc": "Non sa che ore sono, ma sa sempre cosa dire.",
+      "desc": "Arriva tardi, scalzo. La platea lo perdona.",
+      "battuta": "«Se sbaglio rifaccio. Nessun dramma.»",
       "perk": {
         "id": "seconda_chance",
         "testo": "un tentativo fallito non si conta, una volta per livello."
@@ -2067,7 +2068,8 @@
     },
     "showman": {
       "nome": "Showman",
-      "desc": "Crede a tutto cio' che dice, per davvero.",
+      "desc": "Non ha mai avuto un dubbio in vita sua.",
+      "battuta": "«Non devi sapere tutto. Devi dirlo bene.»",
       "perk": {
         "id": "tutto_sbloccato",
         "testo": "tutte le difficolta' sbloccate da subito, in ordine libero."
@@ -2093,7 +2095,8 @@
     },
     "drip": {
       "nome": "Drip",
-      "desc": "Non le importa, ma lo fa con piu' stile di te.",
+      "desc": "Sembra capitata li' per caso. Non e' cosi'.",
+      "battuta": "«Meta' sono sbagliate. Quelle le tolgo.»",
       "perk": {
         "id": "cinquanta",
         "testo": "un 50/50 per livello: elimina due risposte sbagliate."
@@ -2119,7 +2122,8 @@
     },
     "ingegnere": {
       "nome": "Ingegnere",
-      "desc": "Ha gia' letto le specifiche che tu non sapevi esistessero.",
+      "desc": "Ha letto le specifiche. Tutte, note comprese.",
+      "battuta": "«Dammi tre secondi e ti dico anche perche'.»",
       "perk": {
         "id": "tempo",
         "testo": "+3 secondi su ogni domanda."
