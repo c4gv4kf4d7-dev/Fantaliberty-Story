@@ -34,7 +34,9 @@ Uno sfondo intero per schermata, sempre presente sotto ogni altra cosa.
 | `bg_palco_sipario_chiuso` | S4 | Frame 1 dell'apertura sipario. **Simmetrico sull'asse centrale**: si taglia in due metà via codice per l'animazione, non serve un asset per il sipario a metà apertura |
 | `bg_palco_platea_piena` | S5 | Fondale di base del palco per tutta la Scena 5. La platea qui è neutra/in attesa — le reazioni vere sono layer separati (vedi PLATEA) |
 | `bg_palco_schermo_categorie` | S5 | Variante di `bg_palco_platea_piena` con lo schermo dietro in evidenza, diviso in 3 pannelli vuoti dove vanno sovrapposte `obj_icone_categorie` |
-| `bg_palco_luci_calate` | S6 | Fondale del teleprompter — derivato da `bg_palco_platea_piena` con luci abbassate |
+| `bg_palco_luci_calate` | — | Non piu' usato da nessuna scena: S6 e' passato alla sala regia (`bg_control_room_*`). Resta su disco, dichiarato ma orfano |
+| `bg_control_room_susan` | S6 | La sala regia con Susan alla console, vista da dietro: il giocatore lascia il palco. La figura di Susan e' gia' disegnata dentro il fondale — niente sprite npc su questa scena |
+| `bg_control_room_monitors` | S6 | I tre monitor della sala regia, ravvicinati: il riepilogo modificabile delle previsioni ci si sovrappone come UI reale, non e' disegnato nel fondale |
 | `bg_finale_porta_illuminata` | S7 | La porta col rettangolo di luce vuoto: sopra ci va lo sprite `chr_ceo_sagoma` / `chr_ceo_pollice_su` |
 | `bg_countdown_nero` | S7 | Schermata post-lock, riaperta ogni giorno fino al keynote vero |
 

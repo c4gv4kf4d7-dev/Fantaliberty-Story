@@ -33,7 +33,7 @@ function partOf(who, kind, id) {
   const c = story.cast?.[who];
   return c && id ? c[kind]?.[id] : undefined;
 }
-const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'hub', 'carosello', 'griglia', 'domande', 'bivio', 'intermezzo', 'recap', 'email', 'countdown', 'quizhub', 'quizlivello', 'quizmult', 'show', 'hide', 'io', 'prop', 'bg', 'react', 'fx', 'carrellata', 'sipario', 'nero', 'luce', 'wait', 'set', 'goto', 'end']);
+const KNOWN = new Set(['logo', 'boot', 'title', 'say', 'choice', 'input', 'list', 'badge', 'hub', 'carosello', 'griglia', 'domande', 'bivio', 'intermezzo', 'monitor', 'email', 'countdown', 'quizhub', 'quizlivello', 'quizmult', 'show', 'hide', 'io', 'prop', 'bg', 'react', 'fx', 'carrellata', 'sipario', 'nero', 'luce', 'wait', 'set', 'goto', 'end']);
 assert.ok(story.scenes[story.meta.start], 'meta.start punta a una scena esistente');
 
 // Tutti i valori che una variabile puo' assumere, raccolti da chi la scrive.
@@ -161,10 +161,10 @@ for (const [id, sc] of Object.entries(story.scenes)) {
       assert.ok(story.meta.keynote && !isNaN(Date.parse(story.meta.keynote)),
         'meta.keynote deve essere una data valida: e\' quella verso cui conta il countdown');
     }
-    if (st.t === 'recap') {
-      assert.ok(story[st.da || 'argomenti'], `scena ${id}: recap su "${st.da}", che non esiste`);
+    if (st.t === 'monitor') {
+      assert.ok(story[st.da || 'argomenti'], `scena ${id}: monitor su "${st.da}", che non esiste`);
       assert.ok(st.lock?.text, `scena ${id}: il blocco e' irreversibile, serve una conferma`);
-      if (st.goto) assert.ok(story.scenes[st.goto], `scena ${id}: recap verso "${st.goto}", che non esiste`);
+      if (st.goto) assert.ok(story.scenes[st.goto], `scena ${id}: monitor verso "${st.goto}", che non esiste`);
     }
     if (st.t === 'carosello') controllaCarosello(id, st);
     if (st.t === 'sipario') {
@@ -1256,19 +1256,24 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   const tutti = banca.micro_eventi.length + 1;
   assert.ok(VN.state.eventi_sacchetto.length < tutti, 'e qualche evento e\' uscito');
 
-  /* ---------- S6: recap, modifica, blocco ---------- */
+  /* ---------- S6: la sala regia, modifica, blocco ---------- */
   // si arriva qui con una partita vera alle spalle: e' il momento giusto per
-  // provare il recap, che senza risposte non avrebbe niente da mostrare
+  // provare il riepilogo, che senza risposte non avrebbe niente da mostrare
   VN.step(); VN.step();                                        // le due battute di Susan
-  assert.ok($('recap').classList.contains('on'), 'il recap si apre');
-  assert.ok($('boxwrap').classList.contains('recap'), 'il box lascia spazio alla lista');
+  assert.ok($('monitorwrap').classList.contains('on'), 'la sala regia si apre');
 
-  const righe = () => [...$('recap').querySelectorAll('.rriga')];
-  const titoli = [...$('recap').querySelectorAll('.rtit')].map((t) => t.textContent);
-  assert.deepEqual(titoli, ['iPhone', 'Watch', 'Altro'], 'una sezione per macroargomento');
-  // 12 core + 9 facoltative pescate: tutte le risposte sono in lista
-  assert.equal(righe().length, 21, 'tutte le domande giocate sono in lista');
-  assert.equal(righe().filter((r) => r.classList.contains('vuota')).length, 0,
+  const cards = () => [...$('mongriglia').querySelectorAll('.moncard')];
+  assert.deepEqual(cards().map((c) => c.querySelector('.montit').textContent),
+    ['iPhone', 'Watch', 'Altro'], 'un monitor per macroargomento');
+  assert.equal(cards().filter((c) => c.classList.contains('fatta')).length, 3,
+    'tutte e tre gia\' complete: nessuna facoltativa lasciata a meta\'');
+
+  cards()[0].onclick({ stopPropagation() {} });                 // iPhone
+  assert.ok($('mondettaglio').classList.contains('on'), 'il tocco apre il dettaglio del monitor');
+  const righe = () => [...$('monlista').querySelectorAll('.monriga')];
+  // 6 core + 3 facoltative pescate: tutte le risposte di iPhone sono in lista
+  assert.equal(righe().length, 9, 'tutte le domande giocate sono in lista');
+  assert.equal(righe().filter((r) => r.classList.contains('monvuota')).length, 0,
     'nessun posto libero: le facoltative erano state giocate tutte');
 
   // modificare una riga: si riapre la stessa domanda e il punteggio si aggiorna
@@ -1280,7 +1285,9 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.equal(opz.length, primaDomanda.opzioni.length);
   const ultima = primaDomanda.opzioni[primaDomanda.opzioni.length - 1];
   opz[opz.length - 1].onclick({ stopPropagation() {} });
-  assert.ok($('recap').classList.contains('on'), 'e si torna al recap');
+  assert.ok($('monitorwrap').classList.contains('on'), 'si torna alla sala regia');
+  assert.equal($('mondettaglio').classList.contains('on'), false,
+    'non al dettaglio: alla vista generale, dove si vede il progresso aggiornato');
   assert.equal(VN.state.picks.iphone.core[primaDomanda.id].v, ultima.label, 'la risposta e\' cambiata');
   // il totale e' ricalcolato dalle risposte, non accumulato: senza, correggere
   // una risposta lascerebbe i punti della vecchia dentro al conto
@@ -1289,13 +1296,13 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
 
   // il blocco e' irreversibile: prima la conferma
   assert.equal(VN.state.locked, false);
-  $('blocca').onclick({ stopPropagation() {} });
+  $('monconferma').onclick({ stopPropagation() {} });
   assert.ok($('modal').classList.contains('on'), 'conferma prima di chiudere la schedina');
   [...$('modalbtns').querySelectorAll('.ch')][1].onclick({ stopPropagation() {} });   // fammi rileggere
   assert.equal(VN.state.locked, false, 'annullare non chiude niente');
-  assert.ok($('recap').classList.contains('on'), 'e si resta sul recap');
+  assert.ok($('monitorwrap').classList.contains('on'), 'e si resta sulla sala regia');
 
-  $('blocca').onclick({ stopPropagation() {} });
+  $('monconferma').onclick({ stopPropagation() {} });
   [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });
   assert.equal(VN.state.locked, true, 'la schedina e\' chiusa');
   assert.equal(VN.sceneId, 'finale', 'e si va al finale');
@@ -2954,8 +2961,8 @@ function apriMoltiplicatori(stato, extra) {
   assert.equal(conta('teleprompter_complete'), 0, 'non ancora: le previsioni non sono bloccate');
 
   // il blocco delle previsioni: la conferma nella modale, come nel resto del gioco
-  VN.step(); VN.step();                                // le due battute prima del recap
-  $('blocca').onclick({ stopPropagation() {} });
+  VN.step(); VN.step();                                // le due battute prima del riepilogo
+  $('monconferma').onclick({ stopPropagation() {} });
   [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // Si', confermo
   assert.equal(VN.state.locked, true);
   assert.equal(conta('teleprompter_complete'), 1, 'teleprompter_complete al blocco');
