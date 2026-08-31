@@ -54,7 +54,7 @@ Questo documento resta l'autorità su scene, dialoghi, struttura e formule.
 | **Lucas** | accredito, S0 |
 | **Francesca** | lobby, S1 |
 | **Susan** | responsabile dell'evento, coordinamento **e regia**: S2, S3, S4, S5, S6, S7 |
-| **Peter** | il quiz finale, S8 |
+| **Peter** | il quiz finale, S8; presenta (controvoglia) anche la corsa, S9 |
 
 **Martha non esiste più.** Il ruolo della regia durante il keynote è di Susan.
 Non è un rinominamento: le battute sono riscritte sulla sua caratterizzazione.
@@ -612,8 +612,8 @@ Indice degli id in `docs/indice-domande.md`.
     [POST-L02] "Hai completato le tue previsioni. Adesso aspettiamo il keynote
                 e scopriamo quanto ci hai preso."
     [POST-L03] "Ma non abbiamo finito."
-    [POST-L04] "Vai da Peter e mettiti alla prova con i suoi quiz sul mondo
-                Apple."
+    [POST-L04] "Vai da Peter: ha due sfide per te. Una gliel'hanno messa lì e
+                non gli va giù, ma quello te lo racconta lui."
     [POST-L05] "Le risposte giuste possono moltiplicare i punti delle tue
                 previsioni."
     [POST-L06] "Quindi sì, quei dettagli inutilmente specifici potrebbero
@@ -621,15 +621,21 @@ Indice degli id in `docs/indice-domande.md`.
 
   Poi → [S1.HUB], che qui si apre direttamente sulla ZONA4 (Peter): è quello che
   resta da fare. Niente tutorial dello swipe — la lobby è già stata girata — e
-  la ZONA1 diventa la variante a show finito: la tenda non porta più da nessuna
-  parte.
+  la ZONA1 diventa la variante a show finito: la tenda non riporta in sala (là
+  si rigiocherebbe lo show), porta al conto alla rovescia — ed è l'unico modo
+  di tornarci dalla lobby.
 
 [S7.05] COUNTDOWN — ci si arriva dopo il quiz, e a ogni riapertura
   Asset: bg_countdown_nero
   "{nickname} — PREVISIONI COMPLETATE
    Il keynote vero inizia tra [ 00:00:00 ]"
-  A: TORNA IN LOBBY → [S1.HUB] (zona 4 ora sbloccata)
-  B: LA TUA CARD → genera ed esporta obj_card_condivisibile client-side
+  È la schermata su cui si riapre il gioco nei giorni fra le previsioni e il
+  keynote, quindi le due sfide stanno qui, a un tocco: chi rientra non deve
+  rifare il giro della lobby per arrivarci.
+  A: IL QUIZ DI PETER → [S8.01]
+  B: APPLE CAMPUS RUN → [S9], sopra il countdown, che resta acceso sotto
+  C: TORNA IN LOBBY → [S1.HUB] (zona 4 ora sbloccata)
+  D: LA TUA CARD → genera ed esporta obj_card_condivisibile client-side
      (1080x1920 / 1080x1350)
 ```
 
@@ -641,12 +647,25 @@ Indice degli id in `docs/indice-domande.md`.
 [S8.01] PETER — prima volta
   Asset: bg_lobby_z4_quiz_aperta + chr_peter_alza_occhi
   "Hai fatto il keynote. Ora vediamo quanto conosci quelli passati."
+
+  [S8.01b] posa chr_peter_sbuffa — presenta l'altra sfida, malvolentieri
+  "Quest'anno però le sfide sono due. E una delle due non l'ho scelta io."
+  [S8.01c] "Hanno messo un gioco dove corri dentro il campus a raccogliere
+            cerchietti. Dentro. Il. Campus. Di corsa."
+  [S8.01d] "Punti per la prontezza del pollice, non per quello che sai.
+            Comunque è lì sotto: fai pure, non ti guarda nessuno."
+  (è l'unico posto dove il gioco dice che le sfide sono due. Il quiz è roba
+   sua e ne va fiero; la corsa gliel'hanno messa lì. Torna a
+   chr_peter_alza_occhi quando ritorna sul quiz: la faccia dice quello che
+   pensa prima delle parole)
+
   "Lo stile che hai scelto ti dà una mano: <perk dello stile>."
     hawaiano  → il primo giro storto di ogni livello non conta
     showman   → i livelli sono già aperti tutti e tre
     drip      → una volta per livello Peter toglie due risposte sbagliate
     ingegnere → tre secondi in più su ogni domanda
-  "Ci sono 3 livelli di difficoltà e hai due tentativi... sei pronto/a?"
+  "Da me invece sono 3 livelli e due tentativi, con il tempo che scorre.
+   Sei pronto/a?"
   (il perk si spiega QUI e solo qui — in S3, sulla scheda del carosello, era
    una meccanica del quiz arrivata troppo presto. La meccanica dei
    moltiplicatori invece non si rispiega: sta nel regolamento)
@@ -654,6 +673,13 @@ Indice degli id in `docs/indice-domande.md`.
 [S8.HUB] Selezione livello
   SE run.style == showman: tutti e 3 i livelli sbloccati, ordine libero
   ALTRIMENTI: Avanzato dopo aver passato Base, Leggenda dopo Avanzato
+  Sotto la griglia, insieme ai moltiplicatori e all'uscita: APPLE CAMPUS RUN
+  → [S9]. Non è un quarto livello e non sta dentro la griglia: i tre pannelli
+  dicono a che punto sono i livelli, un quarto che non è un livello toglierebbe
+  loro quel significato.
+  Al ritorno dalla corsa, al posto di "Da dove vuoi cominciare?":
+  "Rieccoti. Hai corso, bravissimo/a. Le domande sono ancora qui, quando ti va
+   di usare anche la testa."
 
 [S8.LOOP] per ogni livello
   Asset: bg_lobby_z4_quiz_aperta + chr_peter_guarda_orologio (timer sotto i 3s)
@@ -686,6 +712,30 @@ Indice degli id in `docs/indice-domande.md`.
 
 Livelli, soglie, timer, perk e le 44 domande (due pool per livello) in
 `game/quiz.json`.
+
+---
+
+# [S9] APPLE CAMPUS RUN
+
+```
+Non è una scena e non tocca la partita: si apre in un riquadro sopra quello
+che c'è — come il regolamento e i quadri della Hall of Fame — e chiudendola il
+giocatore è esattamente dov'era. Vive in una pagina sua, `game/runner/`.
+
+Due porte, nessun passaggio in mezzo:
+  [S8.HUB]  sotto la griglia dei livelli  → si torna da Peter, che commenta
+  [S7.05]   sulla schermata del countdown → si torna al countdown
+
+Come si gioca: corsa senza fine dentro il corridoio vetrato del campus, tre
+corsie, swipe per cambiare corsia, saltare e scivolare. Anelli e prodotti
+Apple danno punti, gli ostacoli tolgono vite (due), l'icona Salute ne
+restituisce una. Si riprova quante volte si vuole. Il record resta nel
+salvataggio (run.runner_record).
+
+IN SOSPESO: come i punti della corsa entrano nella classifica dei pronostici.
+Finché non è deciso, il record si tiene e basta — non tocca né i punti né i
+moltiplicatori.
+```
 
 ---
 

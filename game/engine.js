@@ -610,6 +610,7 @@
     chiudiQuiz();
     chiudiRegole();
     chiudiQuadro();
+    chiudiCorsa();
     chiudiEmail();
     chiudiTransizioni();
     /* La figura del giocatore non attraversa i cambi di scena: ogni scena che
@@ -2313,6 +2314,10 @@
       b.onclick = function (ev) {
         if (ev && ev.stopPropagation) ev.stopPropagation();
         if (a.card) return mostraCard(st);
+        // la corsa si apre sopra il countdown e lo lascia acceso sotto: alla
+        // chiusura si e' di nuovo davanti al conto alla rovescia, senza aver
+        // cambiato scena
+        if (a.corsa) return apriCorsa(a, null);
         if (a.goto) { chiudiCountdown(); return goScene(a.goto); }
       };
       el.cdbtn.appendChild(b);
@@ -2533,6 +2538,19 @@
           next();
         }
       });
+    }
+    /* La seconda sfida. Sta sotto la griglia e non dentro, come quarto
+       pannello: i tre pannelli dicono a che punto sono i livelli del quiz, e un
+       quarto che non e' un livello gli toglierebbe quel significato. Aprendola
+       la griglia resta dov'e', sotto: al ritorno non si ricarica niente e Peter
+       ha solo una riga da dire. */
+    if (st.corsa) {
+      azioni.push({ label: st.corsa.label || 'Apple Campus Run', _do: function () {
+        apriCorsa(st.corsa, function () {
+          if (uscito || !st.corsa.dopo) return;
+          typeKeep(fmt(st.corsa.dopo));
+        });
+      } });
     }
     if (st.esci) {
       azioni.push({ label: st.esci.label || 'Torna in lobby', _do: function () {
@@ -2868,6 +2886,110 @@
     if (!el.quadrowrap) return;
     el.quadrowrap.classList.remove('on', 'attesa');
     if (el.bg) el.bg.classList.remove('sfoca');
+  }
+
+  /* ---------------- Apple Campus Run ----------------
+     Il minigioco non e' una scena e non e' dentro il motore: e' una pagina sua
+     (game/runner/) che si apre in un riquadro sopra quello che c'e', come il
+     regolamento e i quadri della Hall of Fame. Chiudendola il giocatore e'
+     esattamente dov'era — nella griglia di Peter o davanti al countdown — e la
+     storia non si e' mossa di un passo.
+
+     Le due pagine si parlano con dei messaggi:
+       corsa -> gioco   'pronto' (sono in piedi), 'fine' (partita finita),
+                        'esci'   (il giocatore ha toccato il bottone d'uscita);
+       gioco -> corsa   'apri', con il nome del posto da cui l'ha aperta, che
+                        diventa l'etichetta di quel bottone.
+     Il bottone d'uscita sta dentro la corsa, non qui sopra: li' e' una
+     schermata sola, mentre un bottone del gioco grande finirebbe sopra il
+     punteggio o sotto il dito. #runchiudi e' solo la via di sicurezza, per la
+     pagina che non si carica. */
+  var corsaAscolto = null, corsaAttesa = null;
+
+  function apriCorsa(cfg, done) {
+    cfg = cfg || {};
+    if (!el.runwrap || !el.runframe) return done && done();
+    var etichetta = fmt(cfg.esci || 'Torna al gioco');
+    var chiusa = false;
+
+    function chiudi() {
+      if (chiusa) return;
+      chiusa = true;
+      chiudiCorsa();
+      if (done) done();
+    }
+
+    corsaAscolto = function (e) {
+      var m = e && e.data;
+      if (!m || m.fl !== 'runner') return;
+      if (m.tipo === 'pronto') {
+        // e' in piedi: via la via di sicurezza, e le si dice da dove si torna
+        if (corsaAttesa) { global.clearTimeout(corsaAttesa); corsaAttesa = null; }
+        el.runchiudi.hidden = true;
+        try {
+          el.runframe.contentWindow.postMessage(
+            { fl: 'gioco', tipo: 'apri', esci: etichetta }, '*');
+        } catch (err) { /* niente: resta la via di sicurezza */ }
+        return;
+      }
+      if (m.tipo === 'fine') return segnaCorsa(m);
+      if (m.tipo === 'esci') { segnaCorsa(m); chiudi(); }
+    };
+    global.addEventListener('message', corsaAscolto);
+
+    el.runchiudi.textContent = etichetta;
+    el.runchiudi.hidden = true;
+    el.runchiudi.onclick = function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      chiudi();
+    };
+    // se entro sei secondi la corsa non ha detto niente, meglio un bottone in
+    // piu' che un giocatore chiuso dentro un riquadro nero
+    if (VN.speed) corsaAttesa = global.setTimeout(function () {
+      if (el.runchiudi) el.runchiudi.hidden = false;
+    }, 6000);
+
+    var pagina = (VN.story.meta && VN.story.meta.runnerInline) || null;
+    if (pagina) el.runframe.srcdoc = pagina;
+    else el.runframe.src = conVersione((VN.story.meta && VN.story.meta.runner) || 'game/runner/');
+    el.runwrap.classList.add('on');
+  }
+
+  /* La pagina della corsa e' un file come engine.js: senza una query di versione
+     il browser se la tiene in cache dopo una pubblicazione. Si riusa la stessa
+     di index.html, cosi' "npm run bump" la alza anche qui senza che nessuno
+     debba ricordarsene. */
+  function conVersione(url) {
+    var t = global.document.querySelector('script[src*="engine.js"]');
+    var m = t && /\?v=(\d+)/.exec(t.getAttribute('src') || '');
+    if (!m) return url;
+    return url + (url.indexOf('?') < 0 ? '?' : '&') + 'v=' + m[1];
+  }
+
+  function chiudiCorsa() {
+    if (corsaAscolto) { global.removeEventListener('message', corsaAscolto); corsaAscolto = null; }
+    if (corsaAttesa) { global.clearTimeout(corsaAttesa); corsaAttesa = null; }
+    if (!el.runwrap) return;
+    el.runwrap.classList.remove('on');
+    if (el.runchiudi) { el.runchiudi.hidden = true; el.runchiudi.onclick = null; }
+    // il riquadro si svuota: la corsa smette di girare, non resta a macinare
+    // fotogrammi dietro la scena
+    if (el.runframe) {
+      el.runframe.removeAttribute('srcdoc');
+      el.runframe.src = 'about:blank';
+    }
+  }
+
+  /* Il record della corsa entra nel salvataggio, cosi' non si perde chiudendo
+     l'app, ma NON entra nei punti delle previsioni: come le due cose si
+     sommano e' una decisione ancora da prendere. Finche' non c'e', qui si
+     tiene il numero e basta. */
+  function segnaCorsa(m) {
+    var r = Math.max(Number(m.record || 0), Number(m.punti || 0));
+    if (r > Number(VN.state.runner_record || 0)) VN.state.runner_record = r;
+    VN.state.runner_giocato = true;
+    VN.progressed = true;
+    if (VN.saveNow) VN.saveNow();
   }
 
   /* ---------------- il regolamento [S1.ZONA3] ----------------
@@ -4230,6 +4352,7 @@
       multwrap: $('multwrap'), multrighe: $('multrighe'), multresto: $('multresto'), multok: $('multok'),
       regole: $('regole'), regtit: $('regtit'), regcorpo: $('regcorpo'), regok: $('regok'),
       quadrowrap: $('quadrowrap'), quadroImg: $('quadroImg'), quadrochiudi: $('quadrochiudi'),
+      runwrap: $('runwrap'), runframe: $('runframe'), runchiudi: $('runchiudi'),
       emblemi: $('emblemi'), emblemaIphone: $('emblema-iphone'),
       emblemaWatch: $('emblema-watch'), emblemaAltro: $('emblema-altro'),
       emailwrap: $('emailwrap'), emailbox: $('emailbox'), emailtit: $('emailtit'),
@@ -4259,6 +4382,7 @@
     chiudiQuiz();
     chiudiRegole();
     chiudiQuadro();
+    chiudiCorsa();
     chiudiEmail();
     chiudiTransizioni();
     if (el.modal) el.modal.classList.remove('on');
@@ -4274,7 +4398,7 @@
            e.target.closest('#countdown') || e.target.closest('#cardwrap') ||
            e.target.closest('#multwrap') || e.target.closest('#regole') ||
            e.target.closest('#emailwrap') || e.target.closest('#quadrowrap') ||
-           e.target.closest('#propwrap'))) return;
+           e.target.closest('#runwrap') || e.target.closest('#propwrap'))) return;
       VN.step();
     };
     global.document.onkeydown = function (e) {
@@ -4291,6 +4415,7 @@
           (el.multwrap && el.multwrap.classList.contains('on')) ||
           (el.regole && el.regole.classList.contains('on')) ||
           (el.quadrowrap && el.quadrowrap.classList.contains('on')) ||
+          (el.runwrap && el.runwrap.classList.contains('on')) ||
           (el.emailwrap && el.emailwrap.classList.contains('on')) ||
           (el.modal && el.modal.classList.contains('on'))) return;
       VN.step();

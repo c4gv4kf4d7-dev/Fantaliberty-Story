@@ -184,6 +184,37 @@ reazione. Le scene non vanno modificate per compensarne l'assenza.
 
 ---
 
+## APPLE CAMPUS RUN (S9) — `assets/in_app_game/`
+Il minigioco è una pagina a sé (`game/runner/`) e carica i suoi file per conto
+proprio, senza passare da `story.json`: qui non ci sono chiavi da collegare, ma
+i nomi contano — la pagina li chiede uno per uno, e chi rinomina un file lo
+scollega. Un file che manca **non rompe niente**: al suo posto la corsa disegna
+un segnaposto e va avanti.
+
+| File | Uso |
+|---|---|
+| `run_corridoio_scena` | Il fondale fisso: il corridoio vetrato con il parco fuori, senza montanti (quelli scorrono a parte) |
+| `run_montante` | Il montante del vetro, ridisegnato a ogni profondità mentre scorre verso di noi |
+| `run_parete_costola` | La costola della parete interna, stessa meccanica dei montanti |
+| `run_pg_corsa` | Il personaggio che corre — foglio da 4 fotogrammi |
+| `run_pg_salto` | Il salto — 4 fotogrammi |
+| `run_pg_scivolata` | La scivolata — un fotogramma solo |
+| `run_ost_carrello` | Ostacolo da schivare cambiando corsia |
+| `run_ost_cartello` | Ostacolo da saltare |
+| `run_ost_arcobaleno` | L'arco sotto cui si scivola |
+| `run_anello_verde` `run_anello_blu` `run_anello_rosso` | Gli anelli da raccogliere, 10 / 25 / 50 punti |
+| `run_bonus_iphone` `run_bonus_computer` `run_bonus_visore` | I tre prodotti nelle bolle, 100 punti l'uno; presi tutti e tre, bonus |
+| `run_vita` | L'icona Salute: restituisce una vita |
+| `run_traguardo` | ⚠️ GAP — l'insegna dei traguardi (1000, 2000, …) non è ancora disegnata: al suo posto una piastrella dorata |
+
+**Nella cartella ma non usati dal gioco**: `run_corridoio_base` (serve alla
+taratura della pista, `tools/taratura_pista.html`), `run_corridoio_vuoto`,
+`run_pavimento_tile`, `run_parco_striscia`, `run_moneta`, `run_icona_1`…`_5`
+(le icone lungo il percorso sono state tolte per scelta). Restano lì come
+materiale, non vanno ricollegate senza chiederlo.
+
+---
+
 ## UI (nessun asset grafico — solo codice/CSS)
 
 box dialogo (variante colore per la regia) · bottone scelta · navigazione

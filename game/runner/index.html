@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>FantaLiberty — Runner (prototipo)</title>
+<title>FantaLiberty — Apple Campus Run</title>
 <style>
   :root{ color-scheme: light; }
   *{ box-sizing:border-box; }
@@ -117,7 +117,22 @@
   @keyframes lampeggiaTasto{
     0%,70%{ background:#79c245 } 71%,100%{ background:#9ade63 }
   }
-  #veloStart small{ margin-top:26px; color:#7c7c76; }
+  /* Il bottone per uscire non e' un tasto da retrogame: e' la porta, e non
+     deve competere con PLAY. Compare solo quando il gioco e' aperto dentro
+     FantaLiberty (l'indirizzo porta ?esci=...), altrimenti resta nascosto. */
+  .velo button.esci{
+    margin-top:20px; padding:11px 22px; font-size:13px; font-weight:700;
+    letter-spacing:.3px; border:2px solid #a8a8a0; border-radius:999px;
+    background:transparent; color:#5a5a54; font-family:inherit;
+    box-shadow:none; white-space:nowrap;
+  }
+  .velo button.esci:active{ transform:translateY(1px); box-shadow:none;
+    background:rgba(0,0,0,.06); }
+  /* le due schermate hanno fondi opposti — la home e' scura, il fine partita
+     chiaro — e lo stesso grigio non si legge su tutti e due */
+  #veloStart button.esci{ border-color:#5d5d57; color:#a9a9a2; }
+  #veloStart button.esci:active{ background:rgba(255,255,255,.08); }
+  .velo button.esci[hidden]{ display:none !important; }
 
   .velo{
     position:absolute; inset:0; pointer-events:auto;
@@ -142,7 +157,6 @@
     transform:translateY(5px);
     box-shadow:0 2px 0 #a97c12, 0 2px 0 4px #2a1d00;
   }
-  .velo small{ font-size:12px; color:#8a8a84; }
 
   /* La lezione non copre la scena: spiega una cosa che si sta vedendo,
      quindi resta in basso e lascia guardare il corridoio. */
@@ -198,7 +212,7 @@
     <p>Corri nel campus, raccogli tutti gli anelli ed evita gli ostacoli.</p>
     <p>Ogni anello vale punti: più ne collezioni, più in alto salirai in classifica.</p>
     <button id="btnVia">PLAY</button>
-    <small>prototipo — non è il gioco vero</small>
+    <button id="btnEsciStart" class="esci" hidden>ESCI</button>
   </div>
 
   <div id="lezione" hidden>
@@ -212,6 +226,7 @@
     <div class="big" id="finePunti">0</div>
     <p id="fineNota"></p>
     <button id="btnAncora">ANCORA</button>
+    <button id="btnEsciFine" class="esci" hidden>ESCI</button>
   </div>
 </div></div>
 
@@ -220,7 +235,12 @@
 'use strict';
 
 /* ══════════════════════════════════════════════════════════════
-   PROTOTIPO RUNNER — test di fattibilità, non collegato al gioco.
+   APPLE CAMPUS RUN — il minigioco di FantaLiberty.
+
+   Vive in una pagina sua e il gioco grande lo apre dentro un iframe, sopra
+   la scena (engine.js, apriRunner): cosi' chiudendolo il giocatore si
+   ritrova esattamente dov'era, come per il regolamento e i quadri della
+   Hall of Fame. Si apre anche da solo, aprendo questo indirizzo.
 
    Il personaggio non si muove mai davvero: scorre il mondo.
    La profondità è una z fra 0 (addosso a noi) e 1 (in fondo);
@@ -249,7 +269,7 @@ addEventListener('resize', adatta); adatta();
    Il corridoio curva, e non di una curva regolare: il bordo sinistro
    prima si allarga e poi rientra. Nessuna formula la indovina, quindi
    i due bordi della pista sono stati TRACCIATI A MANO sul fondale con
-   test/runner/taratura.html, e qui sotto ci sono i punti misurati.
+   tools/taratura_pista.html, e qui sotto ci sono i punti misurati.
 
    Coppie [y, x] in coordinate di gioco (720x1280), dall'alto in basso.
    Se un giorno cambia il fondale, si rifa' la taratura e si sostituiscono
@@ -312,14 +332,19 @@ function proietta(z, corsia){
   };
 }
 
-/* ---------- asset: se ci sono si usano, se no segnaposto ---------- */
+/* ---------- asset: se ci sono si usano, se no segnaposto ----------
+   La cartella e' una sola e sta qui: la build in file unico (dist/) la
+   sostituisce con un elenco di immagini gia' incorporate (window.RUN_INLINE),
+   perche' li' non c'e' nessuna cartella da cui pescare. */
+const CARTELLA = '../../assets/in_app_game/';
+const INLINE = (typeof window !== 'undefined' && window.RUN_INLINE) || null;
 const A = {};
 function carica(nome, file){
   return new Promise(ok => {
     const im = new Image();
     im.onload  = () => { A[nome] = im; ok(); };
     im.onerror = () => { A[nome] = null; ok(); };   // manca: si va di segnaposto
-    im.src = '../../assets/in_app_game/' + file;
+    im.src = (INLINE && INLINE[file]) || (CARTELLA + file);
   });
 }
 const PRONTI = Promise.all([
@@ -1130,17 +1155,60 @@ function finisci(){
     S.punti >= record ? 'Nuovo record.' : 'Il record resta ' + record + '.';
   document.getElementById('veloFine').hidden = false;
   document.getElementById('hud').classList.add('spento');
+  avvisa('fine');
 }
+
+/* ---------- la porta verso il gioco grande ----------
+   Aprendo questa pagina da sola non c'e' nessun posto dove tornare, quindi il
+   bottone d'uscita non esiste proprio. Dentro FantaLiberty invece la corsa sta
+   in un iframe: appena e' pronta lo dice, e il gioco risponde con il nome del
+   posto da cui l'ha aperta ("Torna da Peter", "Torna al countdown"). Il nome
+   arriva da fuori perche' il gioco lo sa e la corsa no — e passa da un
+   messaggio, non dall'indirizzo, cosi' funziona anche nella build in file
+   unico, dove questa pagina non ha un indirizzo suo.
+
+   I messaggi non portano niente di personale (punti e record, gia' scritti a
+   schermo), quindi '*' basta e non lega la pagina a un dominio solo. */
+const dentro = (() => {
+  try { return !!(window.parent && window.parent !== window); } catch(e){ return true; }
+})();
+
+function avvisa(tipo){
+  if (!dentro) return;
+  try { window.parent.postMessage({ fl:'runner', tipo, punti:S.punti|0, record:record|0 }, '*'); } catch(e){}
+}
+
+function mostraUscita(etichetta){
+  ['btnEsciStart','btnEsciFine'].forEach(id => {
+    const b = document.getElementById(id);
+    b.textContent = etichetta;
+    b.hidden = false;
+    b.onclick = () => avvisa('esci');
+  });
+}
+
+addEventListener('message', e => {
+  const m = e && e.data;
+  if (!m || m.fl !== 'gioco' || m.tipo !== 'apri') return;
+  mostraUscita(m.esci || 'ESCI');
+});
+
+// scorciatoia per provare la pagina da sola con il bottone acceso: ?esci=Chiudi
+try {
+  const q = new URLSearchParams(location.search).get('esci');
+  if (q) mostraUscita(q);
+} catch(e){}
 document.getElementById('btnVia').onclick    = via;
 document.getElementById('btnAncora').onclick = via;
 document.getElementById('record').textContent = 'record ' + record;
 
 PRONTI.then(() => {
+  // Un asset che non arriva non si racconta al giocatore: al suo posto il
+  // gioco disegna il segnaposto e gira lo stesso. Resta scritto in console,
+  // che e' il posto giusto per chi sviluppa.
   const mancanti = Object.keys(A).filter(k => !A[k]);
-  if (mancanti.length){
-    document.querySelector('#veloStart small').textContent =
-      'prototipo — grafica finta (' + mancanti.join(', ') + ')';
-  }
+  if (mancanti.length) console.warn('[run] segnaposto per:', mancanti.join(', '));
+  avvisa('pronto');
   requestAnimationFrame(passo);
 });
 

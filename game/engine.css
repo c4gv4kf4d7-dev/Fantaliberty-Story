@@ -844,6 +844,19 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.7)}
 #quadrochiudi{flex:none;text-align:center;min-width:12em}
 
+/* ---------- Apple Campus Run ----------
+   Copre tutto: la corsa e' a schermo pieno e si regola da sola dentro il
+   riquadro (9:16 con le bande, come il gioco). z-index 8 perche' si apre anche
+   sopra il countdown, che sta a 6. Il fondo nero e' quello della corsa: senza,
+   sulle bande laterali si vedrebbe la scena di sotto. */
+#runwrap{position:absolute;inset:0;z-index:8;display:none;background:#111}
+#runwrap.on{display:block}
+#runframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+/* via di sicurezza: resta nascosto finche' la corsa non risponde */
+#runchiudi{position:absolute;left:50%;bottom:calc(4% + env(safe-area-inset-bottom,0px));
+ transform:translateX(-50%);min-width:11em;text-align:center}
+#runchiudi[hidden]{display:none}
+
 /* ---------- modale di conferma ----------
    Per i passi senza ritorno. Copre la scena: finche' e' aperta non si tocca
    altro, cosi' non si entra in sala per sbaglio con uno swipe storto. */

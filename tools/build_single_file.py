@@ -33,6 +33,39 @@ def data_uri(rel):
         return "data:%s;base64,%s" % (mime, base64.b64encode(f.read()).decode())
 
 
+def corsa_inline():
+    """La pagina di Apple Campus Run con dentro le sue immagini e il suo font.
+
+    Sul sito la corsa e' una pagina a parte e il motore la apre per indirizzo.
+    Qui di indirizzi non ce ne sono: la pagina intera finisce dentro lo story,
+    e il motore la monta nel riquadro con "srcdoc". Le immagini le chiede per
+    nome a una cartella, e al posto della cartella si passa un elenco gia'
+    incorporato (window.RUN_INLINE): un file che manca non ferma la build, la
+    corsa disegna il suo segnaposto e va avanti, esattamente come sul sito.
+    """
+    pagina = read("game", "runner", "index.html")
+    nomi = sorted(set(re.findall(r"carica\('[^']+',\s*'([^']+)'\)", pagina)))
+    if not nomi:
+        sys.exit("non trovo le immagini che la corsa carica")
+    dentro = {}
+    for f in nomi:
+        rel = "assets/in_app_game/" + f
+        if os.path.exists(os.path.join(ROOT, rel)):
+            dentro[f] = data_uri(rel)
+    tag = "<script>window.RUN_INLINE=%s;</script>\n" % json.dumps(
+        dentro, separators=(",", ":")).replace("</", "<\\/")
+    pagina, n = re.subn(r"<script>\n\(\(\) => \{", tag + "<script>\n(() => {",
+                        pagina, count=1)
+    if n != 1:
+        sys.exit("non trovo dove agganciare le immagini nella pagina della corsa")
+    pagina, nf = re.subn(
+        r"url\('\.\./\.\./assets/font/([^']+)'\)",
+        lambda m: "url('%s')" % data_uri("assets/font/" + m.group(1)), pagina)
+    if nf != 1:
+        sys.exit("non trovo il font da incorporare nella pagina della corsa")
+    return pagina
+
+
 def main():
     story = json.loads(read("game", "story.json"))
     banca = json.loads(read("game", "domande.json"))
@@ -72,6 +105,9 @@ def main():
             if e.get(k):
                 e[k] = data_uri(base + e[k])
     story.setdefault("meta", {})["assetBase"] = ""
+    # la corsa: niente cartella da cui pescare, quindi ci va la pagina intera
+    story["meta"].pop("runner", None)
+    story["meta"]["runnerInline"] = corsa_inline()
 
     html = read("index.html")
     # i riferimenti portano un ?v=NN che cambia a ogni pubblicazione: la
@@ -98,12 +134,15 @@ def main():
         lambda m: "<script>\n%s\n</script>" % read("game", "engine.js"), html)
     if n != 1:
         sys.exit("non trovo lo script engine.js in index.html")
+    # "</" va spezzato: dentro lo story c'e' la pagina della corsa, e un
+    # "</script>" nei dati chiuderebbe il tag a meta' dell'assegnazione. In una
+    # stringa JavaScript "<\\/script>" e' identico a "</script>".
+    def dump(x):
+        return json.dumps(x, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+
     inline = ("<script>window.STORY_INLINE=%s;window.BANCA_INLINE=%s;"
               "window.BACKEND_INLINE=%s;window.QUIZ_INLINE=%s;</script>") % (
-        json.dumps(story, ensure_ascii=False, separators=(",", ":")),
-        json.dumps(banca, ensure_ascii=False, separators=(",", ":")),
-        json.dumps(backend, ensure_ascii=False, separators=(",", ":")),
-        json.dumps(quiz, ensure_ascii=False, separators=(",", ":")),
+        dump(story), dump(banca), dump(backend), dump(quiz),
     )
     html = html.replace("<script>\n(function () {", inline + "\n<script>\n(function () {", 1)
     # (il font non arriva piu' dalla rete: sta nel CSS come data: URI, sopra)

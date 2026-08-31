@@ -9,7 +9,7 @@
      il browser continua a chiedere la versione vecchia degli asset -->
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <meta name="description" content="FantaLiberty: visual novel interattiva. Steve Jobs Theater, WWDC 26.">
-<link rel="stylesheet" href="./game/engine.css?v=91">
+<link rel="stylesheet" href="./game/engine.css?v=92">
 </head>
 <body>
 <div id="stage">
@@ -216,6 +216,17 @@
     <button id="quadrochiudi" class="ch">Chiudi</button>
   </div>
 
+  <!-- Apple Campus Run. Il minigioco vive in una pagina sua (game/runner/) e si
+       apre qui sopra la scena, come il regolamento e i quadri: non e' una scena,
+       e chiudendolo il giocatore e' esattamente dov'era.
+       Il bottone per uscire ce l'ha la corsa dentro di se', sulle sue schermate.
+       Questo qui sotto e' solo la via di sicurezza: compare se la pagina non da'
+       segni di vita, per non lasciare nessuno chiuso dentro un riquadro nero. -->
+  <div id="runwrap">
+    <iframe id="runframe" title="Apple Campus Run"></iframe>
+    <button id="runchiudi" class="ch" hidden>Chiudi</button>
+  </div>
+
   <!-- la card da salvare: composta su una canvas e mostrata come immagine, cosi'
        su iPhone si tiene premuto per salvarla (il link di download li' apre solo
        una scheda) -->
@@ -242,7 +253,7 @@
   </div>
 </div>
 
-<script src="./game/engine.js?v=91"></script>
+<script src="./game/engine.js?v=92"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -311,7 +322,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=91', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=92', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e

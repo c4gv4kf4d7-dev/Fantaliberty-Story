@@ -154,7 +154,7 @@ for (const [id, sc] of Object.entries(story.scenes)) {
     if (st.t === 'countdown') {
       assert.ok(st.azioni?.length, `scena ${id}: countdown senza vie d'uscita`);
       for (const a of st.azioni) {
-        assert.ok(a.goto || a.card, `scena ${id}: azione "${a.label}" non fa niente`);
+        assert.ok(a.goto || a.card || a.corsa, `scena ${id}: azione "${a.label}" non fa niente`);
         if (a.goto) assert.ok(story.scenes[a.goto], `scena ${id}: countdown verso "${a.goto}", che non esiste`);
       }
       // senza una data il countdown non conta niente
@@ -411,6 +411,38 @@ for (const [id, sc] of Object.entries(story.scenes)) {
     for (const o of st.options || []) {
       assert.ok(!/\w\*/.test(String(o.label || '')), `scena ${id}: asterisco nell'opzione "${o.label}"`);
     }
+  }
+}
+
+/* ---------- 1e. Apple Campus Run ----------
+   Il minigioco non e' una scena: e' una pagina sua, aperta in un riquadro sopra
+   quello che c'e'. Qui si controlla che la pagina esista davvero e che le due
+   porte che ci portano — la griglia di Peter e il countdown — siano ancora
+   aperte: sono facili da perdere in una modifica allo script, e a schermo si
+   vedrebbe solo un bottone in meno. */
+{
+  const runner = story.meta.runner;
+  assert.ok(runner, 'meta.runner: manca l\'indirizzo della corsa');
+  const pagina = path.join(ROOT, runner.replace(/\/$/, '/index.html'));
+  assert.ok(fs.existsSync(pagina), `meta.runner punta a "${runner}", che non esiste`);
+  const sorgente = fs.readFileSync(pagina, 'utf8');
+  // e' la versione definitiva, non una prova: nessuna scritta lo deve smentire
+  assert.ok(!/prototipo/i.test(sorgente),
+    'la corsa non e\' piu\' un prototipo: via la parola dalla pagina');
+  // le due porte
+  const hub = Object.values(story.scenes)
+    .flatMap((sc) => sc.steps || []).find((st) => st.t === 'quizhub');
+  assert.ok(hub?.corsa?.label, 'la griglia di Peter deve offrire anche la corsa ("corsa")');
+  assert.ok(hub.corsa.esci, 'la corsa aperta da Peter deve dire da dove si torna ("esci")');
+  const cd = Object.values(story.scenes)
+    .flatMap((sc) => sc.steps || []).find((st) => st.t === 'countdown');
+  assert.ok((cd?.azioni || []).some((a) => a.corsa),
+    'il countdown e\' la schermata su cui si rientra: la corsa deve essere li\'');
+  assert.ok((cd?.azioni || []).some((a) => a.goto === 'quiz'),
+    'il countdown e\' la schermata su cui si rientra: anche il quiz deve essere li\'');
+  // il record vive nel salvataggio, quindi la variabile va dichiarata
+  for (const v of ['runner_record', 'runner_giocato']) {
+    assert.ok(v in story.vars, `vars: manca "${v}", il record della corsa non si salverebbe`);
   }
 }
 
@@ -1330,8 +1362,21 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.match($('cdtempo').textContent, /^\d+g \d\d:\d\d:\d\d$/,
     `il tempo che manca non e' formattato: "${$('cdtempo').textContent}"`);
   const azioni = [...$('cdbtn').querySelectorAll('.ch')];
-  assert.equal(azioni.length, 2, 'torna in lobby, e la card');
-  azioni[0].onclick({ stopPropagation() {} });
+  assert.deepEqual(azioni.map((b) => b.textContent),
+    ['Il quiz di Peter', 'Apple Campus Run', 'Torna in lobby', 'La tua card'],
+    'e\' la schermata su cui si rientra: le due sfide stanno prima delle altre vie');
+
+  // la corsa si apre SOPRA il countdown e non cambia scena: chiudendola il
+  // giocatore e' esattamente dov'era, come per il regolamento e i quadri
+  azioni[1].onclick({ stopPropagation() {} });
+  assert.ok($('runwrap').classList.contains('on'), 'la corsa si apre');
+  assert.ok($('countdown').classList.contains('on'), 'e il countdown resta acceso sotto');
+  assert.equal(VN.sceneId, 'countdown', 'la corsa non e\' una scena');
+  $('runchiudi').onclick({ stopPropagation() {} });
+  assert.equal($('runwrap').classList.contains('on'), false, 'chiusa la corsa, si torna dov\'era');
+  assert.ok($('countdown').classList.contains('on'), 'e il countdown e\' ancora li\'');
+
+  azioni[2].onclick({ stopPropagation() {} });
   assert.equal(VN.sceneId, 'lobby', 'da qui si torna in lobby');
   assert.equal($('countdown').classList.contains('on'), false, 'e il countdown si chiude');
 }
@@ -2068,7 +2113,9 @@ function apriQuizHub(stile) {
   VN.boot(story, { speed: 0, banca, quiz, scene: 'quiz' });
   VN.state.stile = stile;
   VN.state.locked = true;
-  VN.step(); VN.step(); VN.step();          // le tre battute di presentazione
+  // le battute di presentazione, quante siano: si va avanti finche' la griglia
+  // non e' a schermo. Peter presenta il quiz e, malvolentieri, la corsa.
+  for (let i = 0; i < 20 && !$('griglia').classList.contains('on'); i++) VN.step();
   return cellePerLivello();
 }
 
@@ -2207,8 +2254,11 @@ function apriQuizHub(stile) {
   assert.equal(VN.state.quiz_visto, true, 'la presentazione e\' segnata come vista');
 
   // niente da assegnare finche' non si vince qualcosa: la voce non c'e' proprio
-  assert.equal(azioniQuiz().length, 1, 'a banca vuota resta solo l\'uscita');
-  assert.match(azioniQuiz()[0].textContent, /lobby/);
+  // a banca vuota i moltiplicatori non si vedono proprio: restano l'altra sfida
+  // e la via d'uscita
+  assert.deepEqual(azioniQuiz().map((b) => b.textContent),
+    ['Apple Campus Run', 'Basta cosi\', torno in lobby'],
+    'la corsa sta sotto la griglia, prima dell\'uscita');
 }
 
 /* 10a-bis. i moltiplicatori si assegnano solo nelle 24 ore prima del keynote:
@@ -2218,7 +2268,7 @@ function apriQuizHub(stile) {
   VN.boot(story, { speed: 0, banca, quiz, scene: 'quiz' });
   VN.state.stile = 'showman';
   VN.state.mult_bank = 0.3;                    // come dopo aver passato i tre livelli
-  VN.step(); VN.step(); VN.step();
+  for (let i = 0; i < 20 && !$('griglia').classList.contains('on'); i++) VN.step();
   const azioni = azioniQuiz();
   const presto = azioni.find((b) => /keynote/.test(b.textContent));
   const quando = Date.parse(story.meta.keynote);
@@ -2252,7 +2302,9 @@ function apriQuizHub(stile) {
     VN.clearSave();
     VN.boot(story, { speed: 0, banca, quiz, scene: 'quiz' });
     VN.state.stile = stile; VN.state.genere = 'f'; VN.state.locked = true;
-    VN.step();                                  // via la prima battuta
+    // la battuta del perk arriva dopo che Peter ha presentato le due sfide: si
+    // va avanti finche' non e' quella a schermo, invece di contare i tocchi
+    for (let i = 0; i < 20 && !/stile/i.test($('txt').textContent); i++) VN.step();
     return $('txt').textContent;
   };
   const detto = {
@@ -2374,7 +2426,9 @@ function giocaLivello(liv, stile, giuste) {
     'Avanzato e\' fuori portata, non in attesa');
   assert.equal(celleFinite[2].querySelector('.gstato').textContent, step.etichettaMai,
     'e cosi\' Leggenda');
-  assert.equal(azioniQuiz().length, 1, 'resta solo la via d\'uscita');
+  assert.deepEqual(azioniQuiz().map((b) => b.textContent),
+    ['Apple Campus Run', 'Basta cosi\', torno in lobby'],
+    'finito il quiz resta l\'altra sfida, e la via d\'uscita');
 }
 
 /* 10d-bis. lo showman non resta mai bloccato: i suoi livelli sono aperti da
