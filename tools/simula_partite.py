@@ -121,7 +121,9 @@ def distribuisci(banca, g, rnd):
 
 # I due bonus personali: piccoli, servono solo a sciogliere i quasi pari merito.
 # Si calcolano da dati che il giocatore ha gia' dato in [S0], non da domande nuove.
-ANNI_BONUS = {'0-2 anni': 1.0, '3-7 anni': 0.5, '8-12 anni': 0.25, "Piu' di 12 anni": 0.0}
+# le chiavi sono i codici che finiscono davvero nel database ('0'..'3'), non le
+# etichette che il giocatore legge
+ANNI_BONUS = {'0': 1.0, '1': 0.5, '2': 0.25, '3': 0.0}
 GEN_BONUS = {'17': 0.0, 'Air': 0.0, '16': 0.25, '15': 0.5, '14': 0.75, '13': 0.75}
 
 def bonus_personali(anni, device):
