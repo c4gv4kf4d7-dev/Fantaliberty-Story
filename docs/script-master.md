@@ -126,28 +126,36 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
 
 [S0.02] TERMINALE — campo 1
   Asset: bg_esterno_ingresso + obj_terminale_accrediti + chr_lucas_idle
-  Label: "Nome e cognome"   Tipo: testo libero, minimo 2 parole
-  Salva in: run.fullname   Deriva: run.nickname = prima parola
+  Label: "Nome"   Tipo: testo libero
+  Salva in: run.nome. Non serve il nome vero: e' il nickname con cui il
+  gioco si rivolge al giocatore e con cui compare in classifica.
 
-[S0.03] TERMINALE — campo 2
+[S0.02b] TERMINALE — campo 2
+  Label: "Cognome"   Tipo: testo libero, FACOLTATIVO — si continua anche a
+  campo vuoto, senza dover toccare un bottone di salto a parte.
+  Salva in: run.cognome. Serve solo a distinguere due giocatori con lo
+  stesso nome in classifica ("Nome" + iniziale, es. "Lorenzo B."); non e'
+  il nickname, quello resta run.nome.
+
+[S0.03] TERMINALE — campo 3
   Label: "Genere" (per come il gioco si rivolge a te — non legato allo stile)
   Tipo: 2 bottoni — Maschile | Femminile
   Salva in: run.gender
 
-[S0.04] TERMINALE — campo 3
+[S0.04] TERMINALE — campo 4
   Label: "Store"   Tipo: lista — Piazza Liberty | Carosello | Fiordaliso
   Salva in: run.store
 
-[S0.05] TERMINALE — campo 4
+[S0.05] TERMINALE — campo 5
   Label: "Dipartimento"
   Tipo: lista — Operation | Support | Shopping | Leadership | People
   Salva in: run.department
 
-[S0.06] TERMINALE — campo 5
+[S0.06] TERMINALE — campo 6
   Label: "Da quanto sei in Apple"   Tipo: 4 bottoni — 0-1 | 2-3 | 4-7 | 8+
   Salva in: run.tenure
 
-[S0.07] TERMINALE — campo 6
+[S0.07] TERMINALE — campo 7
   Label: "iPhone che usi"   Tipo: lista, da iPhone 11 in poi
   Salva in: run.device
 
@@ -166,9 +174,6 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
    Ah — se senti qualcuno urlare, non preoccuparti. Succede sempre."
   → [S1.01]
 ```
-
-> ⚠️ **Aperto:** la v4.0 numerava questi campi "1/7"…"6/7" ma ne elenca sei.
-> Qui sono rinumerati 1-6. Se ne manca davvero uno, va aggiunto.
 
 ---
 

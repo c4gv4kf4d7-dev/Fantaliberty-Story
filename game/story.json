@@ -354,6 +354,10 @@
           "var": "nome"
         },
         {
+          "key": "COGNOME:",
+          "var": "cognome"
+        },
+        {
           "key": "GENERE:",
           "var": "genere",
           "map": {
@@ -426,6 +430,15 @@
           "max": 14,
           "text": "Ti registro al terminale. Come ti chiamiamo? Nome o soprannome, decidi tu.",
           "_nota": "Il nome vero non serve: e' l'etichetta con cui il gioco si rivolge al giocatore e con cui compare in classifica. Il regolamento (zona 3 della lobby) lo chiama nickname, e deve restare coerente con quello che si chiede qui."
+        },
+        {
+          "t": "input",
+          "who": "lucas",
+          "var": "cognome",
+          "max": 18,
+          "opzionale": true,
+          "text": "E il cognome? Facoltativo — se lo lasci, in classifica compari come nome e iniziale.",
+          "_nota": "Facoltativo davvero: il bottone resta cliccabile a campo vuoto (st.opzionale in showInput). Usato solo per identificare il giocatore nei punteggi come 'Nome C.' — non e' il nickname con cui il gioco si rivolge a lui, quello resta 'nome'."
         },
         {
           "t": "choice",
@@ -2372,6 +2385,7 @@
           {
             "lista": [
               "il nickname scelto dal giocatore",
+              "il cognome, se il giocatore lo lascia (facoltativo)",
               "il genere selezionato, per personalizzare alcune parti narrative",
               "lo store",
               "il reparto",
@@ -2511,7 +2525,6 @@
         "mus_camerino.mp3",
         "mus_previsioni.mp3",
         "mus_macroargomenti.mp3",
-        "mus_quiz.mp3",
         "mus_lobby_finale.mp3"
       ]
     },
