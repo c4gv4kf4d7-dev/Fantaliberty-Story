@@ -440,6 +440,9 @@
         }, veloce ? TIENI_VELOCE : (b.tieni != null ? b.tieni : 1200));
       };
 
+      // "macchina": un colpo di sfx_typing3 a ogni blocco che comincia, non uno
+      // solo a inizio sequenza — sono i titoli di coda, durano tutta la scena.
+      if (st.macchina) suona('titoli_typing');
       typeLines(righeTitolo(b.righe), dopo, true);
 
       /* typeLines lascia in revealUI la sua "scrivi tutto adesso": la si tiene,
@@ -932,6 +935,9 @@
         // cartello d'apertura — ogni blocco compare, resta, sfuma, e arriva il
         // prossimo. Va da solo, un tocco salta tutto.
         if (st.blocchi) return titoliDiCoda(st, perScena(next));
+        // "macchina": il cartello scrive a macchina, e si sente (sfx_typing3).
+        // Non tutti i cartelli ce l'hanno: solo dove lo dichiara lo step.
+        if (st.macchina) suona('titoli_typing');
         // "ritmo" accorcia scrittura e pause; "senzaSalto" fa si' che il tocco
         // non lo completi a meta': si legge tutto, poi la freccia
         typeLines(righeTitolo(st.lines), perScena(next), false,
@@ -982,6 +988,10 @@
 
       case 'bg':
         var cambiato = setBg(st.id || (VN.scene && VN.scene.bg), st.fx, st.dissolvenza);
+        // "suona": un effetto fisso legato a questo fondale (es. il pollice in
+        // su del CEO), non alla scena intera come musicaScena() e non a un
+        // tocco come gli altri suona() sparsi nel motore.
+        if (st.suona) suona(st.suona);
         if (st.uccelli != null || st.foglie != null || st.pulviscolo != null) atmosfera(st);
         // Con la dissolvenza il fondale nuovo arriva 1,4s dopo. Senza questa
         // attesa lo "show" successivo cambiava posa e faccia subito, sopra il
@@ -1475,6 +1485,7 @@
       if (uscito) return;
       uscito = true;
       var o = opts[cur];
+      suona('traguardo');    // sfx-achievement: lo stile scelto e' definitivo
       VN.progressed = true;
       VN.state[st.var] = o.id;
       VN.state['__label_' + st.var] = o.nome;
@@ -3044,7 +3055,8 @@
   var HOF_EDIZIONI = { halloffame_fabio: '2024', halloffame_michael: '2025', halloffame_nicola: '2026' };
 
   function mostraQuadro(h, done) {
-    suona('apri');
+    // Niente suono qui: la Hall of Fame e' silenziosa, a differenza del
+    // regolamento e della corsa che condividono lo stesso 'apri'/'chiudi'.
     if (!el.quadrowrap) return done && done();
     var src = assetUrl('bg', h.quadro);   // assetUrl applica gia' la base
     if (HOF_EDIZIONI[h.quadro]) ga('hall_of_fame_edition_opened', { edition: HOF_EDIZIONI[h.quadro] });
@@ -3063,7 +3075,6 @@
   }
 
   function chiudiQuadro() {
-    if (el.quadrowrap && el.quadrowrap.classList.contains('on')) suona('chiudi');
     if (!el.quadrowrap) return;
     el.quadrowrap.classList.remove('on', 'attesa');
     if (el.bg) el.bg.classList.remove('sfoca');
@@ -3091,6 +3102,10 @@
     suona('apri');
     cfg = cfg || {};
     if (!el.runwrap || !el.runframe) return done && done();
+    // Musica a caso per la corsa, non quella della scena sotto: si sente ogni
+    // volta diversa, non un effetto che si ripete (audio.musica.corsa e' un
+    // elenco, come gli applausi fra gli effetti).
+    musicaScena('corsa');
     var etichetta = fmt(cfg.esci || 'Torna al gioco');
     var chiusa = false;
 
@@ -3152,7 +3167,12 @@
     if (corsaAscolto) { global.removeEventListener('message', corsaAscolto); corsaAscolto = null; }
     if (corsaAttesa) { global.clearTimeout(corsaAttesa); corsaAttesa = null; }
     if (!el.runwrap) return;
+    var eraAperta = el.runwrap.classList.contains('on');
     el.runwrap.classList.remove('on');
+    // si torna al brano della scena sotto, ma solo se la corsa era davvero
+    // aperta: altrimenti ogni cambio scena (che chiama chiudiCorsa per pulizia)
+    // rifarebbe la stessa richiesta a vuoto
+    if (eraAperta) musicaScena(VN.sceneId);
     if (el.runchiudi) { el.runchiudi.hidden = true; el.runchiudi.onclick = null; }
     // il riquadro si svuota: la corsa smette di girare, non resta a macinare
     // fotogrammi dietro la scena
@@ -3336,13 +3356,10 @@
      resta disattivata finche' il giocatore non ha scorso almeno una volta —
      altrimenti entra in sala senza accorgersi che la lobby era visitabile. */
   function showHub(st) {
-    /* Il brusio della gente si sente entrando in lobby, una volta per partita:
-       e' l'arrivo in un posto pieno di persone, non un tappeto che gira in
-       continuazione. Chi torna dopo le previsioni sente invece il ritorno. */
-    if (!VN.state.__folla) {
-      VN.state.__folla = true;
-      suona('folla_lobby', 0.5);
-    } else if (VN.state.locked && !VN.state.__ritorno) {
+    // Il ritorno dopo le previsioni si sente, una volta per partita
+    // (sfx_folla_lobby all'arrivo e' stato tolto: il file resta in
+    // assets/sfx, solo il gioco non lo suona piu').
+    if (VN.state.locked && !VN.state.__ritorno) {
       VN.state.__ritorno = true;
       suona('ritorno_lobby', 0.8);
     }
@@ -3363,6 +3380,10 @@
     function entra(i, dir) {
       var nuova = (i + zones.length) % zones.length;
       if (nuova === cur) return;
+      // "dir" e' zero solo alla prima apertura dell'hub: li' non e' un tocco
+      // del giocatore, e' come si presenta la scena. Frecce, swipe e frecce
+      // della tastiera passano sempre un verso, quindi il suono e' loro.
+      if (dir) suona('transizione');
       if (cur >= 0) scorso = true;
       cur = nuova;
       var z = zones[cur];
@@ -3754,7 +3775,9 @@
      I quattro numeri sono il vetro dello schermo misurato su bg_macintosh
      (852x1846: x 252-577, y 792-1025), rientrato di poco per non far toccare
      il testo alla cornice. */
-  var SCHERMO_FONDALE = { x: 0.305, y: 0.437, w: 0.358, h: 0.108 };
+  // h ridotta del 40% (era 0.108): il pannello del terminale era troppo alto
+  // sul vetro del Mac.
+  var SCHERMO_FONDALE = { x: 0.305, y: 0.437, w: 0.358, h: 0.0648 };
 
   function ancoraTerminale() {
     var s = el && el.screen;
@@ -4068,6 +4091,10 @@
     if (!CI_SONO_SUONI) return;
     var mappa = cfgAudio().musica || {};
     var file = mappa[id];
+    // Una chiave puo' portare un elenco (la corsa: musica a caso a ogni
+    // apertura, invece del brano fisso di una scena) — stesso principio degli
+    // effetti con piu' file, qui applicato alla musica.
+    if (Array.isArray(file)) file = aCaso(file);
     if (!file) return fermaMusica();
     if (file === musNome && musNodo) return;      // stesso brano: continua
 

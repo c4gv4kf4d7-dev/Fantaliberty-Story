@@ -327,7 +327,8 @@
             }
           ],
           "ritmo": 0.9,
-          "_nota": "Il cartello d'apertura. \"ritmo\": 0.9 = scrittura e pause piu' svelte del 10%. Il tocco non lo completa a meta' (senzaSalto e' il comportamento normale di questo step): si legge tutto, poi arriva la freccia e il tocco vale."
+          "macchina": true,
+          "_nota": "Il cartello d'apertura. \"ritmo\": 0.9 = scrittura e pause piu' svelte del 10%. Il tocco non lo completa a meta' (senzaSalto e' il comportamento normale di questo step): si legge tutto, poi arriva la freccia e il tocco vale. \"macchina\": suona sfx_typing3 (chiave audio.effetti.titoli_typing) quando comincia a scrivere."
         },
         {
           "t": "fx",
@@ -1842,7 +1843,9 @@
         },
         {
           "t": "bg",
-          "id": "finale_porta_pollice"
+          "id": "finale_porta_pollice",
+          "suona": "ceo_pollice",
+          "_nota": "Il CEO mette il pollice in su: sfx_applausi_lungo2 (chiave audio.effetti.ceo_pollice), fisso e non pescato a caso come la lista applausi_lungo."
         },
         {
           "t": "wait",
@@ -1874,7 +1877,8 @@
         },
         {
           "t": "title",
-          "_nota": "[S7.04b] I titoli di coda: dopo il pollice in su del CEO e prima del countdown. Cinque blocchi che compaiono, restano e sfumano uno nell'altro — non si accumulano come il cartello d'apertura. Vanno da soli, un tocco li salta tutti. Totale ~15 secondi. Il tono e' asciutto: i primi crediti seri, poi due assurdi, e la chiusa sui 30 Newton.",
+          "_nota": "[S7.04b] I titoli di coda: dopo il pollice in su del CEO e prima del countdown. Cinque blocchi che compaiono, restano e sfumano uno nell'altro — non si accumulano come il cartello d'apertura. Vanno da soli, un tocco li salta tutti. Totale ~15 secondi. Il tono e' asciutto: i primi crediti seri, poi due assurdi, e la chiusa sui 30 Newton. \"macchina\": sfx_typing3 a ogni blocco che comincia a scrivere.",
+          "macchina": true,
           "dissolvenza": 400,
           "blocchi": [
             {
@@ -2504,7 +2508,17 @@
       "quiz": "mus_quiz.mp3",
       "quiz_livello": "mus_quiz.mp3",
       "moltiplicatori": "mus_quiz.mp3",
-      "countdown": "mus_lobby_finale.mp3"
+      "countdown": "mus_lobby_finale.mp3",
+      "corsa": [
+        "mus_atto1.mp3",
+        "mus_lobby.mp3",
+        "mus_aggancio.mp3",
+        "mus_camerino.mp3",
+        "mus_previsioni.mp3",
+        "mus_macroargomenti.mp3",
+        "mus_quiz.mp3",
+        "mus_lobby_finale.mp3"
+      ]
     },
     "effetti": {
       "scelta": [
@@ -2521,7 +2535,6 @@
       ],
       "tastiera_intro": "sfx_typing_intro.mp3",
       "invio": "sfx_enter.mp3",
-      "folla_lobby": "sfx_folla_lobby.mp3",
       "ritorno_lobby": "sfx_ritorno_lobby.mp3",
       "notifica": "sfx_notifica.mp3",
       "traguardo": "sfx_traguardo.mp3",
@@ -2542,7 +2555,9 @@
       "quiz_sbagliata": "sfx_errore.mp3",
       "quiz_livello": "sfx_quiz_livello.mp3",
       "quiz_fallito": "sfx_quiz_fallito.mp3",
-      "logo": "sfx_logo.mp3"
+      "logo": "sfx_logo.mp3",
+      "titoli_typing": "sfx_typing3.mp3",
+      "ceo_pollice": "sfx_applausi_lungo2.mp3"
     },
     "transizioni": [
       "lobby",
