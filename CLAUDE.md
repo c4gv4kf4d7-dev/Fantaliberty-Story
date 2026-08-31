@@ -320,9 +320,14 @@ raccolti dentro il regolamento (zona 3 della lobby) e il test che li confronta.
 Chi aggiunge o toglie un campo li aggiorna tutti e tre — `npm test` fallisce se
 l'elenco dei campi cambia da solo.
 
-- **Si spedisce due volte**, non una: alla conferma delle previsioni e di nuovo
-  quando si assegnano i moltiplicatori del quiz. Sono due righe della stessa
-  partita: chi legge la classifica tiene **l'ultima arrivata per giocatore**.
+- **Si spedisce due volte ma la riga e' una sola**: alla conferma delle
+  previsioni e di nuovo quando si assegnano i moltiplicatori del quiz, che
+  arrivano giorni dopo. Le due spedizioni portano lo stesso `run_id` (generato
+  una volta, salvato con la partita) e Supabase riscrive la riga invece di
+  aggiungerne un'altra (`Prefer: resolution=merge-duplicates`). Perche' regga
+  servono **due cose nel database**: l'indice unico su `run_id` e la policy di
+  update — senza l'indice l'upsert non ha su cosa agganciarsi e tornano le due
+  righe, in silenzio. Stanno in `docs/backend.sql`.
 - **`anni` e' il codice della fascia, non l'etichetta**: `'0'` = 0-2 anni,
   `'1'` = 3-7, `'2'` = 8-12, `'3'` = piu' di 12. Serve al `rookieBonus`.
 - **`npm run supabase` dice se la tabella e' pronta.** Confronta i campi che

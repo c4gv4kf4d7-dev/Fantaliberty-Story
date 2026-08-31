@@ -2146,9 +2146,31 @@
 
      Il timestamp non lo mette il client: la colonna ha default now() sul
      server, come chiede lo script. */
+  /* L'identificativo della partita. Serve a spedire UNA riga sola: la schedina
+     parte due volte (alla conferma delle previsioni e quando si assegnano i
+     moltiplicatori del quiz, che arrivano giorni dopo), e senza un id la
+     seconda spedizione creava una seconda riga della stessa partita. Con l'id,
+     la seconda riscrive la prima.
+
+     Si genera una volta e vive nel salvataggio: chi riapre l'app riprende la
+     sua riga. Una partita nuova ne prende uno nuovo. */
+  function idPartita() {
+    var s = VN.state;
+    if (!s.run_id) {
+      s.run_id = (global.crypto && global.crypto.randomUUID)
+        ? global.crypto.randomUUID()
+        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            var r = Math.random() * 16 | 0;
+            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+          });
+    }
+    return s.run_id;
+  }
+
   function payload() {
     var s = VN.state;
     return {
+      run_id: idPartita(),
       nome: s.nome, genere: s.genere, store: s.store, reparto: s.reparto,
       anni: s.anni, device: s.device, stile: s.stile,
       punti: totale(), picks: s.picks || {},
@@ -2177,7 +2199,9 @@
         'apikey': cfg.chiave,
         'Authorization': 'Bearer ' + cfg.chiave,
         'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
+        // merge-duplicates: se la riga con questo run_id c'e' gia' (la prima
+        // spedizione), viene riscritta invece di aggiungerne una seconda
+        'Prefer': 'return=minimal,resolution=merge-duplicates'
       },
       body: JSON.stringify(corpo)
     }).then(function (r) {

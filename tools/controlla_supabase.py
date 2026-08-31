@@ -65,7 +65,7 @@ def main():
     print('400 e resta in coda nel telefono del giocatore, senza che nessuno se ne accorga.')
     print('Da incollare nell\'SQL Editor di Supabase:\n')
     for c in mancanti:
-        tipo = 'text' if c in ('email',) else 'jsonb'
+        tipo = {'email': 'text', 'run_id': 'uuid'}.get(c, 'jsonb')
         print('  alter table public.runs add column if not exists %s %s;' % (c, tipo))
     return 1
 
