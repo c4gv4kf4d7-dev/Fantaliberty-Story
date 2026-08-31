@@ -131,6 +131,17 @@ riempiono l'inquadratura invece di lasciare margini vuoti, e sono le stesse che
 il giocatore si vedra' addosso in S5 — quello che scegli e' quello che avrai.
 `idle_camerino` resta dichiarato in `story.stili` ma non lo usa piu' nessuno.
 
+Lo stesso sporco ce l'aveva **Susan** (schegge chiuse nella crocchia e sul
+padiglione della cuffia). Sui personaggi pero' il filtro delle toppe grandi non
+si puo' usare: li' il bianco pieno e' anche il bianco degli occhi, i denti, la
+foto sul badge e la suola delle scarpe. Va usato solo `--bordi`, che due guardie
+tengono buono — quanto la scheggia sta **in dentro** (una scheggia resta entro
+30 px dal profilo, occhi e denti stanno a 100-210) e quanta **compagnia chiara**
+ha attaccata (una suola fa parte della scarpa, 1900 px di chiaro; una scheggia
+in mezzo ai capelli scuri ne ha 300). Con `--isola` si abbassa la soglia del
+chiaro: **200 solo su chi ha i capelli scuri** (Susan, i quattro stili), mai su
+Peter, che i capelli li ha bianchi e ci perderebbe le ciocche.
+
 Gli sprite hanno due difetti di ritaglio diversi, e servono due passate:
 `tools/togli_bianchi.py` da solo prende le **toppe grandi** di fondo chiuse
 dentro il disegno; `--bordi` prende i **puntini e i filetti sul contorno** (fra
