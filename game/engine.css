@@ -1076,15 +1076,10 @@ html.inattesa, html.inattesa body{background:#0a0a0f;overflow:hidden}
   background:#14141f;border:2px solid #3a3a52;border-radius:12px;padding:18px 16px;
   text-align:center;color:#f2f2f7}
 #audiobox h2{margin:0 0 16px;font-size:11px;letter-spacing:.18em;color:#ffd88c}
-#audiobox label{display:block;margin:14px 0 6px;font-size:8px;letter-spacing:.1em;
-  color:#a9a9c0;text-align:left}
-#audiobox input[type=range]{width:100%;margin:0 0 4px;accent-color:#ff9f57;
-  height:22px}
 #audiobox button{width:100%;margin-top:12px;padding:10px;border:2px solid #3a3a52;
   border-radius:8px;background:#1e1e2e;color:#f2f2f7;font:inherit;font-size:8px;
   letter-spacing:.1em;cursor:pointer}
 #audiobox #audiook{border-color:#ff9f57;color:#ffd88c}
-/* il cursore deve essere facile da prendere col dito: la manopola nativa e'
-   piccola, e con una riga alta 22px meta' dei trascinamenti mancavano */
-#audiobox input[type=range]{height:34px;touch-action:pan-x}
-#audiobox label span{float:right;color:#ff9f57}
+/* spento: si vede a colpo d'occhio, ma resta un bottone come gli altri —
+   si riaccende con lo stesso tocco */
+#audiobox button.off{opacity:.5;color:#a9a9c0}
