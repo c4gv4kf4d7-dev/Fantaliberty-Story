@@ -1799,13 +1799,13 @@
     return trovaEvento(v.shift());
   }
 
-  /* I tre esiti di un micro-evento sono sempre +3, 0 e -3 — uno per opzione — ma
+  /* I tre esiti di un micro-evento sono sempre +1, 0 e -1 — uno per opzione — ma
      l'abbinamento si rimescola a ogni attivazione. I valori "editoriale" scritti
      nella banca dicono soltanto che tono ha ciascuna risposta: NON sono il
      mapping del gioco. Cosi' chi rigioca non puo' imparare "la B e' quella
      buona", e deve scegliere la risposta che gli sembra giusta. */
   function esitiMicroEvento(e) {
-    var valori = e.valori || [3, 0, -3];
+    var valori = e.valori || [1, 0, -1];
     return mescola(valori.slice());
   }
 

@@ -30,7 +30,7 @@ def scegli(opzioni, pesi_tipo, rnd):
 
 def punti_core(d, i):
     o = d['opzioni'][i]
-    return o.get('pt', d['diff'] + {'consenso': 0, 'plausibile': 1, 'controcorrente': 2}
+    return o.get('pt', d['diff'] + {'consenso': 0, 'plausibile': 1, 'controcorrente': 1}
                  .get(o.get('tipo'), 0))
 
 def gioca_previsioni(g, rnd):
@@ -68,7 +68,7 @@ def gioca_previsioni(g, rnd):
     for _ in range(n_domande):
         if sacchetto and rnd.random() < prob:
             sacchetto.pop()
-            esiti = [3, 0, -3]; rnd.shuffle(esiti)
+            esiti = [1, 0, -1]; rnd.shuffle(esiti)
             risposte.append((None, 'EV', rnd.randrange(3), esiti[rnd.randrange(3)]))
             micro += 1
     return risposte, n_int, micro
@@ -119,6 +119,17 @@ def distribuisci(banca, g, rnd):
             c = cats[k % len(cats)]; quote[c] = round(quote[c] + 0.05, 2)
     return quote
 
+# I due bonus personali: piccoli, servono solo a sciogliere i quasi pari merito.
+# Si calcolano da dati che il giocatore ha gia' dato in [S0], non da domande nuove.
+ANNI_BONUS = {'0-2 anni': 1.0, '3-7 anni': 0.5, '8-12 anni': 0.25, "Piu' di 12 anni": 0.0}
+GEN_BONUS = {'17': 0.0, 'Air': 0.0, '16': 0.25, '15': 0.5, '14': 0.75, '13': 0.75}
+
+def bonus_personali(anni, device):
+    rookie = ANNI_BONUS.get(anni, 0.0)
+    gen = str(device).split()[0]
+    dev = GEN_BONUS.get(gen, 1.0)          # 12, 11, X e precedenti: il massimo
+    return round(min(rookie + dev, 2.0), 2)
+
 def moltiplicatore_pool(quota):
     if quota < 0.10: return 1.5
     if quota <= 0.30: return 1.25
@@ -141,6 +152,8 @@ def main():
             'stile': STILI[n % len(STILI)],
             'sapere': round(rnd.uniform(0.35, 0.9), 2),   # quanto conosce la storia Apple
             'distribuzione': ['tutto_su_una', 'equa', 'sparso'][n % 3],
+            'anni': list(ANNI_BONUS)[n % 4],
+            'device': ['17 Pro', '16', '15 Plus', '13 mini', '11', 'XR'][n % 6],
         })
 
     # 1) tutti giocano le previsioni
@@ -174,8 +187,9 @@ def main():
             if v > 10: capped += 1
             tot += min(10, v)
         bonus = len(CATEGORIE)                   # tutte le facoltative: il flusso le impone
-        if g['n_int'] >= 5: bonus += 1
-        g['bonus'], g['capped'] = bonus, capped
+        g['personali'] = bonus_personali(g['anni'], g['device'])
+        bonus += g['personali']
+        g['bonus'], g['capped'] = round(bonus, 2), capped
         g['finale'] = round(tot + bonus, 2)
 
     ordinati = sorted(giocatori, key=lambda g: -g['finale'])
@@ -203,7 +217,9 @@ def main():
           % (sum(g['capped'] for g in giocatori), sum(g['capped'] for g in giocatori) / len(giocatori)))
     print('banca quiz: %s' % ', '.join('%.2f x%d' % (b, [g['banca'] for g in giocatori].count(b))
           for b in sorted(set(g['banca'] for g in giocatori))))
-    print('intermezzi giocati per partita: %d (il bonus ne chiede 5)' % giocatori[0]['n_int'])
+    print('intermezzi giocati per partita: %d' % giocatori[0]['n_int'])
+    pers = [g['personali'] for g in giocatori]
+    print('bonus personali: da %.2f a %.2f (mediana %.2f)' % (min(pers), max(pers), statistics.median(pers)))
     print('micro-eventi per partita: min %d, max %d' % (min(g['micro'] for g in giocatori),
                                                         max(g['micro'] for g in giocatori)))
     for nome in PROFILI:
