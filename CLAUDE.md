@@ -342,6 +342,12 @@ l'elenco dei campi cambia da solo.
 - **La chiave nel sito puo' solo inserire.** Non legge, non modifica, non
   cancella. La verifica dal vivo e le query di cancellazione stanno in fondo a
   `docs/backend.sql`.
+- **`cognome` e' facoltativo e non e' il nickname.** Si chiede subito dopo il
+  nome nel terminale (`opzionale:true` sullo step `input` — il bottone resta
+  premibile a campo vuoto, vedi `showInput`). Serve solo a distinguere due
+  giocatori con lo stesso nome nei punteggi: si mostra come iniziale
+  puntata, "Lorenzo B.", mai per esteso — il nickname con cui il gioco si
+  rivolge al giocatore resta `nome`, da solo.
 
 ## I punteggi: il conto finale non lo fa il gioco
 

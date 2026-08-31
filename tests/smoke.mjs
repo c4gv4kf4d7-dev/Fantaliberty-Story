@@ -560,6 +560,16 @@ $('ti').value = 'Franco';
 $('ti').oninput();
 $('tok').onclick();
 
+// input cognome: facoltativo, il bottone resta premibile anche a campo vuoto
+assert.ok($('inputform').classList.contains('on'), 'form cognome visibile');
+assert.match(txt(), /cognome/i, 'chiede il cognome');
+assert.equal($('tok').disabled, false, 'campo facoltativo: si puo\' continuare anche vuoto');
+$('ti').value = 'Ross@i!!!';
+$('ti').oninput();
+assert.equal(VN.state.cognome, 'Rossi', 'sanitizzazione input, come per il nome');
+assert.equal($('tval_cognome').textContent, 'ROSSI', 'terminale aggiornato live');
+$('tok').onclick();
+
 // scelta genere -> interpolazione {NOME}
 assert.match(txt(), /Perfetto, FRANCO/, 'interpolazione {NOME}');
 const opts = [...$('choices').querySelectorAll('.ch')];
@@ -605,6 +615,7 @@ assert.ok(document.body.classList.contains('disp-lg'),
 // il terminale resta la lista dei campi: il badge non si stampa piu' li'
 const term = [...$('screen').querySelectorAll('.frow')].map((d) => d.textContent);
 assert.match(term[0], /NOME: FRANCO/, 'il terminale mostra i campi compilati');
+assert.match(term[1], /COGNOME: ROSSI/, 'e anche il cognome facoltativo');
 assert.equal($('tval___ok').textContent, '> BADGE IN STAMPA');
 
 // riga di sistema mentre la stampante lavora: non la dice nessuno
@@ -1947,6 +1958,7 @@ VN.boot(story, { speed: 0, banca, quiz });
 VN.step();                    // luci
 VN.step();                    // prima battuta di Lucas
 $('ti').value = 'Luca'; $('ti').oninput(); $('tok').onclick();
+$('tok').onclick();           // cognome facoltativo: salta senza scrivere niente
 const scegli = (i) => [...$('choices').querySelectorAll('.ch')][i].onclick({ stopPropagation() {} });
 scegli(0);   // maschile
 scegli(0);   // store: Piazza Liberty
@@ -2700,7 +2712,7 @@ function apriMoltiplicatori(stato, extra) {
   // con l'elenco dei dati raccolti nel regolamento: se qui compare o sparisce
   // un campo, quei due vanno aggiornati insieme.
   assert.deepEqual(Object.keys(spedito).sort(),
-    ['anni', 'device', 'email', 'flags', 'genere', 'nome', 'picks', 'punti',
+    ['anni', 'cognome', 'device', 'email', 'flags', 'genere', 'nome', 'picks', 'punti',
      'quiz', 'reparto', 'run_id', 'runner', 'store', 'stile', 'versione'].sort(),
     'i campi della schedina sono quelli dichiarati in docs/backend.sql e nel regolamento');
   assert.equal(typeof spedito.runner.record, 'number',

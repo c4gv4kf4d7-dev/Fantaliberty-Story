@@ -2426,7 +2426,7 @@
     var s = VN.state;
     return {
       run_id: idPartita(),
-      nome: s.nome, genere: s.genere, store: s.store, reparto: s.reparto,
+      nome: s.nome, cognome: s.cognome || null, genere: s.genere, store: s.store, reparto: s.reparto,
       anni: s.anni, device: s.device, stile: s.stile,
       punti: totale(), picks: s.picks || {},
       flags: { sfacciato: !!s.sfacciato, studiato: s.studiato },
@@ -2502,6 +2502,7 @@
      apposta, cosi' quello che arriva al server e' una riga sola, con dentro
      l'email se il giocatore l'ha lasciata. */
   var RE_EMAIL = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
+  var RE_EMAIL_LAVORO = /@apple\.com$/i;
 
   function showEmail(st) {
     hideUI();
@@ -2540,6 +2541,15 @@
       if (!v) { VN.state.email = null; return esci(); }
       if (!RE_EMAIL.test(v)) {
         el.emailerr.textContent = fmt(st.errore || 'Manca qualcosa: controlla che ci siano la chiocciola e il punto.');
+        el.emailerr.classList.add('on');
+        try { el.emailin.focus(); } catch (e) {}
+        return;
+      }
+      // Niente mail di lavoro: e' un gioco per il tempo libero, non serve
+      // saperlo su un indirizzo aziendale.
+      if (RE_EMAIL_LAVORO.test(v)) {
+        el.emailerr.textContent = fmt(st.erroreLavoro
+          || 'Non puoi usare la mail di lavoro: gioca nel tuo tempo libero.');
         el.emailerr.classList.add('on');
         try { el.emailin.focus(); } catch (e) {}
         return;
@@ -3832,14 +3842,16 @@
     el.ti.maxLength = max;
     var re = st.pattern ? new RegExp(st.pattern, 'g') : /[^A-Za-zÀ-ÿ0-9' ]/g;
     el.ti.value = '';
-    el.tok.disabled = true;
+    // Un campo opzionale (es. il cognome) lascia il bottone premibile anche
+    // a vuoto: si continua senza aver scritto niente, non e' un errore.
+    el.tok.disabled = !st.opzionale;
     el.ti.oninput = function () {
       tastiera();                       // un colpo di tasti, non uno per lettera
       var v = el.ti.value.replace(re, '').slice(0, max);
       el.ti.value = v;
       VN.state[st.var] = v;
       termSet(st.var);
-      el.tok.disabled = v.trim().length === 0;
+      el.tok.disabled = !st.opzionale && v.trim().length === 0;
     };
     el.ti.onkeydown = function (e) { if (e.key === 'Enter' && !el.tok.disabled) el.tok.click(); };
     el.tok.onclick = function (ev) {

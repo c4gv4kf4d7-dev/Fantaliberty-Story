@@ -15,6 +15,12 @@ create table if not exists public.runs (
   -- qui sotto, altrimenti l'upsert non ha su cosa agganciarsi.
   run_id       uuid,
   nome         text,
+  -- Aggiunta insieme al campo cognome nel terminale: facoltativo, puo' essere
+  -- null. Serve solo a identificare il giocatore nei punteggi come "Nome C."
+  -- (nome + iniziale del cognome) — non e' il nickname con cui il gioco si
+  -- rivolge a lui, quello resta 'nome'. Se la tabella esiste gia':
+  --     alter table public.runs add column if not exists cognome text;
+  cognome      text,
   genere       text,
   store        text,
   reparto      text,
@@ -48,10 +54,11 @@ create table if not exists public.runs (
 -- Se la tabella e' stata creata prima di S8, dell'email, della corsa o dell'id
 -- di partita, le colonne aggiunte dopo vanno messe a mano: senza, ogni schedina
 -- viene rifiutata con un 400 e resta in coda nel telefono, in silenzio.
---     alter table public.runs add column if not exists quiz   jsonb;
---     alter table public.runs add column if not exists email  text;
---     alter table public.runs add column if not exists runner jsonb;
---     alter table public.runs add column if not exists run_id uuid;
+--     alter table public.runs add column if not exists quiz    jsonb;
+--     alter table public.runs add column if not exists email   text;
+--     alter table public.runs add column if not exists runner  jsonb;
+--     alter table public.runs add column if not exists run_id  uuid;
+--     alter table public.runs add column if not exists cognome text;
 -- Per sapere come sta la tabella vera: npm run supabase
 
 alter table public.runs enable row level security;
@@ -96,6 +103,10 @@ create policy "chiunque puo aggiornare la propria schedina"
 --
 --   nome      il nickname scelto in [S0]. Non serve il nome vero: il gioco lo
 --             usa solo per rivolgersi al giocatore e per la classifica
+--   cognome   facoltativo, chiesto subito dopo il nome in [S0]. Serve solo a
+--             distinguere in classifica due giocatori con lo stesso nome:
+--             chi la compila conta "Nome" + iniziale ("Lorenzo B."), il gioco
+--             non lo fa da solo (come per il resto dei punteggi, vedi 'punti')
 --   genere    serve al testo, che si declina ("sei pronto" / "sei pronta")
 --   store     classifica per punto vendita
 --   reparto   classifica per categoria
