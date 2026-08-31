@@ -25,6 +25,11 @@ create table if not exists public.runs (
   -- arrivate:
   --     alter table public.runs add column if not exists quiz jsonb;
   quiz         jsonb,
+  -- Aggiunta con l'Apple Campus Run: il record della corsa. Come per le altre,
+  -- se la tabella esiste gia' va aggiunta prima di pubblicare, altrimenti
+  -- l'invio viene rifiutato con un 400 (PGRST204):
+  --     alter table public.runs add column if not exists runner jsonb;
+  runner       jsonb,
   -- Aggiunta con la schermata dell'email (dopo il teleprompter, prima dei
   -- titoli di coda): e' facoltativa, quindi puo' essere null. Se la tabella
   -- esiste gia', la colonna va aggiunta prima di pubblicare, altrimenti
@@ -33,6 +38,14 @@ create table if not exists public.runs (
   email        text,
   versione     text
 );
+
+-- Se la tabella e' stata creata prima di S8, dell'email o della corsa, le tre
+-- colonne aggiunte dopo vanno messe a mano: senza, ogni schedina viene
+-- rifiutata con un 400 e resta in coda nel telefono, in silenzio.
+--     alter table public.runs add column if not exists quiz   jsonb;
+--     alter table public.runs add column if not exists email  text;
+--     alter table public.runs add column if not exists runner jsonb;
+-- Per sapere come sta la tabella vera: npm run supabase
 
 alter table public.runs enable row level security;
 
@@ -61,13 +74,17 @@ create policy "chiunque puo inserire la propria schedina"
 --   genere    serve al testo, che si declina ("sei pronto" / "sei pronta")
 --   store     classifica per punto vendita
 --   reparto   classifica per categoria
---   anni      classifica per anzianita'
+--   anni      classifica per anzianita'. E' il CODICE della fascia, non
+--             l'etichetta: 0 = 0-2 anni, 1 = 3-7, 2 = 8-12, 3 = piu' di 12
 --   device    dato di colore, chiesto in [S0]
 --   stile     decide battute, sprite e perk del quiz
 --   punti     ricalcolati dalle risposte, non accumulati
 --   picks     le risposte date, per macroargomento
 --   flags     due scelte di tono di [S2] e [S4]
 --   quiz      livelli del quiz di Peter e moltiplicatori assegnati
+--   runner    il record dell'Apple Campus Run. Come entri in classifica non e'
+--             deciso: il dato viaggia comunque, cosi' la decisione si puo'
+--             prendere dopo invece che perdere le corse gia' fatte
 --   email     facoltativa: la lascia il giocatore dopo il teleprompter, e
 --             serve solo a mandargli i risultati finali. Chi salta la
 --             schermata manda null

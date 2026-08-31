@@ -774,8 +774,9 @@ Bonus completamento = +1 per ogni categoria con tutte e 3 le facoltative
   completate (max +3)
 
 Bonus personali (piccoli, servono a sciogliere i quasi pari merito)
-  rookieBonus, da "anni" chiesto in [S0]:
-    0-2 anni +1 · 3-7 anni +0.5 · 8-12 anni +0.25 · più di 12 anni 0
+  rookieBonus, da "anni" chiesto in [S0] (nel database e' il CODICE 0-3,
+  non l'etichetta):
+    0 = 0-2 anni +1 · 1 = 3-7 anni +0.5 · 2 = 8-12 anni +0.25 · 3 = oltre 0
   deviceBonus, dalla generazione dell'iPhone scelto in [S0]:
     17 / Air 0 · 16 +0.25 · 15 +0.5 · 14 e 13 +0.75 · 12 e precedenti +1
   Tetto: rookieBonus + deviceBonus ≤ +2

@@ -2154,6 +2154,11 @@
       punti: totale(), picks: s.picks || {},
       flags: { sfacciato: !!s.sfacciato, studiato: s.studiato },
       quiz: { livelli: s.quiz || {}, banca: bancaMult(), moltiplicatori: s.moltiplicatori || null },
+      // Apple Campus Run: il record e' l'unica cosa che la corsa lascia. Come
+      // entri in classifica non e' deciso, ma se non parte con la schedina non
+      // c'e' modo di deciderlo dopo: qui il dato c'e', chi conta a mano lo usa
+      // o lo ignora.
+      runner: { record: Number(s.runner_record || 0) },
       email: s.email || null,
       versione: (VN.story.meta && VN.story.meta.version) || ''
     };

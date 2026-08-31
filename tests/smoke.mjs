@@ -1144,7 +1144,7 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
         assert.equal($('nametxt').textContent, 'Susan');
         assert.doesNotMatch(txt(), /[+-]\s?\d|\bbonus\b|\bmalus\b/i, 'e non dice mai quanto vale');
         const dato = VN.state.picks.micro_eventi.r.CLICKER;
-        assert.ok([3, 0, -3].includes(dato.p), 'il punteggio applicato e\' uno dei tre');
+        assert.ok([1, 0, -1].includes(dato.p), 'il punteggio applicato e\' uno dei tre');
         assert.equal(VN.state.punti, puntiPrima + dato.p, 'e finisce nel totale');
         visto = true;
         break;
@@ -2676,6 +2676,8 @@ function apriMoltiplicatori(stato, extra) {
   let spedito = null;
   window.fetch = (url, opt) => { spedito = JSON.parse(opt.body); return Promise.resolve({ ok: true }); };
   apriMoltiplicatori({ mult_bank: 0.15,
+    nome: 'Tester', genere: 'f', store: 'liberty', reparto: 'operation',
+    anni: '2', device: '13 mini', stile: 'drip',
     quiz: { base: { passato: true, tentativi: 1, pool: 0, seconda: false, vinto: 0.1 } } },
     { backend: { url: 'https://esempio', chiave: 'x' } });
   const righe = [...$('multrighe').querySelectorAll('.mriga')];
@@ -2687,6 +2689,32 @@ function apriMoltiplicatori(stato, extra) {
   assert.deepEqual(spedito.quiz.moltiplicatori, { iphone: 0, watch: 0, altro: 0.15 },
     'e la distribuzione scelta');
   assert.equal(spedito.quiz.livelli.base.passato, true, 'e come sono andati i livelli');
+
+  // Il payload e' il contratto con la tabella di Supabase (docs/backend.sql) e
+  // con l'elenco dei dati raccolti nel regolamento: se qui compare o sparisce
+  // un campo, quei due vanno aggiornati insieme.
+  assert.deepEqual(Object.keys(spedito).sort(),
+    ['anni', 'device', 'email', 'flags', 'genere', 'nome', 'picks', 'punti',
+     'quiz', 'reparto', 'runner', 'store', 'stile', 'versione'].sort(),
+    'i campi della schedina sono quelli dichiarati in docs/backend.sql e nel regolamento');
+  assert.equal(typeof spedito.runner.record, 'number',
+    'il record dell\'Apple Campus Run viaggia con la schedina');
+  delete window.fetch;
+}
+
+/* 10k. il record della corsa arriva davvero nella schedina ---- */
+{
+  VN.clearSave();
+  let spedito = null;
+  window.fetch = (url, opt) => { spedito = JSON.parse(opt.body); return Promise.resolve({ ok: true }); };
+  apriMoltiplicatori({ mult_bank: 0.05, runner_record: 4200,
+    quiz: { base: { passato: true, tentativi: 1, pool: 0, seconda: false, vinto: 0.05 } } },
+    { backend: { url: 'https://esempio', chiave: 'x' } });
+  const r = [...$('multrighe').querySelectorAll('.mriga')];
+  r[0].querySelector('.mpiu').onclick({ stopPropagation() {} });
+  $('multok').onclick({ stopPropagation() {} });
+  [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });
+  assert.equal(spedito.runner.record, 4200, 'il record della corsa e\' quello raggiunto');
   delete window.fetch;
 }
 
