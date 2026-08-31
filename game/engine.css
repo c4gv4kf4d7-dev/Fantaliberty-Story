@@ -507,14 +507,21 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
    Sta fuori da #boxwrap (come #regole): gli serve tutto lo schermo. Il tocco
    su un monitor apre il dettaglio, che copre la griglia; "torna" lo richiude.
    Il bottone che chiude la schedina sta sulla griglia, non nel dettaglio. */
+/* niente justify-content:center: se il contenuto (griglia + bottone) e'
+   piu' alto dello schermo (schermi bassi, testo che va a capo), il centraggio
+   lo spingerebbe meta' sopra e meta' sotto i bordi di #stage, che taglia
+   (overflow:clip) senza modo di raggiungere la parte tagliata. overflow-y:auto
+   qui e' la rete di sicurezza; il margin:auto sui due figli (sotto) centra
+   quando c'e' spazio e si azzera da solo quando non basta, lasciando scorrere
+   dall'alto invece di tagliare. */
 #monitorwrap{position:absolute;inset:0;z-index:7;display:none;flex-direction:column;
- justify-content:center;gap:16px;
+ justify-content:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch;gap:16px;
  padding:8vh calc(4vw + env(safe-area-inset-right,0px)) calc(4vh + env(safe-area-inset-bottom,0px))
   calc(4vw + env(safe-area-inset-left,0px));
  background:linear-gradient(rgba(4,6,12,.15), rgba(4,6,12,.55) 60%, rgba(4,6,12,.72))}
 #monitorwrap.on{display:flex}
 
-#mongriglia{display:flex;gap:8px}
+#mongriglia{display:flex;gap:8px;flex:none;margin-top:auto}
 .moncard{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:8px;
  background:rgba(10,14,24,.86);border:2px solid rgba(120,220,180,.4);border-radius:10px;
  padding:10px 6px;color:#eafff2;font-family:inherit;cursor:pointer;
@@ -547,7 +554,7 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 .moncard:not(.fatta) .monstato{color:#ffd98a}
 
 /* il bottone che chiude la schedina: rosso, fisso sotto la griglia */
-#monconferma{flex:none;background:#8e2a2a;border:3px solid #ff9a9a;border-radius:8px;
+#monconferma{flex:none;margin-bottom:auto;background:#8e2a2a;border:3px solid #ff9a9a;border-radius:8px;
  color:#fff;font-family:inherit;font-size:clamp(8px,2.3vw,12px);padding:12px 13px;
  cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.5);letter-spacing:.04em}
 #monconferma:hover,#monconferma:focus{background:#a83333;outline:none}
