@@ -1262,7 +1262,7 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   VN.step(); VN.step();                                        // le due battute di Susan
   assert.ok($('monitorwrap').classList.contains('on'), 'la sala regia si apre');
 
-  const cards = () => [...$('mongriglia').querySelectorAll('.moncard')];
+  const cards = () => [...$('monschermi').querySelectorAll('.monschermo')];
   assert.deepEqual(cards().map((c) => c.querySelector('.montit').textContent),
     ['iPhone', 'Watch', 'Altro'], 'un monitor per macroargomento');
   assert.equal(cards().filter((c) => c.classList.contains('fatta')).length, 3,
