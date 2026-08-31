@@ -634,8 +634,15 @@ Indice degli id in `docs/indice-domande.md`.
 [S8.01] PETER — prima volta
   Asset: bg_lobby_z4_quiz_aperta + chr_peter_alza_occhi
   "Hai fatto il keynote. Ora vediamo quanto conosci quelli passati."
+  "Lo stile che hai scelto ti dà una mano: <perk dello stile>."
+    hawaiano  → il primo giro storto di ogni livello non conta
+    showman   → i livelli sono già aperti tutti e tre
+    drip      → una volta per livello Peter toglie due risposte sbagliate
+    ingegnere → tre secondi in più su ogni domanda
   "Ci sono 3 livelli di difficoltà e hai due tentativi... sei pronto/a?"
-  (la meccanica dei moltiplicatori NON si rispiega qui: sta nel regolamento)
+  (il perk si spiega QUI e solo qui — in S3, sulla scheda del carosello, era
+   una meccanica del quiz arrivata troppo presto. La meccanica dei
+   moltiplicatori invece non si rispiega: sta nel regolamento)
 
 [S8.HUB] Selezione livello
   SE run.style == showman: tutti e 3 i livelli sbloccati, ordine libero

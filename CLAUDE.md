@@ -117,7 +117,9 @@ cose da non annullare per sbaglio:
    eccezione al resto del gioco (pixelato), non una svista;
 3. **niente meccaniche sulla scheda.** Il perk del quiz si spiega a S8, non
    qui: il carosello lo rimostra solo se lo step chiede `etichettaPerk` (S3
-   non lo chiede).
+   non lo chiede). A S8 lo dice Peter, con una battuta per stile (`by:
+   "stile"`) prima di cominciare: e' l'unico posto dove il perk viene
+   spiegato, quindi non va tolto pensando che si sappia gia'.
 
 Attenzione al piano dei layer: `#carosello` sta a `z-index:1`, **sotto**
 `#boxwrap` (2). Alzandolo, il bottone "Sono io" smette di essere premibile
