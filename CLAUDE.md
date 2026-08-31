@@ -491,10 +491,23 @@ Quattro cose da non annullare per sbaglio:
 3. **La corsa non e' un quarto livello del quiz.** Sta *sotto* la griglia: i
    tre pannelli dicono a che punto sono i livelli, e un quarto che non e' un
    livello toglie loro quel significato.
-4. **Il record si tiene, i punti no.** `VN.state.runner_record` entra nel
+4. **La classifica e' una tabella a parte, e si legge.** `runner_leaderboard`
+   tiene **una riga per giocatore** con dentro il miglior punteggio, non lo
+   storico delle partite. L'identita' non la chiede la corsa: arriva dal gioco
+   grande nel messaggio di apertura (`playerId` = il `run_id` della schedina,
+   `playerName` = il nome scelto in [S0]) insieme a dove sta il database.
+   Aprendo `game/runner/` da soli non arriva niente e la corsa gira come prima,
+   col record del telefono — che resta comunque la riserva quando il server non
+   risponde. Tre cose da non rompere: il punteggio si scrive **solo se batte**
+   quello che c'e' (e un trigger nel database lo garantisce comunque, vedi
+   `docs/backend.sql`); la posizione si fa **contare al database**
+   (`Prefer: count=exact`), non scaricando la tabella; e la classifica non
+   ferma mai il gioco — parte dopo aver mostrato il game over, e ANCORA resta
+   premibile mentre carica.
+5. **Il record si tiene, i punti no.** `VN.state.runner_record` entra nel
    salvataggio; come i punti della corsa si sommino alla classifica dei
    pronostici **non e' deciso** — non inventarlo.
-5. **Il livello e' un tratto con un cuore dentro.** Ogni mille punti si
+6. **Il livello e' un tratto con un cuore dentro.** Ogni mille punti si
    attraversa la riga dorata e la velocita' sale di uno scalino; dentro ogni
    livello esce **un cuore di ricarica solo**, a un punto a caso del tratto
    (`nuovaQuotaVita()`), e si prova a ogni gruppo — non solo in quelli
