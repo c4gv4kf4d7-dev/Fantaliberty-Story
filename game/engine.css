@@ -1047,6 +1047,8 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  max-width:22em;box-shadow:0 8px 0 rgba(0,0,0,.5)}
 #modaltxt{color:#fff;font-size:clamp(8px,2.5vw,13px);line-height:1.9;margin-bottom:16px;
  text-align:center}
+/* la terza via del menu Esci: piu' discreta delle due scelte vere */
+#modalbtns .ch.annulla{background:transparent;border-color:rgba(255,255,255,.45);box-shadow:none}
 #modalbtns{display:flex;flex-direction:column;gap:8px}
 
 /* ---------- sipario / cartello d'apertura ---------- */

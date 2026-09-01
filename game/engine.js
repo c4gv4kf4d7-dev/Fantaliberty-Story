@@ -614,7 +614,7 @@
   function scegliDoveAndareEsci() {
     mostraModale({
       text: 'Cosa vuoi fare?',
-      si: 'TORNA ALLA LOBBY', no: 'ESCI DAL GIOCO'
+      si: 'TORNA ALLA LOBBY', no: 'ESCI DAL GIOCO', annulla: 'ANNULLA, RESTO QUI'
     }, tornaAllaLobbyDaEsci, esciDalGiocoDaEsci);
   }
 
@@ -642,7 +642,7 @@
     stopTyping();
     mostraModale({
       text: 'Vuoi salvare i progressi? Potrai riprendere la partita piu\' tardi.',
-      si: 'SI\', SALVA', no: 'NO'
+      si: 'SI\', SALVA', no: 'NO', annulla: 'ANNULLA, RESTO QUI'
     }, tentaSalvataggioEsci, scegliDoveAndareEsci);
   }
 
@@ -1538,6 +1538,10 @@
     };
     bottone(cfg.si || 'Si\'', onSi);
     bottone(cfg.no || 'Non ancora', onNo);
+    // Terza via, facoltativa: chiude e basta, per chi ha cambiato idea. Serve
+    // dove "no" non vuol dire "annulla" (nel menu Esci "NO" e' "non salvare"
+    // e va avanti lo stesso).
+    if (cfg.annulla) bottone(cfg.annulla, null).classList.add('annulla');
     el.modal.classList.add('on');
   }
 

@@ -1717,7 +1717,16 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.ok($('modal').classList.contains('on'), 'si apre il menu Esci');
   assert.match($('modaltxt').textContent, /salvare i progressi/i);
   let bottoni = [...$('modalbtns').querySelectorAll('.ch')];
-  assert.deepEqual(bottoni.map((b) => b.textContent), ['SI\', SALVA', 'NO']);
+  assert.deepEqual(bottoni.map((b) => b.textContent), ['SI\', SALVA', 'NO', 'ANNULLA, RESTO QUI']);
+
+  // ANNULLA: chi ha cambiato idea chiude il menu e resta dov'era, senza
+  // salvare e senza cambiare scena
+  bottoni[2].onclick({ stopPropagation() {} });
+  assert.equal($('modal').classList.contains('on'), false, 'ANNULLA chiude il menu');
+  assert.equal(VN.sceneId, 'aggancio', 'e non si va da nessuna parte');
+  assert.equal(VN.hasSave(story), false, 'e non salva');
+  $('btnEsciGioco').onclick({ stopPropagation() {} });
+  bottoni = [...$('modalbtns').querySelectorAll('.ch')];
 
   // NO: niente salvataggio, si passa dritti alla seconda domanda
   assert.equal(VN.hasSave(story), false, 'nessun salvataggio ancora');
@@ -1725,7 +1734,14 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.equal(VN.hasSave(story), false, 'NO non salva niente');
   assert.match($('modaltxt').textContent, /cosa vuoi fare/i);
   bottoni = [...$('modalbtns').querySelectorAll('.ch')];
-  assert.deepEqual(bottoni.map((b) => b.textContent), ['TORNA ALLA LOBBY', 'ESCI DAL GIOCO']);
+  assert.deepEqual(bottoni.map((b) => b.textContent), ['TORNA ALLA LOBBY', 'ESCI DAL GIOCO', 'ANNULLA, RESTO QUI']);
+  // anche qui si puo' tornare indietro
+  bottoni[2].onclick({ stopPropagation() {} });
+  assert.equal($('modal').classList.contains('on'), false, 'ANNULLA chiude anche la seconda domanda');
+  assert.equal(VN.sceneId, 'aggancio');
+  $('btnEsciGioco').onclick({ stopPropagation() {} });
+  [...$('modalbtns').querySelectorAll('.ch')][1].onclick({ stopPropagation() {} });   // NO, di nuovo
+  bottoni = [...$('modalbtns').querySelectorAll('.ch')];
 
   // TORNA ALLA LOBBY: pausa narrativa, non un reset. Lo stato (qui: lo
   // stile scelto) resta, e Francesca dice la riga esatta dello spec, non
