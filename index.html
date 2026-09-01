@@ -22,7 +22,7 @@
   gtag('js', new Date());
   gtag('config', 'G-SYX1RZLNNE');
 </script>
-<link rel="stylesheet" href="./game/engine.css?v=130">
+<link rel="stylesheet" href="./game/engine.css?v=131">
 </head>
 <body>
 <div id="stage">
@@ -130,13 +130,7 @@
     </div>
     <!-- chi parla. Per una voce in cuffia (Susan, dalla regia) accanto al nome
          compare l'icona dell'auricolare invece di uno sprite in scena -->
-    <div id="nomeriga">
-      <div id="name" class="hidden"><img id="voce" alt=""><span id="nametxt"></span></div>
-      <!-- "rileggi": riapre le ultime battute. Compare solo quando c'e' una
-           risposta da dare ai pronostici, che e' l'unico momento in cui il
-           contesto di prima serve ancora e non c'e' piu'. -->
-      <button id="rileggi" aria-label="Rileggi le ultime battute" hidden>RILEGGI</button>
-    </div>
+    <div id="name" class="hidden"><img id="voce" alt=""><span id="nametxt"></span></div>
     <div id="box"><span id="txt"></span></div>
     <div id="arrow">▼</div>
     <!-- i tre macroargomenti del keynote (S5), e i tre livelli del quiz (S8).
@@ -238,16 +232,6 @@
 
   <!-- il regolamento (S1, zona 3): si legge e si chiude, non tocca la partita.
        Titolo e bottone restano fermi, scorre solo il corpo. -->
-  <!-- le ultime battute, da rileggere: stessa veste del regolamento, si chiude
-       toccando fuori o col bottone, e non tocca la partita -->
-  <div id="storicowrap">
-    <div id="storicobox">
-      <div id="storicotit">LE ULTIME BATTUTE</div>
-      <div id="storicocorpo"></div>
-      <button id="storicook" class="ch">TORNA ALLA DOMANDA</button>
-    </div>
-  </div>
-
   <div id="regole">
     <div id="regbox">
       <div id="regtit"></div>
@@ -354,8 +338,8 @@
   </div>
 </div>
 
-<script src="./game/analytics.js?v=130"></script>
-<script src="./game/engine.js?v=130"></script>
+<script src="./game/analytics.js?v=131"></script>
+<script src="./game/engine.js?v=131"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -445,7 +429,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=130', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=131', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e
