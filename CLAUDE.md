@@ -418,6 +418,14 @@ Altre due cose di S8 che sembrano dettagli e non lo sono:
 - **la griglia dei livelli convive con `#choices`** — per questo `#griglia`
   sta prima nell'HTML e `#boxwrap` prende la classe `quizhub`.
 
+**Assegnati i moltiplicatori, il quiz è chiuso per davvero** (`quizConcluso()`
+in `engine.js`): ogni cella della griglia diventa "fatta", anche un livello
+mai giocato e non bruciato. Senza questo, chi assegnava presto — appena
+vinto un livello, la voce si vede subito, non serve aspettare il keynote —
+poteva continuare a giocare gli altri livelli e accumulare `mult_bank` che
+non serviva più a niente, restando dentro una schermata che diceva ancora
+"da dove vuoi cominciare?" mentre in realtà aveva già finito.
+
 ## Dopo le previsioni il gioco non finisce
 
 L'ordine e' vincolato e non va riordinato per comodita': conferma delle
@@ -575,6 +583,15 @@ Peter non parla piu' della corsa, in nessuna delle due direzioni: non la
 presenta prima di cominciare il quiz e non la commenta al ritorno. E' voluto —
 sono due attivita' scoperte separatamente, non una proposta sua — quindi non
 va reintrodotta una battuta "l'altra sfida" pensando che manchi qualcosa.
+
+**Il riquadro del gioco si misura su `visualViewport`, non solo su
+`innerWidth`/`innerHeight`.** Su Safari mobile le barre del browser sono
+sempre aperte alla primissima apertura di una pagina e si accorciano da
+sole poco dopo, ma quel cambiamento non sempre fa scattare `resize`: la
+misura calcolata subito restava quella (piu' stretta) di quando le barre
+c'erano ancora. `adatta()` ascolta anche `visualViewport.resize`/`scroll` e
+si ricontrolla un'altra volta quando il gioco e' davvero pronto (`PRONTI`),
+non solo al caricamento dello script.
 
 ## L'audio: tre regole, e una che vale piu' delle altre
 

@@ -2825,6 +2825,11 @@
 
   function bancaMult() { return Number(VN.state.mult_bank || 0); }
 
+  // Assegnati i moltiplicatori, la partita del quiz e' chiusa per davvero:
+  // e' irreversibile come il lock di S6, e riaprire un livello non passato
+  // servirebbe solo ad accumulare punti che non si possono piu' spendere.
+  function quizConcluso() { return !!VN.state.moltiplicatori; }
+
   /* ---------------- [S8.HUB] scelta del livello ----------------
      Tre pannelli come la griglia di S5, piu' le azioni sotto: assegnare i
      moltiplicatori (solo nelle 24 ore prima del keynote) e tornare indietro. */
@@ -2834,13 +2839,14 @@
     if (!ordine.length) return next();
 
     var uscito = false;
+    var concluso = quizConcluso();
 
     el.griglia.innerHTML = '';
     ordine.forEach(function (liv) {
       var cfg = livelli[liv] || {};
       var s = statoQuiz(liv);
       var aperto = livelloAperto(liv, ordine);
-      var chiuso = livelloChiuso(liv);
+      var chiuso = livelloChiuso(liv) || concluso;
       var b = global.document.createElement('button');
       b.className = 'gcell' + (chiuso || !aperto ? ' fatta' : '');
       b.dataset.livello = liv;
@@ -2852,6 +2858,7 @@
             : (st.etichettaChiuso || 'chiuso'))
         : s.passato ? '+' + mult(s.vinto || 0)
         : s.tentativi >= 2 ? (st.etichettaBruciato || 'finito')
+        : concluso ? (st.etichettaConcluso || 'moltiplicatori assegnati')
         : cfg.domande + ' dom · ' + secondiQuiz() + 's';
       b.onclick = function (ev) {
         if (ev && ev.stopPropagation) ev.stopPropagation();
@@ -2908,7 +2915,7 @@
     // Quando non resta niente da giocare — livelli passati, bruciati o fuori
     // portata — "da dove vuoi cominciare?" e' una domanda senza risposta: la
     // griglia e' tutta spenta e il giocatore non capisce di aver finito.
-    var restaQualcosa = ordine.some(function (liv) {
+    var restaQualcosa = !concluso && ordine.some(function (liv) {
       return livelloAperto(liv, ordine) && !livelloChiuso(liv);
     });
     // "Conclude definitivamente il quiz": non resta piu' nessun livello da

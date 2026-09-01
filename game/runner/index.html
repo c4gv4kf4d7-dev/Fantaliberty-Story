@@ -325,11 +325,23 @@ cv.width = W; cv.height = H;
 
 function adatta(){
   const box = document.getElementById('stage');
-  const k = Math.min(innerWidth / W, innerHeight / H);
+  // visualViewport, quando c'e', e' la misura vera: su Safari mobile le barre
+  // del browser si aprono e chiudono senza che "resize" scatti sempre, e la
+  // pagina restava incollata alla finestra piu' stretta di quando si era
+  // aperta (l'apertura mostra sempre le barre, poi si accorciano da sole).
+  const vv = window.visualViewport;
+  const w = vv ? vv.width  : innerWidth;
+  const h = vv ? vv.height : innerHeight;
+  const k = Math.min(w / W, h / H);
   box.style.width  = Math.round(W * k) + 'px';
   box.style.height = Math.round(H * k) + 'px';
 }
-addEventListener('resize', adatta); adatta();
+addEventListener('resize', adatta);
+if (window.visualViewport) {
+  visualViewport.addEventListener('resize', adatta);
+  visualViewport.addEventListener('scroll', adatta);
+}
+adatta();
 
 /* ---------- geometria del corridoio ----------
    Il corridoio curva, e non di una curva regolare: il bordo sinistro
@@ -1607,6 +1619,10 @@ PRONTI.then(() => {
   const mancanti = Object.keys(A).filter(k => !A[k]);
   if (mancanti.length) console.warn('[run] segnaposto per:', mancanti.join(', '));
   avvisa('pronto');
+  // Le barre del browser finiscono di sistemarsi un attimo dopo il primo
+  // disegno (specie su Safari, appena aperta la pagina): si ricontrolla la
+  // misura ora che il gioco e' davvero pronto, non solo al primo resize.
+  setTimeout(adatta, 50);
   requestAnimationFrame(passo);
 });
 
