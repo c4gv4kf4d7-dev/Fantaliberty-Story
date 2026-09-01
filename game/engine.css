@@ -1141,8 +1141,17 @@ html.inattesa, html.inattesa body{background:#0a0a0f;overflow:hidden}
    tranne il sipario e i cartelli a schermo pieno. */
 #audiobtn{position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);right:8px;
   z-index:6;width:30px;height:30px;padding:0;border:0;border-radius:8px;
-  background:rgba(10,10,15,.45);color:#f2f2f7;font-size:13px;line-height:30px;
+  background:rgba(10,10,15,.45);color:#f2f2f7;
+  display:flex;align-items:center;justify-content:center;
   opacity:.5;cursor:pointer;transition:opacity .2s}
+/* Icona in pixel art disegnata a mano (niente emoji: cambia da telefono a
+   telefono). shape-rendering:crispEdges tiene i bordi duri, anche sulle
+   diagonali della croce. La croce rossa e' l'unico segno del muto: le onde
+   restano, come sul simbolo di riferimento. */
+#audiobtn svg{width:20px;height:20px;display:block;shape-rendering:crispEdges}
+#audiobtn .cono,#audiobtn .onde rect{fill:currentColor}
+#audiobtn .ics{display:none;stroke:#e01b1b;stroke-width:2.4;stroke-linecap:butt}
+#audiobtn.muto .ics{display:block}
 #audiobtn:hover,#audiobtn:focus-visible{opacity:1}
 #curtain.on ~ #audiobtn{opacity:.28}
 

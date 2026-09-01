@@ -270,7 +270,16 @@
        due interruttori. Musica ed effetti separati perche' danno fastidio in
        momenti diversi: si accendono e si spengono, ciascuno per conto suo, non
        si regolano. La scelta resta nel browser, non nella partita. -->
-  <button id="audiobtn" aria-label="Audio">&#128266;</button>
+  <button id="audiobtn" aria-label="Audio">
+    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <polygon class="cono" points="2,6 5,6 5,5 6,5 6,4 7,4 7,3 8,3 8,2 9,2 9,14 8,14 8,13 7,13 7,12 6,12 6,11 5,11 5,10 2,10"/>
+      <g class="onde">
+        <rect x="10" y="6" width="1" height="1"/><rect x="11" y="7" width="1" height="2"/><rect x="10" y="9" width="1" height="1"/>
+        <rect x="12" y="3" width="1" height="2"/><rect x="13" y="5" width="1" height="2"/><rect x="14" y="7" width="1" height="2"/><rect x="13" y="9" width="1" height="2"/><rect x="12" y="11" width="1" height="2"/>
+      </g>
+      <g class="ics"><line x1="8.5" y1="3" x2="15.5" y2="13" /><line x1="15.5" y1="3" x2="8.5" y2="13"/></g>
+    </svg>
+  </button>
   <div id="audiowrap">
     <div id="audiobox">
       <h2>AUDIO</h2>
