@@ -333,6 +333,34 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  padding:7px 14px;color:#fff;font-size:clamp(8px,2.15vw,12px);margin-left:12px;position:relative;z-index:2;
  box-shadow:0 4px 0 rgba(0,0,0,.5);display:flex;align-items:center;gap:7px}
 #name.hidden{display:none}
+/* la riga del nome: il cartellino a sinistra e, quando serve, "rileggi" a destra */
+#nomeriga{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+#rileggi{background:#1b1f33;border:3px solid rgba(255,255,255,.7);border-radius:10px;
+ padding:7px 12px;color:#fff;font-family:inherit;font-size:clamp(7px,2vw,11px);
+ margin-right:12px;position:relative;z-index:2;cursor:pointer;
+ box-shadow:0 4px 0 rgba(0,0,0,.5);opacity:.9}
+#rileggi[hidden]{display:none}
+#boxwrap.incuffia #rileggi{background:#123040;border-color:#7fd4ff}
+#rileggi:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.5)}
+
+/* ---------- le ultime battute (rileggi) ---------- */
+#storicowrap{position:absolute;inset:0;z-index:7;display:none;align-items:center;
+ justify-content:center;background:rgba(4,5,10,.62);
+ padding:6vw calc(5vw + env(safe-area-inset-left,0px)) calc(5vw + env(safe-area-inset-bottom,0px))}
+#storicowrap.on{display:flex}
+#storicobox{display:flex;flex-direction:column;width:100%;max-width:24em;max-height:100%;
+ background:#1b1f33;border:3px solid #fff;border-radius:14px;padding:16px 15px 14px;
+ box-shadow:0 10px 0 rgba(0,0,0,.5)}
+#storicotit{flex:none;color:#7fd4ff;font-size:clamp(9px,2.8vw,14px);letter-spacing:.12em;
+ text-align:center;padding-bottom:12px;border-bottom:2px solid rgba(127,212,255,.35)}
+#storicocorpo{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+ padding:12px 2px 4px;display:flex;flex-direction:column;gap:12px}
+.stbatt{font-size:clamp(7px,2.2vw,11px);line-height:1.7;color:#fff;white-space:pre-line}
+.stbatt b{display:block;color:#ffd98a;font-size:clamp(6px,1.9vw,9px);letter-spacing:.08em;
+ margin-bottom:3px}
+.stbatt.ultima{color:#fff}
+.stbatt.ultima b{color:#7fd4ff}
+#storicook{flex:none;margin-top:12px}
 /* voce in cuffia: l'icona dell'auricolare al posto di uno sprite in scena, e il
    box di un altro colore — chi parla dalla regia non e' li' davanti a te */
 #voce{display:none;width:1.9em;height:1.9em;object-fit:contain;image-rendering:pixelated}
