@@ -514,19 +514,42 @@ numeri, niente "bene"/"male" espliciti, solo come Susan racconta com'è andata.
 ## Micro-eventi generali, eventi personali, intermezzi
 
 Elenco e testi in `game/domande.json` (`micro_eventi`, `eventi_personali`,
-`intermezzi`, `intermezzi_riserva`). Cinque micro-eventi generali, uno personale
-per stile mostrato al massimo una volta a run, tre intermezzi fissi (R1 prima
-del primo macroargomento, R4-R5 dopo un macroargomento completato, in ordine di
-completamento) più quattro di riserva: i giri da coprire sono quattro, quindi
-l'ultimo pesca dalla riserva — è esattamente a questo che serve. R2 (la luce per
-Craig) e R3 (il primo piano) sono state tolte per non allungare le previsioni.
+`intermezzi`). Cinque micro-eventi generali in banca, uno personale per stile,
+sette intermezzi. R2 (la luce per Craig) e R3 (il primo piano) sono state tolte
+per non allungare le previsioni.
 
-I micro-eventi non sono più passivi: ogni voce contiene tre `opzioni`, ognuna
-con un `editoriale` (`+3`/`0`/`-3`) che è insieme il tono della battuta e il
-punteggio vero — il motore lo traduce nel segno (`+1`/`0`/`-1`), fisso, mai
-mescolato: la stessa risposta vale sempre lo stesso punto. L'interfaccia non
-deve mostrare mai numeri, badge, popup, "bonus" o "malus": l'esito deve
-restare leggibile solo come conseguenza narrativa.
+**Gli intermezzi sono un pool solo di sette** (R1, R4, R5, RS1-RS4): non ci
+sono più "fissi" e "riserva", valgono tutti uguale. A ogni partita si mescolano
+e se ne giocano **al massimo quattro** — uno prima del primo macroargomento,
+gli altri dopo un macroargomento completato — e mai due volte lo stesso. Quali
+quattro escano non si sa in anticipo e cambia da una partita all'altra.
+
+**I micro-eventi sono al massimo due per partita**, pescati a caso fra i cinque,
+più l'evento personale dello stile, che sta in testa al sacchetto: tre
+imprevisti in tutto. Sono limitati apposta — il keynote è fatto di pronostici, e
+un imprevisto ogni tre domande smetterebbe di essere un imprevisto. Nessuno si
+ripete nella stessa partita.
+
+Ogni voce contiene tre `opzioni`, ognuna con un `editoriale` (`+3`/`0`/`-3`) che
+è insieme il tono della battuta e il punteggio vero — il motore lo traduce nel
+segno (`+1` risposta positiva o collaborativa, `0` neutra, `-1` egoista o
+cattiva), **fisso, mai mescolato**: la stessa risposta vale sempre lo stesso
+punto, a ogni partita e per ogni giocatore. Il valore lo decide l'autore nella
+banca, non il motore a runtime. L'interfaccia non deve mostrare mai numeri,
+badge, popup, "bonus" o "malus": l'esito deve restare leggibile solo come
+conseguenza narrativa.
+
+## Rileggere quello che è già stato detto
+
+Durante il keynote, in alto a sinistra, una freccia `←` apre l'elenco delle
+battute già dette: una riga letta di fretta si rilegge, si controlla come era
+posta una domanda, si chiude.
+
+È un **pannello**, non un passo indietro: si legge sopra la scena e alla
+chiusura il giocatore è esattamente dov'era. Non fa tornare indietro la storia,
+non permette di cambiare una risposta già data e non tocca il punteggio. La
+freccia c'è solo durante il keynote — altrove il gioco ha già i suoi punti di
+pausa.
 
 ## Le domande
 

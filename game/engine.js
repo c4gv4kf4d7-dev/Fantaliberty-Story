@@ -132,8 +132,8 @@
      pannello dell'audio, la card di fine previsioni e il camerino. Da qui in
      poi l'elenco e' uno solo, quindi non puo' piu' divergere. */
   var APERTI = ['inputform', 'choices', 'listform', 'griglia', 'monitorwrap',
-    'countdown', 'multwrap', 'regole', 'quadrowrap', 'runwrap', 'emailwrap',
-    'modal', 'audiowrap', 'cardwrap', 'carosello'];
+    'countdown', 'multwrap', 'regole', 'registro', 'quadrowrap', 'runwrap',
+    'emailwrap', 'modal', 'audiowrap', 'cardwrap', 'carosello'];
 
   function qualcosaAperto() {
     for (var i = 0; i < APERTI.length; i++) {
@@ -169,6 +169,7 @@
     el.arrow.style.opacity = 0;
     hideUI();
     curLine = line; typing = true; pending = null; typeTarget = el.txt;
+    annota(line);
     riservaAltezza(line);
     if (!VN.speed) { el.txt.textContent = line; typing = false; return after(); }
     var shown = 0, t0 = 0;
@@ -760,6 +761,7 @@
     chiudiCountdown();
     chiudiQuiz();
     chiudiRegole();
+    chiudiRegistro();
     chiudiQuadro();
     chiudiCorsa();
     chiudiEmail();
@@ -853,6 +855,7 @@
 
   function run() {
     aggiornaBottoneEsci();
+    aggiornaBottoneRegistro();
     if (!VN.scene) return;
     var steps = VN.scene.steps || [];
     if (VN.i >= steps.length) {
@@ -2030,13 +2033,21 @@
      Si pescano da un sacchetto senza rimessa: cosi' non si ripetono nella stessa
      partita e il loro numero e' limitato dal sacchetto, non dalla fortuna.
      L'evento personale dello stile sta nel sacchetto insieme agli altri. */
+  /* Il sacchetto e' corto apposta: due micro-eventi generali pescati a caso fra
+     quelli in banca, piu' l'evento personale dello stile. Tre imprevisti per
+     partita, non sei: il keynote e' fatto di pronostici, e un imprevisto ogni
+     tre domande smetterebbe di essere un imprevisto. Quali due escano non si sa
+     in anticipo, e cambia a ogni partita. */
+  var MAX_MICRO_EVENTI = 2;
+
   function sacchettoEventi() {
     if (VN.state.eventi_sacchetto) return VN.state.eventi_sacchetto;
     var b = VN.banca || {};
-    var v = mescola((b.micro_eventi || []).map(function (e) { return e.id; }));
+    var v = mescola((b.micro_eventi || []).map(function (e) { return e.id; }))
+      .slice(0, MAX_MICRO_EVENTI);
     // L'evento dello stile va in TESTA, non a caso: con la probabilita' a
-    // 0.15 escono circa tre eventi a partita su sei, e messo a caso uno su
-    // due non lo vedeva. E' l'unico legato alla scelta del camerino.
+    // 0.15 il sacchetto non si svuota per forza, e messo in fondo poteva
+    // restarci. E' l'unico legato alla scelta del camerino.
     var mio = (b.eventi_personali || {})[VN.state.stile];
     if (mio) v.unshift(mio.id);
     VN.state.eventi_sacchetto = v;
@@ -2224,13 +2235,36 @@
   }
 
   /* ---------------- intermezzi di regia ----------------
-     Cinque fissi in ordine, poi quelli di riserva. Valgono punti come le
-     facoltative: il "val" secco dell'opzione. */
-  function showIntermezzo(st) {
+     Un pool solo di sette, tutti uguali fra loro: non ci sono piu' "fissi" e
+     "riserva". A ogni partita si mescolano e se ne tengono quattro — quanti
+     sono i punti dello script che ne chiedono uno (l'apertura del keynote e i
+     tre macroargomenti). Cosi' due partite di fila non fanno le stesse
+     scommesse di regia, e nessuna si ripete dentro la stessa partita.
+     Il sacchetto vive in VN.state: entra nel salvataggio, quindi riprendendo
+     la partita si ritrovano gli stessi quattro nello stesso ordine.
+     Valgono punti come le facoltative: il "val" secco dell'opzione. */
+  var MAX_INTERMEZZI = 4;
+
+  function sacchettoIntermezzi() {
+    if (VN.state.intermezzi_sacchetto) return VN.state.intermezzi_sacchetto;
     var b = VN.banca || {};
+    // intermezzi_riserva non esiste piu' in banca: si legge ancora per non
+    // rompere un salvataggio o una banca di una revisione precedente
+    var tutti = (b.intermezzi || []).concat(b.intermezzi_riserva || []);
+    VN.state.intermezzi_sacchetto =
+      mescola(tutti.map(function (q) { return q.id; })).slice(0, MAX_INTERMEZZI);
+    return VN.state.intermezzi_sacchetto;
+  }
+
+  function trovaIntermezzo(id) {
+    var b = VN.banca || {};
+    var tutti = (b.intermezzi || []).concat(b.intermezzi_riserva || []);
+    return tutti.filter(function (q) { return q.id === id; })[0] || null;
+  }
+
+  function showIntermezzo(st) {
     var n = VN.state.intermezzi || 0;
-    var fissi = b.intermezzi || [];
-    var q = fissi[n] || (b.intermezzi_riserva || [])[n - fissi.length];
+    var q = trovaIntermezzo(sacchettoIntermezzi()[n]);
     if (!q) return next();
     VN.state.intermezzi = n + 1;
 
@@ -3734,6 +3768,97 @@
     if (!el.regole) return;
     el.regole.classList.remove('on');
     el.regcorpo.innerHTML = '';
+    if (el.bg) el.bg.classList.remove('sfoca');
+  }
+
+  /* ---------------- il registro delle battute ----------------
+     La freccia in alto a sinistra apre l'elenco di quello che e' gia' stato
+     detto: chi ha letto male una battuta o vuole ricontrollare come era posta
+     una domanda se la rilegge, e chiude.
+
+     E' un pannello, non una navigazione. Vale lo stesso contratto del
+     regolamento e dei quadri della Hall of Fame: si mostra SOPRA quello che
+     c'e', alla chiusura il giocatore e' esattamente dov'era, e la partita non
+     si e' mossa di un passo. Quindi:
+
+     - non tocca VN.i, non chiama exec(), non fa avanzare ne' tornare niente;
+     - non scrive dentro VN.state: non c'e' salvataggio da aggiornare, perche'
+       leggere non cambia la partita;
+     - non ricostruisce nessuna scena: le battute sono testo gia' scritto, non
+       schermate da rimettere in piedi.
+
+     Chi volesse trasformarlo in un "torna indietro" che rigioca i passi
+     romperebbe proprio questo: rimettere in scena un passo passato vuol dire
+     rieseguirlo, e a quel punto un pannello che si legge diventa una seconda
+     strada dentro la storia.
+
+     L'elenco lo riempie type(), l'unico posto da cui passa una battuta del box
+     del dialogo. Il nome di chi parla e' quello che il box ha addosso in quel
+     momento: setSpeaker() viene sempre prima di type(). */
+  var registro = [];
+  var MAX_REGISTRO = 60;
+
+  /* La freccia c'e' solo durante il keynote: e' li' che si legge in fretta fra
+     una domanda e l'altra, e li' che rileggere serve. Altrove il gioco ha gia'
+     i suoi posti dove fermarsi, e un pannello in piu' sarebbe una seconda via
+     verso qualcosa che non manca a nessuno. */
+  var SCENE_REGISTRO = { keynote: 1, argomenti: 1, argomento: 1 };
+
+  function annota(line) {
+    if (silent || !line) return;
+    var chi = (el.nametxt && el.nametxt.textContent) || '';
+    var ultima = registro[registro.length - 1];
+    // la stessa riga riscritta (un tap che rifa' partire il typewriter) non
+    // e' una battuta nuova
+    if (ultima && ultima.testo === line && ultima.chi === chi) return;
+    registro.push({ chi: chi, testo: line });
+    if (registro.length > MAX_REGISTRO) registro.shift();
+    aggiornaBottoneRegistro();
+  }
+
+  function aggiornaBottoneRegistro() {
+    if (!el || !el.btnRegistro) return;
+    // col pannello aperto la freccia si spegne: sta piu' in alto del pannello
+    // (come il cartello EXIT) e resterebbe li' a invitare un secondo tocco
+    var aperto = !!(el.registro && el.registro.classList.contains('on'));
+    el.btnRegistro.classList.toggle('on',
+      !aperto && !!SCENE_REGISTRO[VN.sceneId] && registro.length > 0);
+  }
+
+  function apriRegistro() {
+    if (!el.registro || !registro.length) return;
+    suona('apri');
+    el.regicorpo.innerHTML = '';
+    var doc = global.document;
+    registro.forEach(function (r) {
+      var box = doc.createElement('div');
+      box.className = 'regiriga';
+      if (r.chi) {
+        var chi = doc.createElement('div');
+        chi.className = 'regichi';
+        chi.textContent = r.chi;
+        box.appendChild(chi);
+      }
+      var t = doc.createElement('p');
+      t.className = 'regitesto';
+      t.textContent = r.testo;
+      box.appendChild(t);
+      el.regicorpo.appendChild(box);
+    });
+    el.registro.classList.add('on');
+    aggiornaBottoneRegistro();
+    if (el.bg) el.bg.classList.add('sfoca');
+    // si apre in fondo, sull'ultima battuta: e' quella appena letta il punto
+    // da cui si risale, non la prima della serata
+    el.regicorpo.scrollTop = el.regicorpo.scrollHeight;
+  }
+
+  function chiudiRegistro() {
+    if (!el.registro) return;
+    if (el.registro.classList.contains('on')) suona('chiudi');
+    el.registro.classList.remove('on');
+    el.regicorpo.innerHTML = '';
+    aggiornaBottoneRegistro();
     if (el.bg) el.bg.classList.remove('sfoca');
   }
 
@@ -5463,7 +5588,9 @@
       carperk: $('carperk'), carok: $('carok'),
       audiobtn: $('audiobtn'), audiowrap: $('audiowrap'), audiomus: $('audiomus'),
       audiosfx: $('audiosfx'), audiook: $('audiook'),
-      btnEsciGioco: $('btnEsciGioco'), btnEsciIcon: $('btnEsciIcon')
+      btnEsciGioco: $('btnEsciGioco'), btnEsciIcon: $('btnEsciIcon'),
+      btnRegistro: $('btnRegistro'),
+      registro: $('registro'), regicorpo: $('regicorpo'), regiok: $('regiok')
     };
     el.avatar.innerHTML = '';
     el.avatar.classList.remove('on', 'entra');
@@ -5472,6 +5599,14 @@
       apriMenuEsci();
     };
     if (el.btnEsciIcon) el.btnEsciIcon.src = assetUrl('props', 'exit');
+    if (el.btnRegistro) el.btnRegistro.onclick = function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      apriRegistro();
+    };
+    if (el.regiok) el.regiok.onclick = function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      chiudiRegistro();
+    };
     if ($('badgewrap')) $('badgewrap').classList.remove('in');
     if ($('coriandoli')) $('coriandoli').innerHTML = '';
     if (el.nero) el.nero.classList.remove('on', 'sfuma');   // ripartenza pulita: mai il nero addosso
@@ -5499,6 +5634,10 @@
     // non deve restare acceso sopra la domanda "vuoi riprendere?". Da li' in
     // poi ci pensa run(), come sempre.
     aggiornaBottoneEsci();
+    // le battute lette erano della partita di prima: il registro riparte vuoto
+    registro = [];
+    chiudiRegistro();
+    aggiornaBottoneRegistro();
     hubTasti = null;
     chiudiHub();
     chiudiCarosello();
@@ -5507,6 +5646,7 @@
     chiudiCountdown();
     chiudiQuiz();
     chiudiRegole();
+    chiudiRegistro();
     chiudiQuadro();
     chiudiCorsa();
     chiudiEmail();
@@ -5532,7 +5672,8 @@
            e.target.closest('#emailwrap') || e.target.closest('#quadrowrap') ||
            e.target.closest('#runwrap') || e.target.closest('#propwrap') ||
            e.target.closest('#audiowrap') || e.target.closest('#audiobtn') ||
-           e.target.closest('#btnEsciGioco'))) return;
+           e.target.closest('#btnEsciGioco') || e.target.closest('#btnRegistro') ||
+           e.target.closest('#registro'))) return;
       VN.step();
     };
     global.document.onkeydown = function (e) {

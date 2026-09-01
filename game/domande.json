@@ -3,8 +3,8 @@
   "_formule": {
     "core": "punti = diff (1-5) + bonus tipo (consenso 0, plausibile 1, controcorrente 1)",
     "extra": "punti = val secco dell'opzione (1, 2 o 3), nessuna difficolta'",
-    "intermezzi": "come extra: val secco",
-    "micro_eventi": "micro-challenge opache: a ogni attivazione le tre opzioni ricevono una permutazione casuale di +1, 0 e -1; il valore non viene mostrato"
+    "intermezzi": "come extra: val secco. Pool unico di 7: a ogni partita si mescolano e se ne giocano al massimo 4, mai due volte lo stesso.",
+    "micro_eventi": "il punteggio di ogni opzione e' quello scritto dall'autore (\"editoriale\": +1 buona, 0 neutra, -1 egoista o cattiva), mai un abbinamento a caso. Per partita se ne giocano al massimo 2, piu' l'evento personale dello stile. Il valore non viene mai mostrato al giocatore."
   },
   "categorie": {
     "iphone": {
@@ -29,25 +29,25 @@
               }
             },
             {
-              "label": "Aumento di almeno 100€",
+              "label": "Aumento tra 100€ e 200€",
               "tipo": "consenso",
               "pt": 4,
               "battute": {
-                "hawaiano": "Cento euro in più. Succede, come quando il noleggio della tavola costa più del previsto e vabbè.",
-                "showman": "Cento euro in più! Per quello che avrete tra le mani, è un affare!",
-                "drip": "Più 100€. Ve l'aspettavate, ammettiamolo.",
-                "ingegnere": "Un aumento di circa 100€, in linea con l'incremento dei costi dei componenti principali."
+                "hawaiano": "Tra i cento e i duecento euro in più. Succede, come quando il noleggio della tavola costa più del previsto e vabbè.",
+                "showman": "Da cento a duecento euro in più! Per quello che avrete tra le mani, è un affare!",
+                "drip": "Aumento tra i 100€ e i 200€. Ve l'aspettavate, ammettiamolo.",
+                "ingegnere": "Un aumento compreso fra 100€ e 200€, in linea con l'incremento dei costi dei componenti principali."
               }
             },
             {
-              "label": "Aumento di almeno 200€",
+              "label": "Aumento oltre i 200€",
               "tipo": "plausibile",
               "pt": 5,
               "battute": {
-                "hawaiano": "Duecento euro in più. Ok, questa fa un po' più male, tipo scottatura da primo giorno di sole.",
-                "showman": "Duecento euro! Ma guardate cosa c'è dentro prima di giudicare!",
-                "drip": "Più 200€. Ok, questa fa male.",
-                "ingegnere": "Un aumento di 200€, giustificato dai nuovi componenti su fotocamera e chip, i numeri parlano chiaro."
+                "hawaiano": "Più di duecento euro. Ok, questa fa un po' più male, tipo scottatura da primo giorno di sole.",
+                "showman": "Oltre duecento euro! Ma guardate cosa c'è dentro prima di giudicare!",
+                "drip": "Oltre i 200€. Ok, questa fa male.",
+                "ingegnere": "Un aumento superiore ai 200€, giustificato dai nuovi componenti su fotocamera e chip, i numeri parlano chiaro."
               }
             }
           ]
@@ -106,7 +106,7 @@
         {
           "id": "IPHONE.C3",
           "diff": 4,
-          "q": "L'apertura variabile su quali modelli arriva?",
+          "q": "Su quali modelli arriverà l'apertura variabile?",
           "opzioni": [
             {
               "label": "Solo sul Pro Max",
@@ -146,7 +146,7 @@
         {
           "id": "IPHONE.C4",
           "diff": 3,
-          "q": "Come si chiama il pieghevole?",
+          "q": "Come si chiamerà il pieghevole?",
           "opzioni": [
             {
               "label": "iPhone Ultra",
@@ -186,7 +186,7 @@
         {
           "id": "IPHONE.C5",
           "diff": 5,
-          "q": "Quando e dove si può comprare il pieghevole?",
+          "q": "Quando e dove si potrà acquistare il pieghevole?",
           "opzioni": [
             {
               "label": "Stessa data dei Pro, ovunque",
@@ -325,7 +325,7 @@
         },
         {
           "id": "IPHONE.E2",
-          "q": "Come si sblocca il pieghevole?",
+          "q": "Come si sbloccherà il pieghevole?",
           "opzioni": [
             {
               "label": "Touch ID laterale",
@@ -361,7 +361,7 @@
         },
         {
           "id": "IPHONE.E3",
-          "q": "Che fine fa il Camera Control?",
+          "q": "Che fine farà il Camera Control?",
           "opzioni": [
             {
               "label": "Resta com'è",
@@ -459,7 +459,7 @@
         },
         {
           "id": "IPHONE.E6",
-          "q": "Dicono esplicitamente che non c'è la piega?",
+          "q": "Diranno esplicitamente che non ci sarà la piega?",
           "opzioni": [
             {
               "label": "Sì",
@@ -507,7 +507,7 @@
               }
             },
             {
-              "label": "Glicemia",
+              "label": "Monitoraggio glicemia",
               "tipo": "controcorrente",
               "pt": 3,
               "battute": {
@@ -626,7 +626,7 @@
       "extra": [
         {
           "id": "WATCH.E1",
-          "q": "Funzioni satellitari Ultra annunciate?",
+          "q": "Verranno annunciate funzioni uniche e inedite per Apple Watch Ultra?",
           "opzioni": [
             {
               "label": "Sì",
@@ -652,7 +652,7 @@
         },
         {
           "id": "WATCH.E2",
-          "q": "Come chiamano il chip nuovo?",
+          "q": "Come si chiamerà il nuovo chip?",
           "opzioni": [
             {
               "label": "S12",
@@ -688,7 +688,7 @@
         },
         {
           "id": "WATCH.E3",
-          "q": "Esce un Apple Watch SE nuovo?",
+          "q": "Uscirà un nuovo Apple Watch SE?",
           "opzioni": [
             {
               "label": "No",
@@ -714,7 +714,7 @@
         },
         {
           "id": "WATCH.E4",
-          "q": "Secondo te creano una nuova linea di cinturini?",
+          "q": "Verrà creata una nuova linea di cinturini?",
           "opzioni": [
             {
               "label": "Sì, una linea completamente nuova",
@@ -750,7 +750,7 @@
         },
         {
           "id": "WATCH.E5",
-          "q": "Ospite esterno per la parte salute?",
+          "q": "Ci sarà un ospite esterno per parlare della salute?",
           "opzioni": [
             {
               "label": "Sì",
@@ -784,7 +784,7 @@
         {
           "id": "ALTRO.C1",
           "diff": 3,
-          "q": "Ok, AirPods. Ne vediamo di nuove stasera?",
+          "q": "Ok, AirPods. Ne vedremo di nuove stasera?",
           "opzioni": [
             {
               "label": "Sì, due modelli nuovi",
@@ -824,7 +824,7 @@
         {
           "id": "ALTRO.C2",
           "diff": 2,
-          "q": "Viene presentata la nuova Apple TV?",
+          "q": "Verrà presentata la nuova Apple TV?",
           "opzioni": [
             {
               "label": "Sì",
@@ -853,7 +853,7 @@
         {
           "id": "ALTRO.C3",
           "diff": 2,
-          "q": "Le AirPods con le fotocamere",
+          "q": "Cosa succederà con le AirPods con le fotocamere?",
           "opzioni": [
             {
               "label": "Sì, già in vendita",
@@ -894,7 +894,7 @@
       "extra": [
         {
           "id": "ALTRO.E1",
-          "q": "Nuovo HomePod mini?",
+          "q": "Verrà presentato un nuovo HomePod mini?",
           "opzioni": [
             {
               "label": "Sì",
@@ -1102,9 +1102,7 @@
           "val": 1
         }
       ]
-    }
-  ],
-  "intermezzi_riserva": [
+    },
     {
       "id": "RS1",
       "q": "Segmento sostenibilità?",

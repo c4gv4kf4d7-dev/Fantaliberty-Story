@@ -1270,6 +1270,53 @@ html.inattesa, html.inattesa body{background:#0a0a0f;overflow:hidden}
 #btnEsciGioco:hover,#btnEsciGioco:focus-visible{opacity:1}
 #curtain.on ~ #btnEsciGioco{opacity:.28}
 
+/* ===== La freccia che riapre le battute gia' dette =====
+   Stessa veste del cartello EXIT e dell'altoparlante: solo l'icona, in un
+   angolo, senza riquadro dietro. Sta nell'angolo in alto a sinistra e, quando
+   c'e' anche l'EXIT, e' la prima delle due: si legge da sinistra a destra,
+   "rileggi" prima di "esci". Quando la freccia e' accesa l'EXIT si sposta di
+   fianco invece di finirci sotto. */
+#btnRegistro{position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;
+  z-index:9;width:48px;height:48px;padding:0;border:0;border-radius:8px;
+  background:transparent;
+  display:none;align-items:center;justify-content:center;
+  opacity:.85;cursor:pointer;transition:opacity .2s}
+#btnRegistro.on{display:flex}
+#btnRegistro svg{width:26px;height:26px;display:block;fill:#fff;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.8))}
+#btnRegistro:hover,#btnRegistro:focus-visible{opacity:1}
+#curtain.on ~ #btnRegistro{opacity:.28}
+#btnRegistro.on ~ #btnEsciGioco{left:56px}
+
+/* ===== Il pannello delle battute gia' dette =====
+   Stessa costruzione del regolamento, per la stessa ragione: e' un pannello
+   che si legge e si chiude, non una schermata del gioco. Flex e non grid —
+   con place-items:center la riga si dimensiona sul contenuto e il max-height
+   non limita niente, cosi' il bottone di chiusura finiva fuori schermo. */
+#registro{position:absolute;inset:0;z-index:7;display:none;align-items:center;
+ justify-content:center;
+ background:rgba(4,5,10,.72);padding:6vw calc(5vw + env(safe-area-inset-left,0px))
+ calc(5vw + env(safe-area-inset-bottom,0px))}
+#registro.on{display:flex}
+#regibox{display:flex;flex-direction:column;width:100%;max-width:24em;max-height:100%;
+ background:#1b1f33;border:3px solid #fff;border-radius:14px;padding:16px 15px 14px;
+ box-shadow:0 10px 0 rgba(0,0,0,.5), 0 0 34px rgba(255,217,138,.18)}
+#regitit{flex:none;color:#ffd98a;font-size:clamp(10px,3vw,15px);letter-spacing:.12em;
+ text-align:center;padding-bottom:12px;border-bottom:2px solid rgba(255,217,138,.35);
+ text-shadow:0 0 16px rgba(255,217,138,.4)}
+#regicorpo{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+ padding:12px 2px 4px;display:flex;flex-direction:column;gap:12px}
+/* flex:none come nel regolamento: in una colonna flex i figli si stringono
+   prima che il contenitore scorra, e le battute lunghe si schiacciavano */
+.regiriga{flex:none}
+.regichi{color:#ffd98a;font-size:clamp(6px,1.8vw,9px);letter-spacing:.1em;
+ margin-bottom:4px}
+.regitesto{margin:0;color:#cfdaef;font-size:clamp(6.5px,1.95vw,10px);line-height:1.85}
+#regiok{flex:none;margin-top:12px;background:#2a3050;border:3px solid #fff;border-radius:8px;
+ padding:11px 13px;color:#fff;font-family:inherit;font-size:clamp(8px,2.35vw,12px);
+ cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.5)}
+#regiok:hover,#regiok:focus{background:#3d466e;outline:none}
+
 /* ===== Selettore dei volumi =====
    Il bottone sta in alto a destra, piccolo e spento: deve essere trovabile
    quando lo si cerca e invisibile quando non lo si cerca. Sta sopra tutto

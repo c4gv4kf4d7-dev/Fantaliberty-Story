@@ -52,7 +52,8 @@ def main():
     for x in d["intermezzi"]:
         r.append("| `%s` | %s | %d |" % (x["id"], x["q"], len(x["opzioni"])))
     r.append("")
-    r.append("Piu' %d intermezzi di riserva." % len(d["intermezzi_riserva"]))
+    r.append("Un pool solo: a ogni partita se ne mescolano %d e se ne giocano al massimo 4."
+             % len(d["intermezzi"]))
 
     r += ["", "## Quiz di Peter [S8]", "",
           "| livello | domande | soglia | 1o tentativo | 2o tentativo | pool |",
