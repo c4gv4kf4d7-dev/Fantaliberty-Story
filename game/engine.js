@@ -2374,6 +2374,13 @@
           : (st.daFinire || (s.totale - s.fatte) + ' da completare');
         b.appendChild(stato);
 
+        // Il segnale luminoso della lobby, uno per schermo: dice che il
+        // monitor si tocca. Senza, i tre pannelli si leggevano come un
+        // riepilogo da guardare e nessuno ci entrava.
+        var spia = global.document.createElement('i');
+        spia.className = 'monspia';
+        b.appendChild(spia);
+
         b.onclick = function (ev) {
           if (ev && ev.stopPropagation) ev.stopPropagation();
           if (uscito) return;

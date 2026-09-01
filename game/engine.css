@@ -643,6 +643,16 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 .msValore{color:#eafff2;font-size:clamp(6px,2vw,9px)}
 
 .monstato{flex:none;font-size:clamp(5.5px,2vw,9px);letter-spacing:.08em;color:#8fe8b4;text-align:center}
+/* il puntino pulsante della lobby (stesse animazioni di .hspot i), in fondo a
+   ogni monitor: "qui si tocca". Lo schermo ha overflow:hidden, quindi sta un
+   po' rientrato per non farsi tagliare le onde. */
+.monspia{flex:none;position:relative;width:12px;height:12px;margin-top:2px;
+ border-radius:50%;background:#fff;
+ box-shadow:0 0 0 3px rgba(10,14,28,.45), 0 0 12px 3px rgba(255,255,255,.75);
+ animation:puntino 2.2s ease-in-out infinite}
+.monspia::before,.monspia::after{content:"";position:absolute;inset:-3px;border-radius:50%;
+ border:2px solid rgba(255,255,255,.9);animation:onda 2.2s ease-out infinite}
+.monspia::after{animation-delay:1.1s}
 .monschermo:not(.fatta) .monstato{color:#ffd98a}
 
 /* il bottone che chiude la schedina: rosso, un overlay a parte fisso sulla
@@ -1229,14 +1239,17 @@ html.inattesa, html.inattesa body{background:#0a0a0f;overflow:hidden}
    come l'audio — qui il disegno c'era gia'. Compare solo da [S2] fino al
    ritorno in lobby dopo le previsioni confermate: display:none di base, .on
    lo accende (aggiornaBottoneEsci() in engine.js). */
-/* I due bottoni agli angoli (Esci a sinistra, audio a destra) sono solo
+/* I due bottoni agli angoli (Esci a sinistra, audio a destra) sono una
+   sovrimpressione fissa, come l'HUD di un gioco: z-index 9, sopra i pannelli
+   (7), le modali e la corsa (8). Finivano SOTTO i monitor del teleprompter e
+   sotto il regolamento, e li' sembravano spenti o tagliati. Sono solo
    l'icona, scontornata: niente riquadro scuro dietro, che sul fondale
    chiaro si vedeva come una macchia. Stessa misura tutti e due: il
    cartello EXIT e' alto quanto l'altoparlante (36px) e largo quel che viene:
    e' il bottone ad allargarsi attorno. Un'ombra morbida al posto del
    riquadro li tiene leggibili anche sul chiaro. */
 #btnEsciGioco{position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;
-  z-index:6;width:auto;height:48px;padding:0 6px;border:0;border-radius:8px;
+  z-index:9;width:auto;height:48px;padding:0 6px;border:0;border-radius:8px;
   background:transparent;
   display:none;align-items:center;justify-content:center;
   opacity:.85;cursor:pointer;transition:opacity .2s}
@@ -1251,7 +1264,7 @@ html.inattesa, html.inattesa body{background:#0a0a0f;overflow:hidden}
    quando lo si cerca e invisibile quando non lo si cerca. Sta sopra tutto
    tranne il sipario e i cartelli a schermo pieno. */
 #audiobtn{position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);right:8px;
-  z-index:6;width:48px;height:48px;padding:0;border:0;border-radius:8px;
+  z-index:9;width:48px;height:48px;padding:0;border:0;border-radius:8px;
   background:transparent;color:#f2f2f7;
   display:flex;align-items:center;justify-content:center;
   opacity:.85;cursor:pointer;transition:opacity .2s}
