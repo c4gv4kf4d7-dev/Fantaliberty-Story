@@ -416,13 +416,25 @@ function proietta(z, corsia){
    perche' li' non c'e' nessuna cartella da cui pescare. */
 const CARTELLA = '../../assets/in_app_game/';
 const INLINE = (typeof window !== 'undefined' && window.RUN_INLINE) || null;
+/* La stessa versione con cui il gioco ha aperto questa pagina (?v=NN) va
+   appesa anche alle immagini. Senza, il browser si tiene quelle di prima anche
+   dopo una pubblicazione: la pagina si ricarica perche' l'indirizzo cambia, le
+   tavole no. E' gia' successo con il personaggio nuovo — a chi aveva aperto il
+   gioco prima restava il vecchio, o niente. Aprendo game/runner/ da solo non
+   c'e' nessuna versione e non si appende niente. */
+const VERSIONE = (() => {
+  try {
+    const v = new URLSearchParams(location.search).get('v');
+    return v ? '?v=' + encodeURIComponent(v) : '';
+  } catch (e) { return ''; }
+})();
 const A = {};
 function carica(nome, file){
   return new Promise(ok => {
     const im = new Image();
     im.onload  = () => { A[nome] = im; ok(); };
     im.onerror = () => { A[nome] = null; ok(); };   // manca: si va di segnaposto
-    im.src = (INLINE && INLINE[file]) || (CARTELLA + file);
+    im.src = (INLINE && INLINE[file]) || (CARTELLA + file + VERSIONE);
   });
 }
 const PRONTI = Promise.all([
