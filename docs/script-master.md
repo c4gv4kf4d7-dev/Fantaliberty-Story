@@ -539,17 +539,25 @@ banca, non il motore a runtime. L'interfaccia non deve mostrare mai numeri,
 badge, popup, "bonus" o "malus": l'esito deve restare leggibile solo come
 conseguenza narrativa.
 
-## Rileggere quello che è già stato detto
+## Riavvolgere
 
-Durante il keynote, in alto a sinistra, una freccia `←` apre l'elenco delle
-battute già dette: una riga letta di fretta si rilegge, si controlla come era
-posta una domanda, si chiude.
+In basso a destra, appena sopra il box del dialogo, una freccia `←`
+**riavvolge**: rimette in scena la battuta appena lasciata — testo,
+personaggio, posa — e da lì si riparte. Su una domanda già risposta si può
+rispondere di nuovo: la risposta nuova **sostituisce** la vecchia e il totale
+si ricalcola da capo, quindi il punto di prima non resta sommato da nessuna
+parte.
 
-È un **pannello**, non un passo indietro: si legge sopra la scena e alla
-chiusura il giocatore è esattamente dov'era. Non fa tornare indietro la storia,
-non permette di cambiare una risposta già data e non tocca il punteggio. La
-freccia c'è solo durante il keynote — altrove il gioco ha già i suoi punti di
-pausa.
+Dove non arriva, per scelta: prima dell'inizio, oltre un cambio di scena
+(rientrare in una scena chiusa vorrebbe dire rigiocarla), dopo le previsioni
+confermate, e sulle schermate che non sono una rilettura ma un impegno preso o
+un posto a sé — terminale, badge, lobby, camerino, griglia, riepilogo,
+countdown, quiz, email, Campus Run.
+
+Quello che è stato **sorteggiato** per la partita (quali intermezzi, quali
+imprevisti, quali facoltative) non si rimescola riavvolgendo: cambierebbe la
+partita invece di rimostrarla. Anche le parole sono le stesse — le battute
+pescate da un pool restano quelle che erano.
 
 ## Le domande
 

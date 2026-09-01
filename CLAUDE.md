@@ -401,42 +401,65 @@ colorato). Due modi per dichiararlo, non intercambiabili:
   introDomanda, scarica, improvvisazione, caos, critica), usate solo sui
   micro-eventi.
 
-## La freccia in alto a sinistra apre un pannello, non torna indietro
+## La freccia riavvolge: rimette in scena il passo di prima
 
-`#btnRegistro` (la freccia `←`) apre l'elenco delle battute gia' dette. E' un
-**pannello che si legge e si chiude**, con lo stesso contratto di `#regole` e
-`#quadrowrap`: si mostra sopra quello che c'e', alla chiusura il giocatore e'
-esattamente dov'era, e la partita non si e' mossa di un passo.
+`#btnIndietro` (la freccia `←`, in basso a destra) **riavvolge**: rimette in
+scena la battuta appena lasciata — testo, personaggio, posa, oggetti — e da li'
+si riparte. Non e' un pannello che si legge sopra la scena, e **non deve
+tornare a esserlo**: e' stato provato due volte (un RILEGGI accanto al nome,
+poi un elenco a schermo pieno) e bocciato tutte e due. Quello che serve e' che
+la scena torni indietro davvero.
 
-Le quattro cose che lo tengono in piedi, e che sono la richiesta esplicita
-dell'utente:
+Come funziona: a ogni passo riavvolgibile si mette da parte un punto di ritorno
+(scena, numero di passo, e una copia intera di `VN.state`); tornare indietro
+rimette quello stato e ricostruisce la scena con `restore()`, la stessa
+macchina del "riprendi la partita". **Non si ricostruisce la scena a mano**
+(spegnendo e riaccendendo `#npc`, `#bg`, gli oggetti): quella strada lascia
+addosso pezzi della scena sbagliata — e' la stessa famiglia degli intrusi.
 
-1. **Non tocca `VN.i` e non chiama `exec()`.** Non fa avanzare niente e non fa
-   tornare niente. Rimettere in scena un passo passato vorrebbe dire
-   rieseguirlo, e a quel punto un pannello che si legge diventerebbe una
-   seconda strada dentro la storia.
-2. **Non scrive dentro `VN.state`.** Leggere non cambia la partita, quindi non
-   c'e' nessun salvataggio da aggiornare. Il test fotografa `VN.state` prima di
-   aprire e lo riconfronta dopo aver chiuso, come per il regolamento.
-3. **L'elenco lo riempie `type()`**, l'unico posto da cui passa una battuta del
-   box del dialogo (`annota()`). Il nome di chi parla e' quello che il box ha
-   addosso in quel momento: `setSpeaker()` viene sempre prima di `type()`. Chi
-   scrivesse una battuta senza passare da `type()` non la vedrebbe comparire.
-4. **La freccia c'e' solo durante il keynote** — `SCENE_REGISTRO` in
-   `engine.js`: `keynote`, `argomenti`, `argomento`. E' li' che si legge in
-   fretta fra una domanda e l'altra. Altrove il gioco ha gia' i suoi posti dove
-   fermarsi, e un pannello in piu' sarebbe una seconda via verso qualcosa che
-   non manca a nessuno. Il pannello non sopravvive a un cambio di scena
-   (`goScene()` chiama `chiudiRegistro()`, come per il regolamento) e con il
-   pannello aperto la freccia si spegne: sta piu' in alto del pannello, come il
-   cartello EXIT, e resterebbe li' a invitare un secondo tocco.
+Cinque cose che sembrano dettagli e non lo sono:
 
-Una versione precedente faceva navigare davvero: rimetteva in scena il passo
-lasciato ricostruendolo con `restore()`, e lasciava cambiare la risposta gia'
-data. E' stata **bocciata dall'utente** — non e' quello che serve, e portava
-dietro tutta una coda di problemi (che fare dei sorteggi gia' fatti, delle
-battute pescate a caso, del punteggio da non sommare due volte). Non
-reintrodurla.
+1. **Il punteggio non torna indietro, e non deve.** Le risposte gia' date
+   (`picks`, `punti`, `categorie_visitate`) restano fuori dal rollback:
+   rispondere di nuovo **sostituisce** — `segna()` riscrive sotto lo stesso id
+   e `VN.state.punti` si ricalcola da `totale()`. E' per questo che non si
+   sommano due volte. Chi cambiasse `totale()` in un contatore accumulato
+   riporterebbe il bug che questa architettura evita da sempre.
+2. **I sorteggi della partita non si rimescolano.** `SORTEGGI` in `engine.js`
+   (sacchetto degli intermezzi, sacchetto degli eventi, facoltative pescate)
+   sopravvive al riavvolgimento: rimescolarlo vorrebbe dire che tornare
+   indietro **cambia** la partita invece di rimostrarla. Chi aggiunge un
+   sorteggio a inizio partita lo aggiunge a `SORTEGGI`.
+3. **Riavvolgere deve dare le stesse parole e la stessa posa.** Le battute
+   pescate da un pool (`pool` negli step, `introDomanda`) e la posa di una
+   domanda passano da `pescaFissa()`, che tiene l'estrazione per tutta la
+   permanenza nella scena. Senza, "torna indietro" mostrava una frase diversa,
+   che e' il contrario di rileggere.
+4. **Il giro delle domande di S5 e' un passo solo ma tante schermate.** Il suo
+   indice non e' il numero di passo: `showDomande` si segna il punto di ritorno
+   per ogni domanda (`sub: {domande, set}`) e riparte da li'. Chi aggiunge un
+   altro step con un giro interno fa lo stesso, o la freccia riporta all'inizio
+   del giro.
+5. **La freccia sta in un punto fisso dello schermo** (in basso a destra, bordo
+   basso al 62%), non dentro `#boxwrap`. E' la stessa lezione delle frecce
+   della lobby: dentro al box si muoverebbe con lui — su quando il box e' alto,
+   giu' quando e' basso — e il pollice se la ritroverebbe ogni volta altrove.
+   Il 62% e' il bordo alto massimo del box del dialogo, quindi la freccia non
+   ci finisce mai sopra.
+
+Dove **non** arriva, e non va esteso senza pensarci: prima dell'inizio, oltre
+un cambio di scena (`goScene()` svuota la cronologia — rientrare in una scena
+chiusa vuol dire rigiocarla), a previsioni confermate (`VN.state.locked`), con
+un velo aperto sopra la scena (`SOPRA` in `engine.js` — non `qualcosaAperto()`,
+che comprende anche `#choices` e `#griglia`, che sono la scena e non un velo),
+e su tutto quello che non e' una rilettura ma un impegno preso o una schermata
+a se' — terminale, badge, hub, camerino, griglia, recap, countdown, quiz,
+email, corsa. L'elenco dei reversibili e' `REVERSIBILI` in `engine.js` ed e'
+corto apposta.
+
+`npm test` gira in jsdom: prende il punteggio e la sostituzione della risposta,
+non prende com'e' venuta su la scena ricostruita. Toccando questa roba si
+rilancia `npm run transizioni`.
 
 ## Non tutti gli sprite si mostrano alla stessa misura
 

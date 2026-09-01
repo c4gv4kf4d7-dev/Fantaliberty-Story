@@ -337,28 +337,41 @@ L'inquadratura ha due posti fissi: **il giocatore a sinistra** (step `io`, sprit
 dello stile scelto in S3) e **gli NPC a destra** (step `show`). Da S4 in poi i
 due condividono la scena.
 
-### La freccia `←`: rileggere quello che e' gia' stato detto
+### La freccia `←`: riavvolgere
 
-Durante il keynote, in alto a sinistra, una freccia apre l'elenco delle battute
-gia' scritte: chi ha letto male una riga o vuole ricontrollare come era posta
-una domanda se la rilegge, e chiude.
+In basso a destra, appena sopra il box del dialogo, una freccia **riavvolge**:
+rimette in scena la battuta appena lasciata — testo, personaggio, posa,
+oggetti — e da li' si riparte. Su una domanda gia' risposta si puo' rispondere
+di nuovo.
 
-**Non e' una navigazione: e' un pannello.** Vale lo stesso contratto del
-regolamento e dei quadri della Hall of Fame — si mostra sopra quello che c'e',
-alla chiusura il giocatore e' dov'era, la partita non si e' mossa. Quindi non
-tocca `VN.i`, non chiama `exec()`, non scrive dentro `VN.state`, e non
-ricostruisce nessuna scena: sono battute gia' scritte, non schermate da
-rimettere in piedi.
+Come funziona: a ogni passo riavvolgibile il motore mette da parte un **punto
+di ritorno** — dove si era (scena e numero di passo) e una copia di `VN.state`.
+Riavvolgere vuol dire rimettere quello stato e ricostruire la scena con la
+stessa macchina che ripristina un salvataggio (`restore()`): i passi visivi si
+rigiocano in silenzio dal primo fino a li'. Non si tocca `#npc`, `#bg` o gli
+oggetti a mano — quella strada lascia addosso pezzi della scena sbagliata.
 
-| pezzo | dove |
+Il punteggio non si somma due volte perche' **non e' il punteggio a tornare
+indietro**: `segna()` riscrive la risposta sotto lo stesso id e
+`VN.state.punti` si ricalcola da `totale()`. Cambiare risposta sostituisce.
+
+Tre cose non tornano indietro con il resto dello stato, apposta:
+
+| cosa | perche' |
 |---|---|
-| l'elenco si riempie | `annota()`, chiamata da `type()` — l'unico passaggio di ogni battuta del box |
-| chi parla | il nome che il box ha addosso: `setSpeaker()` viene sempre prima di `type()` |
-| dove si vede la freccia | `SCENE_REGISTRO` in `engine.js`: `keynote`, `argomenti`, `argomento` |
-| quanto tiene | le ultime `MAX_REGISTRO` battute (60) |
+| le risposte gia' date (`picks`, `punti`) | cosi' la domanda riaperta mostra segnata la scelta di prima (`.ch.gia`) |
+| i sorteggi della partita (`SORTEGGI` in `engine.js`: intermezzi, eventi, facoltative pescate) | rimescolarli vorrebbe dire che tornare indietro *cambia* la partita invece di rimostrarla |
+| le battute pescate da un pool e la posa della domanda | riavvolgere deve dare la stessa schermata (`pescaFissa()`) |
 
-Il pannello non sopravvive a un cambio di scena (`goScene()` chiama
-`chiudiRegistro()`) e il registro riparte vuoto a ogni `VN.boot()`.
+La freccia sta in un **punto fisso** dello schermo (bordo basso al 62%), non
+dentro `#boxwrap`: dentro al box si muoverebbe con lui, ed e' esattamente il
+difetto per cui le frecce della lobby erano gia' state spostate fuori.
+
+Dove non compare: al primo passo di una scena, oltre un cambio di scena
+(`goScene()` svuota la cronologia), a previsioni confermate
+(`VN.state.locked`), con un velo aperto sopra la scena (`SOPRA` in
+`engine.js`), e su tutti gli step che non sono una rilettura ma un impegno
+preso o una schermata a se' — l'elenco dei reversibili e' `REVERSIBILI`.
 
 ### Parlare in cuffia
 

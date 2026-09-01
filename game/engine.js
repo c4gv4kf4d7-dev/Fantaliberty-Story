@@ -103,11 +103,26 @@
   // Il testo di una battuta puo' dipendere da una variabile: si scrive "by" con
   // il nome della variabile e "text" come oggetto valore -> frase ("*" e' il
   // ripiego). Serve per far dire a Lucas cose diverse a seconda delle risposte.
+  /* Le battute pescate a caso di questa scena, tenute da parte per punto dello
+     script. Servono al riavvolgimento: una riga pescata dal pool si rilegge
+     uguale a com'era, se no "torna indietro" mostrerebbe parole diverse, che e'
+     il contrario di rileggere. Si svuota al cambio di scena, quindi la varieta'
+     fra una partita e l'altra resta intatta. */
+  var battutePescate = {};
+
+  function pescaFissa(chiave, elenco) {
+    if (battutePescate[chiave] == null) battutePescate[chiave] = aCaso(elenco) || '';
+    return battutePescate[chiave];
+  }
+
   function testoDi(st) {
     // "pool": la battuta si pesca da un elenco di story.regia invece di essere
     // scritta nello step. Serve alle battute di Susan durante il keynote, che
     // lo script vuole variabili e non sempre le stesse.
-    if (st.pool) return aCaso((VN.story.regia || {})[st.pool]) || '';
+    if (st.pool) {
+      return pescaFissa(VN.sceneId + ':' + VN.i + ':' + st.pool,
+        (VN.story.regia || {})[st.pool]);
+    }
     if (typeof st.text === 'string') return st.text;
     if (!st.text) return '';
     var v = st.by ? VN.state[st.by] : null;
@@ -132,7 +147,7 @@
      pannello dell'audio, la card di fine previsioni e il camerino. Da qui in
      poi l'elenco e' uno solo, quindi non puo' piu' divergere. */
   var APERTI = ['inputform', 'choices', 'listform', 'griglia', 'monitorwrap',
-    'countdown', 'multwrap', 'regole', 'registro', 'quadrowrap', 'runwrap',
+    'countdown', 'multwrap', 'regole', 'quadrowrap', 'runwrap',
     'emailwrap', 'modal', 'audiowrap', 'cardwrap', 'carosello'];
 
   function qualcosaAperto() {
@@ -170,7 +185,6 @@
     el.arrow.style.opacity = 0;
     hideUI();
     curLine = line; typing = true; pending = null; typeTarget = el.txt;
-    annota(line);
     riservaAltezza(line);
     if (!VN.speed) { el.txt.textContent = line; typing = false; return after(); }
     var shown = 0, t0 = 0;
@@ -713,6 +727,143 @@
 
   function next() { if (silent) return; VN.i++; run(); }
 
+  /* ---------------- il passo indietro ----------------
+     La freccia in alto a sinistra rimette in scena il passo appena letto: una
+     battuta letta male, una domanda a cui si e' risposto di fretta. Non e' un
+     "annulla" generale — e' la rilettura.
+
+     Come funziona: a ogni passo su cui si puo' tornare si mette da parte un
+     punto di ritorno, cioe' dove si era (scena e numero di passo) e com'era
+     VN.state, copiato per intero. Tornare indietro vuol dire rimettere quello
+     stato e ricostruire la scena con la stessa macchina che ripristina un
+     salvataggio (restore): i passi visivi si rigiocano in silenzio dal primo
+     fino a li', e il passo di arrivo riparte per davvero. Nessuna scorciatoia
+     a mano su #npc, #bg o gli oggetti: quella strada, gia' provata altrove,
+     lascia addosso pezzi della scena sbagliata.
+
+     Le risposte non si sommano due volte perche' non e' il punteggio a tornare
+     indietro: segna() riscrive la risposta sotto lo stesso id e VN.state.punti
+     si RICALCOLA da totale(). Cambiare risposta sostituisce, non aggiunge.
+
+     Dove il passo indietro non arriva (le eccezioni della specifica):
+     - prima dell'inizio: serve almeno un passo alle spalle;
+     - oltre un cambio di scena: goScene() svuota la cronologia, quindi non si
+       torna in una scena gia' chiusa (che vorrebbe dire rigiocarla);
+     - dopo le previsioni confermate (VN.state.locked): da li' in poi la
+       schedina e' quella, e riaprirla cambierebbe una fase conclusa;
+     - sui passi che non sono una rilettura ma un impegno preso o una
+       schermata a se' (terminale, badge, hub, camerino, griglia, recap,
+       countdown, quiz, email, corsa): non entrano proprio in cronologia. */
+  var cronologia = [];
+  var MAX_CRONOLOGIA = 40;
+  // sotto-posizione da riprendere dentro uno step che ne ha una sua (il giro
+  // delle domande di S5 tiene il suo indice, che non e' il numero di passo)
+  var ripresa = null;
+  // dove ci si trova adesso, sotto-posizione compresa
+  var ripresaCorrente = null;
+
+  var REVERSIBILI = { say: 1, choice: 1, list: 1, domande: 1, intermezzo: 1 };
+
+  // i sorteggi fatti una volta per partita: composizione, non avanzamento
+  var SORTEGGI = ['intermezzi_sacchetto', 'eventi_sacchetto', 'pescate'];
+
+  // i veli che si aprono SOPRA la scena: finche' c'e' uno di questi la freccia
+  // non si vede (#choices e #griglia non sono veli, sono la scena)
+  var SOPRA = ['modal', 'regole', 'quadrowrap', 'runwrap', 'emailwrap',
+    'cardwrap', 'audiowrap', 'carosello', 'countdown', 'multwrap', 'monitorwrap'];
+
+  function copiaStato() { return JSON.parse(JSON.stringify(VN.state)); }
+
+  function stessoPunto(p, sub) {
+    if (!p || p.scene !== VN.sceneId || p.i !== VN.i) return false;
+    return JSON.stringify(p.sub || null) === JSON.stringify(sub || null);
+  }
+
+  /* Un punto di ritorno per ogni passo rileggibile. Il primo della fila e' il
+     punto in cui ci si trova adesso: si torna a quello prima. Si rimette lo
+     stesso punto due volte (capita rientrandoci col passo indietro) non
+     aggiunge niente. */
+  function segnaPunto(sub) {
+    if (silent) return;
+    ripresaCorrente = sub || null;
+    if (!stessoPunto(cronologia[cronologia.length - 1], sub)) {
+      cronologia.push({ scene: VN.sceneId, i: VN.i, sub: sub || null, state: copiaStato() });
+      if (cronologia.length > MAX_CRONOLOGIA) cronologia.shift();
+    }
+    aggiornaBottoneIndietro();
+  }
+
+  function scordaCronologia() {
+    cronologia = [];
+    ripresa = null;
+    battutePescate = {};
+    battutePescate = {};
+    aggiornaBottoneIndietro();
+  }
+
+  function puoTornare() {
+    if (VN.state.locked) return false;            // fase conclusa: non si riapre
+    if (cronologia.length < 2) return false;      // non si esce dalla storia dal davanti
+    // con un pannello aperto sopra la scena (il menu Esci, il regolamento, un
+    // quadro, la corsa) si risponde a quello: la freccia riguarda la storia
+    // sotto, non quello che ci sta davanti. Non e' qualcosaAperto(): li'
+    // dentro ci sono anche #choices e #griglia, che sono la scena, non un velo.
+    for (var k = 0; k < SOPRA.length; k++) {
+      var n = el[SOPRA[k]];
+      if (n && n.classList.contains('on')) return false;
+    }
+    // con una domanda a schermo (il menu Esci) si risponde a quella, non si
+    // scivola via da sotto: la freccia sta sopra la modale, come il cartello EXIT
+    if (el && el.modal && el.modal.classList.contains('on')) return false;
+    return stessoPunto(cronologia[cronologia.length - 1], ripresaCorrente);
+  }
+
+  function tornaIndietro() {
+    if (!puoTornare()) return;
+    cronologia.pop();
+    var p = cronologia[cronologia.length - 1];
+    stopTyping();
+    pending = null;
+    hideUI();
+    // i seguiti differiti del passo che si sta lasciando (attese, dissolvenze,
+    // applausi) appartengono a un momento che non c'e' piu'
+    gen++;
+    ripresa = p.sub;
+    ripresaCorrente = p.sub;
+
+    /* Le risposte non tornano indietro con il resto dello stato: restano
+       quelle date, cosi' la domanda riaperta mostra gia' segnata la scelta di
+       prima e il giocatore vede cosa aveva risposto. Rispondere di nuovo la
+       SOSTITUISCE — segna() riscrive sotto lo stesso id e VN.state.punti si
+       ricalcola da totale() — quindi il punto vecchio non resta sommato da
+       nessuna parte. Tutto il resto (il sacchetto degli eventi, il conto degli
+       intermezzi, quello che il palco ha gia' acceso) torna com'era. */
+    var adesso = copiaStato();
+    var stato = JSON.parse(JSON.stringify(p.state));
+    stato.picks = adesso.picks;
+    stato.punti = adesso.punti;
+    stato.categorie_visitate = adesso.categorie_visitate;
+    /* Nemmeno i sorteggi della partita tornano indietro: quali intermezzi sono
+       usciti, quali imprevisti, quali facoltative. Sono stati estratti una
+       volta e valgono per tutta la serata — rimescolarli a ogni rilettura
+       vorrebbe dire che tornare indietro cambia la partita, invece di
+       rimostrarla. Quanti ne sono stati GIA' usati, quello si', torna indietro
+       con il resto dello stato. */
+    SORTEGGI.forEach(function (k) { if (adesso[k] != null) stato[k] = adesso[k]; });
+
+    // restore() rimette lo stato e ricostruisce la scena passo per passo:
+    // e' la stessa strada del "riprendi la partita", non una seconda.
+    restore({ scene: p.scene, i: p.i, state: stato });
+    // lo stato appena rimesso e' quello buono anche per chi riaprisse il gioco
+    VN.saveNow();
+    aggiornaBottoneIndietro();
+  }
+
+  function aggiornaBottoneIndietro() {
+    if (!el || !el.btnIndietro) return;
+    el.btnIndietro.classList.toggle('on', puoTornare());
+  }
+
   /* Una scena che COMINCIA su un cartello nero (sigla, barra di caricamento,
      titolo) si tiene addosso il sipario nero. Una che ce l'ha in mezzo o in
      fondo no: i titoli di coda stanno alla fine del finale, e cercando un
@@ -762,7 +913,6 @@
     chiudiCountdown();
     chiudiQuiz();
     chiudiRegole();
-    chiudiRegistro();
     chiudiQuadro();
     chiudiCorsa();
     chiudiEmail();
@@ -790,6 +940,10 @@
       el.arrow.style.opacity = 0;
     }
     gen++;              // da qui in poi i seguiti della scena di prima non contano piu'
+    /* Il riavvolgimento non attraversa i cambi di scena: tornare in una scena
+       gia' chiusa vorrebbe dire rigiocarla, e con lei tutto quello che ha
+       messo in moto. E' l'eccezione del "checkpoint non reversibile". */
+    scordaCronologia();
     pending = null;
     senzaSalto = false;
     VN.scene = sc; VN.sceneId = id; VN.i = 0;
@@ -856,7 +1010,6 @@
 
   function run() {
     aggiornaBottoneEsci();
-    aggiornaBottoneRegistro();
     if (!VN.scene) return;
     var steps = VN.scene.steps || [];
     if (VN.i >= steps.length) {
@@ -877,6 +1030,15 @@
     // battute che si dicono una volta sola: Peter presenta il quiz al primo
     // ingresso, non tutte le sere che si torna a giocare un livello.
     if (st.se && !condizioneOk(st.se)) return next();
+
+    /* Il punto di ritorno del riavvolgimento. Le domande di S5 se lo segnano da
+       sole, una per domanda: li' il passo e' uno solo per tutto il giro, e
+       tornare all'inizio del giro non sarebbe tornare alla domanda di prima. */
+    if (!silent) {
+      ripresaCorrente = null;
+      if (REVERSIBILI[st.t] && st.t !== 'domande') segnaPunto(null);
+      else aggiornaBottoneIndietro();
+    }
 
     if (!silent && (st.t === 'say' || st.t === 'choice' || st.t === 'input' ||
                     st.t === 'list' || st.t === 'badge' ||
@@ -1561,6 +1723,7 @@
       b.onclick = function (ev) {
         if (ev && ev.stopPropagation) ev.stopPropagation();
         el.modal.classList.remove('on');
+        aggiornaBottoneIndietro();
         if (azione) azione();
       };
       el.modalbtns.appendChild(b);
@@ -1573,6 +1736,8 @@
     // e va avanti lo stesso).
     if (cfg.annulla) bottone(cfg.annulla, null).classList.add('annulla');
     el.modal.classList.add('on');
+    // la freccia si spegne: qui si risponde alla domanda
+    aggiornaBottoneIndietro();
   }
 
   /* ---------------- carosello di scelta ----------------
@@ -1964,25 +2129,41 @@
       : (cat.core || []);
     if (!lista.length) return next();
 
-    var i = 0;
     var tipo = st.set === 'extra' ? 'extra' : 'core';
+
+    /* Il giro delle domande e' un passo solo dello script ma tante schermate:
+       la freccia deve tornare alla DOMANDA di prima, non all'inizio del giro.
+       Quando ci si rientra riavvolgendo, si riparte da li'. */
+    var i = 0;
+    if (ripresa && ripresa.domande != null && ripresa.set === tipo) {
+      i = Math.min(ripresa.domande, lista.length - 1);
+    }
+    ripresa = null;
 
     function intro() {
       if (i >= lista.length) { hideUI(); return next(); }
       var d = lista[i];
+      segnaPunto({ domande: i, set: tipo });
       el.boxwrap.classList.add('in');
-      mostraIo({ posa: posaPerDomanda(d, tipo) });
+      // posa e riga d'attacco si pescano una volta per domanda: riavvolgendo
+      // fin qui si ritrova la stessa schermata, non una simile
+      mostraIo({ posa: pescaFissa('posa:' + d.id, [posaPerDomanda(d, tipo)]) });
       setSpeaker(st.who || 'susan', st.incuffia !== false);
       var apri = function () { opzioni(d); };
-      type(fmt(aCaso(VN.story.regia && VN.story.regia.introDomanda) || 'Tocca a te.') + ' ' + fmt(d.q), apri);
+      var attacco = pescaFissa('intro:' + d.id,
+        (VN.story.regia && VN.story.regia.introDomanda) || ['Tocca a te.']);
+      type(fmt(attacco) + ' ' + fmt(d.q), apri);
       revealUI = apri;
     }
 
     function opzioni(d) {
       el.choices.innerHTML = '';
+      // se ci si e' tornati riavvolgendo, la risposta di prima si vede gia'
+      // segnata: e' quella che vale finche' non se ne tocca un'altra
+      var data = ((((VN.state.picks || {})[VN.state.categoria] || {})[tipo] || {})[d.id] || {}).v;
       (d.opzioni || []).forEach(function (o) {
         var b = global.document.createElement('button');
-        b.className = 'ch';
+        b.className = 'ch' + (data != null && data === o.label ? ' gia' : '');
         b.textContent = fmt(o.label);
         b.onclick = function (ev) {
           if (ev && ev.stopPropagation) ev.stopPropagation();
@@ -2271,10 +2452,11 @@
 
     el.boxwrap.classList.add('in');
     setSpeaker(st.who || 'susan', st.incuffia !== false);
+    var data = ((((VN.state.picks || {}).intermezzi || {}).r || {})[q.id] || {}).v;
     var apri = function () {
       showChoices({
         options: (q.opzioni || []).map(function (o) {
-          return { label: o.label, value: o.val, _do: function () {
+          return { label: o.label, value: o.val, gia: data != null && data === o.label, _do: function () {
             segna('intermezzi', 'r', q.id, o.label, o.val || 0);
             VN.progressed = true;
             hideUI();
@@ -3772,97 +3954,6 @@
     if (el.bg) el.bg.classList.remove('sfoca');
   }
 
-  /* ---------------- il registro delle battute ----------------
-     La freccia in alto a sinistra apre l'elenco di quello che e' gia' stato
-     detto: chi ha letto male una battuta o vuole ricontrollare come era posta
-     una domanda se la rilegge, e chiude.
-
-     E' un pannello, non una navigazione. Vale lo stesso contratto del
-     regolamento e dei quadri della Hall of Fame: si mostra SOPRA quello che
-     c'e', alla chiusura il giocatore e' esattamente dov'era, e la partita non
-     si e' mossa di un passo. Quindi:
-
-     - non tocca VN.i, non chiama exec(), non fa avanzare ne' tornare niente;
-     - non scrive dentro VN.state: non c'e' salvataggio da aggiornare, perche'
-       leggere non cambia la partita;
-     - non ricostruisce nessuna scena: le battute sono testo gia' scritto, non
-       schermate da rimettere in piedi.
-
-     Chi volesse trasformarlo in un "torna indietro" che rigioca i passi
-     romperebbe proprio questo: rimettere in scena un passo passato vuol dire
-     rieseguirlo, e a quel punto un pannello che si legge diventa una seconda
-     strada dentro la storia.
-
-     L'elenco lo riempie type(), l'unico posto da cui passa una battuta del box
-     del dialogo. Il nome di chi parla e' quello che il box ha addosso in quel
-     momento: setSpeaker() viene sempre prima di type(). */
-  var registro = [];
-  var MAX_REGISTRO = 60;
-
-  /* La freccia c'e' solo durante il keynote: e' li' che si legge in fretta fra
-     una domanda e l'altra, e li' che rileggere serve. Altrove il gioco ha gia'
-     i suoi posti dove fermarsi, e un pannello in piu' sarebbe una seconda via
-     verso qualcosa che non manca a nessuno. */
-  var SCENE_REGISTRO = { keynote: 1, argomenti: 1, argomento: 1 };
-
-  function annota(line) {
-    if (silent || !line) return;
-    var chi = (el.nametxt && el.nametxt.textContent) || '';
-    var ultima = registro[registro.length - 1];
-    // la stessa riga riscritta (un tap che rifa' partire il typewriter) non
-    // e' una battuta nuova
-    if (ultima && ultima.testo === line && ultima.chi === chi) return;
-    registro.push({ chi: chi, testo: line });
-    if (registro.length > MAX_REGISTRO) registro.shift();
-    aggiornaBottoneRegistro();
-  }
-
-  function aggiornaBottoneRegistro() {
-    if (!el || !el.btnRegistro) return;
-    // col pannello aperto la freccia si spegne: sta piu' in alto del pannello
-    // (come il cartello EXIT) e resterebbe li' a invitare un secondo tocco
-    var aperto = !!(el.registro && el.registro.classList.contains('on'));
-    el.btnRegistro.classList.toggle('on',
-      !aperto && !!SCENE_REGISTRO[VN.sceneId] && registro.length > 0);
-  }
-
-  function apriRegistro() {
-    if (!el.registro || !registro.length) return;
-    suona('apri');
-    el.regicorpo.innerHTML = '';
-    var doc = global.document;
-    registro.forEach(function (r) {
-      var box = doc.createElement('div');
-      box.className = 'regiriga';
-      if (r.chi) {
-        var chi = doc.createElement('div');
-        chi.className = 'regichi';
-        chi.textContent = r.chi;
-        box.appendChild(chi);
-      }
-      var t = doc.createElement('p');
-      t.className = 'regitesto';
-      t.textContent = r.testo;
-      box.appendChild(t);
-      el.regicorpo.appendChild(box);
-    });
-    el.registro.classList.add('on');
-    aggiornaBottoneRegistro();
-    if (el.bg) el.bg.classList.add('sfoca');
-    // si apre in fondo, sull'ultima battuta: e' quella appena letta il punto
-    // da cui si risale, non la prima della serata
-    el.regicorpo.scrollTop = el.regicorpo.scrollHeight;
-  }
-
-  function chiudiRegistro() {
-    if (!el.registro) return;
-    if (el.registro.classList.contains('on')) suona('chiudi');
-    el.registro.classList.remove('on');
-    el.regicorpo.innerHTML = '';
-    aggiornaBottoneRegistro();
-    if (el.bg) el.bg.classList.remove('sfoca');
-  }
-
   /* ---------------- hub a zone ----------------
      La lobby dello script: quattro zone che si scorrono di lato, senza ordine
      imposto, ognuna con il suo fondale, il suo personaggio e le sue aree
@@ -4222,7 +4313,10 @@
       var b = global.document.createElement('button');
       // "spento": la voce si vede ma non si tocca. Serve a dire perche' una
       // strada e' chiusa, invece di non mostrarla e lasciare il dubbio.
-      b.className = 'ch' + (o.spento ? ' spento' : '');
+      // "gia": e' la risposta data la volta scorsa, riavvolgendo fin qui. Si
+      // vede segnata, ma resta toccabile come le altre — anzi, il senso del
+      // riavvolgere e' proprio poterne toccare un'altra.
+      b.className = 'ch' + (o.spento ? ' spento' : '') + (o.gia ? ' gia' : '');
       b.disabled = !!o.spento;
       b.textContent = fmt(o.label);
       b.onclick = function (ev) {
@@ -5591,8 +5685,7 @@
       audiobtn: $('audiobtn'), audiowrap: $('audiowrap'), audiomus: $('audiomus'),
       audiosfx: $('audiosfx'), audiook: $('audiook'),
       btnEsciGioco: $('btnEsciGioco'), btnEsciIcon: $('btnEsciIcon'),
-      btnRegistro: $('btnRegistro'),
-      registro: $('registro'), regicorpo: $('regicorpo'), regiok: $('regiok')
+      btnIndietro: $('btnIndietro')
     };
     el.avatar.innerHTML = '';
     el.avatar.classList.remove('on', 'entra');
@@ -5601,13 +5694,9 @@
       apriMenuEsci();
     };
     if (el.btnEsciIcon) el.btnEsciIcon.src = assetUrl('props', 'exit');
-    if (el.btnRegistro) el.btnRegistro.onclick = function (ev) {
+    if (el.btnIndietro) el.btnIndietro.onclick = function (ev) {
       if (ev && ev.stopPropagation) ev.stopPropagation();
-      apriRegistro();
-    };
-    if (el.regiok) el.regiok.onclick = function (ev) {
-      if (ev && ev.stopPropagation) ev.stopPropagation();
-      chiudiRegistro();
+      tornaIndietro();
     };
     if ($('badgewrap')) $('badgewrap').classList.remove('in');
     if ($('coriandoli')) $('coriandoli').innerHTML = '';
@@ -5636,10 +5725,9 @@
     // non deve restare acceso sopra la domanda "vuoi riprendere?". Da li' in
     // poi ci pensa run(), come sempre.
     aggiornaBottoneEsci();
-    // le battute lette erano della partita di prima: il registro riparte vuoto
-    registro = [];
-    chiudiRegistro();
-    aggiornaBottoneRegistro();
+    // e nemmeno la freccia: quello che c'era da riavvolgere apparteneva alla
+    // partita di prima
+    scordaCronologia();
     hubTasti = null;
     chiudiHub();
     chiudiCarosello();
@@ -5648,7 +5736,6 @@
     chiudiCountdown();
     chiudiQuiz();
     chiudiRegole();
-    chiudiRegistro();
     chiudiQuadro();
     chiudiCorsa();
     chiudiEmail();
@@ -5674,8 +5761,7 @@
            e.target.closest('#emailwrap') || e.target.closest('#quadrowrap') ||
            e.target.closest('#runwrap') || e.target.closest('#propwrap') ||
            e.target.closest('#audiowrap') || e.target.closest('#audiobtn') ||
-           e.target.closest('#btnEsciGioco') || e.target.closest('#btnRegistro') ||
-           e.target.closest('#registro'))) return;
+           e.target.closest('#btnEsciGioco') || e.target.closest('#btnIndietro'))) return;
       VN.step();
     };
     global.document.onkeydown = function (e) {
@@ -5738,6 +5824,10 @@
     if (skip()) return;
     if (pending) { var f = pending; pending = null; el.arrow.style.opacity = 0; f(); }
   };
+
+  // Il riavvolgimento, per il bottone e per chi lo prova da fuori (i test)
+  VN.indietro = tornaIndietro;
+  VN.puoTornare = puoTornare;
 
   // La porta d'ingresso (index.html) lo chiama sul tocco di GIOCA: quel gesto
   // e' il primo sulla pagina, e il telefono concede l'audio solo li' dentro.
