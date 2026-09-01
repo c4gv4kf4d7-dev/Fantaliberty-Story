@@ -5151,6 +5151,10 @@
   // Un giocatore verosimile gia' registrato: senza questo, saltare a meta'
   // storia parte con nome vuoto, genere nullo e nessuno stile — e le scene da
   // S3 in poi non hanno niente da mostrare.
+  // Le scene prima di [S2]: li' il pulsante Esci non esiste, e nemmeno saltandoci
+  // dentro dal menu di sviluppo deve comparire.
+  var PRIMA_DI_S2 = ['arrivo', 'ingresso', 'registrazione', 'badge', 'lobby'];
+
   function statoFinto(story, scelte) {
     var st = {};
     Object.keys(story.vars || {}).forEach(function (k) { st[k] = story.vars[k]; });
@@ -5291,7 +5295,12 @@
         b.onclick = function () {
           box.classList.remove('on');
           VN.clearSave();
-          VN.boot(story, unisci(opts, { dev: false, scene: id, stato: statoFinto(story, scelte) }));
+          // Saltando dentro col menu di sviluppo si scavalca lo step di [S2]
+          // che alza raggiunto_s2, e il pulsante Esci non compariva: da qui in
+          // avanti il giocatore vero ci e' gia' passato, quindi lo si alza.
+          var stato = statoFinto(story, scelte);
+          if (PRIMA_DI_S2.indexOf(id) < 0) stato.raggiunto_s2 = true;
+          VN.boot(story, unisci(opts, { dev: false, scene: id, stato: stato }));
         };
         box.appendChild(b);
       });
@@ -5307,6 +5316,10 @@
     Object.keys(b || {}).forEach(function (k) { o[k] = b[k]; });
     return o;
   }
+
+  // Un pixel trasparente: serve a svuotare un <img> senza far comparire
+  // l'icona di immagine rotta.
+  var PIXEL_VUOTO = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
   VN.boot = function (story, opts) {
     opts = opts || {};
@@ -5386,6 +5399,30 @@
     if ($('badgewrap')) $('badgewrap').classList.remove('in');
     if ($('coriandoli')) $('coriandoli').innerHTML = '';
     if (el.nero) el.nero.classList.remove('on', 'sfuma');   // ripartenza pulita: mai il nero addosso
+    /* Riavvio dentro la pagina (il menu Esci -> ESCI DAL GIOCO): qui non c'e'
+       nessun ricaricamento a fare piazza pulita, quindi la scena di prima
+       resterebbe a schermo dietro alla domanda "vuoi riprendere?" — fondale,
+       personaggio in scena, box del dialogo e oggetti. Riaprire l'app deve
+       somigliare a riaprire l'app: si spegne tutto. */
+    el.npc.classList.remove('in', 'pop', 'fisso', 'micro');
+    el.npc.classList.add('out');
+    current.who = null;
+    el.boxwrap.classList.remove('in', 'muto', 'quizhub');
+    el.txt.textContent = '';
+    setSpeaker(null);
+    hideUI();
+    if (el.propwrap) el.propwrap.classList.remove('in', 'fondale');
+    if (el.platea) el.platea.classList.remove('on');
+    if (el.emblemi) el.emblemi.classList.remove('on');
+    // Un <img> senza src disegna l'icona di immagine rotta: si mette un pixel
+    // trasparente, che e' "niente" per davvero.
+    if (el.bg) el.bg.src = PIXEL_VUOTO;
+    if (el.bg2) { el.bg2.classList.remove('mostra'); el.bg2.src = PIXEL_VUOTO; }
+    fermaMusica(0);
+    // Lo stato e' appena tornato quello di una partita nuova: il pulsante Esci
+    // non deve restare acceso sopra la domanda "vuoi riprendere?". Da li' in
+    // poi ci pensa run(), come sempre.
+    aggiornaBottoneEsci();
     hubTasti = null;
     chiudiHub();
     chiudiCarosello();

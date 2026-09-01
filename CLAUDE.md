@@ -276,6 +276,16 @@ essere arrivati a questo punto, solo se il giocatore ha scelto SI, SALVA
 poco prima) lo trova da solo e chiede "vuoi riprendere?" — nessun bisogno di
 duplicare quella logica qui. Non chiama mai `VN.clearSave()`.
 
+Attenzione pero': **un riavvio dentro la pagina non fa piazza pulita da solo.**
+Al primo caricamento lo schermo e' vuoto perche' la pagina e' nuova; qui no, e
+la domanda "vuoi riprendere?" restava scritta sopra la scena di prima —
+fondale, personaggio, box, oggetti — che e' esattamente il contrario di
+"riaprire l'app". Per questo `VN.boot()` spegne `#npc`, `#boxwrap`, gli
+oggetti, i due fondali (con un pixel trasparente, non togliendo `src`: un
+`<img>` senza `src` disegna l'icona di immagine rotta), la musica, e rifa'
+`aggiornaBottoneEsci()`. Chi aggiunge un layer nuovo alla scena lo aggiunge
+anche li'.
+
 ## Mai un fotogramma della scena di prima
 
 Un `<img>` a cui si cambia `src` **continua a disegnare l'immagine vecchia**
