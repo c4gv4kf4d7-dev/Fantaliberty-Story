@@ -1017,6 +1017,19 @@
         else if (st.name === 'blur') el.bg.classList.add('blur');
         else if (st.name === 'unblur') el.bg.classList.remove('blur');
         else if (st.name === 'lights') {          // si accendono le luci: il nero sfuma via
+          // Il fondale porta lo zoom lento fin dal caricamento della scena,
+          // dietro al nero (sigla, barra di avvio, cartello scritto a
+          // macchina): senza riavviarlo qui, il giocatore lo vede gia' a
+          // meta' corsa appena il nero sfuma, uno scatto in avanti invece di
+          // partire dall'immagine intera. Si riparte da questo istante,
+          // quello vero in cui il fondale diventa visibile.
+          ['zoom', 'zoomlento'].forEach(function (c) {
+            if (el.bg.classList.contains(c)) {
+              el.bg.classList.remove(c);
+              void el.bg.offsetWidth;
+              el.bg.classList.add(c);
+            }
+          });
           el.curtainArrow.style.opacity = 0;
           el.curtain.classList.add('lights');
           el.hint.style.opacity = '';
