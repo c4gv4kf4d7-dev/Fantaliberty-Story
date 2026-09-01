@@ -488,6 +488,10 @@ Tre cose tarate insieme (agosto 2026, misurate con
   bene, non l'aver scelto la casella marcata "controcorrente". Se si tocca il
   bonus, i `pt` di `domande.json` vanno ricalcolati — `npm test` li ricontrolla
   uno per uno dalla formula.
+- **micro-eventi: probabilita' 0.15 per risposta, non 0.3.** A 0.3 ne uscivano
+  5-6 su 21 risposte e il sacchetto si svuotava sempre; a 0.15 ne escono ~3 e
+  restano una sorpresa. L'evento personale dello stile e' in testa al sacchetto
+  (`sacchettoEventi()`), cosi' non lo si perde.
 - **micro-eventi ±1, non ±3.** A ±3 la fortuna spostava 3,7 posizioni in
   classifica, quanto tutto il quiz di Peter (3,9). A ±1 sposta 1,7 e il quiz
   5,4.

@@ -2346,7 +2346,8 @@
   "regia": {
     "_nota": "La regia e' Susan. Durante il keynote non e' in scena: parla in cuffia, quindi gli step che la fanno parlare da qui chiedono \"incuffia\". Le battute stanno in pool per situazione e non in fila nello script: cosi' non dice sempre le stesse cose, e soprattutto non parla dopo ogni singola scelta — i pool situazionali escono solo sui micro-eventi.",
     "chi": "susan",
-    "probabilitaEvento": 0.3,
+    "probabilitaEvento": 0.15,
+    "_notaProbabilita": "Era 0.3: con 21 risposte a partita e 6 eventi nel sacchetto ne uscivano 5-6, uno ogni quattro domande, e il sacchetto si svuotava quasi sempre. A 0.15 ne escono in media 3, uno ogni sette: restano una sorpresa. L'evento personale dello stile sta in testa al sacchetto (sacchettoEventi in engine.js), cosi' e' il primo a uscire e non lo si perde.",
     "apertura": [
       "Ok. Ci siamo.",
       "Respira. Non troppo, pero'. Abbiamo tempi stretti."
