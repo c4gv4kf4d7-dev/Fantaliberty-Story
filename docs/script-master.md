@@ -474,10 +474,11 @@ Tutti e 3 i macroargomenti completati → [S6.01]
   3. Il giocatore sceglie → run.picks[categoria][core|extra][ID]
   4. Il personaggio annuncia alla platea con la battuta del suo stile
      (da game/domande.json, campo `battute[run.style]`)
-  5. SE random() < probabilità (0.15, `regia.probabilitaEvento`): il prossimo
-     evento del sacchetto. Il sacchetto si mescola una volta per partita e
-     l'evento personale dello stile sta in testa, quindi è il primo a uscire:
-     in media 3 eventi su 21 risposte, uno ogni sette domande
+  5. SE questa è la domanda obbligatoria sorteggiata per il macroargomento:
+     l'imprevisto assegnato a quel macroargomento. Sono tre per tutti, uno per
+     macroargomento: a inizio partita si sorteggia quali (due micro-eventi fra
+     i cinque in banca più quello personale dello stile, mescolati fra loro) e
+     dopo quale domanda obbligatoria escono. Mai quanti: nessuna probabilità
   6. Il micro-evento, se estratto, presenta tre reazioni rapide: il valore di
      ciascuna è +1 / 0 / -1, fisso — quello scritto dall'autore in banca
      (`editoriale`, sul segno) — e non viene mai mostrato al giocatore
@@ -524,11 +525,15 @@ e se ne giocano **al massimo quattro** — uno prima del primo macroargomento,
 gli altri dopo un macroargomento completato — e mai due volte lo stesso. Quali
 quattro escano non si sa in anticipo e cambia da una partita all'altra.
 
-**I micro-eventi sono al massimo due per partita**, pescati a caso fra i cinque,
-più l'evento personale dello stile, che sta in testa al sacchetto: tre
-imprevisti in tutto. Sono limitati apposta — il keynote è fatto di pronostici, e
-un imprevisto ogni tre domande smetterebbe di essere un imprevisto. Nessuno si
-ripete nella stessa partita.
+**Gli imprevisti sono tre per ogni partita, uno per macroargomento**: due
+micro-eventi pescati fra i cinque in banca più quello personale dello stile,
+mescolati fra loro. Il sorteggio riguarda **quali** e **dopo quale domanda
+obbligatoria** escono, mai **quanti** — così due partite giocate allo stesso
+modo valgono lo stesso, e nessuno si ritrova tre occasioni in più o in meno per
+puro caso. Sono tre e non di più perché il keynote è fatto di pronostici: un
+imprevisto ogni tre domande smetterebbe di essere un imprevisto. Nessuno si
+ripete nella stessa partita, e nessuno esce dopo una facoltativa — le
+obbligatorie le gioca chiunque, ed è lì che il conto torna uguale per tutti.
 
 Ogni voce contiene tre `opzioni`, ognuna con un `editoriale` (`+3`/`0`/`-3`) che
 è insieme il tono della battuta e il punteggio vero — il motore lo traduce nel

@@ -64,23 +64,23 @@ def gioca_previsioni(g, rnd):
         i = rnd.randrange(len(d['opzioni']))
         risposte.append((None, d['id'], i, d['opzioni'][i].get('val', 0)))
 
-    # micro-eventi: sacchetto corto e senza rimessa (due generali a caso piu'
-    # l'evento personale dello stile, in testa). Il punteggio di ogni risposta
-    # e' quello scritto in banca, non un abbinamento a caso.
+    # micro-eventi: uno per macroargomento, tre per tutti. Il sorteggio riguarda
+    # quali (due generali a caso piu' quello personale dello stile, mescolati) e
+    # dopo quale domanda obbligatoria escono, mai quanti. Il punteggio di ogni
+    # risposta e' quello scritto in banca, non un abbinamento a caso.
     sacchetto = [e['id'] for e in BANCA['micro_eventi']]
     rnd.shuffle(sacchetto)
     sacchetto = sacchetto[:MAX_MICRO_EVENTI]
     mio = BANCA['eventi_personali'].get(g['stile'])
-    if mio: sacchetto.insert(0, mio['id'])
-    prob = STORY.get('regia', {}).get('probabilitaEvento', 0.3)
+    if mio: sacchetto.append(mio['id'])
+    rnd.shuffle(sacchetto)
     micro = 0
-    for _ in range(n_domande):
-        if sacchetto and rnd.random() < prob:
-            ev = TUTTI_EVENTI[sacchetto.pop(0)]
-            i = rnd.randrange(len(ev['opzioni']))
-            e = ev['opzioni'][i]['editoriale']
-            risposte.append((None, 'EV', i, 1 if e > 0 else -1 if e < 0 else 0))
-            micro += 1
+    for id_ev in sacchetto[:len(CATEGORIE)]:
+        ev = TUTTI_EVENTI[id_ev]
+        i = rnd.randrange(len(ev['opzioni']))
+        e = ev['opzioni'][i]['editoriale']
+        risposte.append((None, 'EV', i, 1 if e > 0 else -1 if e < 0 else 0))
+        micro += 1
     return risposte, n_int, micro
 
 def gioca_quiz(g, rnd):
