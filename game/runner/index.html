@@ -45,18 +45,23 @@
      bordo nero e' l'unica cosa che resta leggibile sempre. */
   #targa{
     display:inline-flex; flex-direction:column; gap:6px;
-    padding:7px 9px 8px; background:#2b2521; color:#f4f4f0;
-    box-shadow:0 0 0 3px #100e0d,
-               inset 2px 2px 0 rgba(255,255,255,.10),
+    padding:7px 9px 8px; background:#1b1f33; color:#f4f4f0;
+    box-shadow:0 0 0 3px #0a0c16,
+               inset 2px 2px 0 rgba(255,255,255,.12),
                inset -2px -2px 0 rgba(0,0,0,.45),
                0 3px 0 4px rgba(0,0,0,.28);
   }
   #targaAlto{ display:flex; align-items:center; gap:9px; }
+  /* Il riquadro della faccia non e' marrone: e' il blu notte dei pannelli del
+     gioco grande (il regolamento, le modali), schiarito quel tanto che basta a
+     staccare dalla targa. Cosi' la corsa non ha una tavolozza sua, e la faccia
+     sta su un fondo freddo come il corridoio invece che su una toppa di cuoio. */
   #ritratto{
-    width:52px; height:52px; flex:none; background:#4a3f37;
-    box-shadow:0 0 0 3px #100e0d,
-               inset 2px 2px 0 rgba(255,255,255,.12),
-               inset -2px -2px 0 rgba(0,0,0,.4);
+    width:52px; height:52px; flex:none;
+    background:linear-gradient(160deg, #3a4670 0%, #232a49 60%, #1a1f38 100%);
+    box-shadow:0 0 0 3px #0a0c16,
+               inset 2px 2px 0 rgba(255,255,255,.16),
+               inset -2px -2px 0 rgba(0,0,0,.45);
     overflow:hidden;
   }
   /* Il foglio ha tre facce in fila: si scorre con la posizione dello sfondo,
@@ -71,13 +76,17 @@
   #faccia.contento{ background-position:100% 0; }
 
   #targaBasso{ display:flex; align-items:center; gap:7px; }
-  #anellino{ width:22px; height:22px; flex:none; display:block;
-    image-rendering:pixelated; animation:giraAnello 2.4s linear infinite; }
+  /* Gira a scatti, non di continuo: ruotare un disegno a quadretti in modo
+     continuo sbava i pixel a ogni fotogramma e l'icona diventa una macchia.
+     A dodici scatti l'occhio vede che gira e i quadretti restano dritti. */
+  #anellino{ width:26px; height:26px; flex:none; display:block;
+    animation:giraAnello 2.4s steps(12) infinite; }
+  #anellino svg{ display:block; width:100%; height:100%; }
   @keyframes giraAnello{ to{ transform:rotate(360deg) } }
   #punti{ font-family:'Press Start 2P', monospace; font-size:15px;
-    color:#f0b722; text-shadow:2px 2px 0 #100e0d; letter-spacing:1px; }
+    color:#f0b722; text-shadow:2px 2px 0 #0a0c16; letter-spacing:1px; }
   #record{ font-family:'Press Start 2P', monospace; font-size:9px;
-    color:#8f8880; margin-left:auto; padding-left:8px; white-space:nowrap; }
+    color:#8d97c4; margin-left:auto; padding-left:10px; white-space:nowrap; }
 
   /* ---- l'ingranaggio in alto a destra ----
      Stessa pastiglia della X di prima, altro colore: qui non si esce, si apre
@@ -100,8 +109,8 @@
      #hud non prende tocchi (sta dentro .ui), quindi il tasto se li riprende. */
   #sinistra{ display:flex; align-items:center; gap:10px; }
   #vite{ display:flex; gap:4px; font-size:24px; line-height:1; }
-  #vite span{ color:#e04b44; text-shadow:2px 2px 0 #100e0d; }
-  #vite span.spenta{ color:#5a5049; text-shadow:2px 2px 0 #100e0d; opacity:1; }
+  #vite span{ color:#e04b44; text-shadow:2px 2px 0 #0a0c16; }
+  #vite span.spenta{ color:#414a66; text-shadow:2px 2px 0 #0a0c16; opacity:1; }
   #vite.colpito span{ animation: tremaCuore .45s ease-out; }
   #vite.guarito span:not(.spenta){ animation: pulsaCuore .5s ease-out; }
   @keyframes tremaCuore{
@@ -125,11 +134,6 @@
     35%  { transform:translate(0,-46px) scale(1.9) rotate(-12deg); opacity:1 }
     100% { transform:translate(0,-72px) scale(3.2) rotate(10deg); opacity:0 }
   }
-  #fps{
-    position:absolute; left:16px; bottom:12px; font-size:11px;
-    color:#2a2a28; opacity:.45; font-weight:600;
-  }
-
   /* ---- schermata iniziale, alla maniera dei cabinati ----
      Press Start 2P e' il font del gioco vero, sta gia' nel repo. E'
      bellissimo per un titolo e illeggibile per una frase: il corpo del
@@ -342,11 +346,6 @@
   #menu button.uscire{ background:#d8564e; color:#2a0b09; border-color:#2a0b09;
     box-shadow:0 6px 0 #8f2f2a, 0 6px 0 4px #2a0b09; }
   #menu button.uscire:active{ box-shadow:0 2px 0 #8f2f2a, 0 2px 0 4px #2a0b09; }
-  /* il record in fondo al menu: e' l'informazione che in sala giochi sta
-     sempre sotto il titolo, e nella targa non ci sta comoda */
-  #menuRecord{ font-family:'Press Start 2P', monospace; font-size:10px;
-    color:#8f8880; margin-top:20px; }
-
   /* La lezione non copre la scena: spiega una cosa che si sta vedendo,
      quindi resta in basso e lascia guardare il corridoio. */
   #lezione{
@@ -398,14 +397,13 @@
           <div id="vite"><span>♥</span><span>♥</span><span>♥</span></div>
         </div>
         <div id="targaBasso">
-          <img id="anellino" alt="">
+          <span id="anellino" aria-hidden="true"></span>
           <span id="punti">0</span>
           <span id="record">HI 0</span>
         </div>
       </div>
       <button id="btnIng" aria-label="Menu" hidden></button>
     </div>
-    <div id="fps"></div>
   </div>
 
   <div class="velo" id="veloStart">
@@ -430,7 +428,6 @@
       <button id="mnClassifica">CLASSIFICA</button>
       <button id="mnEsci" class="uscire">ESCI DAL GIOCO</button>
     </div>
-    <div id="menuRecord">RECORD 0</div>
   </div>
 
   <div id="uscita" hidden>
@@ -1142,7 +1139,7 @@ function personaggio(){
 }
 
 /* ---------- ciclo ---------- */
-let ultimo = performance.now(), fpsAcc = 0, fpsN = 0;
+let ultimo = performance.now();
 
 function passo(ora){
   requestAnimationFrame(passo);
@@ -1151,12 +1148,6 @@ function passo(ora){
 
   if (S.fase === 'corsa'){ aggiorna(dt); controllaLezioni(); }
   disegna();
-
-  fpsAcc += dt; fpsN++;
-  if (fpsAcc > 0.5){
-    document.getElementById('fps').textContent = Math.round(fpsN / fpsAcc) + ' fps';
-    fpsAcc = 0; fpsN = 0;
-  }
 }
 
 function aggiorna(dt){
@@ -1896,18 +1887,39 @@ function faccia(quale, ms){
   if (quale) facciaId = setTimeout(() => faccia(null), ms || 1100);
 }
 
+/* I tre anelli dell'attivita', quelli che si raccolgono per il corridoio.
+   Disegnati a quadretti come l'ingranaggio: la tacca in alto sul cerchio
+   esterno serve a far vedere che gira — tre anelli pieni, ruotando, starebbero
+   fermi. Il fondo scuro sotto e' quello che fa da separazione fra un anello e
+   l'altro, come nell'icona vera. */
+function disegnaAnelli(nodo){
+  const N = 17, C = (N - 1) / 2;
+  const ANELLI = [[5.9, 7.7, '#f5335e'], [3.7, 5.4, '#a8db00'], [1.5, 3.2, '#1fd5e8']];
+  const pezzi = [];
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++){
+    const dx = x - C, dy = y - C, d = Math.hypot(dx, dy);
+    let colore = null;
+    ANELLI.forEach(([ri, re, c]) => { if (d >= ri && d <= re) colore = c; });
+    // la tacca sul cerchio esterno
+    if (colore === ANELLI[0][2] &&
+        Math.abs(Math.atan2(-dy, dx) - Math.PI / 2) < 0.20) colore = null;
+    if (colore) pezzi.push('<rect x="' + x + '" y="' + y + '" width="1" height="1" fill="' + colore + '"/>');
+  }
+  nodo.innerHTML =
+    '<svg viewBox="0 0 ' + N + ' ' + N + '" shape-rendering="crispEdges">' +
+    '<circle cx="' + C + '" cy="' + C + '" r="8" fill="#100e0d"/>' +
+    pezzi.join('') + '</svg>';
+}
+
 function mostraRecord(){
   const r = document.getElementById('record');
-  if (r) r.textContent = 'HI ' + record;
-  const m = document.getElementById('menuRecord');
-  if (m) m.textContent = 'RECORD ' + record;
+  if (r) r.textContent = 'RECORD ' + record;
 }
 
 function montaTarga(){
   document.getElementById('faccia').style.backgroundImage =
     'url(' + ((INLINE && INLINE['run_avatar.webp']) || (CARTELLA + 'run_avatar.webp' + VERSIONE)) + ')';
-  document.getElementById('anellino').src =
-    (INLINE && INLINE['run_anello_rosso.webp']) || (CARTELLA + 'run_anello_rosso.webp' + VERSIONE);
+  disegnaAnelli(document.getElementById('anellino'));
   mostraRecord();
 }
 

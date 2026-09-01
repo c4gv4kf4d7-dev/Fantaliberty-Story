@@ -3511,6 +3511,9 @@
     if (pagina) el.runframe.srcdoc = pagina;
     else el.runframe.src = conVersione((VN.story.meta && VN.story.meta.runner) || 'game/runner/');
     el.runwrap.classList.add('on');
+    // via il bottone dell'audio del gioco: sta sopra il riquadro e finirebbe
+    // accanto all'ingranaggio della corsa, che fa gia' quel mestiere
+    if (global.document.body) global.document.body.classList.add('incorsa');
   }
 
   /* La pagina della corsa e' un file come engine.js: senza una query di versione
@@ -3525,6 +3528,7 @@
   }
 
   function chiudiCorsa() {
+    if (global.document.body) global.document.body.classList.remove('incorsa');
     if (corsaAscolto) { global.removeEventListener('message', corsaAscolto); corsaAscolto = null; }
     if (corsaAttesa) { global.clearTimeout(corsaAttesa); corsaAttesa = null; }
     if (!el.runwrap) return;
