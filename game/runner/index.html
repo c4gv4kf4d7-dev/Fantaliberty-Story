@@ -172,6 +172,17 @@
     color:#4a4a46; margin-top:4px;
   }
   .velo .posizione b{ color:#1d1d1b; }
+  /* Appena si muore la schermata compare sotto il dito di chi stava ancora
+     giocando, e il tocco di troppo lo porta fuori prima che abbia letto dove e'
+     arrivato. Per un attimo i tasti non si toccano: si spengono e si riaccendono
+     quando la riga della classifica e' arrivata. */
+  .velo.congelato button{ pointer-events:none; opacity:.4; }
+  .velo .posizione.arrivata{ animation: entraPosizione .5s ease-out; }
+  @keyframes entraPosizione{
+    0%   { transform:scale(.82); opacity:0 }
+    55%  { transform:scale(1.06); opacity:1 }
+    100% { transform:scale(1); opacity:1 }
+  }
   .velo button.secondario{
     margin-top:12px; padding:12px 22px; font-size:12px;
     background:#e9e9e4; color:#1d1d1b; border:4px solid #1d1d1b;
@@ -1391,9 +1402,34 @@ function via(){
   S.imparate = {}; S.collezione = {}; riprendi();
   document.getElementById('veloStart').hidden = true;
   document.getElementById('veloFine').hidden  = true;
+  document.getElementById('veloFine').classList.remove('congelato');
+  clearTimeout(fermoId); fermoId = null;
   document.getElementById('veloClassifica').hidden = true;
   document.getElementById('hud').classList.remove('spento');
 }
+/* ---------- il tempo di guardare ----------
+   Il tetto e' un obbligo, non un lusso: la classifica non deve MAI fermare il
+   gioco, quindi se il database non risponde entro FERMO_MAX i tasti si
+   riaccendono lo stesso e la riga resta com'e'. */
+const FERMO_MIN = 900;      // il tocco di troppo di chi stava ancora giocando
+const FERMO_MAX = 3000;     // oltre non si aspetta nessuno
+let fermoDa = 0, fermoId = null;
+
+function congelaFine(){
+  fermoDa = performance.now();
+  document.getElementById('veloFine').classList.add('congelato');
+  clearTimeout(fermoId);
+  fermoId = setTimeout(scongelaFine, FERMO_MAX);
+}
+
+function scongelaFine(){
+  const resta = FERMO_MIN - (performance.now() - fermoDa);
+  clearTimeout(fermoId);
+  if (resta > 0){ fermoId = setTimeout(scongelaFine, resta); return; }
+  fermoId = null;
+  document.getElementById('veloFine').classList.remove('congelato');
+}
+
 function finisci(){
   S.fase = 'fine'; S.scossa = 0.5;
   riprendi();
@@ -1410,11 +1446,15 @@ function finisci(){
   document.getElementById('fineNota').textContent =
     S.punti >= record ? 'Nuovo record.' : 'Il record resta ' + record + '.';
   document.getElementById('veloClassifica').hidden = true;
-  mostraPosizione(0);                 // "aggiornamento..." finche' non torna
   document.getElementById('veloFine').hidden = false;
+  // prima si congela, poi si chiede la posizione: al contrario, quando non c'e'
+  // nessuna classifica da aspettare, mostraPosizione scongelava un attimo prima
+  // che congelassi, e i tasti restavano spenti fino al tetto dei tre secondi
+  congelaFine();
+  mostraPosizione(0);                 // "aggiornamento..." finche' non torna
   document.getElementById('hud').classList.add('spento');
   avvisa('fine');
-  // parte per conto suo: ANCORA resta premibile anche mentre carica
+  // parte per conto suo, e quando torna riaccende i tasti
   claAggiorna(S.punti | 0);
 }
 
@@ -1432,7 +1472,9 @@ function finisci(){
    Regola che vale su tutto: la classifica non deve MAI fermare il gioco. Se il
    database non risponde, la riga della posizione resta nascosta, il record del
    telefono continua a valere e si riprova alla partita dopo. */
-const CLA = {
+// esposto per il collaudo automatico, come S: serve a simulare una classifica
+// lenta o assente senza toccare il database vero
+const CLA = window.CLA = {
   id: null, nome: '', cfg: null,
   mio: 0,            // il miglior punteggio secondo il server
   posizione: 0, quanti: 0,
@@ -1509,10 +1551,14 @@ async function claAggiorna(punti){
     if (p > suServer) { await claSalva(p); CLA.mio = p; }
     else CLA.mio = suServer;
 
-    CLA.quanti = await claConta('');
-    const sopra = await claConta('&best_score=gt.' + CLA.mio);
+    /* I due conteggi vanno insieme, non in fila: la riga della posizione e' la
+       cosa che il giocatore aspetta a schermo dopo essere morto, e ogni viaggio
+       in piu' e' un secondo in cui rischia di andarsene senza averla letta. */
+    const [quanti, sopra] = await Promise.all([
+      claConta(''), claConta('&best_score=gt.' + CLA.mio)
+    ]);
+    CLA.quanti = quanti;
     CLA.posizione = sopra + 1;
-    CLA.top = await claTop();
     CLA.fallita = false;
 
     // il record ufficiale e' quello del server: se sul telefono era piu' basso
@@ -1523,6 +1569,12 @@ async function claAggiorna(punti){
       document.getElementById('record').textContent = 'record ' + record;
     }
     mostraPosizione(primaEro);
+
+    /* Le prime dieci servono solo al tabellone, che si apre con un tocco in
+       piu': si chiedono DOPO aver mostrato la posizione, e se non arrivano
+       la riga resta buona lo stesso. */
+    try { CLA.top = await claTop(); }
+    catch (e) { console.warn('[run] tabellone non disponibile:', e && e.message); }
   } catch (e) {
     CLA.fallita = true;
     mostraPosizione(0);
@@ -1534,11 +1586,19 @@ async function claAggiorna(punti){
 function mostraPosizione(primaEro){
   const riga = document.getElementById('finePosizione');
   const tasto = document.getElementById('btnClassifica');
-  if (!claAttiva()) { riga.hidden = true; tasto.hidden = true; return; }
+  riga.classList.remove('arrivata');
+  // niente classifica: non c'e' niente da aspettare, ma il tempo di reazione
+  // resta — e' quello che salva da chi sta ancora pestando sullo schermo
+  if (!claAttiva()) { riga.hidden = true; tasto.hidden = true; scongelaFine(); return; }
   tasto.hidden = false;
   riga.hidden = false;
-  if (CLA.fallita) { riga.textContent = 'Classifica non disponibile.'; return; }
+  if (CLA.fallita) { riga.textContent = 'Classifica non disponibile.'; scongelaFine(); return; }
   if (!CLA.posizione) { riga.textContent = 'Aggiornamento classifica...'; return; }
+  // da qui in poi c'e' un numero da leggere: si riaccendono i tasti e la riga
+  // si fa notare, cosi' l'occhio ci finisce sopra invece che sul primo bottone
+  void riga.offsetWidth;
+  riga.classList.add('arrivata');
+  scongelaFine();
   let testo = '#' + CLA.posizione + ' di ' + CLA.quanti +
               (CLA.quanti === 1 ? ' giocatore' : ' giocatori');
   // quante persone si sono superate con questa partita: si dice solo se e'
