@@ -226,6 +226,9 @@ giocatore se le trovava ogni volta in un posto diverso, ed e' stato bocciato.
 Il 66% e' sotto gli hotspot dell'hub (finiscono al 66%) e sopra la fascia del
 dialogo (al massimo arriva all'80%): sono sempre li', con o senza fumetto.
 In una zona muta si spegne solo il fumetto, con la classe `muto` su `#boxwrap`.
+I pallini (`#hdots`) invece stanno in fondo allo schermo, centrati, sotto il
+box: in mezzo alla scena coprivano il disegno. Si accendono e si spengono con
+l'hub (`showHub`/`chiudiHub`), non con le frecce.
 
 ## Il pulsante Esci: solo dove non c'e' gia' un punto di pausa
 

@@ -534,7 +534,12 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  font-family:inherit;font-size:clamp(10px,3vw,15px);padding:8px 16px;cursor:pointer;
  box-shadow:0 3px 0 rgba(0,0,0,.5)}
 #hprev:active,#hnext:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.5)}
-#hdots{display:flex;gap:7px}
+/* I pallini stanno in fondo allo schermo, centrati, sotto il box del dialogo
+   (che parte dal 3% + safe area): fuori dalla scena, dove non coprono niente.
+   Si vedono solo con l'hub aperto. */
+#hdots{position:absolute;left:0;right:0;bottom:calc(0.7% + env(safe-area-inset-bottom,0px));
+ z-index:3;display:none;justify-content:center;gap:7px;pointer-events:none}
+#hdots.on{display:flex}
 .hdot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.22);
  border:2px solid rgba(255,255,255,.35)}
 .hdot.seen{background:rgba(255,255,255,.5)}

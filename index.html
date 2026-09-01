@@ -22,7 +22,7 @@
   gtag('js', new Date());
   gtag('config', 'G-SYX1RZLNNE');
 </script>
-<link rel="stylesheet" href="./game/engine.css?v=138">
+<link rel="stylesheet" href="./game/engine.css?v=139">
 </head>
 <body>
 <div id="stage">
@@ -90,9 +90,11 @@
        ogni volta in un posto diverso. -->
   <div id="hubnav">
     <button id="hprev" aria-label="Zona precedente">◀</button>
-    <div id="hdots"></div>
     <button id="hnext" aria-label="Zona successiva">▶</button>
   </div>
+  <!-- i pallini delle zone: in fondo allo schermo, sotto il box del dialogo,
+       fuori dalla scena (in mezzo coprivano il disegno) -->
+  <div id="hdots"></div>
   <!-- hub della lobby: quattro zone che si scorrono di lato. Le aree toccabili
        vengono disegnate dal motore dentro #hubspots, sopra il fondale. -->
   <div id="hub">
@@ -344,12 +346,12 @@
      telefono, cosi' la sigla dello studio si sente davvero. Si salta con
      ?subito (i tool di verifica), ?dev e ?scene= (sviluppo). -->
 <div id="home" hidden>
-  <img id="homeBg" src="./assets/bg/bg_intro.webp?v=138" alt="">
+  <img id="homeBg" src="./assets/bg/bg_intro.webp?v=139" alt="">
   <button id="homeGioca" type="button">GIOCA</button>
 </div>
 
-<script src="./game/analytics.js?v=138"></script>
-<script src="./game/engine.js?v=138"></script>
+<script src="./game/analytics.js?v=139"></script>
+<script src="./game/engine.js?v=139"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -469,7 +471,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=138', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=139', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e
