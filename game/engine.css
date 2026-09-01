@@ -383,7 +383,9 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 /* La riga di sistema e' sempre corta e non la dice nessuno: la' in mezzo sta
    meglio che appesa in alto. */
 #boxwrap.sistema #box{justify-content:center;text-align:center}
-#txt{display:block;width:100%}
+/* pre-line: un \n nel testo di story.json va a capo (gli spazi normali si
+   comprimono come sempre) */
+#txt{display:block;width:100%;white-space:pre-line}
 #arrow{text-align:center;color:#fff;font-size:12px;margin-top:5px;opacity:0;animation:bob 1s infinite}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
 
