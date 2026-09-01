@@ -178,7 +178,9 @@ Interpolazione nei testi:
 ### Lo step `hub`: esplorare una stanza a zone
 
 La lobby (`[S1.HUB]` dello script master) non e' una sequenza di battute ma un
-posto da girare: quattro zone che si scorrono di lato, senza ordine imposto.
+posto da girare: cinque zone che si scorrono di lato, senza ordine imposto —
+teatro, Hall of Fame, regolamento, Peter/quiz e la porta STAFF ONLY di Apple
+Campus Run (S9).
 
 ```json
 { "t": "hub", "start": "tenda", "var": "zona",
@@ -500,8 +502,8 @@ salvataggio: il quiz si gioca nei giorni fra il lock e il keynote, non in una
 sessione sola. Quello che si vince si accumula in `VN.state.mult_bank`, e in
 `[S8.FINALE]` diventa `VN.state.moltiplicatori`.
 
-Sotto la griglia dei tre livelli c'e' anche **l'altra sfida**, Apple Campus Run
-(`corsa` nello step `quizhub`) — vedi qui sotto.
+Il quiz e' solo il quiz: Apple Campus Run non e' piu' legata a Peter e non
+compare in questa griglia — vedi S9 qui sotto per dove si raggiunge davvero.
 
 I quattro perk di `story.stili` cadono tutti qui:
 
@@ -543,12 +545,17 @@ il gioco la apre in un riquadro sopra quello che c'e' — come il regolamento e 
 quadri della Hall of Fame. Chiudendola il giocatore e' esattamente dov'era, e la
 storia non si e' mossa di un passo.
 
-Ci si arriva da due posti, senza passaggi in mezzo:
-
-| dove | come si dichiara | si torna a |
-|---|---|---|
-| la griglia di Peter [S8.HUB] | `corsa` nello step `quizhub` | da Peter, che commenta |
-| il countdown [S7.05] | un'azione con `"corsa": true` | al countdown, ancora acceso |
+**Non e' una sfida di Peter e non ha niente a che fare con il quiz.** E'
+un'attivita' indipendente che si scopre da soli: una porta **STAFF ONLY**, zona
+5 dell'hub della lobby (`game/story.json`, scena `lobby`, `t: hub`), visibile
+fin dall'inizio ma respinge (fondale `staff_door_locked`, dialogo di Francesca)
+finche' le previsioni non sono confermate (`run.locked`). Dopo il lock la stessa
+zona mostra il fondale `staff_door_authorized`: il tocco sposta il fondale sul
+corridoio (`campus_run_corridor`) e apre subito la corsa sopra — l'hotspot porta
+un campo `corsa` (`label`/`esci`), lo stesso oggetto che prima stava dentro lo
+step `quizhub`. Non esiste nessun'altra via: ne' la griglia di Peter [S8.HUB] ne'
+il countdown [S7.05] offrono piu' un bottone diretto — un secondo accesso
+scavalcherebbe la porta, che e' apposta l'unico punto narrativo del gioco.
 
 Le due pagine si parlano con dei messaggi (`postMessage`), e nessuna delle due
 sa niente dell'altra oltre a questo:

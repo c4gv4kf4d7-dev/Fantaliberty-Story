@@ -215,7 +215,7 @@ function controllaHub(id, st) {
       assert.ok(c.bodies?.[body], `scena ${id}, zona ${z.id}: posa "${body}" non dichiarata per ${z.who}`);
     }
     for (const h of z.hotspots || []) {
-      assert.ok(h.goto || h.say || h.set || h.apre || h.quadro,
+      assert.ok(h.goto || h.say || h.set || h.apre || h.quadro || h.corsa,
         `scena ${id}, zona ${z.id}: hotspot "${h.label}" non fa niente`);
       // "apre" mostra un pannello da leggere sopra la lobby: dev'esserci
       if (h.apre) assert.ok(story[h.apre],
@@ -224,6 +224,13 @@ function controllaHub(id, st) {
       // dev'essere un fondale dichiarato, altrimenti si apre un riquadro vuoto
       if (h.quadro) assert.ok(story.assets.bg[h.quadro],
         `scena ${id}: hotspot quadro "${h.quadro}" non dichiarato in assets.bg`);
+      // "corsa" apre Apple Campus Run sopra la lobby (la porta STAFF ONLY): il
+      // corridoio, se dichiarato, deve essere un fondale vero
+      if (h.corsa) {
+        assert.ok(h.corsa.esci, `scena ${id}: hotspot corsa "${h.label}" deve dire da dove si torna ("esci")`);
+        if (h.corridoio) assert.ok(story.assets.bg[h.corridoio],
+          `scena ${id}: hotspot corsa "${h.label}" punta al corridoio "${h.corridoio}", non dichiarato in assets.bg`);
+      }
       if (h.goto) { assert.ok(story.scenes[h.goto], `scena ${id}: hotspot verso "${h.goto}" inesistente`); usciteTotali++; }
       if (h.richiede) assert.equal(h.richiede, 'swipe',
         `scena ${id}: "richiede" accetta solo "swipe", non "${h.richiede}"`);
@@ -416,10 +423,11 @@ for (const [id, sc] of Object.entries(story.scenes)) {
 
 /* ---------- 1e. Apple Campus Run ----------
    Il minigioco non e' una scena: e' una pagina sua, aperta in un riquadro sopra
-   quello che c'e'. Qui si controlla che la pagina esista davvero e che le due
-   porte che ci portano — la griglia di Peter e il countdown — siano ancora
-   aperte: sono facili da perdere in una modifica allo script, e a schermo si
-   vedrebbe solo un bottone in meno. */
+   quello che c'e'. Qui si controlla che la pagina esista davvero e che l'unica
+   porta che ci porta — la zona STAFF ONLY della lobby, dopo le previsioni — sia
+   ancora aperta, e che NON esistano piu' scorciatoie dal quiz di Peter o dal
+   countdown: sono facili da reintrodurre per sbaglio in una modifica allo
+   script, e a schermo si vedrebbe un bottone in piu' che bypassa la porta. */
 {
   const runner = story.meta.runner;
   assert.ok(runner, 'meta.runner: manca l\'indirizzo della corsa');
@@ -429,17 +437,33 @@ for (const [id, sc] of Object.entries(story.scenes)) {
   // e' la versione definitiva, non una prova: nessuna scritta lo deve smentire
   assert.ok(!/prototipo/i.test(sorgente),
     'la corsa non e\' piu\' un prototipo: via la parola dalla pagina');
-  // le due porte
+
+  // Peter e il countdown non devono avere NESSUN legame con la corsa
   const hub = Object.values(story.scenes)
     .flatMap((sc) => sc.steps || []).find((st) => st.t === 'quizhub');
-  assert.ok(hub?.corsa?.label, 'la griglia di Peter deve offrire anche la corsa ("corsa")');
-  assert.ok(hub.corsa.esci, 'la corsa aperta da Peter deve dire da dove si torna ("esci")');
+  assert.ok(hub && !hub.corsa,
+    'il quiz di Peter deve essere separato da Apple Campus Run: niente "corsa" nello step quizhub');
   const cd = Object.values(story.scenes)
     .flatMap((sc) => sc.steps || []).find((st) => st.t === 'countdown');
-  assert.ok((cd?.azioni || []).some((a) => a.corsa),
-    'il countdown e\' la schermata su cui si rientra: la corsa deve essere li\'');
-  assert.ok((cd?.azioni || []).some((a) => a.goto === 'quiz'),
-    'il countdown e\' la schermata su cui si rientra: anche il quiz deve essere li\'');
+  assert.ok(!(cd?.azioni || []).some((a) => a.corsa),
+    'il countdown non deve offrire un bottone diretto alla corsa: bypasserebbe la porta STAFF ONLY');
+  assert.ok((cd?.azioni || []).some((a) => a.goto === 'quiz'), 'il countdown deve offrire il quiz di Peter');
+  assert.ok((cd?.azioni || []).some((a) => a.goto === 'lobby'), 'il countdown deve poter tornare in lobby (unica via verso la porta)');
+
+  // L'unica porta: la zona STAFF ONLY dell'hub della lobby, sbloccata da run.locked
+  const lobbyHub = story.scenes.lobby?.steps?.find((st) => st.t === 'hub');
+  assert.ok(lobbyHub, 'la lobby deve avere il suo step "hub"');
+  const zoneStaff = (lobbyHub.zones || []).filter((z) => (z.hotspots || []).some((h) => h.corsa));
+  assert.equal(zoneStaff.length, 1, 'deve esistere esattamente una zona della lobby con l\'hotspot che apre la corsa (STAFF ONLY)');
+  const hStaff = zoneStaff[0].hotspots.find((h) => h.corsa);
+  assert.ok(hStaff.corsa.esci, 'l\'hotspot STAFF ONLY deve dire da dove si torna ("esci")');
+  assert.ok(zoneStaff[0].when?.var === 'locked' && zoneStaff[0].when.is === true,
+    'la zona STAFF ONLY che apre la corsa deve essere condizionata a "locked": true (dopo le previsioni)');
+  // deve esistere anche la sua controparte bloccata, sulla stessa condizione invertita
+  const zoneStaffChiusa = (lobbyHub.zones || []).find((z) => z.when?.var === 'locked' && z.when.is === false
+    && (z.hotspots || []).some((h) => h.say && !h.corsa));
+  assert.ok(zoneStaffChiusa, 'la zona STAFF ONLY deve avere una controparte bloccata (locked:false) che risponde con un dialogo, non con la corsa');
+
   // il record vive nel salvataggio, quindi la variabile va dichiarata
   for (const v of ['runner_record', 'runner_giocato']) {
     assert.ok(v in story.vars, `vars: manca "${v}", il record della corsa non si salverebbe`);
@@ -460,9 +484,13 @@ const inArrivo = new Set(story.meta.assetiInArrivo || []);
 // I layer della platea restano dichiarati (il motore sa mostrarli, e le reazioni
 // di S5 ci girano intorno) ma NON sono piu' in lavorazione: l'arte non si fa, e
 // la scena senza quei file va avanti uguale. Percio' non stanno fra i file che
-// devono esistere sul disco, e non stanno nemmeno in meta.assetiInArrivo.
-assert.equal(story.meta.assetiInArrivo?.length ?? 0, 0,
-  'niente piu\' layer della platea in roadmap: l\'arte della platea non si fa');
+// devono esistere sul disco, e non devono ricomparire in meta.assetiInArrivo
+// (che invece puo' elencare arte diversa, ancora in coda, come la porta STAFF
+// ONLY e il corridoio di Apple Campus Run).
+for (const rel of inArrivo) {
+  assert.ok(!rel.startsWith('platea/'),
+    'niente piu\' layer della platea in roadmap: l\'arte della platea non si fa');
+}
 for (const kind of ['bg', 'props']) {
   for (const rel of Object.values(story.assets[kind] || {})) {
     if (inArrivo.has(rel)) { if (!onDisk(rel)) todoAssets.add(rel + ' (da convertire)'); continue; }
@@ -1392,20 +1420,10 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
     `il tempo che manca non e' formattato: "${$('cdtempo').textContent}"`);
   const azioni = [...$('cdbtn').querySelectorAll('.ch')];
   assert.deepEqual(azioni.map((b) => b.textContent),
-    ['Il quiz di Peter', 'Apple Campus Run', 'Torna in lobby', 'La tua card'],
-    'e\' la schermata su cui si rientra: le due sfide stanno prima delle altre vie');
+    ['Il quiz di Peter', 'Torna in lobby', 'La tua card'],
+    'nessun bottone diretto alla corsa: si raggiunge solo dalla porta STAFF ONLY in lobby');
 
-  // la corsa si apre SOPRA il countdown e non cambia scena: chiudendola il
-  // giocatore e' esattamente dov'era, come per il regolamento e i quadri
   azioni[1].onclick({ stopPropagation() {} });
-  assert.ok($('runwrap').classList.contains('on'), 'la corsa si apre');
-  assert.ok($('countdown').classList.contains('on'), 'e il countdown resta acceso sotto');
-  assert.equal(VN.sceneId, 'countdown', 'la corsa non e\' una scena');
-  $('runchiudi').onclick({ stopPropagation() {} });
-  assert.equal($('runwrap').classList.contains('on'), false, 'chiusa la corsa, si torna dov\'era');
-  assert.ok($('countdown').classList.contains('on'), 'e il countdown e\' ancora li\'');
-
-  azioni[2].onclick({ stopPropagation() {} });
   assert.equal(VN.sceneId, 'lobby', 'da qui si torna in lobby');
   assert.equal($('countdown').classList.contains('on'), false, 'e il countdown si chiude');
 }
@@ -1428,7 +1446,7 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   VN.clearSave();
 }
 
-/* ---------- 5b. S1: hub della lobby a quattro zone ----------
+/* ---------- 5b. S1: hub della lobby a cinque zone ----------
    Il vincolo dello script e' che la tenda NON sia toccabile finche' il giocatore
    non ha scorso almeno una volta: senza quello entra in sala senza accorgersi che
    la lobby era visitabile, e la meta' del contenuto di S1 non la vede nessuno. */
@@ -1442,8 +1460,9 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.ok($('hub').classList.contains('on'), 'l\'hub si apre dopo l\'introduzione');
   assert.ok($('hubnav').classList.contains('on'), 'frecce e pallini visibili');
 
-  // quattro zone: la quarta e' quella chiusa, perche' locked e' ancora false
-  assert.equal(dots().length, 4, 'quattro zone, come nello script');
+  // cinque zone: la quarta (il quiz) e la quinta (STAFF ONLY) sono chiuse,
+  // perche' locked e' ancora false
+  assert.equal(dots().length, 5, 'cinque zone, come nello script');
   assert.equal(dots()[0].classList.contains('sel'), true, 'si parte dalla tenda');
   assert.equal(VN.state.locked, false);
 
@@ -1507,6 +1526,18 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.match(txt(), /ancora vivo/);
   assert.equal(VN.sceneId, 'lobby', 'la zona 4 chiusa non porta al quiz');
 
+  // zona 5: STAFF ONLY, sempre visibile ma respinge finche' le previsioni
+  // non sono confermate. Non e' una scena: il tocco non cambia mai VN.sceneId.
+  $('hnext').onclick({ stopPropagation() {} });
+  assert.ok(dots()[4].classList.contains('sel'), 'quinta zona');
+  assert.ok($('bg').getAttribute('src').includes('staff_door_locked'), 'porta STAFF ONLY, ancora bloccata');
+  assert.equal(spots().length, 1, 'un solo hotspot sulla porta');
+  spots()[0].onclick({ stopPropagation() {} });
+  assert.equal($('name').textContent, 'Francesca', 'a rispondere e\' Francesca, non un personaggio in scena');
+  assert.match(txt(), /non ti da ancora tutto questo potere|non ti dà ancora tutto questo potere/i, 'il badge nega l\'accesso');
+  assert.equal(VN.sceneId, 'lobby', 'il rifiuto non cambia scena');
+  assert.equal($('runwrap').classList.contains('on'), false, 'la corsa non si apre: il badge non e\' autorizzato');
+
   // giro completo: si torna alla tenda, e adesso ENTRA e' attivo
   $('hnext').onclick({ stopPropagation() {} });
   assert.ok(dots()[0].classList.contains('sel'), 'l\'hub e\' circolare');
@@ -1535,8 +1566,9 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.equal(txt(), '', 'la zona non ripete la presentazione');
   assert.ok($('npc').classList.contains('in'), 'ma Peter e\' ancora al suo tavolino');
   assert.ok($('npcBody').getAttribute('src').includes('chr_peter_dorme'), 'e dorme, come prima');
-  $('hnext').onclick({ stopPropagation() {} });
-  $('hnext').onclick({ stopPropagation() {} });
+  $('hnext').onclick({ stopPropagation() {} });   // -> zona 5, staff only (muta)
+  $('hnext').onclick({ stopPropagation() {} });   // -> zona 1, tenda (muta)
+  $('hnext').onclick({ stopPropagation() {} });   // -> zona 2, hall of fame (muta)
 
   // ...e i quadri restano guardabili anche nella zona muta: non serve una
   // battuta per aprirli, li apre il tocco
@@ -1570,7 +1602,7 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   VN.state.post_lobby_visto = true;             // la sequenza del ritorno l'ha gia' vista
   VN.step(); VN.step(); VN.step();
   const dots = () => [...$('hdots').querySelectorAll('.hdot')];
-  assert.equal(dots().length, 4, 'restano quattro zone anche dopo il lock');
+  assert.equal(dots().length, 5, 'restano cinque zone anche dopo il lock');
   // dopo le previsioni l'hub si apre gia' su Peter: e' quello che resta da fare
   assert.ok($('bg').getAttribute('src').includes('quiz_aperta'), 'zona 4 aperta');
   assert.ok($('npcBody').getAttribute('src').includes('chr_peter_prego'), 'Peter sveglio, e invita al tavolo');
@@ -1578,6 +1610,30 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   spot.onclick({ stopPropagation() {} });
   [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });
   assert.equal(VN.sceneId, 'quiz', 'ora la zona 4 porta al quiz');
+}
+
+/* ---------- 5c-ter. la porta STAFF ONLY, autorizzata dopo il lock ----------
+   Stessa zona 5, l'altra faccia: il badge e' autorizzato, il tocco apre il
+   corridoio della corsa e la corsa stessa, sopra la lobby — nessun cambio di
+   scena, come il regolamento e i quadri. */
+{
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'lobby' });
+  VN.state.locked = true;
+  VN.state.post_lobby_visto = true;
+  VN.step(); VN.step(); VN.step();
+  $('hnext').onclick({ stopPropagation() {} });   // dall'hub di Peter (zona 4) alla zona 5, STAFF ONLY
+  assert.ok($('bg').getAttribute('src').includes('staff_door_authorized'), 'porta STAFF ONLY, autorizzata');
+  const spot = $('hubspots').querySelector('.hspot');
+  spot.onclick({ stopPropagation() {} });
+  assert.ok($('bg').getAttribute('src').includes('campus_run_corridor'), 'il fondale passa al corridoio');
+  assert.ok($('runwrap').classList.contains('on'), 'e la corsa si apre sopra');
+  assert.equal(VN.sceneId, 'lobby', 'la corsa non e\' una scena: si resta in lobby');
+  $('runchiudi').onclick({ stopPropagation() {} });
+  assert.equal($('runwrap').classList.contains('on'), false, 'chiusa la corsa...');
+  assert.ok($('bg').getAttribute('src').includes('staff_door_authorized'), '...si torna alla porta, non al corridoio vuoto');
+  assert.ok($('hub').classList.contains('on'), 'e l\'hub della lobby e\' ancora li\'');
+  VN.clearSave();
 }
 
 
@@ -2350,11 +2406,11 @@ function apriQuizHub(stile) {
   assert.equal(VN.state.quiz_visto, true, 'la presentazione e\' segnata come vista');
 
   // niente da assegnare finche' non si vince qualcosa: la voce non c'e' proprio
-  // a banca vuota i moltiplicatori non si vedono proprio: restano l'altra sfida
-  // e la via d'uscita
+  // a banca vuota i moltiplicatori non si vedono proprio: resta solo l'uscita.
+  // Apple Campus Run non e' piu' qui: e' separata dal quiz di Peter.
   assert.deepEqual(azioniQuiz().map((b) => b.textContent),
-    ['Apple Campus Run', 'Basta cosi\', torno in lobby'],
-    'la corsa sta sotto la griglia, prima dell\'uscita');
+    ['Basta cosi\', torno in lobby'],
+    'niente corsa sotto la griglia: solo la via d\'uscita');
 }
 
 /* 10a-bis. i moltiplicatori si assegnano appena se ne vince uno: la voce e'
@@ -2542,8 +2598,8 @@ function giocaLivello(liv, stile, giuste) {
   assert.equal(celleFinite[2].querySelector('.gstato').textContent, step.etichettaMai,
     'e cosi\' Leggenda');
   assert.deepEqual(azioniQuiz().map((b) => b.textContent),
-    ['Apple Campus Run', 'Basta cosi\', torno in lobby'],
-    'finito il quiz resta l\'altra sfida, e la via d\'uscita');
+    ['Basta cosi\', torno in lobby'],
+    'finito il quiz resta solo la via d\'uscita: niente corsa qui');
 }
 
 /* 10d-bis. lo showman non resta mai bloccato: i suoi livelli sono aperti da
