@@ -2889,19 +2889,9 @@
         }
       });
     }
-    /* La seconda sfida. Sta sotto la griglia e non dentro, come quarto
-       pannello: i tre pannelli dicono a che punto sono i livelli del quiz, e un
-       quarto che non e' un livello gli toglierebbe quel significato. Aprendola
-       la griglia resta dov'e', sotto: al ritorno non si ricarica niente e Peter
-       ha solo una riga da dire. */
-    if (st.corsa) {
-      azioni.push({ label: st.corsa.label || 'Apple Campus Run', _do: function () {
-        apriCorsa(st.corsa, function () {
-          if (uscito || !st.corsa.dopo) return;
-          typeKeep(fmt(st.corsa.dopo));
-        });
-      } });
-    }
+    // Apple Campus Run non e' piu' una sfida del quiz di Peter: nessun
+    // pulsante verso la corsa in questa griglia. Si raggiunge solo dalla
+    // porta STAFF ONLY della lobby.
     if (st.esci) {
       azioni.push({ label: st.esci.label || 'Torna in lobby', _do: function () {
         uscito = true;
@@ -3701,6 +3691,11 @@
         typeKeep(fmt(h.bloccato || 'Non ancora: prima guardati intorno.'));
         return;
       }
+      // Feedback sonoro dell'hotspot (il lettore badge della porta STAFF ONLY:
+      // un suono al tocco, rosso o verde a seconda dello stato, e' gia' tutto
+      // nel fondale della zona). Non e' il tocco che manda avanti il dialogo —
+      // e' la risposta a un'azione, come una scelta o un pannello che si apre.
+      if (h.suono) suona(h.suono);
       if (h.react) react(h.react);
       var vai = function () {
         if (uscito) return;
@@ -3710,6 +3705,21 @@
         if (h.apre) return mostraRegole(h.apre, null);
         // un quadro da guardare (la Hall of Fame): stessa cosa, un'immagine sola
         if (h.quadro) return mostraQuadro(h, null);
+        // la porta STAFF ONLY autorizzata: il fondale passa al corridoio e la
+        // corsa si apre sopra di esso, come il regolamento e i quadri. Alla
+        // chiusura si torna qui, nella lobby, con la zona com'era.
+        if (h.corsa) {
+          var zonaStaff = zones[cur];
+          if (h.corridoio) setBg(h.corridoio);
+          var lanciaCorsa = function () {
+            if (uscito) return;
+            apriCorsa(h.corsa, function () {
+              if (uscito) return;
+              setBg(zonaStaff.bg, zonaStaff.bgFx);
+            });
+          };
+          return VN.speed ? global.setTimeout(lanciaCorsa, 650) : lanciaCorsa();
+        }
         if (h.say) {                      // commento e basta: si resta nell'hub
           var righe = [{ who: h.who || zones[cur].who, text: h.say }].concat(h.after || []);
           var k = 0;

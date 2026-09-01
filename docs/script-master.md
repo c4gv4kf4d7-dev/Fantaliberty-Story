@@ -54,7 +54,7 @@ Questo documento resta l'autorità su scene, dialoghi, struttura e formule.
 | **Lucas** | accredito, S0 |
 | **Francesca** | lobby, S1 |
 | **Susan** | responsabile dell'evento, coordinamento **e regia**: S2, S3, S4, S5, S6, S7 |
-| **Peter** | il quiz finale, S8; presenta (controvoglia) anche la corsa, S9 |
+| **Peter** | il quiz finale, S8 — non ha niente a che fare con la corsa di S9 |
 
 **Martha non esiste più.** Il ruolo della regia durante il keynote è di Susan.
 Non è un rinominamento: le battute sono riscritte sulla sua caratterizzazione.
@@ -192,7 +192,7 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
   "Quando sei pronto/a, vai verso la tenda. Da lì in poi... sei a teatro."
   → [S1.HUB]
 
-[S1.HUB] HUB LOBBY — 4 zone, swipe orizzontale libero, nessun ordine forzato
+[S1.HUB] HUB LOBBY — 5 zone, swipe orizzontale libero, nessun ordine forzato
   ZONA1 → bg_lobby_z1_tenda (nessun oggetto separato per la tenda)
   ZONA1 dopo le previsioni → stesso fondale, senza hotspot ENTRA: lo show è
                      andato, e la battuta non manda più nessuno di là
@@ -203,6 +203,10 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
                      → chr_peter_alza_occhi al tocco
   ZONA4 sbloccata  → bg_lobby_z4_quiz_aperta + obj_lucchetto_zona4 (frame
                      "aperto", animazione una tantum al primo sblocco)
+  ZONA5 bloccata   → bg_staff_door_locked (lettore badge rosso, disegnato nel
+                     fondale) — la porta di Apple Campus Run, vedi [S1.ZONA5]
+  ZONA5 sbloccata  → bg_staff_door_authorized (lettore badge verde, porta
+                     ancora chiusa: il badge è autorizzato, non la porta aperta)
   Tutorial swipe   → chr_francesca_gesto_swipe (deve coincidere col gesto reale
                      implementato: verificare prima di finalizzare l'asset)
 
@@ -265,6 +269,19 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
         "Prima segui il keynote. Poi le domande difficili."
     SE run.locked === true:
       lucchetto aperto (animazione una tantum) → [S8.01]
+
+  [S1.ZONA5] Porta STAFF ONLY — vedi [S9] per i dettagli completi
+    Non ha un personaggio in scena: la porta è la scenografia, e a rispondere
+    è Francesca, che compare solo al tocco.
+    SE run.locked === false:
+      hotspot sulla porta → suono errore/fail, lettore rosso (nel fondale)
+      FRANCESCA: "Eh no. Il badge non ti dà ancora tutto questo potere.
+                  Torna più tardi."
+      → resta in [S1.HUB]
+    SE run.locked === true:
+      hotspot sulla porta → suono successo/livello completato, lettore verde
+      → il fondale passa a bg_campus_run_corridor, e sopra si apre [S9]
+      → alla chiusura si torna qui, in [S1.HUB]
 ```
 
 ---
@@ -630,8 +647,7 @@ Indice degli id in `docs/indice-domande.md`.
     [POST-L02] "Hai completato le tue previsioni. Adesso aspettiamo il keynote
                 e scopriamo quanto ci hai preso."
     [POST-L03] "Ma non abbiamo finito."
-    [POST-L04] "Vai da Peter: ha due sfide per te. Una metterà alla prova la
-                tua mente, l'altra... i tuoi pollici."
+    [POST-L04] "Vai da Peter: ha una sfida per te, tutta di testa."
     [POST-L05] "Le risposte giuste possono moltiplicare i punti delle tue
                 previsioni."
     [POST-L06] "Quindi sì, quei dettagli inutilmente specifici potrebbero
@@ -648,12 +664,13 @@ Indice degli id in `docs/indice-domande.md`.
   "{nickname} — PREVISIONI COMPLETATE
    Il keynote vero inizia tra [ 00:00:00 ]"
   È la schermata su cui si riapre il gioco nei giorni fra le previsioni e il
-  keynote, quindi le due sfide stanno qui, a un tocco: chi rientra non deve
-  rifare il giro della lobby per arrivarci.
+  keynote, quindi il quiz sta qui, a un tocco: chi rientra non deve rifare il
+  giro della lobby per arrivarci. APPLE CAMPUS RUN non è fra queste azioni: si
+  raggiunge solo dalla porta STAFF ONLY in lobby, mai da una scorciatoia qui.
   A: IL QUIZ DI PETER → [S8.01]
-  B: APPLE CAMPUS RUN → [S9], sopra il countdown, che resta acceso sotto
-  C: TORNA IN LOBBY → [S1.HUB] (zona 4 ora sbloccata)
-  D: LA TUA CARD → genera ed esporta obj_card_condivisibile client-side
+  B: TORNA IN LOBBY → [S1.HUB] (zona 4 ora sbloccata, e zona 5 — STAFF ONLY —
+     ora autorizzata)
+  C: LA TUA CARD → genera ed esporta obj_card_condivisibile client-side
      (1080x1920 / 1080x1350)
 ```
 
@@ -665,16 +682,9 @@ Indice degli id in `docs/indice-domande.md`.
 [S8.01] PETER — prima volta
   Asset: bg_lobby_z4_quiz_aperta + chr_peter_alza_occhi
   "Hai fatto il keynote. Ora vediamo quanto conosci quelli passati."
-
-  [S8.01b] posa chr_peter_sbuffa — presenta l'altra sfida, malvolentieri
-  "Hanno anche messo un gioco dove corri dentro il campus a raccogliere
-   cerchietti."
-  [S8.01d] "Punti per la prontezza del pollice, non una mia idea ma...
-            fai pure, non ti guarda nessuno."
-  (è l'unico posto dove il gioco dice che le sfide sono due. Il quiz è roba
-   sua e ne va fiero; la corsa gliel'hanno messa lì. Torna a
-   chr_peter_alza_occhi quando ritorna sul quiz: la faccia dice quello che
-   pensa prima delle parole)
+  (Peter parla solo del quiz: Apple Campus Run non la nomina, non la
+   commenta, non c'entra niente con lui. Si scopre altrove, dalla porta
+   STAFF ONLY della lobby)
 
   "Lo stile che hai scelto ti dà una mano: <perk dello stile>."
     hawaiano  → il primo giro storto di ogni livello non conta
@@ -690,14 +700,11 @@ Indice degli id in `docs/indice-domande.md`.
 [S8.HUB] Selezione livello
   SE run.style == showman: tutti e 3 i livelli sbloccati, ordine libero
   ALTRIMENTI: Avanzato dopo aver passato Base, Leggenda dopo Avanzato
-  Sotto la griglia, insieme ai moltiplicatori e all'uscita: APPLE CAMPUS RUN
-  → [S9]. Non è un quarto livello e non sta dentro la griglia: i tre pannelli
-  dicono a che punto sono i livelli, un quarto che non è un livello toglierebbe
-  loro quel significato. Nessuna battuta fissa "da dove vuoi cominciare?":
-  la griglia parla da sola.
-  Al ritorno dalla corsa:
-  "Rieccoti. Hai corso, bravissimo/a. Le domande sono ancora qui, quando ti va
-   di usare anche la testa."
+  Sotto la griglia, solo l'uscita verso la lobby. APPLE CAMPUS RUN non è qui:
+  niente pulsante, niente link, niente battuta di ritorno — è un'attività
+  indipendente, si raggiunge solo dalla porta STAFF ONLY della lobby (vedi
+  [S9]). Nessuna battuta fissa "da dove vuoi cominciare?": la griglia parla
+  da sola.
 
 [S8.LOOP] per ogni livello
   Asset: bg_lobby_z4_quiz_aperta + chr_peter_guarda_orologio (timer sotto i 3s)
@@ -748,9 +755,20 @@ Non è una scena e non tocca la partita: si apre in un riquadro sopra quello
 che c'è — come il regolamento e i quadri della Hall of Fame — e chiudendola il
 giocatore è esattamente dov'era. Vive in una pagina sua, `game/runner/`.
 
-Due porte, nessun passaggio in mezzo:
-  [S8.HUB]  sotto la griglia dei livelli  → si torna da Peter, che commenta
-  [S7.05]   sulla schermata del countdown → si torna al countdown
+Attività completamente indipendente da Peter e dal quiz: nessun link nella
+griglia [S8.HUB], nessuna azione nel countdown [S7.05]. Un solo accesso:
+
+  [S1.HUB], ZONA5 — porta STAFF ONLY, sempre visibile nella lobby
+    Bloccata (run.locked == false): bg_staff_door_locked, lettore badge
+    rosso. Al tocco:
+      suono errore/fail → "Eh no. Il badge non ti dà ancora tutto questo
+      potere. Torna più tardi." (Francesca) → resta in lobby.
+    Autorizzata (run.locked == true, dopo la conferma delle previsioni):
+    bg_staff_door_authorized, lettore badge verde. Al tocco:
+      suono successo/livello completato → il fondale passa al corridoio
+      (bg_campus_run_corridor) → si apre [S9] sopra di esso, senza mostrare
+      la porta aprirsi fisicamente. Alla chiusura si torna alla porta, in
+      lobby — non è mai una scena.
 
 Come si gioca: corsa senza fine dentro il corridoio vetrato del campus, tre
 corsie, swipe per cambiare corsia, saltare e scivolare. Anelli e prodotti

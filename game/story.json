@@ -14,7 +14,13 @@
     "note": "Formato: iPhone portrait 390x844. Il terzo inferiore e' area dialogo.",
     "keynote": "2026-09-09T19:00:00+02:00",
     "_nota_keynote": "Data e ora del keynote vero, ora locale italiana. Il countdown di S7 conta fin qui. Confermata dall'utente il 30 agosto 2026: 9 settembre, ore 19:00.",
-    "_nota_pose_palco": "Le quattro pose 'palco_*' sono figure intere, tagliate dai fogli consegnati il 30 agosto. Servono al giro delle domande di S5: prima il giocatore restava in idle_palco per tutte e ventuno. L'ordine sui fogli NON e' lo stesso per tutti gli stili, quindi il ruolo e' stato assegnato guardandole una per una: attesa = braccia incrociate o in ascolto, presenta = mano aperta che spiega, sicuro = indica (il microfono, per lo showman), dubbio = spalle alzate o perplesso. Sono figure intere come idle_palco: passando dall'una all'altra l'inquadratura non salta, cosa che invece succedeva con le 'espressioni_*', che sono primi piani."
+    "_nota_pose_palco": "Le quattro pose 'palco_*' sono figure intere, tagliate dai fogli consegnati il 30 agosto. Servono al giro delle domande di S5: prima il giocatore restava in idle_palco per tutte e ventuno. L'ordine sui fogli NON e' lo stesso per tutti gli stili, quindi il ruolo e' stato assegnato guardandole una per una: attesa = braccia incrociate o in ascolto, presenta = mano aperta che spiega, sicuro = indica (il microfono, per lo showman), dubbio = spalle alzate o perplesso. Sono figure intere come idle_palco: passando dall'una all'altra l'inquadratura non salta, cosa che invece succedeva con le 'espressioni_*', che sono primi piani.",
+    "assetiInArrivo": [
+      "bg/bg_staff_door_locked.webp",
+      "bg/bg_staff_door_authorized.webp",
+      "bg/bg_campus_run_corridor.webp"
+    ],
+    "_nota_assetiInArrivo": "La porta STAFF ONLY (zona 5 della lobby) e il corridoio della corsa sono scritti e collegati, ma le tre immagini non sono ancora state disegnate/convertite: finche' non arrivano, npm test le segnala come 'da convertire' invece di fallire, e il motore mostra un fondale vuoto al loro posto."
   },
   "assets": {
     "bg": {
@@ -45,7 +51,10 @@
       "halloffame_nicola": "bg/bg_halloffame_nicola.webp",
       "palco_vuoto": "bg/bg_palco_vuoto.webp",
       "control_room_susan": "bg/bg_control_room_susan.webp",
-      "control_room_monitors": "bg/bg_control_room_monitors.webp"
+      "control_room_monitors": "bg/bg_control_room_monitors.webp",
+      "staff_door_locked": "bg/bg_staff_door_locked.webp",
+      "staff_door_authorized": "bg/bg_staff_door_authorized.webp",
+      "campus_run_corridor": "bg/bg_campus_run_corridor.webp"
     },
     "props": {
       "mac_terminale": "props/prop_mac_terminale.webp",
@@ -1360,7 +1369,7 @@
         {
           "t": "say",
           "who": "francesca",
-          "text": "Vai da Peter: ha due sfide per te. Una mettera' alla prova la tua mente, l'altra... i tuoi pollici.",
+          "text": "Vai da Peter: ha una sfida per te, tutta di testa.",
           "se": [
             {
               "var": "locked",
@@ -1416,11 +1425,11 @@
           "t": "hub",
           "var": "zona",
           "start": "tenda",
-          "_nota": "S1.HUB: quattro zone, swipe libero, nessun ordine imposto. La zona 1 e la zona 4 sono scritte due volte, una per stato di run.locked: il motore mostra solo quella la cui condizione e' vera. Dopo le previsioni l'hub si riapre da Peter, che e' quello che resta da fare.",
+          "_nota": "S1.HUB: cinque zone, swipe libero, nessun ordine imposto. La zona 1, la zona 4 e la zona 5 sono scritte due volte ciascuna, una per stato di run.locked: il motore mostra solo quella la cui condizione e' vera. La zona 5 (STAFF ONLY) e' la porta di Apple Campus Run: prima delle previsioni respinge, dopo apre il corridoio e la corsa — non ha niente a che fare con Peter/il quiz. Dopo le previsioni l'hub si riapre da Peter, che e' quello che resta da fare.",
           "tutorial": {
             "who": "francesca",
             "body": "gesto_swipe",
-            "text": "Scorri per scoprire la lobby: le zone sono quattro. Tutto quello che brilla si tocca."
+            "text": "Scorri per scoprire la lobby: le zone sono cinque. Tutto quello che brilla si tocca."
           },
           "zones": [
             {
@@ -1610,6 +1619,51 @@
               "_nota": "Peter e' scenografia, non la guida: nella zona gia' vista resta in scena (\"resta\": true) invece di uscire come fa Francesca. Senza, tornando sulla zona il tavolino era vuoto e non si capiva piu' dove fosse il quiz.",
               "scala": 0.62,
               "bottom": "16%"
+            },
+            {
+              "id": "staff_bloccato",
+              "when": {
+                "var": "locked",
+                "is": false
+              },
+              "bg": "staff_door_locked",
+              "hotspots": [
+                {
+                  "label": "STAFF ONLY",
+                  "x": "30%",
+                  "y": "28%",
+                  "w": "40%",
+                  "h": "58%",
+                  "who": "francesca",
+                  "suono": "porta_negata",
+                  "say": "Eh no. Il badge non ti dà ancora tutto questo potere. Torna più tardi."
+                }
+              ],
+              "_nota": "Zona 5, sempre visibile ma chiusa finche' le previsioni non sono confermate (run.locked). Campus Run non e' piu' una sfida di Peter: si raggiunge solo da qui, dopo lo sblocco. Il lettore badge rosso/verde e' disegnato dentro il fondale stesso (bg_staff_door_locked / bg_staff_door_authorized): non c'e' nessun layer separato da accendere."
+            },
+            {
+              "id": "staff_aperto",
+              "when": {
+                "var": "locked",
+                "is": true
+              },
+              "bg": "staff_door_authorized",
+              "hotspots": [
+                {
+                  "label": "STAFF ONLY",
+                  "x": "30%",
+                  "y": "28%",
+                  "w": "40%",
+                  "h": "58%",
+                  "suono": "porta_autorizzata",
+                  "corridoio": "campus_run_corridor",
+                  "corsa": {
+                    "label": "Apple Campus Run",
+                    "esci": "Torna in lobby"
+                  }
+                }
+              ],
+              "_nota": "Il badge e' autorizzato, ma la porta non si vede aprire: il tocco sposta il fondale sul corridoio (\"corridoio\") e apre subito la corsa sopra di esso (\"corsa\", stesso oggetto che prima stava dentro lo step quizhub). Alla chiusura si torna qui, nella lobby, con la zona 5 com'era — esattamente come il regolamento e i quadri della Hall of Fame."
             }
           ],
           "tutorialSe": {
@@ -1629,7 +1683,7 @@
     "quiz": {
       "title": "S8 — Il quiz di Peter",
       "bg": "lobby_z4_quiz_aperta",
-      "_nota": "[S8.01] e [S8.HUB]. Le battute di presentazione hanno \"se\": si dicono solo la prima volta, non a ogni ritorno dalla griglia dei livelli. Da [S8.01b] a [S8.01d] Peter presenta l'altra sfida, Apple Campus Run, e lo fa malvolentieri: il quiz e' roba sua, la corsa gliel'hanno messa li'. E' l'unico posto dove il gioco spiega che le sfide sono due — la griglia poi le mostra tutte e due insieme.",
+      "_nota": "[S8.01] e [S8.HUB]. Le battute di presentazione hanno \"se\": si dicono solo la prima volta, non a ogni ritorno dalla griglia dei livelli. Peter si occupa esclusivamente del quiz: Apple Campus Run non e' roba sua, non la nomina e non ci sono link verso la corsa da qui. Si raggiunge solo dalla porta STAFF ONLY della lobby.",
       "steps": [
         {
           "t": "hide"
@@ -1649,47 +1703,6 @@
             "is": false
           },
           "text": "Hai fatto il keynote. Ora vediamo quanto conosci quelli passati."
-        },
-        {
-          "t": "show",
-          "who": "peter",
-          "body": "sbuffa",
-          "height": "44%",
-          "bottom": "34%",
-          "se": {
-            "var": "quiz_visto",
-            "is": false
-          },
-          "_nota": "[S8.01b] Cambia posa mentre parla dell'altra sfida e torna ad alza_occhi quando ritorna sul quiz: la faccia dice quello che pensa prima delle parole."
-        },
-        {
-          "t": "say",
-          "who": "peter",
-          "se": {
-            "var": "quiz_visto",
-            "is": false
-          },
-          "text": "Hanno anche messo un gioco dove corri dentro il campus a raccogliere cerchietti."
-        },
-        {
-          "t": "say",
-          "who": "peter",
-          "se": {
-            "var": "quiz_visto",
-            "is": false
-          },
-          "text": "Punti per la prontezza del pollice, non una mia idea ma... fai pure, non ti guarda nessuno."
-        },
-        {
-          "t": "show",
-          "who": "peter",
-          "body": "alza_occhi",
-          "height": "44%",
-          "bottom": "34%",
-          "se": {
-            "var": "quiz_visto",
-            "is": false
-          }
         },
         {
           "t": "say",
@@ -1734,12 +1747,6 @@
           "assegna": "Assegna i moltiplicatori (+{banca})",
           "assegnaPresto": "I moltiplicatori si assegnano il giorno del keynote",
           "assegnati": "Rivedi i moltiplicatori",
-          "corsa": {
-            "label": "Apple Campus Run",
-            "esci": "Torna da Peter",
-            "dopo": "Rieccoti. Hai corso, bravissim{g:o|a}. Le domande sono ancora qui, quando ti va di usare anche la testa.",
-            "_nota": "L'altra sfida, sotto la griglia dei livelli. Non e' una scena: si apre in un riquadro sopra, e chiudendola si e' di nuovo qui, con la griglia com'era. \"dopo\" e' la riga che Peter dice al ritorno, al posto di \"da dove vuoi cominciare?\"."
-          },
           "esci": {
             "label": "Basta cosi', torno in lobby",
             "goto": "lobby"
@@ -2017,16 +2024,11 @@
           "arrivato": "E' iniziato. Buona visione.",
           "cardTitolo": "PREVISIONI COMPLETATE",
           "cardPunti": "PUNTI IN GIOCO",
-          "_nota_azioni": "E' la schermata su cui si riapre il gioco nei giorni fra le previsioni e il keynote, quindi le due sfide stanno qui, a un tocco: chi rientra non deve rifare il giro della lobby per arrivarci. La corsa non e' una scena — si apre sopra il countdown, che resta acceso sotto.",
+          "_nota_azioni": "E' la schermata su cui si riapre il gioco nei giorni fra le previsioni e il keynote. Il quiz di Peter sta qui, a un tocco: chi rientra non deve rifare il giro della lobby per arrivarci. Apple Campus Run NON c'e': niente bottone che scavalchi la porta STAFF ONLY, l'unico modo di raggiungere la corsa resta \"Torna in lobby\" e poi la zona 5.",
           "azioni": [
             {
               "label": "Il quiz di Peter",
               "goto": "quiz"
-            },
-            {
-              "label": "Apple Campus Run",
-              "corsa": true,
-              "esci": "Torna al countdown"
             },
             {
               "label": "Torna in lobby",
@@ -2578,6 +2580,8 @@
       "quiz_sbagliata": "sfx_errore.mp3",
       "quiz_livello": "sfx_quiz_livello.mp3",
       "quiz_fallito": "sfx_quiz_fallito.mp3",
+      "porta_negata": "sfx_errore.mp3",
+      "porta_autorizzata": "sfx_quiz_livello.mp3",
       "logo": "sfx_logo.mp3",
       "titoli_typing": "sfx_typing3.mp3",
       "ceo_pollice": "sfx_applausi_lungo2.mp3",

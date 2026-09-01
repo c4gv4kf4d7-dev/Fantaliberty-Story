@@ -500,22 +500,34 @@ che c'e', come il regolamento e i quadri: non e' una scena, non fa avanzare
 niente, e alla chiusura il giocatore e' esattamente dov'era. Chi volesse
 "integrarlo meglio" portandolo dentro `engine.js` romperebbe proprio questo.
 
-Quattro cose da non annullare per sbaglio:
+Sei cose da non annullare per sbaglio:
 
 1. **Il bottone per uscire sta dentro la corsa, non sopra.** Il gioco le manda
    il nome del posto da cui l'ha aperta (`esci`) e quello diventa l'etichetta:
-   "Torna da Peter", "Torna al countdown". Aprendo `game/runner/` da soli il
-   bottone non compare — non ci sarebbe niente dietro. `#runchiudi` e' solo la
-   via di sicurezza per la pagina che non si carica.
-2. **La corsa si raggiunge da due posti e basta**: sotto la griglia di Peter
-   (`corsa` nello step `quizhub`) e sul countdown (`"corsa": true` fra le
-   azioni). Il countdown e' la schermata su cui si riapre il gioco nei giorni
-   prima del keynote: le due sfide stanno li' a un tocco apposta, chi rientra
-   non deve rifare il giro della lobby. Aggiungere una terza porta vuol dire
-   aggiungere un passaggio, non una comodita'.
-3. **La corsa non e' un quarto livello del quiz.** Sta *sotto* la griglia: i
-   tre pannelli dicono a che punto sono i livelli, e un quarto che non e' un
-   livello toglie loro quel significato.
+   "Torna in lobby". Aprendo `game/runner/` da soli il bottone non compare —
+   non ci sarebbe niente dietro. `#runchiudi` e' solo la via di sicurezza per
+   la pagina che non si carica.
+2. **Campus Run e' completamente separata da Peter e dal quiz.** Non e' una
+   sua sfida, non c'e' nessun link nella griglia [S8.HUB] ne' nel countdown
+   [S7.05], e Peter non la nomina piu'. L'unico modo di raggiungerla e' la
+   porta **STAFF ONLY**, zona 5 dell'hub della lobby (`game/story.json`,
+   scena `lobby`): sempre visibile, ma respinge (fondale `staff_door_locked`,
+   Francesca dice "Eh no. Il badge non ti dà ancora tutto questo potere. Torna
+   più tardi.", suono `porta_negata`) finche' le previsioni non sono
+   confermate (`run.locked`). Dopo il lock la stessa zona diventa
+   `staff_door_authorized`: il tocco (suono `porta_autorizzata`) sposta il
+   fondale sul corridoio `campus_run_corridor` e apre subito la corsa sopra,
+   esattamente come il regolamento e i quadri della Hall of Fame — nessuna
+   animazione di porta che si apre, il cambio e' nel fondale e nel lettore
+   badge (rosso/verde), gia' disegnati dentro le due immagini. Aggiungere un
+   secondo accesso (un bottone nel countdown, un link nel quiz) scavalca
+   apposta la porta, che e' l'unico punto narrativo del gioco per questa
+   attivita': non farlo.
+3. **La corsa non e' un livello del quiz e non e' un'azione del countdown.**
+   Non sta sotto la griglia dei tre livelli (i pannelli dicono a che punto
+   sono le domande, un elemento in piu' toglie loro quel significato) e non
+   sta fra i bottoni del countdown (che offrirebbe una scorciatoia attorno
+   alla porta STAFF ONLY).
 4. **La classifica e' una tabella a parte, e si legge.** `runner_leaderboard`
    tiene **una riga per giocatore** con dentro il miglior punteggio, non lo
    storico delle partite. L'identita' non la chiede la corsa: arriva dal gioco
@@ -559,10 +571,10 @@ di coppie `[y,x]` tracciate su `run_corridoio_base.webp` con
 cerca una formula: ci sono gia' stati due tentativi (spostamento lineare del
 centro, parabola interpolata) e il corridoio non li segue.
 
-Il tono di Peter sulla corsa e' parte della scena, non un commento a margine:
-il quiz e' roba sua e ne va fiero, la corsa gliel'hanno messa li' e non gli va
-giu' ("Dentro. Il. Campus. Di corsa."). E' l'unico posto dove il gioco dice
-che le sfide sono due — togliendo quelle battute non lo dice piu' nessuno.
+Peter non parla piu' della corsa, in nessuna delle due direzioni: non la
+presenta prima di cominciare il quiz e non la commenta al ritorno. E' voluto —
+sono due attivita' scoperte separatamente, non una proposta sua — quindi non
+va reintrodotta una battuta "l'altra sfida" pensando che manchi qualcosa.
 
 ## L'audio: tre regole, e una che vale piu' delle altre
 
