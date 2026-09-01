@@ -203,7 +203,7 @@ un segnaposto e va avanti.
 | `run_corridoio_scena` | Il fondale fisso: il corridoio vetrato con il parco fuori, senza montanti (quelli scorrono a parte) |
 | `run_montante` | Il montante del vetro, ridisegnato a ogni profondità mentre scorre verso di noi |
 | `run_parete_costola` | La costola della parete interna, stessa meccanica dei montanti |
-| `run_pg_corsa` | Il personaggio che corre — foglio da 4 fotogrammi |
+| `run_pg_corsa` | Il personaggio che corre — foglio da 4 fotogrammi (consegnato come `run_pg_run.png`) |
 | `run_pg_salto` | Il salto — 4 fotogrammi |
 | `run_pg_scivolata` | La scivolata — un fotogramma solo |
 | `run_ost_carrello` | Ostacolo da schivare cambiando corsia |
@@ -213,6 +213,15 @@ un segnaposto e va avanti.
 | `run_bonus_iphone` `run_bonus_computer` `run_bonus_visore` | I tre prodotti nelle bolle, 100 punti l'uno; presi tutti e tre, bonus |
 | `run_vita` | L'icona Salute: restituisce una vita |
 | `run_traguardo` | ⚠️ GAP — l'insegna dei traguardi (1000, 2000, …) non è ancora disegnata: al suo posto una piastrella dorata |
+
+Le tavole arrivano con il fondo bianco e vanno preparate prima di entrare in
+`assets/`: `tools/rimuovi_sfondo.py` toglie il fondo dai bordi,
+`tools/togli_bianchi.py` le toppe di bianco chiuse dentro il disegno (il vuoto
+fra il cordino e il fianco), e i fogli vanno tagliati stretti in verticale con i
+quattro fotogrammi **allineati sulla testa**: il motore taglia il foglio in
+quattro colonne uguali e disegna ogni fotogramma alto quanto tutta l'immagine,
+quindi allineandoli sul rettangolo che li contiene la gamba tesa sposta il
+rettangolo e il personaggio balla di lato a ogni passo.
 
 **Nella cartella ma non usati dal gioco**: `run_corridoio_base` (serve alla
 taratura della pista, `tools/taratura_pista.html`), `run_corridoio_vuoto`,
