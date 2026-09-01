@@ -2897,7 +2897,7 @@ function apriMoltiplicatori(stato, extra) {
 {
   VN.clearSave();
   let spedito = null;
-  window.fetch = (url, opt) => { spedito = JSON.parse(opt.body); return Promise.resolve({ ok: true }); };
+  window.fetch = (url, opt) => { spedito = JSON.parse(opt.body).p; return Promise.resolve({ ok: true }); };
   apriMoltiplicatori({ mult_bank: 0.15,
     nome: 'Tester', genere: 'f', store: 'liberty', reparto: 'operation',
     anni: '2', device: '13 mini', stile: 'drip',
@@ -2929,7 +2929,7 @@ function apriMoltiplicatori(stato, extra) {
 {
   VN.clearSave();
   let spedito = null;
-  window.fetch = (url, opt) => { spedito = JSON.parse(opt.body); return Promise.resolve({ ok: true }); };
+  window.fetch = (url, opt) => { spedito = JSON.parse(opt.body).p; return Promise.resolve({ ok: true }); };
   apriMoltiplicatori({ mult_bank: 0.05, runner_record: 4200,
     quiz: { base: { passato: true, tentativi: 1, pool: 0, seconda: false, vinto: 0.05 } } },
     { backend: { url: 'https://esempio', chiave: 'x' } });
@@ -2950,7 +2950,7 @@ function apriMoltiplicatori(stato, extra) {
   // la prima spedizione viene rifiutata (colonna mancante, rete): finisce in
   // coda e riparte dopo. Deve tornare come la stessa riga, non come una nuova.
   window.fetch = (url, opt) => {
-    inviati.push(JSON.parse(opt.body));
+    inviati.push(JSON.parse(opt.body).p);
     url_chiamate.push(url);
     return Promise.resolve({ ok: inviati.length > 1, status: 400, text: () => Promise.resolve('') });
   };

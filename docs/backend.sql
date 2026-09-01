@@ -99,24 +99,19 @@ drop policy if exists "chiunque puo inserire la propria schedina" on public.runs
 drop policy if exists "chiunque puo aggiornare la propria schedina" on public.runs;
 revoke insert, update, select, delete on public.runs from anon;
 
-create or replace function public.upsert_run(
-  run_id   uuid,
-  nome     text,
-  cognome  text default null,
-  genere   text default null,
-  store    text default null,
-  reparto  text default null,
-  anni     text default null,
-  device   text default null,
-  stile    text default null,
-  punti    integer default null,
-  picks    jsonb default '{}'::jsonb,
-  flags    jsonb default '{}'::jsonb,
-  quiz     jsonb default '{}'::jsonb,
-  runner   jsonb default '{}'::jsonb,
-  email    text default null,
-  versione text default null
-)
+-- Se la funzione esisteva gia' con un parametro per campo (una versione di
+-- passaggio di questa stessa correzione, il 1 settembre 2026): dentro la
+-- funzione un identificatore come "run_id" risultava ambiguo — poteva essere
+-- il parametro o la colonna della tabella, e Postgres si rifiutava con 42702
+-- "column reference is ambiguous" — proprio perche' i nomi dei parametri
+-- ricalcavano apposta quelli del payload. Va tolta prima di ricrearla con un
+-- unico parametro jsonb, che non ha questo problema:
+drop function if exists public.upsert_run(
+  uuid, text, text, text, text, text, text, text, text, integer,
+  jsonb, jsonb, jsonb, jsonb, text, text
+);
+
+create or replace function public.upsert_run(p jsonb)
 returns void
 language plpgsql
 security definer
@@ -127,8 +122,22 @@ begin
     run_id, nome, cognome, genere, store, reparto, anni, device, stile,
     punti, picks, flags, quiz, runner, email, versione
   ) values (
-    run_id, nome, cognome, genere, store, reparto, anni, device, stile,
-    punti, picks, flags, quiz, runner, email, versione
+    (p->>'run_id')::uuid,
+    p->>'nome',
+    p->>'cognome',
+    p->>'genere',
+    p->>'store',
+    p->>'reparto',
+    p->>'anni',
+    p->>'device',
+    p->>'stile',
+    (p->>'punti')::integer,
+    coalesce(p->'picks', '{}'::jsonb),
+    coalesce(p->'flags', '{}'::jsonb),
+    coalesce(p->'quiz', '{}'::jsonb),
+    coalesce(p->'runner', '{}'::jsonb),
+    p->>'email',
+    p->>'versione'
   )
   on conflict (run_id) do update set
     nome = excluded.nome, cognome = excluded.cognome, genere = excluded.genere,
@@ -139,8 +148,8 @@ begin
 end;
 $$;
 
-revoke all on function public.upsert_run from public;
-grant execute on function public.upsert_run to anon;
+revoke all on function public.upsert_run(jsonb) from public;
+grant execute on function public.upsert_run(jsonb) to anon;
 
 -- Nessuna policy di select sulla tabella: di default RLS nega tutto quello
 -- che non e' esplicitamente permesso, e ora anon non ha nemmeno il grant di

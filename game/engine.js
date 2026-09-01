@@ -2573,7 +2573,12 @@
         'Content-Type': 'application/json',
         'Prefer': 'return=minimal'
       },
-      body: JSON.stringify(corpo)
+      // La funzione prende un unico parametro jsonb ('p'): coi parametri
+      // nominati uno per campo, dentro la funzione un identificatore come
+      // 'run_id' e' ambiguo (puo' essere il parametro o la colonna della
+      // tabella, Postgres si rifiuta con 42702) proprio perche' i nomi dei
+      // parametri ricalcano apposta quelli del payload.
+      body: JSON.stringify({ p: corpo })
     }).then(function (r) {
       if (r.ok) return svuotaCoda();
       // Un rifiuto va in coda e si riprova al prossimo avvio, ma resta muto per

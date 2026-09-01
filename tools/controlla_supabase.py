@@ -50,7 +50,12 @@ DUMMY = {
 def prova_upsert(cfg, campi):
     corpo = {c: DUMMY.get(c) for c in campi}
     url = cfg['url'].rstrip('/') + '/rest/v1/rpc/upsert_run'
-    req = urllib.request.Request(url, data=json.dumps(corpo).encode(), method='POST', headers={
+    # la funzione prende un unico parametro jsonb ('p'), come il motore
+    # (game/engine.js, invia()): con un parametro per campo, dentro la
+    # funzione un identificatore come 'run_id' risultava ambiguo (poteva
+    # essere il parametro o la colonna della tabella), perche' i nomi dei
+    # parametri ricalcavano apposta quelli del payload.
+    req = urllib.request.Request(url, data=json.dumps({'p': corpo}).encode(), method='POST', headers={
         'apikey': cfg['chiave'], 'Authorization': 'Bearer ' + cfg['chiave'],
         'Content-Type': 'application/json', 'Prefer': 'return=minimal'})
     try:
