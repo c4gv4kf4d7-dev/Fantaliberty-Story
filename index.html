@@ -22,7 +22,7 @@
   gtag('js', new Date());
   gtag('config', 'G-SYX1RZLNNE');
 </script>
-<link rel="stylesheet" href="./game/engine.css?v=117">
+<link rel="stylesheet" href="./game/engine.css?v=118">
 </head>
 <body>
 <div id="stage">
@@ -270,6 +270,17 @@
        toccare #curtain, che serve all'intro e viene spento a ogni cambio scena -->
   <div id="nero"></div>
 
+  <!-- Il pulsante Esci: visibile solo da [S2] fino al ritorno in lobby dopo le
+       previsioni confermate (aggiornaBottoneEsci() in engine.js). Apre il
+       menu di uscita: salvare o no, poi tornare alla lobby o chiudere il
+       gioco. Piccolo e in un angolo come il selettore dell'audio, non un
+       bottone che compete con la scena. L'icona (il cartello EXIT in pixel
+       art, props/prop_exit) si assegna in VN.boot, come il logo dello
+       studio: non e' contenuto di scena, quindi non passa da story.json. -->
+  <button id="btnEsciGioco" aria-label="Esci dal gioco">
+    <img id="btnEsciIcon" alt="">
+  </button>
+
   <!-- Selettore dell'audio: un bottone piccolo in un angolo, e un pannello con
        due interruttori. Musica ed effetti separati perche' danno fastidio in
        momenti diversi: si accendono e si spengono, ciascuno per conto suo, non
@@ -323,8 +334,8 @@
   </div>
 </div>
 
-<script src="./game/analytics.js?v=117"></script>
-<script src="./game/engine.js?v=117"></script>
+<script src="./game/analytics.js?v=118"></script>
+<script src="./game/engine.js?v=118"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -414,7 +425,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=117', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=118', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e

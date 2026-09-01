@@ -537,15 +537,19 @@
     try { return global.localStorage; } catch (e) { return null; }   // Safari privato
   }
 
+  // Ritorna true/false: il menu Esci ("Vuoi salvare i progressi?") deve poter
+  // dire al giocatore se il salvataggio e' andato a buon fine, non solo
+  // tentarlo in silenzio come fa il checkpoint automatico a ogni step.
   VN.saveNow = function () {
     var s = store();
-    if (!s || !VN.sceneId || !VN.progressed) return;
+    if (!s || !VN.sceneId || !VN.progressed) return false;
     try {
       s.setItem(SAVE_KEY, JSON.stringify({
         v: (VN.story.meta && VN.story.meta.version) || '0',
         scene: VN.sceneId, i: VN.i, state: VN.state, ts: Date.now()
       }));
-    } catch (e) { /* quota piena: il gioco continua comunque */ }
+      return true;
+    } catch (e) { return false; /* quota piena: il gioco continua comunque */ }
   };
 
   VN.readSave = function () {
@@ -573,6 +577,73 @@
     var s = store();
     if (s) { try { s.removeItem(SAVE_KEY); } catch (e) {} }
   };
+
+  /* ---------------- il menu Esci ----------------
+     Disponibile solo nel tratto lungo senza altri punti di pausa: da [S2]
+     (raggiunto_s2) fino al ritorno in lobby che segue la conferma delle
+     previsioni (post_lobby_visto). Prima di [S2] la lobby stessa e' gia' un
+     posto sicuro dove fermarsi; dopo quel ritorno, countdown/quiz/Campus Run
+     hanno gia' i loro punti di ripresa (il countdown e' proprio pensato per
+     essere lasciato e ripreso). Aggiungere Esci anche li' sarebbe una
+     scorciatoia in piu' verso posti che una pausa ce l'hanno gia'.
+
+     "Salva" usa lo stesso salvataggio locale del checkpoint automatico
+     (VN.saveNow/hasSave): non e' un sistema parallelo, e' lo stesso — solo
+     che qui il giocatore lo chiede esplicitamente e vede se e' riuscito. */
+  function aggiornaBottoneEsci() {
+    if (!el || !el.btnEsciGioco) return;
+    el.btnEsciGioco.classList.toggle('on', !!VN.state.raggiunto_s2 && !VN.state.post_lobby_visto);
+  }
+
+  function tentaSalvataggioEsci() {
+    // VN.saveNow() si rifiuta di salvare prima della prima scelta vera
+    // (VN.progressed), per non offrire di "riprendere" un nulla. Ma qui il
+    // giocatore lo sta chiedendo esplicitamente, dopo aver gia' raggiunto
+    // [S2]: c'e' sempre qualcosa di significativo da salvare.
+    VN.progressed = true;
+    if (VN.saveNow()) return scegliDoveAndareEsci();
+    // fallito (es. quota piena): lo stato in memoria non si tocca, si
+    // avvisa e si lascia scegliere se riprovare o continuare senza salvare
+    mostraModale({
+      text: 'Il salvataggio non e\' riuscito. Riprovare?',
+      si: 'RIPROVA', no: 'CONTINUA SENZA SALVARE'
+    }, tentaSalvataggioEsci, scegliDoveAndareEsci);
+  }
+
+  function scegliDoveAndareEsci() {
+    mostraModale({
+      text: 'Cosa vuoi fare?',
+      si: 'TORNA ALLA LOBBY', no: 'ESCI DAL GIOCO'
+    }, tornaAllaLobbyDaEsci, esciDalGiocoDaEsci);
+  }
+
+  // Una pausa narrativa, non un reset: lo stato resta quello che era, si
+  // rientra in lobby e Francesca dice una riga sola — mai l'intro normale
+  // ne' le congratulazioni post-previsioni, quelle sono per chi ci arriva
+  // per la prima volta o dopo aver chiuso davvero la schedina.
+  function tornaAllaLobbyDaEsci() {
+    VN.state.esci_ritorno = true;
+    goScene('lobby');
+  }
+
+  // Come riaprire l'app da capo, senza cancellare un salvataggio appena
+  // fatto: VN.boot() con scene:null guarda da solo se c'e' una partita da
+  // riprendere e lo chiede, esattamente come al prossimo avvio vero.
+  function esciDalGiocoDaEsci() {
+    VN.boot(VN.story, {
+      dev: false, scene: null, stato: null,
+      speed: VN.speed, banca: VN.banca, quiz: VN.quiz, backend: VN.backend
+    });
+  }
+
+  function apriMenuEsci() {
+    if (!VN.state.raggiunto_s2 || VN.state.post_lobby_visto) return;   // il bottone non dovrebbe esserci, ma per sicurezza
+    stopTyping();
+    mostraModale({
+      text: 'Vuoi salvare i progressi? Potrai riprendere la partita piu\' tardi.',
+      si: 'SI\', SALVA', no: 'NO'
+    }, tentaSalvataggioEsci, scegliDoveAndareEsci);
+  }
 
   var VISUAL = { show: 1, hide: 1, react: 1, prop: 1, bg: 1, set: 1, sipario: 1, io: 1 };
 
@@ -754,6 +825,7 @@
   }
 
   function run() {
+    aggiornaBottoneEsci();
     if (!VN.scene) return;
     var steps = VN.scene.steps || [];
     if (VN.i >= steps.length) {
@@ -3570,7 +3642,12 @@
 
     var cur = -1;
     var visti = {};
-    var scorso = false;                 // il giocatore ha gia' cambiato zona?
+    // Chi rientra in lobby dal menu Esci ha gia' girato l'hub in passato: non
+    // gli si chiede un altro swipe a vuoto solo per riaprire la tenda, e
+    // niente tutorial da rivedere. "esci_ritorno" e' un flag a un colpo solo,
+    // consumato qui.
+    var scorso = !!VN.state.esci_ritorno;
+    if (VN.state.esci_ritorno) VN.state.esci_ritorno = false;
     var uscito = false;                 // l'hub ha gia' ceduto il turno: niente doppi goto
 
     function entra(i, dir) {
@@ -5211,10 +5288,16 @@
       carnome: $('carnome'), cardesc: $('cardesc'), carbattuta: $('carbattuta'),
       carperk: $('carperk'), carok: $('carok'),
       audiobtn: $('audiobtn'), audiowrap: $('audiowrap'), audiomus: $('audiomus'),
-      audiosfx: $('audiosfx'), audiook: $('audiook')
+      audiosfx: $('audiosfx'), audiook: $('audiook'),
+      btnEsciGioco: $('btnEsciGioco'), btnEsciIcon: $('btnEsciIcon')
     };
     el.avatar.innerHTML = '';
     el.avatar.classList.remove('on', 'entra');
+    if (el.btnEsciGioco) el.btnEsciGioco.onclick = function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      apriMenuEsci();
+    };
+    if (el.btnEsciIcon) el.btnEsciIcon.src = assetUrl('props', 'exit');
     if ($('badgewrap')) $('badgewrap').classList.remove('in');
     if ($('coriandoli')) $('coriandoli').innerHTML = '';
     if (el.nero) el.nero.classList.remove('on', 'sfuma');   // ripartenza pulita: mai il nero addosso
@@ -5250,7 +5333,8 @@
            e.target.closest('#multwrap') || e.target.closest('#regole') ||
            e.target.closest('#emailwrap') || e.target.closest('#quadrowrap') ||
            e.target.closest('#runwrap') || e.target.closest('#propwrap') ||
-           e.target.closest('#audiowrap') || e.target.closest('#audiobtn'))) return;
+           e.target.closest('#audiowrap') || e.target.closest('#audiobtn') ||
+           e.target.closest('#btnEsciGioco'))) return;
       VN.step();
     };
     global.document.onkeydown = function (e) {

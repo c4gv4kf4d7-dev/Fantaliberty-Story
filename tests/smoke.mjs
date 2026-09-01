@@ -1653,7 +1653,10 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   //  comunque: quello che si verifica e' la condizione nello script.)
   const intro = story.scenes.lobby.steps.filter(
     (st) => (st.t === 'say' || st.t === 'show') && /Io sono Francesca|non si inizia senza di te|verso la tenda/.test(String(st.text || '')));
-  assert.ok(intro.length >= 2 && intro.every((st) => st.se && st.se.var === 'locked' && st.se.is === false),
+  // "se" e' un array (AND con esci_ritorno, per il menu Esci): basta che una
+  // delle condizioni chieda locked === false
+  assert.ok(intro.length >= 2 && intro.every((st) => [].concat(st.se || [])
+    .some((c) => c.var === 'locked' && c.is === false)),
     'le battute d\'apertura sono legate a "previsioni non ancora fatte"');
   const dette = [];
   for (let k = 0; k < 12 && !$('hub').classList.contains('on'); k++) {
@@ -1667,6 +1670,8 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.match(tutto, /moltiplicare i punti/, 'POST-L06: e spiega a cosa serve');
   assert.ok($('hub').classList.contains('on'), 'e poi si torna a girare la lobby');
   assert.equal(VN.state.post_lobby_visto, true, 'la sequenza si segna come vista');
+  assert.equal($('btnEsciGioco').classList.contains('on'), false,
+    'il pulsante Esci sparisce per sempre dopo il ritorno post-previsioni');
   // la posa "orgogliosa", che prima non usava nessuno, e' qui
   const orgogliosa = story.scenes.lobby.steps.some(
     (st) => st.t === 'show' && st.who === 'francesca' && st.body === 'orgogliosa');
@@ -1681,6 +1686,93 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   VN.state = stato;
   VN.step(); VN.step(); VN.step();
   assert.ok($('hub').classList.contains('on'), 'la seconda volta si arriva subito all\'hub');
+  VN.clearSave();
+}
+
+/* ---------- 5n. il menu Esci: disponibile solo da [S2] al ritorno in lobby
+   post-previsioni, salva in locale, e "torna alla lobby" e' una pausa, non
+   un reset ---------- */
+{
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'lobby' });
+  assert.equal($('btnEsciGioco').classList.contains('on'), false,
+    'prima di [S2] il pulsante Esci non c\'e\'');
+
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'aggancio' });
+  VN.state.stile = 'drip';
+  VN.step();   // consuma lo step "set raggiunto_s2"
+  assert.equal(VN.state.raggiunto_s2, true, 'raggiunto_s2 si alza entrando in S2');
+  assert.equal($('btnEsciGioco').classList.contains('on'), true,
+    'da qui in poi il pulsante Esci c\'e\'');
+
+  // tocco: prima domanda, "vuoi salvare i progressi?"
+  $('btnEsciGioco').onclick({ stopPropagation() {} });
+  assert.ok($('modal').classList.contains('on'), 'si apre il menu Esci');
+  assert.match($('modaltxt').textContent, /salvare i progressi/i);
+  let bottoni = [...$('modalbtns').querySelectorAll('.ch')];
+  assert.deepEqual(bottoni.map((b) => b.textContent), ['SI\', SALVA', 'NO']);
+
+  // NO: niente salvataggio, si passa dritti alla seconda domanda
+  assert.equal(VN.hasSave(story), false, 'nessun salvataggio ancora');
+  bottoni[1].onclick({ stopPropagation() {} });
+  assert.equal(VN.hasSave(story), false, 'NO non salva niente');
+  assert.match($('modaltxt').textContent, /cosa vuoi fare/i);
+  bottoni = [...$('modalbtns').querySelectorAll('.ch')];
+  assert.deepEqual(bottoni.map((b) => b.textContent), ['TORNA ALLA LOBBY', 'ESCI DAL GIOCO']);
+
+  // TORNA ALLA LOBBY: pausa narrativa, non un reset. Lo stato (qui: lo
+  // stile scelto) resta, e Francesca dice la riga esatta dello spec, non
+  // l'intro normale ne' le congratulazioni post-previsioni.
+  bottoni[0].onclick({ stopPropagation() {} });
+  assert.equal(VN.sceneId, 'lobby', 'si torna alla scena lobby');
+  assert.equal(VN.state.stile, 'drip', 'lo stato della partita non si tocca');
+  const detteRitorno = [];
+  for (let k = 0; k < 6 && !$('hub').classList.contains('on'); k++) {
+    if (txt()) detteRitorno.push(txt());
+    VN.step();
+  }
+  const tuttoRitorno = detteRitorno.join(' | ');
+  assert.match(tuttoRitorno,
+    /Non pensavo saresti (scappato|scappata) cosi' presto\. Il teatro e' da quella parte\. Continua quando vuoi\./,
+    'Francesca dice esattamente la riga del ritorno da Esci');
+  assert.doesNotMatch(tuttoRitorno, /Io sono Francesca/, 'non l\'intro normale');
+  assert.doesNotMatch(tuttoRitorno, /com'e' andata/, 'ne\' le congratulazioni post-previsioni');
+  assert.ok($('hub').classList.contains('on'), 'e si arriva comunque all\'hub');
+  assert.equal(VN.state.esci_ritorno, false,
+    'il flag e\' un colpo solo: consumato da showHub() una volta aperto l\'hub');
+  assert.equal($('btnEsciGioco').classList.contains('on'), true,
+    'il pulsante Esci resta disponibile: le previsioni non sono confermate');
+
+  // di nuovo Esci, stavolta SI', SALVA: deve salvare per davvero
+  $('btnEsciGioco').onclick({ stopPropagation() {} });
+  [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });   // SI', SALVA
+  assert.equal(VN.hasSave(story), true, 'SI\', SALVA salva sul serio');
+  bottoni = [...$('modalbtns').querySelectorAll('.ch')];
+  assert.match($('modaltxt').textContent, /cosa vuoi fare/i, 'poi la seconda domanda');
+
+  // ESCI DAL GIOCO: come riaprire l'app, senza cancellare il salvataggio
+  // appena fatto — la boot vera lo trova e chiede se riprendere
+  bottoni[1].onclick({ stopPropagation() {} });
+  assert.ok($('choices').classList.contains('on'), 'la boot chiede se riprendere');
+  assert.match(txt(), /vuoi riprendere/i);
+  VN.clearSave();
+}
+
+/* ---------- 5n-bis. "NO" al salvataggio non tocca un salvataggio precedente ---------- */
+{
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'aggancio' });
+  VN.state.stile = 'showman';
+  VN.step();
+  VN.progressed = true;
+  VN.saveNow();
+  assert.ok(VN.hasSave(story), 'c\'e\' gia\' un salvataggio da prima');
+  const salvataggioPrima = dom.window.localStorage.getItem('fl_nexus_save_v1');
+
+  $('btnEsciGioco').onclick({ stopPropagation() {} });
+  [...$('modalbtns').querySelectorAll('.ch')][1].onclick({ stopPropagation() {} });   // NO
+  assert.equal(dom.window.localStorage.getItem('fl_nexus_save_v1'), salvataggioPrima,
+    'NO non aggiorna e non cancella il salvataggio che c\'era gia\'');
   VN.clearSave();
 }
 
