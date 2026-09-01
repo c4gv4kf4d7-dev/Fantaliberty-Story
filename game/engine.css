@@ -197,11 +197,24 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #propwrap.fondale #prop{display:none}
 /* Sullo schermo del Mac c'e' gia' disegnata una finestra di sistema: il
    terminale ci si appoggia sopra con un pannello suo, se no le due scritte si
-   accavallano e non si legge niente. */
-#propwrap.fondale #screen{left:0;top:0;width:auto;height:auto;
- background:rgba(228,238,248,.97);border:1px solid rgba(20,40,70,.35);
- color:#12263f;padding:.5em .6em;font-size:clamp(6px,2vw,12px);line-height:1.35;
- box-shadow:inset 0 0 0 2px rgba(255,255,255,.6)}
+   accavallano e non si legge niente. E il pannello non e' una finestra
+   moderna: e' un tubo catodico acceso di trent'anni fa — fosforo verde su
+   nero, righe di scansione, la luce che sfarfalla appena e gli angoli
+   arrotondati del vetro. */
+#propwrap.fondale #screen{left:0;top:0;width:auto;height:auto;overflow:hidden;
+ background:radial-gradient(120% 130% at 50% 42%, #1b3327 0%, #12241b 55%, #060d09 100%);
+ color:#8ff3b4;padding:.55em .65em;font-size:clamp(6px,2vw,12px);line-height:1.4;
+ border-radius:7px;text-shadow:0 0 4px rgba(120,255,170,.55);
+ box-shadow:inset 0 0 18px rgba(0,0,0,.85), inset 0 0 3px rgba(150,255,190,.35);
+ animation:crt 4.7s steps(60) infinite}
+/* le righe del tubo: sopra il testo, ma non si prendono i tocchi */
+#propwrap.fondale #screen::after{content:"";position:absolute;inset:0;
+ background:repeating-linear-gradient(to bottom,
+   rgba(0,0,0,.34) 0px, rgba(0,0,0,.34) 1px, transparent 1px, transparent 3px);
+ pointer-events:none;border-radius:7px}
+/* il fosforo non sta mai fermo del tutto: due punti percentuali di luce, non di piu' */
+@keyframes crt{0%,100%{filter:brightness(1)}47%{filter:brightness(.98)}52%{filter:brightness(1.02)}}
+#propwrap.fondale .fk{opacity:.62}
 
 /* ---------- badge dell'accredito ----------
    Lucas lo consegna a fine registrazione: l'immagine porta la mela, il nome

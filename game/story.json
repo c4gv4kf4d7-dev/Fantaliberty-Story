@@ -348,6 +348,8 @@
     "registrazione": {
       "title": "Atto 1 — Registrazione",
       "bg": "macintosh",
+      "bgFx": "basso",
+      "_nota_taglio": "\"basso\" ancora il fondale in basso invece che in alto: quello che avanza si taglia dal soffitto, non dalla scrivania. Serve perche' su Safari, con le barre del browser, la finestra e' piu' bassa dell'immagine: ancorato in alto il Mac scendeva e il box del dialogo gli finiva davanti. Cosi' il box si appoggia sulla scrivania e il Mac resta tutto sopra.",
       "terminal": [
         {
           "key": "NOME:",
@@ -409,10 +411,8 @@
           "t": "show",
           "who": "lucas",
           "body": "neutro",
-          "height": "40%",
-          "bottom": "12%",
-          "right": "-8%",
-          "_nota": "Piu' piccolo e piu' in basso del solito: lo schermo del Mac sta dentro il fondale, e con la misura piena (56%) Lucas ci finiva davanti e copriva il terminale."
+          "right": "-12%",
+          "_nota": "Misura di default, come in ogni altra scena: Lucas dev'essere sempre alto uguale, e qui era stato rimpicciolito. E' solo spostato piu' a destra, perche' il Mac sta in mezzo al fondale e il terminale va lasciato leggibile."
         },
         {
           "t": "prop",
@@ -428,7 +428,8 @@
           "who": "lucas",
           "var": "nome",
           "max": 14,
-          "text": "Ti registro al terminale. Come ti chiamiamo? Nome o soprannome, decidi tu.",
+          "placeholder": "Nome",
+          "text": "Ti registro subito al terminale. Nome e cognome?",
           "_nota": "Il nome vero non serve: e' l'etichetta con cui il gioco si rivolge al giocatore e con cui compare in classifica. Il regolamento (zona 3 della lobby) lo chiama nickname, e deve restare coerente con quello che si chiede qui."
         },
         {
@@ -437,7 +438,8 @@
           "var": "cognome",
           "max": 18,
           "opzionale": true,
-          "text": "E il cognome? Facoltativo — se lo lasci, in classifica compari come nome e iniziale.",
+          "placeholder": "Cognome (se vuoi)",
+          "_nota_domanda": "Niente \"text\": la domanda l'ha gia' fatta il campo prima (\"Nome e cognome?\") e quella battuta resta a schermo. Quale dei due campi si sta scrivendo lo dice il suggerimento dentro al campo.",
           "_nota": "Facoltativo davvero: il bottone resta cliccabile a campo vuoto (st.opzionale in showInput). Usato solo per identificare il giocatore nei punteggi come 'Nome C.' — non e' il nickname con cui il gioco si rivolge a lui, quello resta 'nome'."
         },
         {
@@ -2103,8 +2105,8 @@
       "next": "lobby",
       "foglie": 3,
       "pulviscolo": 10,
-      "bgFx": "blur",
-      "_nota": "Stesso fondale della registrazione, tenuto fuori fuoco: il badge e i coriandoli si staccano, e non si vede un cambio di posto fra la stampa e la consegna."
+      "bgFx": "blur basso",
+      "_nota": "Stesso fondale della registrazione e stesso taglio (\"basso\"), tenuto fuori fuoco: il badge e i coriandoli si staccano, e fra la stampa e la consegna non si vede un cambio di posto."
     }
   },
   "carrellate": {
