@@ -85,6 +85,13 @@ compresa la 5 — la porta **STAFF ONLY** di Apple Campus Run, gia' sbloccata:
 e' cosi' che si prova la corsa senza dover rigiocare fino in fondo le
 previsioni ogni volta.
 
+C'e' anche una scorciatoia dedicata, sotto "Dall'inizio, come un giocatore
+vero": **"Apple Campus Run — porta STAFF ONLY gia' sbloccata"** salta dritto
+alla lobby con l'hub gia' aperto sulla zona 5 sbloccata, un tocco dalla corsa
+vera e propria — senza nemmeno lo swipe. Usa `VN.state.__devZona`
+(`indiceIniziale()` in `engine.js`), una variabile che esiste solo per questo:
+non e' contenuto della storia e un giocatore vero non la imposta mai.
+
 L'elenco delle scene **non e' scritto a mano**: si ricava seguendo i `next` a
 partire da `meta.start`, e chi resta fuori (le scene che si raggiungono solo con
 un `goto`) finisce in coda. Una scena nuova in `story.json` compare da sola.
