@@ -139,6 +139,14 @@ trova "Riprendi / Ricomincia da capo": riprendendo, il motore rigioca in silenzi
 solo gli step visivi della scena (sfondo, sprite, terminale) e riparte dalla battuta
 esatta in cui si era interrotto. A storia finita il salvataggio viene cancellato.
 
+**Il pulsante ESCI** (in alto a sinistra) offre lo stesso salvataggio a comando,
+ma solo dove serve: da `[S2]` fino al ritorno in lobby dopo le previsioni
+confermate, l'unico tratto lungo del gioco senza un punto di pausa naturale.
+Chiede prima se salvare, poi se tornare alla lobby (pausa, non reset — lo stato
+resta quello che era) o uscire (`VN.boot()` con `scene:null`, la stessa
+schermata di un riavvio vero). Dettagli e motivazioni in `CLAUDE.md`, sezione
+"Il pulsante Esci".
+
 ## Scrivere una scena
 
 Tutto lo script vive in `game/story.json`. Ogni scena e' una lista di `steps`:

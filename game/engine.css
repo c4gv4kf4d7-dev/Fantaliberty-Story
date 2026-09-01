@@ -1170,6 +1170,23 @@ html.inattesa, html.inattesa body{background:#0a0a0f;overflow:hidden}
 #gate .gateSub b{display:inline-block;margin-top:.7em;font-weight:400;
   font-size:1.5em;color:#ff9f57}
 
+/* ===== Pulsante Esci =====
+   Stessa logica e stessa misura del selettore audio: piccolo, in un angolo
+   opposto, spento finche' non serve. Icona (il cartello EXIT consegnato in
+   pixel art, props/prop_exit) invece di un'icona disegnata a mano in SVG
+   come l'audio — qui il disegno c'era gia'. Compare solo da [S2] fino al
+   ritorno in lobby dopo le previsioni confermate: display:none di base, .on
+   lo accende (aggiornaBottoneEsci() in engine.js). */
+#btnEsciGioco{position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;
+  z-index:6;width:48px;height:48px;padding:0;border:0;border-radius:8px;
+  background:rgba(10,10,15,.45);
+  display:none;align-items:center;justify-content:center;
+  opacity:.5;cursor:pointer;transition:opacity .2s}
+#btnEsciGioco.on{display:flex}
+#btnEsciGioco img{width:36px;height:auto;display:block;image-rendering:pixelated}
+#btnEsciGioco:hover,#btnEsciGioco:focus-visible{opacity:1}
+#curtain.on ~ #btnEsciGioco{opacity:.28}
+
 /* ===== Selettore dei volumi =====
    Il bottone sta in alto a destra, piccolo e spento: deve essere trovabile
    quando lo si cerca e invisibile quando non lo si cerca. Sta sopra tutto

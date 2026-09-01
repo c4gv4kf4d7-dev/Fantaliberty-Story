@@ -224,6 +224,58 @@ una zona muta non si spegne il contenitore (`in`), che porterebbe via anche
 quelle e lascerebbe il giocatore senza comandi visibili: si spegne solo il
 fumetto, con la classe `muto`.
 
+## Il pulsante Esci: solo dove non c'e' gia' un punto di pausa
+
+`#btnEsciGioco` (in alto a sinistra, come il selettore audio) compare **solo**
+da `[S2]` (`aggancio`) al ritorno in lobby che segue la conferma delle
+previsioni — mai prima, mai dopo. `aggiornaBottoneEsci()` in `engine.js`
+decide con due variabili di `VN.state`, non guardando il nome della scena:
+`raggiunto_s2` (si alza al primo step di `aggancio`, non si riabbassa mai) e
+`post_lobby_visto` (si alza quando la sequenza di ritorno post-previsioni e'
+stata vista). E' chiamata da un solo punto, l'inizio di `run()`, cosi' resta
+aggiornata a ogni cambio di scena e a ogni step senza dover ricordarsi di
+chiamarla da ogni punto che tocca quelle due variabili.
+
+**Il resto del gioco non ha bisogno di questo pulsante**: prima di `[S2]` la
+lobby stessa e' gia' un posto sicuro dove fermarsi, e dopo il ritorno
+post-previsioni countdown/quiz/Campus Run hanno gia' i loro punti di ripresa
+— il countdown esiste apposta per essere lasciato e riaperto. Aggiungerlo
+anche li' sarebbe una seconda via verso un posto che una pausa ce l'ha gia'.
+
+Il tocco apre due domande in sequenza (`mostraModale()`, riusato cosi' com'e',
+non un sistema di dialoghi a parte):
+
+1. **"Vuoi salvare i progressi?"** — SI, SALVA usa **lo stesso** salvataggio
+   locale del checkpoint automatico (`VN.saveNow()`/`VN.hasSave()`), non un
+   secondo sistema. La differenza e' che qui il giocatore lo chiede apposta,
+   quindi `VN.saveNow()` non deve rifiutarsi solo perche' non ha ancora fatto
+   una scelta vera (`VN.progressed`): `tentaSalvataggioEsci()` lo forza a
+   `true` prima di salvare, perche' arrivare a `[S2]` e' gia' un punto valido
+   da cui riprendere. Se il salvataggio fallisce (quota piena) si avvisa e si
+   lascia riprovare, senza toccare lo stato in memoria. **NO** non tocca
+   proprio niente: se c'era gia' un salvataggio di prima, resta li' intatto.
+2. **"Cosa vuoi fare?"** — TORNA ALLA LOBBY o ESCI DAL GIOCO. Sono due
+   domande separate apposta: salvare e uscire sono decisioni indipendenti.
+
+**"Torna alla lobby" e' una pausa narrativa, non un reset.** Lo stato resta
+quello che era (avatar, stile, previsioni gia' fatte, tutto), e Francesca dice
+**una riga sola, sempre la stessa** — mai l'intro normale ("Io sono
+Francesca...") ne' le congratulazioni post-previsioni, che sono per chi ci
+arriva per la prima volta o dopo aver chiuso davvero la schedina. Il
+meccanismo e' `VN.state.esci_ritorno`, un flag a un colpo solo: lo alza
+`tornaAllaLobbyDaEsci()` prima del `goScene('lobby')`, lo consuma
+`showHub()` (che lo rispegne e insieme segna la lobby come gia' girata, cosi'
+non tocca rifare lo swipe del tutorial per riaprire la tenda). Le due sequenze
+esistenti in `story.json` (l'intro pre-previsioni e le congratulazioni
+post-previsioni) hanno entrambe `esci_ritorno: false` in coda al loro `"se"`:
+senza, ripartirebbero da capo ogni volta che si rientra dal menu Esci.
+
+**"Esci dal gioco" e' una `VN.boot()` con `scene: null`, non un reset a mano.**
+Fa esattamente quello che farebbe riaprire l'app: se c'e' un salvataggio (per
+essere arrivati a questo punto, solo se il giocatore ha scelto SI, SALVA
+poco prima) lo trova da solo e chiede "vuoi riprendere?" — nessun bisogno di
+duplicare quella logica qui. Non chiama mai `VN.clearSave()`.
+
 ## Mai un fotogramma della scena di prima
 
 Un `<img>` a cui si cambia `src` **continua a disegnare l'immagine vecchia**

@@ -63,7 +63,8 @@
       "gobbo": "props/prop_gobbo_teleprompter.webp",
       "emblema_categoria_iphone": "props/prop_emblema_categoria_iphone.webp",
       "emblema_categoria_watch": "props/prop_emblema_categoria_watch.webp",
-      "emblema_categoria_altro": "props/prop_emblema_categoria_altro.webp"
+      "emblema_categoria_altro": "props/prop_emblema_categoria_altro.webp",
+      "exit": "props/prop_exit.webp"
     },
     "chars": {},
     "platea": {
@@ -293,7 +294,9 @@
     "post_lobby_visto": false,
     "categorie_visitate": {},
     "runner_record": 0,
-    "runner_giocato": false
+    "runner_giocato": false,
+    "raggiunto_s2": false,
+    "esci_ritorno": false
   },
   "scenes": {
     "arrivo": {
@@ -802,6 +805,12 @@
       "_nota": "La scena si apre ancora sulla tenda della lobby: e' quella che si divide in due. Dietro c'e' bg_sala_teatro — lo script master lo chiama bg_sala_ingresso_superiore, e' lo stesso file: la sala vista dall'alto del corridoio, con il palco in fondo.",
       "steps": [
         {
+          "t": "set",
+          "var": "raggiunto_s2",
+          "value": true,
+          "_nota": "Da qui in poi (fino al ritorno in lobby dopo le previsioni confermate) il pulsante ESCI e' disponibile: aggiornaBottoneEsci() in engine.js legge questo flag insieme a post_lobby_visto."
+        },
+        {
           "t": "hide"
         },
         {
@@ -1244,46 +1253,59 @@
           "t": "show",
           "who": "francesca",
           "body": "benvenuto",
-          "se": {
-            "var": "locked",
-            "is": false
-          }
+          "se": [
+            { "var": "locked", "is": false },
+            { "var": "esci_ritorno", "is": false }
+          ]
         },
         {
           "t": "say",
           "who": "francesca",
           "text": "Eccoti, {NOME}. Io sono Francesca, e questa e' la lobby: girala tutta, tocca cio' che ti incuriosisce.",
-          "se": {
-            "var": "locked",
-            "is": false
-          }
+          "se": [
+            { "var": "locked", "is": false },
+            { "var": "esci_ritorno", "is": false }
+          ]
         },
         {
           "t": "say",
           "who": "francesca",
           "text": "Tanto di la' non si inizia senza di te.",
-          "se": {
-            "var": "locked",
-            "is": false
-          }
+          "se": [
+            { "var": "locked", "is": false },
+            { "var": "esci_ritorno", "is": false }
+          ]
         },
         {
           "t": "show",
           "who": "francesca",
           "body": "indica_tenda",
-          "se": {
-            "var": "locked",
-            "is": false
-          }
+          "se": [
+            { "var": "locked", "is": false },
+            { "var": "esci_ritorno", "is": false }
+          ]
         },
         {
           "t": "say",
           "who": "francesca",
           "text": "Quando sei pront{g:o|a}, vai verso la tenda. Da li' in poi... sei a teatro.",
-          "se": {
-            "var": "locked",
-            "is": false
-          }
+          "se": [
+            { "var": "locked", "is": false },
+            { "var": "esci_ritorno", "is": false }
+          ]
+        },
+        {
+          "t": "show",
+          "who": "francesca",
+          "body": "idle",
+          "se": { "var": "esci_ritorno", "is": true },
+          "_nota": "Ritorno alla lobby dal menu Esci (S2..S6, prima del ritorno post-previsioni): non e' l'intro normale ne' la sequenza di congratulazioni, e' una riga sola, sempre la stessa. esci_ritorno e' un flag a un colpo solo: showHub() lo consuma e lo rispegne quando apre l'hub."
+        },
+        {
+          "t": "say",
+          "who": "francesca",
+          "text": "{g:Bentornato|Bentornata}. Non pensavo saresti {g:scappato|scappata} cosi' presto. Il teatro e' da quella parte. Continua quando vuoi.",
+          "se": { "var": "esci_ritorno", "is": true }
         },
         {
           "t": "show",
@@ -1298,9 +1320,10 @@
             {
               "var": "post_lobby_visto",
               "is": false
-            }
+            },
+            { "var": "esci_ritorno", "is": false }
           ],
-          "_nota": "[POST-L01]-[POST-L07] Il ritorno in lobby dopo le previsioni: Francesca si congratula e passa la parola a Peter. Una volta sola (post_lobby_visto)."
+          "_nota": "[POST-L01]-[POST-L07] Il ritorno in lobby dopo le previsioni: Francesca si congratula e passa la parola a Peter. Una volta sola (post_lobby_visto). Se il ritorno e' invece dal menu Esci (esci_ritorno), questa sequenza non parte: parla solo la riga sopra."
         },
         {
           "t": "say",
@@ -1314,7 +1337,8 @@
             {
               "var": "post_lobby_visto",
               "is": false
-            }
+            },
+            { "var": "esci_ritorno", "is": false }
           ]
         },
         {
@@ -1329,7 +1353,8 @@
             {
               "var": "post_lobby_visto",
               "is": false
-            }
+            },
+            { "var": "esci_ritorno", "is": false }
           ]
         },
         {
@@ -1344,7 +1369,8 @@
             {
               "var": "post_lobby_visto",
               "is": false
-            }
+            },
+            { "var": "esci_ritorno", "is": false }
           ]
         },
         {
@@ -1359,7 +1385,8 @@
             {
               "var": "post_lobby_visto",
               "is": false
-            }
+            },
+            { "var": "esci_ritorno", "is": false }
           ]
         },
         {
@@ -1374,7 +1401,8 @@
             {
               "var": "post_lobby_visto",
               "is": false
-            }
+            },
+            { "var": "esci_ritorno", "is": false }
           ]
         },
         {
@@ -1389,7 +1417,8 @@
             {
               "var": "post_lobby_visto",
               "is": false
-            }
+            },
+            { "var": "esci_ritorno", "is": false }
           ]
         },
         {
@@ -1404,18 +1433,19 @@
             {
               "var": "post_lobby_visto",
               "is": false
-            }
+            },
+            { "var": "esci_ritorno", "is": false }
           ]
         },
         {
           "t": "set",
           "var": "post_lobby_visto",
           "value": true,
-          "se": {
-            "var": "locked",
-            "is": true
-          },
-          "_nota": "La sequenza del ritorno si vede una volta sola. Il flag si alza anche se la sequenza e' gia' stata vista: e' idempotente, e cosi' non serve una seconda condizione."
+          "se": [
+            { "var": "locked", "is": true },
+            { "var": "esci_ritorno", "is": false }
+          ],
+          "_nota": "La sequenza del ritorno si vede una volta sola. Il flag si alza anche se la sequenza e' gia' stata vista: e' idempotente, e cosi' non serve una seconda condizione. Non si alza durante un ritorno dal menu Esci (esci_ritorno): altrimenti chiuderebbe per sempre il pulsante Esci anche se le previsioni non sono ancora state confermate per davvero."
         },
         {
           "t": "hub",
