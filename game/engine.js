@@ -117,7 +117,8 @@
 
   /* ---------------- typewriter ---------------- */
   function hideUI() {
-    el.choices.classList.remove('on');
+    el.choices.classList.remove('on', 'fermo');
+    if (el.box) el.box.style.height = '';
     el.inputform.classList.remove('on');
     if (el.listform) el.listform.classList.remove('on');
     revealUI = null;
@@ -1151,9 +1152,22 @@
     // Rimettere il default in mezzo faceva vedere per un fotogramma la figura
     // piccola, a ogni cambio di battuta.
     if (!inquadrata(c, body, st)) {
+      /* Chi e' gia' in scena e cambia misura ci scivola (transition nel CSS):
+         serve al quiz, dove Peter si alza quando si apre la griglia dei livelli
+         e torna seduto quando resta solo il box. Chi invece sta ENTRANDO prende
+         la misura secca: la si applica con 'fisso' addosso e un reflow in
+         mezzo, se no il riquadro partirebbe dalla misura del personaggio di
+         prima e lo si vedrebbe crescere mentre entra.
+         ('fisso' la mette inquadra() per le pose inquadrate sul viso, e senza
+         questa riga restava addosso a #npc per tutto il resto della partita —
+         Francesca e' inquadrata e si incontra presto — spegnendo la
+         transizione per chiunque venisse dopo.) */
+      if (!giaInScena) el.npc.classList.add('fisso');
       el.npc.style.height = st.height || (scala === 1 ? '' : (NPC_H * scala).toFixed(1) + '%');
       el.npc.style.bottom = st.bottom || '';
       el.npc.style.right = st.right || '';
+      if (!giaInScena) void el.npc.offsetWidth;
+      el.npc.classList.remove('fisso');
     }
     inquadra(c, body, st);
 
@@ -2989,11 +3003,22 @@
     var msTotali = secondiQuiz() * 1000;
     var rimasti = msTotali;
 
-    function chiudiTimer() {
+    /* Il tempo si ferma, ma la barra resta a schermo.
+       Peter e' disegnato seduto a un tavolino: la sua figura finisce con il
+       piano del tavolo tagliato di netto, e quel taglio deve stare dietro
+       l'interfaccia, se no il tavolo galleggia in aria sopra il pavimento.
+       Togliendo barra e risposte per far posto al verdetto, tutto il blocco in
+       basso si accorciava e il taglio restava scoperto. Qui si spegne solo il
+       conto alla rovescia: la cornice non si muove. */
+    function fermaTimer() {
       if (qId) { clearInterval(qId); qId = null; }
       VN.quizScadenza = null;
-      el.quizbar.classList.remove('on');
       el.qtimer.classList.remove('poco');
+    }
+
+    function chiudiTimer() {
+      fermaTimer();
+      el.quizbar.classList.remove('on');
     }
 
     function disegnaTimer() {
@@ -3009,6 +3034,7 @@
 
     function domanda() {
       chiudiTimer();
+      if (el.box) el.box.style.height = '';       // il box torna a misurarsi sulla domanda nuova
       if (i >= lista.length) return fine();
       var d = lista[i];
       rimasti = msTotali;
@@ -3066,12 +3092,17 @@
         };
         el.choices.appendChild(p);
       }
+      el.choices.classList.remove('fermo');
       el.choices.classList.add('on');
     }
 
     function rispondi(d, scelto) {
-      chiudiTimer();
-      hideUI();
+      fermaTimer();
+      // L'altezza che il box ha ADESSO, con la domanda dentro: il verdetto e'
+      // piu' corto e senza questa il box si accorciava, tutto il blocco in
+      // basso scendeva e il tavolino di Peter restava scoperto a mezz'aria.
+      // Si applica dopo type(), che passa da hideUI() e la ripulirebbe.
+      var altezzaBox = el.box ? el.box.offsetHeight : 0;
       VN.progressed = true;
       var giusta = scelto === d.ok;
       if (giusta) giuste++;
@@ -3084,6 +3115,11 @@
       i++;
       var poi = function () { pending = function () { domanda(); }; el.arrow.style.opacity = 1; };
       type(fmt(testo).replace('{r}', fmt(d.opzioni[d.ok])), poi);
+      // Le risposte restano dove sono, spente (vedi #choices.fermo): sparendo
+      // si portavano dietro l'ingombro sotto al box e fra la domanda e il
+      // verdetto si spostava mezza schermata.
+      if (altezzaBox) el.box.style.height = altezzaBox + 'px';
+      el.choices.classList.add('fermo');
       revealUI = poi;
     }
 
@@ -3116,7 +3152,11 @@
       // il livello passato e' un traguardo; il fallito e' quello di Peter, e
       // suona solo a fine livello: su ogni risposta sbagliata sarebbe pesante
       suona(passato ? 'quiz_livello' : 'quiz_fallito');
-      showChar({ who: 'peter', body: passato ? 'applauso_ironico' : 'scuote_testa', height: st.height, bottom: st.bottom });
+      // Qui l'interfaccia del livello se ne va davvero (barra e risposte) e
+      // resta il solo box del dialogo: Peter torna alla misura da seduto, con
+      // il piano del tavolo dietro al box. Vedi "bottomDialogo" in story.json.
+      showChar({ who: 'peter', body: passato ? 'applauso_ironico' : 'scuote_testa',
+        height: st.height, bottom: st.bottomDialogo || st.bottom });
       setSpeaker(st.who || 'peter');
       var testo = passato
         ? (st.passato || 'Passato: {giuste} su {n}. Vale +{mult}.')
@@ -5175,7 +5215,7 @@
       boot: $('boot'), bootbar: $('bootbar'), logo: $('logo'), logoImg: $('logoImg'),
       avatar: $('avatar'), propwrap: $('propwrap'), prop: $('prop'), screen: $('screen'),
       schermata: $('schermata'),
-      boxwrap: $('boxwrap'), name: $('name'), nametxt: $('nametxt'), voce: $('voce'),
+      boxwrap: $('boxwrap'), box: $('box'), name: $('name'), nametxt: $('nametxt'), voce: $('voce'),
       txt: $('txt'), arrow: $('arrow'),
       choices: $('choices'), inputform: $('inputform'), ti: $('ti'), tok: $('tok'),
       listform: $('listform'), tsel: $('tsel'), tselok: $('tselok'),

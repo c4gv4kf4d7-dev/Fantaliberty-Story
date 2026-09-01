@@ -301,6 +301,17 @@ volta.** Le classi di reazione si tolgono da sole quando finiscono, e
 `#npc` la mette `forwards` **e** controlla chi altro scrive `animation` su
 quel nodo.
 
+**`fisso` non e' per sempre.** `#npc.fisso` spegne la transizione di misura, e
+la mette `inquadra()` sulle pose inquadrate sul viso (li' il riquadro cambia a
+ogni battuta e vederlo scorrere sembra un rimpicciolimento). Restava pero'
+addosso al nodo per tutto il resto della partita — Francesca e' inquadrata e si
+incontra presto — e da li' in poi ogni cambio di misura era un salto secco per
+chiunque. Adesso `showChar()` la toglie sulle pose non inquadrate, e la rimette
+per un istante su chi sta **entrando**: chi entra prende la misura nuova subito,
+invece di vedersi crescere partendo da quella del personaggio di prima. Il
+risultato e' che scivola solo chi e' gia' in scena e cambia posto — in pratica
+Peter, fra il dialogo e i pannelli del quiz.
+
 `npm test` gira in jsdom, che non calcola le animazioni: questi bug **non
 li prende**, si vedono solo negli screenshot.
 
@@ -417,6 +428,27 @@ Altre due cose di S8 che sembrano dettagli e non lo sono:
   render, scrivere a macchina sarebbe una penalità invisibile;
 - **la griglia dei livelli convive con `#choices`** — per questo `#griglia`
   sta prima nell'HTML e `#boxwrap` prende la classe `quizhub`.
+
+**Peter finisce con il tavolo tagliato, e quel taglio deve stare dietro
+l'interfaccia.** Non e' una figura intera: lo sprite si chiude con il piano del
+tavolino tagliato di netto, e sopra il pavimento chiaro della lobby quel bordo
+si legge come un tavolo che galleggia a mezz'aria. Quindi la sua misura dipende
+da quanto e' alto quello che ha sotto, e in S8 sono due:
+
+- `bottom: 34%` quando sotto c'e' un pannello — griglia dei livelli, domande
+  (barra del tempo + risposte), moltiplicatori: il taglio finisce dietro al box;
+- `bottom: 13%` quando resta solo il box del dialogo, che e' basso: la
+  presentazione del quiz e la riga di fine livello. Sullo step del livello e'
+  `bottomDialogo`, e lo usa `fine()` in `engine.js`. Misurato sul box piu'
+  corto, dal telefono piu' piccolo al piu' grande.
+
+Si sposta **due volte in tutto**: quando si apre la griglia la prima volta, e a
+fine livello. Durante le domande non si muove mai — e per questo **il verdetto
+non toglie le risposte, le spegne** (`#choices.fermo`, e il box tiene l'altezza
+che aveva). Toglierle faceva scendere di un centinaio di pixel tutto il blocco
+in basso a ogni risposta, e il tavolino restava scoperto. `fermo` non e' `on`
+apposta: cosi' la barra spaziatrice continua ad avanzare e il tocco passa
+attraverso le risposte spente invece di finire su un bottone morto.
 
 **Assegnati i moltiplicatori, il quiz è chiuso per davvero** (`quizConcluso()`
 in `engine.js`): ogni cella della griglia diventa "fatta", anche un livello
