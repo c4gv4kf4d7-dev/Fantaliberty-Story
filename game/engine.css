@@ -54,8 +54,8 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #bg.zoomlento,#bg2.zoomlento{animation:zoomlento 22s linear forwards}
 @keyframes zoom{from{transform:scale(1.06)}to{transform:scale(1.16)}}
 /* zoom molto piu' marcato: non si vedeva. Stesso punto di partenza, guadagno
-   di scala a 0.5 (era 0.143) */
-@keyframes zoomlento{from{transform:scale(1.02)}to{transform:scale(1.52)}}
+   di scala a 0.75 (era 0.5, prima ancora 0.143) */
+@keyframes zoomlento{from{transform:scale(1.02)}to{transform:scale(1.77)}}
 
 /* ---------- atmosfera ----------
    Uccelli, foglie e pulviscolo: pochi elementi che si muovono con tempi diversi
