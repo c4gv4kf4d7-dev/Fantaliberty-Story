@@ -2008,8 +2008,11 @@
     if (VN.state.eventi_sacchetto) return VN.state.eventi_sacchetto;
     var b = VN.banca || {};
     var v = mescola((b.micro_eventi || []).map(function (e) { return e.id; }));
+    // L'evento dello stile va in TESTA, non a caso: con la probabilita' a
+    // 0.15 escono circa tre eventi a partita su sei, e messo a caso uno su
+    // due non lo vedeva. E' l'unico legato alla scelta del camerino.
     var mio = (b.eventi_personali || {})[VN.state.stile];
-    if (mio) v.splice(Math.floor(Math.random() * (v.length + 1)), 0, mio.id);
+    if (mio) v.unshift(mio.id);
     VN.state.eventi_sacchetto = v;
     return v;
   }
