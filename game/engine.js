@@ -3801,6 +3801,10 @@
     // riaprire sulla tenda manderebbe il giocatore verso una porta chiusa.
     var start = st.start;
     if (st.startDopo && condizioneOk(st.startDopo.se)) start = st.startDopo.zona;
+    // Scorciatoia del menu di sviluppo (?dev): non e' contenuto della storia,
+    // e' solo per saltare dritti a una zona a colpo sicuro senza girare
+    // l'hub a mano. VN.state.__devZona vince su tutto il resto.
+    if (VN.state.__devZona) start = VN.state.__devZona;
     if (!start) return 0;
     for (var i = 0; i < zones.length; i++) if (zones[i].id === start) return i;
     return 0;
@@ -5093,6 +5097,24 @@
         VN.boot(story, unisci(opts, { dev: false, scene: null, stato: null }));
       };
       box.appendChild(via);
+
+      // Scorciatoia per provare Apple Campus Run: arriva dritto alla lobby,
+      // gia' aperta sulla zona 5 (STAFF ONLY) autorizzata, senza dover
+      // rigiocare le previsioni ne' girare l'hub a mano. Ignora le scelte
+      // GENERE/ANNI/STILE sopra solo per pronostici/schedina, che qui sono
+      // per forza "gia' fatti"/"chiusa": e' quello che sblocca la porta.
+      var staff = doc.createElement('button');
+      staff.className = 'via';
+      staff.textContent = 'Apple Campus Run — porta STAFF ONLY gia\' sbloccata';
+      staff.onclick = function () {
+        box.classList.remove('on');
+        VN.clearSave();
+        var stato = statoFinto(story, unisci(scelte, { pronostici: true, locked: true }));
+        stato.post_lobby_visto = true;   // salta la sequenza di ritorno di Francesca
+        stato.__devZona = 'staff_aperto';
+        VN.boot(story, unisci(opts, { dev: false, scene: 'lobby', stato: stato }));
+      };
+      box.appendChild(staff);
 
       ordineScene(story).forEach(function (id) {
         var sc = story.scenes[id];
