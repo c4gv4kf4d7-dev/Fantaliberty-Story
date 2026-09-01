@@ -691,7 +691,14 @@ Sei cose da non annullare per sbaglio:
 5. **Il record si tiene, i punti no.** `VN.state.runner_record` entra nel
    salvataggio; come i punti della corsa si sommino alla classifica dei
    pronostici **non e' deciso** — non inventarlo.
-6. **Il livello e' un tratto con un cuore dentro.** Ogni mille punti si
+6. **Bolla chiara si prende, bolla rossa si scansa.** I tre prodotti Apple
+   valgono punti, le tre fregature (cuffie aggrovigliate, cavo sfilacciato,
+   batteria all'1%) ne tolgono, e si distinguono **solo** dal colore della
+   bolla: e' l'unica cosa che tiene in piedi la regola. Un malus disegnato come
+   un premio e' un gioco che sembra rotto. Le fregature **non tolgono cuori** —
+   il carrello resta l'unica cosa che ne toglie uno — e sono sempre schivabili
+   cambiando corsia.
+7. **Il livello e' un tratto con un cuore dentro.** Ogni mille punti si
    attraversa la riga dorata e la velocita' sale di uno scalino; dentro ogni
    livello esce **un cuore di ricarica solo**, a un punto a caso del tratto
    (`nuovaQuotaVita()`), e si prova a ogni gruppo — non solo in quelli

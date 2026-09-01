@@ -442,7 +442,10 @@ const PRONTI = Promise.all([
   carica('computer',  'run_bonus_computer.webp'),
   carica('visore',    'run_bonus_visore.webp'),
   carica('cartello',  'run_ost_cartello.webp'),
-  carica('salto',     'run_pg_salto.webp')
+  carica('salto',     'run_pg_salto.webp'),
+  carica('cuffie',    'run_malus_cuffie.webp'),
+  carica('cavo',      'run_malus_cavo.webp'),
+  carica('batteria',  'run_malus_batteria.webp')
 ]);
 
 /* Quanti cuori si hanno in partenza. Sta qui e non sparso nel codice perche'
@@ -541,6 +544,26 @@ const CHICCHE = {
 const COLLEZIONE = ['iphone','computer','visore'];
 const BONUS_COLLEZIONE = 300;
 
+/* ---------- le fregature ----------
+   Stessa forma delle chicche — un oggetto che galleggia dentro una bolla — ma
+   la bolla e' ROSSA, ed e' quello a dire la regola: bolla chiara si prende,
+   bolla rossa si scansa. Senza quel segnale sarebbero un premio che punisce,
+   che e' il modo piu' rapido di far sembrare un gioco rotto.
+
+   Non tolgono cuori: il carrello resta l'unica cosa che ne toglie uno. Queste
+   costano punti, e basta — si possono sempre schivare cambiando corsia. */
+const MALUS = {
+  cuffie:   { valore: -25,  alone:'#e0554d' },
+  cavo:     { valore: -50,  alone:'#e0554d' },
+  batteria: { valore: -100, alone:'#e0554d' }
+};
+const FREGATURE = ['cuffie','cavo','batteria'];
+
+function forseMalus(z, corsia){
+  if (Math.random() > 0.09) return;
+  S.cose.push({ tipo:'malus', quale: FREGATURE[Math.random()*FREGATURE.length | 0], z, corsia });
+}
+
 function forseChicca(z, corsia){
   // solo i tre prodotti, uno per partita, e non a ogni gruppo
   if (Math.random() > 0.09) return;
@@ -616,6 +639,7 @@ function genera(){
     const n = 4 + (Math.random()*2 | 0);
     for (let i=0; i<n; i++) anello('verde', NASCE + i*PASSO_ANELLI, c);
     forseChicca(NASCE + 0.20, c);            // in mezzo alla fila comoda
+    forseMalus(NASCE + 0.9, corsiaDiversa(c));
     S.prossimo = 0.62;
 
   } else if (r < 0.44){
@@ -624,6 +648,7 @@ function genera(){
     for (let i=0; i<3; i++) anello('blu', NASCE + i*PASSO_ANELLI, c);
     for (let i=0; i<3; i++) anello('blu', NASCE + 0.42 + i*PASSO_ANELLI, d);
     forseChicca(NASCE + 0.16, corsiaDiversa(c));
+    forseMalus(NASCE + 0.9, corsiaDiversa(c));
     S.prossimo = 0.75;
 
   } else if (r < 0.60){
@@ -686,7 +711,8 @@ const LEZIONI = {
     corpo: '<p><b class="verde">Anello verde 10</b> · <b class="blu">blu 25</b> · ' +
            '<b class="rosso">rosso 50</b><br>' +
            'I prodotti nelle bolle: <b class="verde">100 a testa</b><br>' +
-           'Il cuore ti ridà un tentativo: <b>uno per livello</b><br><br>' +
+           'Il cuore ti ridà un tentativo: <b>uno per livello</b><br>' +
+           'Le <b class="rosso">bolle rosse</b> tolgono punti: schivale<br><br>' +
            'Carrelli e cartelli ti costano un cuore.<br>' +
            'L\'arcobaleno si passa <b>al centro, scivolando</b>.</p>'
   }
@@ -998,6 +1024,11 @@ function aggiorna(dt){
         c.presa = true;
         if (S.vite < VITE){ S.vite++; mostraVite('guarito'); segnale(c, '+♥', true); }
         else { S.raccolti += 25; segnale(c, '+25', true); }   // col cuore pieno vale punti
+      } else if (c.tipo === 'malus'){
+        c.presa = true;
+        const k = MALUS[c.quale];
+        S.raccolti += k.valore;                  // il totale non scende sotto zero
+        segnale(c, String(k.valore), false);
       } else if (c.tipo === 'chicca'){
         c.presa = true;
         const k = CHICCHE[c.quale];
@@ -1082,6 +1113,32 @@ function disegna(){
         ctx.fillStyle = k.segnaposto; ctx.strokeStyle = '#8a8a80';
         ctx.lineWidth = Math.max(2, s*0.06);
         ctx.beginPath(); ctx.roundRect(q.x - s*0.36, q.y - su, s*0.72, s*0.72, s*0.18);
+        ctx.fill(); ctx.stroke();
+      }
+
+    } else if (c.tipo === 'malus'){
+      /* Le chicche respirano piano e ondeggiano: dicono "prendimi". Questa
+         trema, piu' stretta e piu' nervosa, e l'alone e' rosso. */
+      const k = MALUS[c.quale];
+      const s = 240 * q.scala;
+      const su = s * (1.25 + 0.05 * Math.sin(S.distanza*6 + c.z*7));
+      const tremore = 0.05 * Math.sin(S.distanza * 22 + c.z * 9);
+      ombra(q.x, q.y, s * 0.28, 0.14);
+      ctx.save();
+      ctx.globalAlpha = 0.45; ctx.fillStyle = k.alone;
+      ctx.beginPath(); ctx.ellipse(q.x, q.y - su + s*0.45, s*0.60, s*0.60, 0, 0, 7);
+      ctx.fill(); ctx.restore();
+      const im = A[c.quale];
+      if (im){
+        const h = s, w = h * (im.width / im.height);
+        ctx.save();
+        ctx.translate(q.x, q.y - su + s/2); ctx.rotate(tremore);
+        ctx.drawImage(im, -w/2, -h/2, w, h);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = '#c8443c'; ctx.strokeStyle = '#6d1f1a';
+        ctx.lineWidth = Math.max(2, s*0.07);
+        ctx.beginPath(); ctx.arc(q.x, q.y - su + s*0.36, s*0.36, 0, 7);
         ctx.fill(); ctx.stroke();
       }
 

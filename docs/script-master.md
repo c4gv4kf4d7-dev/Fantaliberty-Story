@@ -773,7 +773,9 @@ griglia [S8.HUB], nessuna azione nel countdown [S7.05]. Un solo accesso:
 
 Come si gioca: corsa senza fine dentro il corridoio vetrato del campus, tre
 corsie, swipe per cambiare corsia, saltare e scivolare. Anelli e prodotti
-Apple danno punti, gli ostacoli tolgono cuori (se ne parte con tre). Si
+Apple danno punti, le tre "fregature" nelle bolle rosse — cuffie aggrovigliate,
+cavo sfilacciato, batteria all'1% — ne tolgono (25 / 50 / 100), e gli ostacoli
+tolgono cuori (se ne parte con tre). Si
 riprova quante volte si vuole. Il record resta nel salvataggio
 (run.runner_record).
 
