@@ -22,7 +22,7 @@
   gtag('js', new Date());
   gtag('config', 'G-SYX1RZLNNE');
 </script>
-<link rel="stylesheet" href="./game/engine.css?v=136">
+<link rel="stylesheet" href="./game/engine.css?v=139">
 </head>
 <body>
 <div id="stage">
@@ -90,9 +90,11 @@
        ogni volta in un posto diverso. -->
   <div id="hubnav">
     <button id="hprev" aria-label="Zona precedente">◀</button>
-    <div id="hdots"></div>
     <button id="hnext" aria-label="Zona successiva">▶</button>
   </div>
+  <!-- i pallini delle zone: in fondo allo schermo, sotto il box del dialogo,
+       fuori dalla scena (in mezzo coprivano il disegno) -->
+  <div id="hdots"></div>
   <!-- hub della lobby: quattro zone che si scorrono di lato. Le aree toccabili
        vengono disegnate dal motore dentro #hubspots, sopra il fondale. -->
   <div id="hub">
@@ -363,8 +365,18 @@
   </div>
 </div>
 
-<script src="./game/analytics.js?v=136"></script>
-<script src="./game/engine.js?v=136"></script>
+<!-- La porta d'ingresso del gioco: il palco col sipario aperto sulla sala, e
+     un bottone solo. Il gioco parte quando la persona lo decide, non appena
+     inquadra il QR — e quel tocco e' anche quello che sblocca l'audio sul
+     telefono, cosi' la sigla dello studio si sente davvero. Si salta con
+     ?subito (i tool di verifica), ?dev e ?scene= (sviluppo). -->
+<div id="home" hidden>
+  <img id="homeBg" src="./assets/bg/bg_intro.webp?v=139" alt="">
+  <button id="homeGioca" type="button">GIOCA</button>
+</div>
+
+<script src="./game/analytics.js?v=139"></script>
+<script src="./game/engine.js?v=139"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -380,7 +392,7 @@
   // sorgente entra lo stesso. Serve solo a non far trovare il gioco aperto a
   // chi passa da fantaliberty.com prima del 2 settembre.
   var DOMINI_PUBBLICI = ['fantaliberty.com', 'www.fantaliberty.com'];
-  var APERTURA = Date.parse('2026-09-02T00:00:00+02:00');
+  var APERTURA = Date.parse('2026-09-02T10:00:00+02:00');
   function siApre() {
     // Le porte di servizio scavalcano il cartello: ?apri, il menu di sviluppo
     // e il salto a una scena servono a provare il gioco anche dal dominio
@@ -397,7 +409,16 @@
   }
 
   var ENGINE_ATTESO = '24';   // deve combaciare con VN.engine in game/engine.js
-  var partito = false;
+  var partito = false;        // i dati del gioco sono arrivati e sono buoni
+
+  // La porta d'ingresso (#home) sta davanti a tutto finche' non si preme GIOCA.
+  // I dati intanto si scaricano lo stesso: quando si preme, il motore parte
+  // subito. Non c'e' per chi salta a una scena (?scene=, ?dev) e per i tool di
+  // verifica (?subito), che si aspettano il gioco gia' in moto.
+  var CON_HOME = !params.has('subito') && !params.has('dev') && !params.get('scene');
+  var dati = null, giocaPremuto = !CON_HOME;
+  var home = document.getElementById('home');
+  if (CON_HOME) home.hidden = false;
 
   function mostraErrore(msg) {
     var box = document.getElementById('loaderr');
@@ -433,18 +454,39 @@
     }
     try { sessionStorage.removeItem('fl_reload'); } catch (e) {}
 
+    dati = { story: story, banca: banca, backend: backend, quiz: quiz };
+    partito = true;
+    avvia();
+  }
+
+  // Parte solo quando ci sono tutte e due le cose: i dati, e il GIOCA premuto
+  // (o nessuna porta da attraversare). Chi arriva per secondo fa partire.
+  function avvia() {
+    if (!dati || !giocaPremuto || window.__avviato) return;
+    window.__avviato = true;
     try {
-      opts.banca = banca;
-      opts.backend = backend;
-      opts.quiz = quiz;
-      VN.boot(story, opts);
-      partito = true;
+      opts.banca = dati.banca;
+      opts.backend = dati.backend;
+      opts.quiz = dati.quiz;
+      VN.boot(dati.story, opts);
     } catch (e) {
       console.error(e);
       try { localStorage.removeItem('fl_nexus_save_v1'); } catch (e2) {}
       mostraErrore('Errore all\'avvio.<br><small>' + (e && e.message ? e.message : e) + '</small>');
     }
   }
+
+  document.getElementById('homeGioca').onclick = function () {
+    if (giocaPremuto) return;
+    giocaPremuto = true;
+    // Il tocco su GIOCA e' il primo gesto della persona sulla pagina: e' qui
+    // che il telefono concede l'audio. Va detto al motore PRIMA di far partire
+    // la sigla, se no il jingle dello studio esce muto.
+    if (window.VN && VN.sbloccaAudio) VN.sbloccaAudio();
+    home.classList.add('via');
+    setTimeout(function () { home.hidden = true; }, 450);
+    avvia();                   // sotto c'e' gia' il nero della sigla
+  };
 
   // STORY_INLINE / BANCA_INLINE vengono definiti dal build single-file
   // (tools/build_single_file.py): in quel caso non serve nessuna richiesta HTTP
@@ -454,7 +496,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=136', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=139', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e

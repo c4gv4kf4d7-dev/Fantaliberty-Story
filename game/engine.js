@@ -147,6 +147,7 @@
     if (!el.hub) return;
     el.hub.classList.remove('on');
     el.hubnav.classList.remove('on');
+    if (el.hdots) el.hdots.classList.remove('on');
     el.hubspots.innerHTML = '';
   }
 
@@ -4148,6 +4149,7 @@
     el.boxwrap.classList.add('in');
     el.hub.classList.add('on');
     el.hubnav.classList.add('on');
+    if (el.hdots) el.hdots.classList.add('on');
     pending = null;
     entra(indiceIniziale(st, zones), 0);
   }
@@ -5736,6 +5738,10 @@
     if (skip()) return;
     if (pending) { var f = pending; pending = null; el.arrow.style.opacity = 0; f(); }
   };
+
+  // La porta d'ingresso (index.html) lo chiama sul tocco di GIOCA: quel gesto
+  // e' il primo sulla pagina, e il telefono concede l'audio solo li' dentro.
+  VN.sbloccaAudio = sbloccaAudio;
 
   global.VN = VN;
 })(typeof window !== 'undefined' ? window : globalThis);
