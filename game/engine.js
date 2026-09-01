@@ -3467,9 +3467,24 @@
             fl: 'gioco', tipo: 'apri', esci: etichetta,
             playerId: idPartita(),
             playerName: VN.state.nome || '',
-            backend: VN.backend || null
+            backend: VN.backend || null,
+            musica: !!audio.mus
           }, '*');
         } catch (err) { /* niente: resta la via di sicurezza */ }
+        return;
+      }
+      /* La musica che si sente durante la corsa e' quella del gioco grande: la
+         corsa non ne ha una sua, e il riquadro copre lo schermo ma non ferma
+         l'audio di sotto. Quindi l'interruttore del suo menu chiede qui, e
+         passa dallo stesso stato del pannello audio del gioco: uno solo,
+         altrimenti si spegne in un posto e resta acceso nell'altro. */
+      if (m.tipo === 'musica') {
+        audio.mus = !audio.mus;
+        aggiornaVolumi(); aggiornaBottoneAudio(); aggiornaToggle(); salvaAudio();
+        try {
+          el.runframe.contentWindow.postMessage(
+            { fl: 'gioco', tipo: 'musica', on: !!audio.mus }, '*');
+        } catch (err) {}
         return;
       }
       if (m.tipo === 'fine') return segnaCorsa(m);
