@@ -250,7 +250,12 @@
   .velo button.secondario[hidden]{ display:none !important; }
   /* fondo pieno: sotto c'e' la schermata chiara del fine partita, e in
      trasparenza si leggeva attraverso i punteggi */
-  #veloClassifica{ background:#16161a; justify-content:flex-start;
+  /* Sopra il menu (6), non sotto: la classifica si apre anche da li', e
+     restando sotto il suo CHIUDI non si poteva premere — il menu se lo
+     mangiava, e chi ci entrava restava incastrato. Cosi' invece il menu resta
+     aperto dietro, il gioco resta in pausa, e chiudendo la classifica si torna
+     al menu da cui si era partiti. */
+  #veloClassifica{ background:#16161a; justify-content:flex-start; z-index:7;
     padding:calc(28px + env(safe-area-inset-top)) 20px 24px; gap:0; }
   #veloClassifica h1.titoloClassifica{ color:#f0b722; font-size:18px;
     text-shadow:4px 4px 0 #4aa8cc; margin-bottom:20px; }
@@ -384,7 +389,9 @@
   <canvas id="cv"></canvas>
 
   <div class="ui">
-    <div id="hud">
+    <!-- spenta di partenza: la targa non ha senso prima di cominciare, e sotto
+         il velo della schermata iniziale sarebbe solo un rettangolo scuro -->
+    <div id="hud" class="spento">
       <div id="targa">
         <div id="targaAlto">
           <div id="ritratto"><div id="faccia"></div></div>
@@ -2051,6 +2058,9 @@ document.getElementById('mnClassifica').onclick = () => {
   claCarica();
 };
 document.getElementById('mnEsci').onclick = () => { chiudiMenu(); apriUscita(); };
+// "annulla" chiude e basta: non dipende dal gioco grande, quindi si collega
+// qui e non insieme all'etichetta dell'uscita, che invece arriva da fuori
+document.getElementById('btnEsciNo').onclick = chiudiUscita;
 scriviMusica();
 montaTarga();
 
