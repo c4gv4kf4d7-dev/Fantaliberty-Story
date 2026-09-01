@@ -83,9 +83,15 @@
     src:url('../../assets/font/press-start-2p.woff2') format('woff2');
     font-display:swap;
   }
+  /* Il corridoio dell'accesso STAFF ONLY, non un fondo piatto: e' la stessa
+     inquadratura che si vede subito prima che la corsa si apra, quindi il
+     menu non sembra un cabinato scollegato dal resto del gioco. Il velo
+     scuro sopra serve solo a far leggere il titolo e i bottoni. */
   #veloStart{
-    background:linear-gradient(180deg, rgba(22,22,26,.90), rgba(22,22,26,.96));
-    backdrop-filter:blur(4px); color:#f4f4f0; gap:0;
+    background:
+      linear-gradient(180deg, rgba(18,18,22,.62) 0%, rgba(18,18,22,.55) 45%, rgba(18,18,22,.92) 100%),
+      url('../../assets/bg/bg_campus_run_corridor.webp') center 30% / cover no-repeat;
+    color:#f4f4f0; gap:0;
   }
   #titolo{
     font-family:'Press Start 2P', monospace; line-height:1.75;

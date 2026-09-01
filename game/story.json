@@ -15,10 +15,8 @@
     "keynote": "2026-09-09T19:00:00+02:00",
     "_nota_keynote": "Data e ora del keynote vero, ora locale italiana. Il countdown di S7 conta fin qui. Confermata dall'utente il 30 agosto 2026: 9 settembre, ore 19:00.",
     "_nota_pose_palco": "Le quattro pose 'palco_*' sono figure intere, tagliate dai fogli consegnati il 30 agosto. Servono al giro delle domande di S5: prima il giocatore restava in idle_palco per tutte e ventuno. L'ordine sui fogli NON e' lo stesso per tutti gli stili, quindi il ruolo e' stato assegnato guardandole una per una: attesa = braccia incrociate o in ascolto, presenta = mano aperta che spiega, sicuro = indica (il microfono, per lo showman), dubbio = spalle alzate o perplesso. Sono figure intere come idle_palco: passando dall'una all'altra l'inquadratura non salta, cosa che invece succedeva con le 'espressioni_*', che sono primi piani.",
-    "assetiInArrivo": [
-      "bg/bg_campus_run_corridor.webp"
-    ],
-    "_nota_assetiInArrivo": "La porta STAFF ONLY (zona 5 della lobby) ha gia' le sue due immagini (bloccata/autorizzata); manca ancora il corridoio della corsa. Finche' non arriva, npm test lo segnala come 'da convertire' invece di fallire, e il motore mostra un fondale vuoto al suo posto."
+    "assetiInArrivo": [],
+    "_nota_assetiInArrivo": "Vuoto: le tre immagini della porta STAFF ONLY e del corridoio di Apple Campus Run sono tutte arrivate e convertite."
   },
   "assets": {
     "bg": {
