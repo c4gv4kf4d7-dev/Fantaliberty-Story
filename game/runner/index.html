@@ -43,6 +43,20 @@
   #record{ font-size:13px; opacity:.65; font-weight:600; white-space:nowrap; }
 
   /* i cuori: uno per tentativo */
+  /* La X sta in alto a sinistra, prima dei cuori, che si spostano di conseguenza:
+     e' l'angolo dove la si cerca, ed e' l'unica via d'uscita mentre si corre.
+     #hud non prende tocchi (sta dentro .ui), quindi il tasto se li riprende. */
+  #sinistra{ display:flex; align-items:center; gap:10px; }
+  #btnX{
+    pointer-events:auto; border:0; background:transparent; padding:0; margin:0;
+    width:34px; height:34px; cursor:pointer; opacity:.9; transition:opacity .2s;
+    display:block; flex:none;
+  }
+  #btnX[hidden]{ display:none !important; }
+  #btnX:active{ transform:translateY(1px); }
+  #btnX svg{ display:block; width:100%; height:100%;
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,.35)); }
+
   #vite{ display:flex; gap:5px; font-size:25px; line-height:1; }
   #vite span{ color:#d9453f; text-shadow:0 1px 0 rgba(255,255,255,.7); }
   #vite span.spenta{ color:#b9b9b3; opacity:.45; }
@@ -219,6 +233,36 @@
   #tabellone .stato{ color:#8a8a84; text-align:center; padding:24px 0;
     line-height:2; }
 
+  /* ---- il menu dell'uscita ----
+     Copre tutto e ferma il mondo: uscire e' l'unica cosa irreversibile che si
+     puo' fare qui dentro, e chiederlo mentre gli ostacoli continuano ad
+     arrivare vorrebbe dire farsi ammazzare mentre si decide. */
+  #uscita{
+    position:absolute; inset:0; z-index:5; pointer-events:auto;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:6px; text-align:center; padding:24px;
+    background:rgba(28,28,26,.82); backdrop-filter:blur(3px);
+  }
+  #uscita[hidden]{ display:none !important; }
+  #uscita h2{
+    font-family:'Press Start 2P', monospace; font-size:15px; line-height:1.9;
+    color:#f4f4f0; margin:0 0 18px; max-width:15em;
+  }
+  #uscita button{
+    font-family:'Press Start 2P', monospace; font-size:13px; letter-spacing:1px;
+    margin-top:14px; padding:15px 26px; border-radius:0; cursor:pointer;
+    background:#f0b722; color:#2a1d00; border:4px solid #2a1d00;
+    box-shadow:0 7px 0 #a97c12, 0 7px 0 4px #2a1d00;
+    transition:transform .05s, box-shadow .05s; max-width:16em;
+  }
+  #uscita button:active{ transform:translateY(5px);
+    box-shadow:0 2px 0 #a97c12, 0 2px 0 4px #2a1d00; }
+  #uscita button.resto{
+    background:#e9e9e4; color:#1d1d1b; border-color:#1d1d1b;
+    box-shadow:0 7px 0 #a8a8a0, 0 7px 0 4px #1d1d1b;
+  }
+  #uscita button.resto:active{ box-shadow:0 2px 0 #a8a8a0, 0 2px 0 4px #1d1d1b; }
+
   /* La lezione non copre la scena: spiega una cosa che si sta vedendo,
      quindi resta in basso e lascia guardare il corridoio. */
   #lezione{
@@ -262,7 +306,10 @@
 
   <div class="ui">
     <div id="hud">
-      <div id="vite"><span>♥</span><span>♥</span><span>♥</span></div>
+      <div id="sinistra">
+        <button id="btnX" aria-label="Esci dalla corsa" hidden></button>
+        <div id="vite"><span>♥</span><span>♥</span><span>♥</span></div>
+      </div>
       <div id="segna"><div id="punti">0</div><div id="record">record 0</div></div>
     </div>
     <div id="fps"></div>
@@ -279,6 +326,12 @@
          e il database, come per quello di fine partita. -->
     <button id="btnClassificaInizio" class="secondario" hidden>CLASSIFICA</button>
     <button id="btnEsciStart" class="esci" hidden>ESCI</button>
+  </div>
+
+  <div id="uscita" hidden>
+    <h2 id="uscitaTesto">Vuoi uscire dalla corsa?</h2>
+    <button id="btnEsciSi">TORNA INDIETRO</button>
+    <button id="btnEsciNo" class="resto">ANNULLA, RESTO QUI</button>
   </div>
 
   <div id="lezione" hidden>
@@ -1400,6 +1453,8 @@ function via(){
   S.annuncio = null;
   nuovaQuotaVita(); mostraVite(null);
   S.imparate = {}; S.collezione = {}; riprendi();
+  chiudiUscita();
+  if (uscitaPronta) document.getElementById('btnX').hidden = false;
   document.getElementById('veloStart').hidden = true;
   document.getElementById('veloFine').hidden  = true;
   document.getElementById('veloFine').classList.remove('congelato');
@@ -1447,6 +1502,10 @@ function finisci(){
     S.punti >= record ? 'Nuovo record.' : 'Il record resta ' + record + '.';
   document.getElementById('veloClassifica').hidden = true;
   document.getElementById('veloFine').hidden = false;
+  // sulla schermata di morte la X sparisce: li' l'uscita c'e' gia', e restando
+  // sarebbe un tasto fuori dal congelamento proprio mentre qualcuno pesta
+  chiudiUscita();
+  document.getElementById('btnX').hidden = true;
   // prima si congela, poi si chiede la posizione: al contrario, quando non c'e'
   // nessuna classifica da aspettare, mostraPosizione scongelava un attimo prima
   // che congelassi, e i tasti restavano spenti fino al tetto dei tre secondi
@@ -1703,6 +1762,59 @@ function avvisa(tipo){
   try { window.parent.postMessage({ fl:'runner', tipo, punti:S.punti|0, record:record|0 }, '*'); } catch(e){}
 }
 
+/* ---------- la X in alto a sinistra ----------
+   Disegnata qui e non caricata come immagine: e' una croce di quadretti, il
+   codice che la genera e' piu' corto del file che la conterrebbe, e non c'e' un
+   asset in piu' da pubblicare e da invalidare quando cambia.
+
+   La griglia e' dispari perche' le due diagonali si incrocino su un quadretto
+   solo: il corpo rosso e' la diagonale spessa tre, il contorno nero e' tutto
+   quello che le sta attaccato attorno. */
+function disegnaX(nodo){
+  const N = 15, SPESSA = 2;      // 5 quadretti di rosso su 15: come il riferimento
+  const suX = (x, y) => Math.abs(x - y) <= SPESSA || Math.abs(x + y - (N - 1)) <= SPESSA;
+  const corpo = [], bordo = [];
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++){
+    if (suX(x, y)) { corpo.push([x, y]); continue; }
+    let tocca = false;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++){
+      const a = x + dx, b = y + dy;
+      if (a >= 0 && a < N && b >= 0 && b < N && suX(a, b)) tocca = true;
+    }
+    if (tocca) bordo.push([x, y]);
+  }
+  const quad = (l, c) => l.map(([x, y]) =>
+    '<rect x="' + x + '" y="' + y + '" width="1" height="1" fill="' + c + '"/>').join('');
+  nodo.innerHTML =
+    '<svg viewBox="-1 -1 ' + (N + 2) + ' ' + (N + 2) + '" shape-rendering="crispEdges" aria-hidden="true">' +
+    '<rect x="-1" y="-1" width="' + (N + 2) + '" height="' + (N + 2) + '" rx="1.6" fill="#ececeb"/>' +
+    quad(bordo, '#141414') + quad(corpo, '#b81414') + '</svg>';
+}
+
+/* ---------- uscire mentre si corre ----------
+   La X e' l'unica via d'uscita durante la partita, e apre un menu invece di
+   uscire di colpo: uscire e' l'unica cosa irreversibile che si puo' fare qui
+   dentro. Mentre il menu e' aperto il mondo si ferma — chiedere "sei sicuro?"
+   lasciando arrivare i carrelli sarebbe una domanda a tradimento. */
+let faseFermata = null;
+// vero quando una via d'uscita esiste davvero: dentro il gioco grande, o con
+// la scorciatoia ?esci= che serve a provare questa parte da soli
+let uscitaPronta = false;
+
+function apriUscita(){
+  if (S.fase === 'fine' || S.fase === 'attesa') return;
+  if (!document.getElementById('uscita').hidden) return;
+  faseFermata = S.fase;
+  S.fase = 'menu';
+  document.getElementById('uscita').hidden = false;
+}
+
+function chiudiUscita(){
+  document.getElementById('uscita').hidden = true;
+  if (S.fase === 'menu') S.fase = faseFermata || 'corsa';
+  faseFermata = null;
+}
+
 function mostraUscita(etichetta){
   ['btnEsciStart','btnEsciFine'].forEach(id => {
     const b = document.getElementById(id);
@@ -1710,6 +1822,14 @@ function mostraUscita(etichetta){
     b.hidden = false;
     b.onclick = () => avvisa('esci');
   });
+  uscitaPronta = true;
+  const x = document.getElementById('btnX');
+  disegnaX(x);
+  x.onclick = apriUscita;
+  if (S.fase !== 'attesa' && S.fase !== 'fine') x.hidden = false;
+  document.getElementById('btnEsciSi').textContent = etichetta.toUpperCase();
+  document.getElementById('btnEsciSi').onclick = () => avvisa('esci');
+  document.getElementById('btnEsciNo').onclick = chiudiUscita;
 }
 
 addEventListener('message', e => {

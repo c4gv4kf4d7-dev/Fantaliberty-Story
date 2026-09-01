@@ -709,7 +709,18 @@ Sei cose da non annullare per sbaglio:
    posizione si chiedono insieme (`Promise.all`) e le prime dieci si chiedono
    dopo: ogni viaggio in fila e' un secondo in cui il giocatore rischia di
    andarsene senza aver visto dov'e' arrivato.
-8. **Il livello e' un tratto con un cuore dentro.** Ogni mille punti si
+8. **La X in alto a sinistra apre un menu, non esce.** E' l'unica via d'uscita
+   mentre si corre, e uscire e' l'unica cosa irreversibile che si puo' fare li'
+   dentro: chiede conferma, e **mentre chiede il mondo si ferma**
+   (`apriUscita` mette `S.fase = 'menu'`, `chiudiUscita` rimette la fase di
+   prima). Chiedere "sei sicuro?" lasciando arrivare i carrelli sarebbe una
+   domanda a tradimento. La X non c'e' sulla schermata di morte — li' l'uscita
+   c'e' gia', e un tasto fuori dal congelamento mentre qualcuno pesta sullo
+   schermo e' esattamente il difetto che il congelamento serve a togliere — e
+   non c'e' nemmeno aprendo `game/runner/` da soli, dove non c'e' niente da cui
+   uscire. E' disegnata dal codice (`disegnaX`), non caricata: e' una croce di
+   quadretti, e cosi' non c'e' un asset in piu' da pubblicare e da invalidare.
+9. **Il livello e' un tratto con un cuore dentro.** Ogni mille punti si
    attraversa la riga dorata e la velocita' sale di uno scalino; dentro ogni
    livello esce **un cuore di ricarica solo**, a un punto a caso del tratto
    (`nuovaQuotaVita()`), e si prova a ogni gruppo — non solo in quelli
