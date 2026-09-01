@@ -2835,6 +2835,12 @@
         if (ev && ev.stopPropagation) ev.stopPropagation();
         el.cardwrap.classList.remove('on');
       };
+      // Si chiude anche toccando fuori dalla card, come il pannello dell'audio
+      // e gli altri riquadri: una via d'uscita in piu' su una schermata che
+      // non fa avanzare niente.
+      el.cardwrap.onclick = function (ev) {
+        if (ev.target === el.cardwrap) el.cardwrap.classList.remove('on');
+      };
     };
 
     // la figura dello stile scelto, se c'e': si disegna quando e' caricata

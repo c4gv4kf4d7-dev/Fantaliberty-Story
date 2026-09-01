@@ -933,12 +933,19 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #regok:hover,#regok:focus{background:#3d466e;outline:none}
 #regok:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.5)}
 
+/* Flex e non grid: con display:grid + place-items:center la riga si dimensiona
+   sul contenuto, quindi il "max-height" dell'immagine non limitava niente e i
+   due bottoni finivano sotto il bordo dello schermo — la card si apriva e non
+   si poteva piu' chiudere. In colonna flex l'altezza del genitore e' definita,
+   l'immagine si stringe (min-height:0, se no un'immagine non si stringe mai
+   sotto la sua misura naturale) e i bottoni restano interi (flex:none). */
 #cardwrap{position:absolute;inset:0;z-index:7;display:none;
- background:rgba(4,5,10,.9);padding:6vw;place-items:center}
-#cardwrap.on{display:grid}
-#cardImg{max-width:100%;max-height:74%;object-fit:contain;border-radius:10px;
+ background:rgba(4,5,10,.9);padding:6vw;
+ flex-direction:column;align-items:center;justify-content:center}
+#cardwrap.on{display:flex}
+#cardImg{max-width:100%;min-height:0;flex:0 1 auto;object-fit:contain;border-radius:10px;
  box-shadow:0 12px 40px rgba(0,0,0,.7)}
-#cardazioni{display:flex;flex-direction:column;gap:8px;width:100%;max-width:22em;
+#cardazioni{display:flex;flex:none;flex-direction:column;gap:8px;width:100%;max-width:22em;
  margin-top:14px}
 #cardazioni .ch{text-align:center;text-decoration:none;display:block}
 
