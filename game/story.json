@@ -49,6 +49,7 @@
     },
     "props": {
       "mac_terminale": "props/prop_mac_terminale.webp",
+      "mac_hello": "props/prop_mac_hello.webp",
       "badge": "props/prop_badge.webp",
       "slide_iphone": "props/prop_schermo_slide_categoria_iphone.webp",
       "slide_watch": "props/prop_schermo_slide_categoria_watch.webp",
@@ -417,7 +418,9 @@
         {
           "t": "prop",
           "fondale": true,
-          "show": true
+          "show": true,
+          "schermata": "mac_hello",
+          "_nota": "Il Mac e' acceso su MacPaint col \"hello.\" scritto a mano: e' la schermata con cui il Macintosh si e' presentato al mondo nel 1984. Resta li' mentre Lucas chiede nome e cognome, e lascia il posto al terminale quando i primi dati sono dentro."
         },
         {
           "t": "wait",
@@ -441,6 +444,16 @@
           "placeholder": "Cognome (se vuoi)",
           "_nota_domanda": "Niente \"text\": la domanda l'ha gia' fatta il campo prima (\"Nome e cognome?\") e quella battuta resta a schermo. Quale dei due campi si sta scrivendo lo dice il suggerimento dentro al campo.",
           "_nota": "Facoltativo davvero: il bottone resta cliccabile a campo vuoto (st.opzionale in showInput). Usato solo per identificare il giocatore nei punteggi come 'Nome C.' — non e' il nickname con cui il gioco si rivolge a lui, quello resta 'nome'."
+        },
+        {
+          "t": "prop",
+          "fondale": true,
+          "show": true,
+          "_nota": "Primi dati dentro: il \"hello.\" lascia il posto al terminale, che arriva con NOME e COGNOME gia' compilati."
+        },
+        {
+          "t": "wait",
+          "ms": 500
         },
         {
           "t": "choice",

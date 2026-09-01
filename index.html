@@ -22,7 +22,7 @@
   gtag('js', new Date());
   gtag('config', 'G-SYX1RZLNNE');
 </script>
-<link rel="stylesheet" href="./game/engine.css?v=110">
+<link rel="stylesheet" href="./game/engine.css?v=111">
 </head>
 <body>
 <div id="stage">
@@ -68,6 +68,10 @@
 
   <div id="propwrap">
     <img id="prop" alt="">
+    <!-- quello che il Mac sta mostrando prima del terminale (la schermata
+         "hello." di MacPaint): sta esattamente dove sta #screen, e' il motore a
+         dare a tutti e due lo stesso riquadro -->
+    <img id="schermata" alt="">
     <div id="screen"></div>
   </div>
 
@@ -319,8 +323,8 @@
   </div>
 </div>
 
-<script src="./game/analytics.js?v=110"></script>
-<script src="./game/engine.js?v=110"></script>
+<script src="./game/analytics.js?v=111"></script>
+<script src="./game/engine.js?v=111"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -410,7 +414,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=110', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=111', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e

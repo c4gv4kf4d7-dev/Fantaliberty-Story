@@ -2213,6 +2213,14 @@ function apriQuizHub(stile) {
   const prop = reg.steps.filter((x) => x.t === 'prop');
   assert.ok(prop.length && prop.every((x) => x.fondale === true),
     'il Mac non torna un oggetto sovrapposto: gli step prop sono quelli "fondale"');
+  // All'accensione il Mac mostra il "hello." di MacPaint, e il terminale arriva
+  // solo dopo i primi dati: l'ordine e' la battuta, non un dettaglio.
+  const iHello = reg.steps.findIndex((x) => x.t === 'prop' && x.schermata === 'mac_hello');
+  const iCognome = reg.steps.findIndex((x) => x.t === 'input' && x.var === 'cognome');
+  const iTerm = reg.steps.findIndex((x, k) => k > iCognome && x.t === 'prop' && x.show === true && !x.schermata);
+  assert.ok(iHello >= 0 && iHello < iCognome, 'il "hello." e\' acceso prima dei primi dati');
+  assert.ok(iTerm > iCognome, 'e lascia il posto al terminale dopo nome e cognome');
+  assert.ok(story.assets.props.mac_hello, 'la schermata "hello." e\' dichiarata fra i props');
   assert.ok(prop.some((x) => x.show === true) && prop.some((x) => x.show === false),
     'il terminale si accende e a fine registrazione si spegne');
   // Lucas e' alto uguale in ogni scena: qui era stato rimpicciolito per non
