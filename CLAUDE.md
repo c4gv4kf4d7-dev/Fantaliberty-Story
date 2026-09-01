@@ -698,7 +698,18 @@ Sei cose da non annullare per sbaglio:
    un premio e' un gioco che sembra rotto. Le fregature **non tolgono cuori** —
    il carrello resta l'unica cosa che ne toglie uno — e sono sempre schivabili
    cambiando corsia.
-7. **Il livello e' un tratto con un cuore dentro.** Ogni mille punti si
+7. **La schermata di morte non si tocca per un attimo.** Compare sotto il dito
+   di chi stava ancora giocando, e il tocco di troppo lo portava fuori dalla
+   corsa prima di aver letto la posizione in classifica — e' successo davvero.
+   I tasti restano spenti finche' la riga della classifica non e' arrivata
+   (`congelaFine` / `scongelaFine`), con un minimo di 900 ms perche' il tocco
+   di troppo non arrivi comunque, e un tetto di 3 secondi perche' **la
+   classifica non deve mai fermare il gioco**: se il database non risponde i
+   tasti si riaccendono lo stesso. Per la stessa ragione i due conteggi della
+   posizione si chiedono insieme (`Promise.all`) e le prime dieci si chiedono
+   dopo: ogni viaggio in fila e' un secondo in cui il giocatore rischia di
+   andarsene senza aver visto dov'e' arrivato.
+8. **Il livello e' un tratto con un cuore dentro.** Ogni mille punti si
    attraversa la riga dorata e la velocita' sale di uno scalino; dentro ogni
    livello esce **un cuore di ricarica solo**, a un punto a caso del tratto
    (`nuovaQuotaVita()`), e si prova a ogni gruppo — non solo in quelli
