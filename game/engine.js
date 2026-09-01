@@ -816,6 +816,12 @@
         el.boxwrap.classList.remove('sistema');
         el.boxwrap.classList.add('in');
         setSpeaker(st.who, st.incuffia);
+        // Senza testo la battuta di prima resta a schermo e si apre solo il
+        // campo. E' il caso di due campi chiesti con una domanda sola ("Nome e
+        // cognome?"): far riscrivere a Lucas una riga per il secondo sarebbe
+        // una domanda che nessuno ha fatto. A dire quale campo si sta
+        // riempiendo ci pensa il suggerimento dentro al campo.
+        if (!st.text) return showInput(st);
         type(fmt(st.text), function () { showInput(st); });
         revealUI = function () { showInput(st); };
         return;
@@ -3852,6 +3858,9 @@
     el.ti.maxLength = max;
     var re = st.pattern ? new RegExp(st.pattern, 'g') : /[^A-Za-zÀ-ÿ0-9' ]/g;
     el.ti.value = '';
+    // il suggerimento dentro al campo: quando due campi di fila arrivano con una
+    // domanda sola, e' l'unica cosa che dice quale dei due si sta scrivendo
+    el.ti.placeholder = fmt(st.placeholder || '');
     // Un campo opzionale (es. il cognome) lascia il bottone premibile anche
     // a vuoto: si continua senza aver scritto niente, non e' un errore.
     el.tok.disabled = !st.opzionale;
@@ -3951,9 +3960,10 @@
      dell'immagine disegnata, cosi' il testo resta dentro il vetro del CRT su
      qualunque schermo.
      I quattro numeri sono il vetro dello schermo misurato su bg_macintosh
-     (852x1846: x 252-577, y 792-1025), rientrato di poco per non far toccare
-     il testo alla cornice. */
-  var SCHERMO_FONDALE = { x: 0.305, y: 0.437, w: 0.358, h: 0.108 };
+     (852x1846: x 252-577, y 792-1025). Il pannello lo copre tutto, fino alla
+     cornice nera del tubo: rientrando anche solo di poco si vedeva spuntare la
+     finestra di sistema disegnata sotto, e il CRT sembrava acceso a meta'. */
+  var SCHERMO_FONDALE = { x: 0.298, y: 0.431, w: 0.377, h: 0.122 };
 
   function ancoraTerminale() {
     var s = el && el.screen;
@@ -3966,7 +3976,11 @@
     if (!lw || !lh) return;
     var scala = Math.max(lw / nw, lh / nh);       // object-fit: cover
     var dw = nw * scala, dh = nh * scala;
-    var ox = (lw - dw) / 2, oy = 0;               // object-position: center top
+    // object-position: center top, oppure center bottom quando la scena
+    // chiede il fondale tagliato in alto ("basso"). Sbagliare questo ancoraggio
+    // sposta il terminale di tutta l'altezza che il fondale sfora.
+    var ox = (lw - dw) / 2;
+    var oy = el.bg.classList.contains('basso') ? (lh - dh) : 0;
     s.style.left = (ox + SCHERMO_FONDALE.x * dw).toFixed(1) + 'px';
     s.style.top = (oy + SCHERMO_FONDALE.y * dh).toFixed(1) + 'px';
     s.style.width = (SCHERMO_FONDALE.w * dw).toFixed(1) + 'px';

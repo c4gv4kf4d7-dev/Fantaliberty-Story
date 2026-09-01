@@ -72,11 +72,24 @@ motore sopra il vetro del CRT calcolando i pixel veri dell'immagine disegnata
 testo finiva fuori dal vetro su ogni finestra di forma diversa dal telefono,
 perche' il fondale e' `cover` e viene ingrandito e tagliato.
 
-Tre cose che vanno insieme, e che sono gia' state smontate una volta per
-sbaglio (poi rimesse): lo step `prop` con `"fondale": true`, la classe CSS
-`#propwrap.fondale` e Lucas piu' piccolo e in basso (`height`/`bottom`/`right`
-nello step `show`) — alla misura piena copre lo schermo. Se il fondale viene
-ridisegnato, `SCHERMO_FONDALE` va rimisurato.
+Due cose che vanno insieme, e che sono gia' state smontate una volta per
+sbaglio (poi rimesse): lo step `prop` con `"fondale": true` e la classe CSS
+`#propwrap.fondale`. Se il fondale viene ridisegnato, `SCHERMO_FONDALE` va
+rimisurato — e il pannello deve coprire il vetro **tutto**: rientrando anche
+di poco spunta sotto la finestra di sistema disegnata, e il CRT sembra acceso
+a meta'.
+
+Altre due, imparate a schermo:
+
+- **Il fondale e' ancorato in basso** (`"bgFx": "basso"`, sia in registrazione
+  che sul badge). Su Safari le barre del browser accorciano la finestra, il
+  fondale e' `cover`, e ancorato in alto il Mac scendeva finche' il box del
+  dialogo non gli finiva davanti. Ancorato in basso quello che avanza si taglia
+  dal soffitto, che non serve a niente. `ancoraTerminale()` deve saperlo:
+  legge la classe `basso` per capire dove sta il bordo dell'immagine.
+- **Lucas non si rimpicciolisce.** E' alto uguale in ogni scena, ed era stato
+  ridotto proprio qui per non coprire il terminale: si vedeva, ed e' stato
+  bocciato. Se copre lo schermo si sposta di lato (`right`), non si accorcia.
 
 ## Personaggi: prima di dire che manca l'arte, controlla il nome
 

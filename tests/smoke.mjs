@@ -551,7 +551,8 @@ VN.step();                                              // -> scena registrazion
 
 // input nome
 assert.ok($('inputform').classList.contains('on'), 'form nome visibile');
-assert.match(txt(), /Come ti chiami/);
+assert.match(txt(), /Nome e cognome/, 'una domanda sola per i primi due campi');
+assert.equal($('ti').placeholder, 'Nome', 'il campo dice quale dei due si sta scrivendo');
 $('ti').value = 'Fr@nc€sco!!!';
 $('ti').oninput();
 assert.equal(VN.state.nome, 'Frncsco', 'sanitizzazione input');
@@ -562,7 +563,10 @@ $('tok').onclick();
 
 // input cognome: facoltativo, il bottone resta premibile anche a campo vuoto
 assert.ok($('inputform').classList.contains('on'), 'form cognome visibile');
-assert.match(txt(), /cognome/i, 'chiede il cognome');
+// nessuna seconda domanda: resta a schermo quella di prima, e a dire che ora
+// tocca al cognome ci pensa il suggerimento dentro al campo
+assert.match(txt(), /Nome e cognome/, 'la battuta non viene riscritta per il secondo campo');
+assert.match($('ti').placeholder, /Cognome/, 'il campo dice che ora tocca al cognome');
 assert.equal($('tok').disabled, false, 'campo facoltativo: si puo\' continuare anche vuoto');
 $('ti').value = 'Ross@i!!!';
 $('ti').oninput();
@@ -2202,22 +2206,30 @@ function apriQuizHub(stile) {
 {
   const reg = story.scenes.registrazione;
   assert.equal(reg.bg, 'macintosh', 'la registrazione sta sul fondale col Mac dentro');
-  assert.equal(reg.bgFx, undefined, 'e a fuoco: il terminale si deve leggere');
+  // a fuoco (il terminale si deve leggere) e ancorato in basso: quello che
+  // avanza si taglia dal soffitto, se no su una finestra bassa il Mac scende e
+  // il box del dialogo gli finisce davanti
+  assert.equal(reg.bgFx, 'basso', 'fondale ancorato in basso, e a fuoco');
   const prop = reg.steps.filter((x) => x.t === 'prop');
   assert.ok(prop.length && prop.every((x) => x.fondale === true),
     'il Mac non torna un oggetto sovrapposto: gli step prop sono quelli "fondale"');
   assert.ok(prop.some((x) => x.show === true) && prop.some((x) => x.show === false),
     'il terminale si accende e a fine registrazione si spegne');
+  // Lucas e' alto uguale in ogni scena: qui era stato rimpicciolito per non
+  // coprire il terminale, e si vedeva. Ora si sposta solo di lato.
   const lucas = reg.steps.find((x) => x.t === 'show' && x.who === 'lucas');
-  assert.ok(lucas.height && lucas.bottom,
-    'Lucas e\' piu\' piccolo e piu\' in basso, se no copre lo schermo');
+  assert.ok(!lucas.height && !lucas.bottom && !lucas.scala,
+    'Lucas tiene la misura di sempre: si sposta, non si rimpicciolisce');
   assert.equal(story.scenes.badge.bg, 'macintosh', 'il badge resta nello stesso posto');
-  assert.equal(story.scenes.badge.bgFx, 'blur', 'fuori fuoco, cosi\' il badge si stacca');
+  assert.equal(story.scenes.badge.bgFx, 'blur basso',
+    'fuori fuoco e con lo stesso taglio: il badge si stacca senza spostare la scena');
 
   const motore = fs.readFileSync(path.join(ROOT, 'game/engine.js'), 'utf8');
   assert.match(motore, /SCHERMO_FONDALE/, 'il motore sa dov\'e\' il vetro del CRT');
   assert.match(motore, /function ancoraTerminale/, 'e ci incolla il terminale in pixel');
   assert.match(motore, /if \(st\.fondale\)/, 'lo step prop conosce la variante "fondale"');
+  assert.match(motore, /classList\.contains\('basso'\)/,
+    'e l\'aggancio sa che con "basso" il fondale e\' ancorato in basso');
 }
 
 /* ---------- 9-quater. il giocatore non attraversa le scene ----------
