@@ -124,6 +124,25 @@
     revealUI = null;
   }
 
+  /* Le finestre che, quando sono aperte, si prendono loro il comando: finche'
+     una di queste e' a schermo, la barra spaziatrice non deve far scorrere il
+     dialogo che sta dietro. Il tocco lo sapeva gia' (l'onclick di #stage
+     ignora i tocchi che finiscono dentro questi riquadri), la tastiera no: il
+     suo elenco era scritto a mano ed era rimasto indietro di tre finestre — il
+     pannello dell'audio, la card di fine previsioni e il camerino. Da qui in
+     poi l'elenco e' uno solo, quindi non puo' piu' divergere. */
+  var APERTI = ['inputform', 'choices', 'listform', 'griglia', 'monitorwrap',
+    'countdown', 'multwrap', 'regole', 'quadrowrap', 'runwrap', 'emailwrap',
+    'modal', 'audiowrap', 'cardwrap', 'carosello'];
+
+  function qualcosaAperto() {
+    for (var i = 0; i < APERTI.length; i++) {
+      var n = el[APERTI[i]];
+      if (n && n.classList.contains('on')) return true;
+    }
+    return false;
+  }
+
   function chiudiHub() {
     if (!el.hub) return;
     el.hub.classList.remove('on');
@@ -639,7 +658,14 @@
 
   function apriMenuEsci() {
     if (!VN.state.raggiunto_s2 || VN.state.post_lobby_visto) return;   // il bottone non dovrebbe esserci, ma per sicurezza
-    stopTyping();
+    /* skip(), non stopTyping(): il menu si puo' aprire mentre una battuta si
+       sta ancora scrivendo, e stopTyping() spegneva il typewriter lasciando la
+       riga a meta' e senza freccia. Chi poi sceglieva "ANNULLA, RESTO QUI" si
+       ritrovava davanti una frase troncata — il gioco non era bloccato (il tap
+       dopo la completava) ma sembrava rotto. skip() la porta in fondo e
+       riaccende la freccia, cioe' lascia la scena esattamente come sarebbe
+       stata toccando lo schermo. */
+    skip();
     mostraModale({
       text: 'Vuoi salvare i progressi? Potrai riprendere la partita piu\' tardi.',
       si: 'SI\', SALVA', no: 'NO', annulla: 'ANNULLA, RESTO QUI'
@@ -3734,7 +3760,18 @@
     var tutorial = condizioneOk(st.tutorialSe) ? st.tutorial : null;
 
     var cur = -1;
-    var visti = {};
+    /* Le zone gia' presentate valgono per la PARTITA, non per la singola
+       apertura dell'hub. Con un oggetto locale, ogni rientro in lobby (dal
+       menu Esci, o da Peter dopo il quiz) ripartiva da zero e Francesca
+       rispiegava la Hall of Fame e il regolamento da capo — proprio il difetto
+       che la battuta-una-volta-sola doveva togliere. Sta in VN.state, quindi
+       entra nel salvataggio e sopravvive alla chiusura dell'app; una partita
+       nuova lo azzera con tutto il resto (azzeraVars).
+       Le zone che cambiano dopo le previsioni hanno id propri (tenda_dopo,
+       quiz_aperto, staff_aperto), quindi la loro battuta nuova si dice
+       comunque: qui restano fuori solo quelle che il giocatore ha visto
+       davvero, con quell'id. */
+    var visti = VN.state.hub_visti || (VN.state.hub_visti = {});
     // Chi rientra in lobby dal menu Esci ha gia' girato l'hub in passato: non
     // gli si chiede un altro swipe a vuoto solo per riaprire la tenda, e
     // niente tutorial da rivedere. "esci_ritorno" e' un flag a un colpo solo,
@@ -5500,17 +5537,7 @@
         || (el.carosello && el.carosello.classList.contains('on'));
       if (hubTasti && scorribile && hubTasti(e.key)) return;
       if (e.key !== ' ' && e.key !== 'Enter') return;
-      if (el.inputform.classList.contains('on') || el.choices.classList.contains('on') ||
-          (el.listform && el.listform.classList.contains('on')) ||
-          (el.griglia && el.griglia.classList.contains('on')) ||
-          (el.monitorwrap && el.monitorwrap.classList.contains('on')) ||
-          (el.countdown && el.countdown.classList.contains('on')) ||
-          (el.multwrap && el.multwrap.classList.contains('on')) ||
-          (el.regole && el.regole.classList.contains('on')) ||
-          (el.quadrowrap && el.quadrowrap.classList.contains('on')) ||
-          (el.runwrap && el.runwrap.classList.contains('on')) ||
-          (el.emailwrap && el.emailwrap.classList.contains('on')) ||
-          (el.modal && el.modal.classList.contains('on'))) return;
+      if (qualcosaAperto()) return;
       VN.step();
     };
 

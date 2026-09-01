@@ -1599,6 +1599,32 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.equal(VN.sceneId, 'aggancio', 'ENTRA porta in sala');
   assert.equal($('hub').classList.contains('on'), false, 'uscendo, l\'hub si chiude');
   assert.equal($('hubspots').children.length, 0, 'e non lascia hotspot appesi sopra la scena');
+
+  /* Le zone gia' presentate valgono per la partita, non per la singola apertura
+     dell'hub: l'elenco sta in VN.state, quindi entra nel salvataggio e si
+     ritrova identico al rientro in lobby (dal menu Esci, o da Peter dopo il
+     quiz). Con un elenco locale ogni rientro ripartiva da zero e Francesca
+     rispiegava la Hall of Fame e il regolamento da capo. */
+  assert.ok(VN.state.hub_visti && VN.state.hub_visti.hall_of_fame,
+    'le zone viste restano segnate nello stato della partita');
+}
+
+/* ---------- 5b-bis. rientrando in lobby non si rispiega quello che si e' gia' visto ---------- */
+{
+  VN.clearSave();
+  // come ci arriva chi rientra dal menu Esci: la lobby l'ha gia' girata, e la
+  // Hall of Fame gliel'hanno gia' presentata
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'lobby',
+    stato: { esci_ritorno: true, hub_visti: { tenda: true, hall_of_fame: true } } });
+  VN.step(); VN.step(); VN.step();
+  const dots = () => [...$('hdots').querySelectorAll('.hdot')];
+  $('hnext').onclick({ stopPropagation() {} });
+  assert.ok(dots()[1].classList.contains('sel'), 'seconda zona: la Hall of Fame');
+  assert.equal(txt(), '', 'non ripete la presentazione a chi c\'e\' gia\' stato');
+  assert.ok($('boxwrap').classList.contains('muto'), 'e il fumetto resta spento');
+  // il regolamento invece non l'ha mai aperto: quello si presenta
+  $('hnext').onclick({ stopPropagation() {} });
+  assert.match(txt(), /regolamento/i, 'la zona mai vista si presenta normalmente');
 }
 
 /* ---------- 5c. la zona 4 cambia faccia quando i pronostici sono chiusi ---------- */
