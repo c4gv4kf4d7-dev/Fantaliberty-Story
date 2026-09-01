@@ -4387,7 +4387,7 @@
      la partita. */
   function aggiornaBottoneAudio() {
     if (!el.audiobtn) return;
-    el.audiobtn.textContent = (!audio.mus && !audio.sfx) ? '🔇' : '🔊';
+    el.audiobtn.classList.toggle('muto', !audio.mus && !audio.sfx);
   }
 
   function aggiornaToggle() {
