@@ -76,12 +76,12 @@
   #faccia.contento{ background-position:100% 0; }
 
   #targaBasso{ display:flex; align-items:center; gap:7px; }
-  /* Gira a scatti, non di continuo: ruotare un disegno a quadretti in modo
-     continuo sbava i pixel a ogni fotogramma e l'icona diventa una macchia.
-     A dodici scatti l'occhio vede che gira e i quadretti restano dritti. */
+  /* Gira liscio: la tavola non e' a quadretti, quindi ruotandola non c'e'
+     niente da sbavare, e gli scatti su un disegno tondo si leggerebbero come
+     sussulti. Le tre code degli anelli, in alto, sono quelle che fanno vedere
+     che gira. */
   #anellino{ width:26px; height:26px; flex:none; display:block;
-    animation:giraAnello 2.4s steps(12) infinite; }
-  #anellino svg{ display:block; width:100%; height:100%; }
+    animation:giraAnello 3.6s linear infinite; }
   @keyframes giraAnello{ to{ transform:rotate(360deg) } }
   #punti{ font-family:'Press Start 2P', monospace; font-size:15px;
     color:#f0b722; text-shadow:2px 2px 0 #0a0c16; letter-spacing:1px; }
@@ -397,7 +397,7 @@
           <div id="vite"><span>♥</span><span>♥</span><span>♥</span></div>
         </div>
         <div id="targaBasso">
-          <span id="anellino" aria-hidden="true"></span>
+          <img id="anellino" alt="">
           <span id="punti">0</span>
           <span id="record">HI 0</span>
         </div>
@@ -1887,30 +1887,6 @@ function faccia(quale, ms){
   if (quale) facciaId = setTimeout(() => faccia(null), ms || 1100);
 }
 
-/* I tre anelli dell'attivita', quelli che si raccolgono per il corridoio.
-   Disegnati a quadretti come l'ingranaggio: la tacca in alto sul cerchio
-   esterno serve a far vedere che gira — tre anelli pieni, ruotando, starebbero
-   fermi. Il fondo scuro sotto e' quello che fa da separazione fra un anello e
-   l'altro, come nell'icona vera. */
-function disegnaAnelli(nodo){
-  const N = 17, C = (N - 1) / 2;
-  const ANELLI = [[5.9, 7.7, '#f5335e'], [3.7, 5.4, '#a8db00'], [1.5, 3.2, '#1fd5e8']];
-  const pezzi = [];
-  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++){
-    const dx = x - C, dy = y - C, d = Math.hypot(dx, dy);
-    let colore = null;
-    ANELLI.forEach(([ri, re, c]) => { if (d >= ri && d <= re) colore = c; });
-    // la tacca sul cerchio esterno
-    if (colore === ANELLI[0][2] &&
-        Math.abs(Math.atan2(-dy, dx) - Math.PI / 2) < 0.20) colore = null;
-    if (colore) pezzi.push('<rect x="' + x + '" y="' + y + '" width="1" height="1" fill="' + colore + '"/>');
-  }
-  nodo.innerHTML =
-    '<svg viewBox="0 0 ' + N + ' ' + N + '" shape-rendering="crispEdges">' +
-    '<circle cx="' + C + '" cy="' + C + '" r="8" fill="#100e0d"/>' +
-    pezzi.join('') + '</svg>';
-}
-
 function mostraRecord(){
   const r = document.getElementById('record');
   if (r) r.textContent = 'RECORD ' + record;
@@ -1919,7 +1895,8 @@ function mostraRecord(){
 function montaTarga(){
   document.getElementById('faccia').style.backgroundImage =
     'url(' + ((INLINE && INLINE['run_avatar.webp']) || (CARTELLA + 'run_avatar.webp' + VERSIONE)) + ')';
-  disegnaAnelli(document.getElementById('anellino'));
+  document.getElementById('anellino').src =
+    (INLINE && INLINE['run_banner_icona.webp']) || (CARTELLA + 'run_banner_icona.webp' + VERSIONE);
   mostraRecord();
 }
 
