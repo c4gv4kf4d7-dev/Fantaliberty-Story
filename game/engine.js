@@ -2005,14 +2005,14 @@
     return trovaEvento(v.shift());
   }
 
-  /* I tre esiti di un micro-evento sono sempre +1, 0 e -1 — uno per opzione — ma
-     l'abbinamento si rimescola a ogni attivazione. I valori "editoriale" scritti
-     nella banca dicono soltanto che tono ha ciascuna risposta: NON sono il
-     mapping del gioco. Cosi' chi rigioca non puo' imparare "la B e' quella
-     buona", e deve scegliere la risposta che gli sembra giusta. */
-  function esitiMicroEvento(e) {
-    var valori = e.valori || [1, 0, -1];
-    return mescola(valori.slice());
+  /* Il punteggio di ogni risposta e' quello che l'autore ha scritto in banca
+     ("editoriale": -3/0/+3, il tono narrativo della scelta), non un
+     abbinamento a caso: la stessa risposta vale sempre lo stesso punteggio,
+     a ogni partita e per ogni giocatore. Il giocatore non vede il numero —
+     lo dice solo Susan, a parole (conseguenzaMicroEvento) — ma il numero
+     dietro non cambia mai in base a quale posizione l'opzione occupa. */
+  function puntoMicroEvento(o) {
+    return o.editoriale > 0 ? 1 : o.editoriale < 0 ? -1 : 0;
   }
 
   /* Come e' andata lo dice Susan, e lo dice a parole: niente numeri, niente
@@ -2069,10 +2069,9 @@
   }
 
   function scelteEvento(e, opzioni, done) {
-    var esiti = esitiMicroEvento(e);
     showChoices({
       options: opzioni.map(function (o, idx) {
-        var punti = esiti[idx % esiti.length] || 0;
+        var punti = puntoMicroEvento(o);
         return { label: o.label, value: idx, _do: function () {
           segna('micro_eventi', 'r', e.id, o.label, punti);
           VN.progressed = true;

@@ -418,20 +418,23 @@ Uno step `say` puo' pescare da un pool invece di avere il testo scritto:
 
 ### I micro-eventi: tre risposte, e il punteggio non si vede
 
-Un micro-evento non e' una scenetta passiva: ha **tre risposte**, e vale
-`+3`, `0` o `-3`. Il valore `editoriale` scritto in `game/domande.json` dice
-soltanto che tono ha ciascuna risposta — **non e' il mapping del gioco**. A ogni
-attivazione il motore mescola i tre esiti e li riassegna alle tre opzioni, cosi'
-chi rigioca non puo' imparare "la B e' quella buona".
+Un micro-evento non e' una scenetta passiva: ha **tre risposte**, e in banca
+ognuna porta un `editoriale` (`game/domande.json`, `+3`/`0`/`-3`) che e' il
+tono narrativo della scelta — utile, neutra, egoista. Il punto che finisce nel
+totale e' il **segno** di quel valore (`+1`/`0`/`-1`, `puntoMicroEvento()` in
+`engine.js`): fisso, deciso dall'autore, mai a caso. La stessa risposta vale
+sempre lo stesso punto, a ogni partita e per ogni giocatore — non c'e' nessun
+rimescolamento a runtime.
 
 Il giro e': narrazione dell'evento → un tocco → Susan dalla regia, con le tre
 risposte sotto → la conseguenza, sempre detta da Susan.
 
 **Il giocatore non deve mai vedere il valore.** Niente numeri, badge, popup,
 "bonus" o "malus": l'unico ritorno e' come Susan racconta com'e' andata. `npm
-test` controlla che ogni evento abbia esattamente un `+3`, uno `0` e un `-3`,
-che le etichette e i pool non contengano cifre, e che il mapping venga davvero
-mescolato a runtime.
+test` controlla che ogni evento abbia esattamente un `+3`, uno `0` e un `-3` in
+banca, che le etichette e i pool non contengano cifre, e che il punto salvato
+sia sempre quello dell'editoriale scelto — mai un altro, mai diverso fra un
+giro e l'altro.
 
 ### S6: il recap e l'invio
 
