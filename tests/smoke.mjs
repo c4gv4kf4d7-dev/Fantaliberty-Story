@@ -618,7 +618,7 @@ assert.equal($('tval_store').textContent, 'LIBERTY');
 
 // dipartimento (campo aggiunto dallo script master v4.0)
 assert.match(txt(), /in che dipartimento/);
-[...$('choices').querySelectorAll('.ch')][2].onclick({ stopPropagation() {} });   // Shopping
+[...$('choices').querySelectorAll('.ch')][5].onclick({ stopPropagation() {} });   // Shopping (sesto dei sette, in ordine alfabetico)
 assert.equal(VN.state.reparto, 'shopping');
 assert.equal($('tval_reparto').textContent, 'SHOPPING');
 
@@ -1486,14 +1486,15 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.ok($('bg').getAttribute('src').includes('halloffame_frontale'),
     'fondale della zona 2: la parete con i tre quadri');
   assert.match(txt(), /Hall of Fame/);
-  assert.ok($('npcBody').getAttribute('src').includes('chr_francesca_presenta'),
-    'Francesca c\'e\' anche qui, e presenta la parete');
-  // Lo scorrimento si anima sul fondale, non sul personaggio: #npc ha gia' la sua
-  // animazione d'ingresso, e una seconda la sovrascriveva lasciandolo trasparente
-  // a fine corsa — a schermo Francesca spariva da tutte le zone dopo il primo swipe.
+  assert.equal($('name').textContent, 'Francesca', 'la presenta lei, ma da fuori campo');
+  // Nella lobby Francesca si vede solo davanti alla tenda: nelle altre zone e'
+  // una voce nel box ("dice"), perche' la parete dei quadri e il cartellone del
+  // regolamento sono la scena e una figura in mezzo li copriva.
+  assert.equal($('npc').classList.contains('out'), true,
+    'nella Hall of Fame nessuno in scena');
+  // Lo scorrimento si anima sul fondale, non sul personaggio.
   assert.ok($('bg').classList.contains('vaiSx'), 'il fondale scorre');
   assert.equal($('npc').classList.contains('vaiSx'), false, 'il personaggio no');
-  assert.ok($('npc').classList.contains('in'), 'ed entra con la sua animazione');
   /* La Hall of Fame e' una piccola galleria: tre quadri, uno per vincitore, e
      ognuno si apre per conto suo. Guardarli non e' una scena e non deve toccare
      la partita, come il regolamento. */
