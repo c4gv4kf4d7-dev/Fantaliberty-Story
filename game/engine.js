@@ -118,6 +118,7 @@
   /* ---------------- typewriter ---------------- */
   function hideUI() {
     el.choices.classList.remove('on', 'fermo');
+    if (el.rileggi) el.rileggi.hidden = true;
     if (el.box) el.box.style.height = '';
     el.inputform.classList.remove('on');
     if (el.listform) el.listform.classList.remove('on');
@@ -145,10 +146,24 @@
 
   // Il testo si scrive su requestAnimationFrame invece che con setInterval:
   // un timer a 36 ms su iOS finisce fuori sincrono col refresh e "singhiozza".
+  /* Le ultime battute, per "rileggi": chi le ha dette e cosa. Si riempie da
+     type() e typeKeep(), cioe' da tutto quello che passa per il box, e si
+     mostra solo dove serve (le risposte dei pronostici). */
+  var storico = [];
+  function annota(line) {
+    if (!line) return;
+    var chi = el.name && !el.name.classList.contains('hidden') ? el.nametxt.textContent : '';
+    var ultima = storico[storico.length - 1];
+    if (ultima && ultima.testo === line && ultima.chi === chi) return;   // la stessa riga ridetta
+    storico.push({ chi: chi, testo: line });
+    if (storico.length > 40) storico.shift();
+  }
+
   function type(line, after) {
     stopTyping();
     el.arrow.style.opacity = 0;
     hideUI();
+    annota(line);
     curLine = line; typing = true; pending = null; typeTarget = el.txt;
     riservaAltezza(line);
     if (!VN.speed) { el.txt.textContent = line; typing = false; return after(); }
@@ -186,6 +201,7 @@
   function typeKeep(line) {
     stopTyping();
     el.arrow.style.opacity = 0;
+    annota(line);
     curLine = line; typing = true; pending = null; typeTarget = el.txt;
     if (!VN.speed) { el.txt.textContent = line; typing = false; return; }
     var shown = 0, t0 = 0;
@@ -1967,6 +1983,7 @@
         el.choices.appendChild(b);
       });
       el.choices.classList.add('on');
+      if (el.rileggi) el.rileggi.hidden = false;
     }
 
     function annuncia(d, o) {
@@ -3681,6 +3698,34 @@
     return doc.createTextNode('');
   }
 
+  /* ---------------- rileggi: le ultime battute ----------------
+     Durante i pronostici la domanda resta nel box, ma il contesto che l'ha
+     preparata (quello che ha detto la regia prima) e' gia' passato. Il
+     pannello mostra le ultime otto righe, con chi le ha dette; l'ultima e'
+     evidenziata. Si apre sopra la scena e non tocca la partita. */
+  function apriStorico() {
+    if (!el.storicowrap) return;
+    suona('apri');
+    el.storicocorpo.innerHTML = '';
+    var righe = storico.slice(-8);
+    righe.forEach(function (r, i) {
+      var d = global.document.createElement('div');
+      d.className = 'stbatt' + (i === righe.length - 1 ? ' ultima' : '');
+      var b = global.document.createElement('b');
+      b.textContent = r.chi || '';
+      if (r.chi) d.appendChild(b);
+      d.appendChild(global.document.createTextNode(r.testo));
+      el.storicocorpo.appendChild(d);
+    });
+    el.storicowrap.classList.add('on');
+    el.storicocorpo.scrollTop = el.storicocorpo.scrollHeight;
+  }
+  function chiudiStorico() {
+    if (!el.storicowrap || !el.storicowrap.classList.contains('on')) return;
+    suona('chiudi');
+    el.storicowrap.classList.remove('on');
+  }
+
   function chiudiRegole() {
     if (el.regole && el.regole.classList.contains('on')) suona('chiudi');
     if (!el.regole) return;
@@ -5386,6 +5431,8 @@
       quizbar: $('quizbar'), qinfo: $('qinfo'), qtimer: $('qtimer'), qbar: $('qbar'), qsec: $('qsec'),
       multwrap: $('multwrap'), multrighe: $('multrighe'), multresto: $('multresto'), multok: $('multok'),
       regole: $('regole'), regtit: $('regtit'), regcorpo: $('regcorpo'), regok: $('regok'),
+      rileggi: $('rileggi'), storicowrap: $('storicowrap'), storicocorpo: $('storicocorpo'),
+      storicook: $('storicook'),
       quadrowrap: $('quadrowrap'), quadroImg: $('quadroImg'), quadrochiudi: $('quadrochiudi'),
       runwrap: $('runwrap'), runframe: $('runframe'), runchiudi: $('runchiudi'),
       emblemi: $('emblemi'), emblemaIphone: $('emblema-iphone'),
@@ -5413,6 +5460,23 @@
       apriMenuEsci();
     };
     if (el.btnEsciIcon) el.btnEsciIcon.src = assetUrl('props', 'exit');
+    storico = [];
+    if (el.rileggi) {
+      el.rileggi.hidden = true;
+      el.rileggi.onclick = function (ev) {
+        if (ev && ev.stopPropagation) ev.stopPropagation();
+        apriStorico();
+      };
+    }
+    if (el.storicook) el.storicook.onclick = function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      chiudiStorico();
+    };
+    if (el.storicowrap) el.storicowrap.onclick = function (ev) {
+      if (ev.target === el.storicowrap) chiudiStorico();
+      else if (ev.stopPropagation) ev.stopPropagation();
+    };
+    chiudiStorico();
     if ($('badgewrap')) $('badgewrap').classList.remove('in');
     if ($('coriandoli')) $('coriandoli').innerHTML = '';
     if (el.nero) el.nero.classList.remove('on', 'sfuma');   // ripartenza pulita: mai il nero addosso
@@ -5470,6 +5534,7 @@
            e.target.closest('#griglia') || e.target.closest('#monitorwrap') ||
            e.target.closest('#countdown') || e.target.closest('#cardwrap') ||
            e.target.closest('#multwrap') || e.target.closest('#regole') ||
+           e.target.closest('#rileggi') || e.target.closest('#storicowrap') ||
            e.target.closest('#emailwrap') || e.target.closest('#quadrowrap') ||
            e.target.closest('#runwrap') || e.target.closest('#propwrap') ||
            e.target.closest('#audiowrap') || e.target.closest('#audiobtn') ||
@@ -5489,6 +5554,7 @@
           (el.countdown && el.countdown.classList.contains('on')) ||
           (el.multwrap && el.multwrap.classList.contains('on')) ||
           (el.regole && el.regole.classList.contains('on')) ||
+          (el.storicowrap && el.storicowrap.classList.contains('on')) ||
           (el.quadrowrap && el.quadrowrap.classList.contains('on')) ||
           (el.runwrap && el.runwrap.classList.contains('on')) ||
           (el.emailwrap && el.emailwrap.classList.contains('on')) ||
