@@ -87,6 +87,12 @@ Altre due, imparate a schermo:
   dialogo non gli finiva davanti. Ancorato in basso quello che avanza si taglia
   dal soffitto, che non serve a niente. `ancoraTerminale()` deve saperlo:
   legge la classe `basso` per capire dove sta il bordo dell'immagine.
+- **All'accensione il Mac non mostra il terminale.** Mostra `prop_mac_hello`
+  — MacPaint col "hello." scritto a mano, l'immagine con cui il Macintosh si e'
+  presentato nel 1984 — e cede il posto al terminale solo quando nome e cognome
+  sono dentro (step `prop` con `"schermata"`). E' un omaggio chiesto
+  dall'utente, non una schermata di caricamento: non va tolto perche' "tanto il
+  terminale c'e' gia'".
 - **Lucas non si rimpicciolisce.** E' alto uguale in ogni scena, ed era stato
   ridotto proprio qui per non coprire il terminale: si vedeva, ed e' stato
   bocciato. Se copre lo schermo si sposta di lato (`right`), non si accorcia.

@@ -217,6 +217,26 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 /* il fosforo non sta mai fermo del tutto: due punti percentuali di luce, non di piu' */
 @keyframes crt{0%,100%{filter:brightness(1)}47%{filter:brightness(.98)}52%{filter:brightness(1.02)}}
 #propwrap.fondale .fk{opacity:.62}
+/* Il cursore del terminale e' un blocco pieno: sul fosforo verde va verde,
+   se no resta il verdone scuro del Mac a prop e non si vede. */
+#propwrap.fondale .cur{background:#8ff3b4}
+
+/* Quello che il Mac mostra prima del terminale: la schermata "hello." di
+   MacPaint, omaggio all'accensione del Macintosh. Sta nello stesso riquadro del
+   terminale — glielo da' ancoraTerminale — e ci va dentro tutta ("fill"): il
+   ritaglio della foto e il vetro del CRT non hanno la stessa forma per pochi
+   punti percentuali, e vale piu' vedere tutta la finestra di MacPaint che
+   rispettare quei punti. */
+#schermata{position:absolute;display:none;object-fit:fill;border-radius:7px;
+ image-rendering:pixelated}
+#propwrap.fondale #schermata.on{display:block}
+/* col "hello." a schermo il terminale non si spegne: resta sopra, vuoto, a
+   mettere le righe del tubo anche sulla schermata */
+#propwrap.conschermata #screen{background:none;box-shadow:none;animation:none}
+/* sul bianco di MacPaint le righe pesano il doppio che sul fosforo: qui piu' leggere */
+#propwrap.conschermata #screen::after{background:repeating-linear-gradient(to bottom,
+   rgba(0,0,0,.2) 0px, rgba(0,0,0,.2) 1px, transparent 1px, transparent 3px)}
+#propwrap.conschermata .frow,#propwrap.conschermata .cur{visibility:hidden}
 
 /* ---------- badge dell'accredito ----------
    Lucas lo consegna a fine registrazione: l'immagine porta la mela, il nome

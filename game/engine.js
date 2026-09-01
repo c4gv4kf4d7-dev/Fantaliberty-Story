@@ -980,6 +980,10 @@
         // e' gia' dentro il fondale della scena. Serve solo ad accendere (e poi
         // spegnere) il terminale sopra lo schermo che sta nell'immagine.
         if (st.fondale) {
+          // Il Mac puo' mostrare una schermata sua invece del terminale: e'
+          // cosi' che all'accensione c'e' il "hello." di MacPaint e il
+          // terminale arriva solo dopo i primi dati.
+          mostraSchermata(st.show ? st.schermata : null);
           terminaleNelFondale(!!st.show);
           el.propwrap.classList.remove(st.show ? 'out' : 'in');
           el.propwrap.classList.add(st.show ? 'in' : 'out');
@@ -3994,10 +3998,17 @@
     // sposta il terminale di tutta l'altezza che il fondale sfora.
     var ox = (lw - dw) / 2;
     var oy = el.bg.classList.contains('basso') ? (lh - dh) : 0;
-    s.style.left = (ox + SCHERMO_FONDALE.x * dw).toFixed(1) + 'px';
-    s.style.top = (oy + SCHERMO_FONDALE.y * dh).toFixed(1) + 'px';
-    s.style.width = (SCHERMO_FONDALE.w * dw).toFixed(1) + 'px';
-    s.style.height = (SCHERMO_FONDALE.h * dh).toFixed(1) + 'px';
+    var box = {
+      left: (ox + SCHERMO_FONDALE.x * dw).toFixed(1) + 'px',
+      top: (oy + SCHERMO_FONDALE.y * dh).toFixed(1) + 'px',
+      width: (SCHERMO_FONDALE.w * dw).toFixed(1) + 'px',
+      height: (SCHERMO_FONDALE.h * dh).toFixed(1) + 'px'
+    };
+    [s, el.schermata].forEach(function (n) {
+      if (!n) return;
+      n.style.left = box.left; n.style.top = box.top;
+      n.style.width = box.width; n.style.height = box.height;
+    });
     adattaTerminale();
   }
 
@@ -4008,10 +4019,27 @@
     el.propwrap.classList.toggle('fondale', !!dentro);
     if (!dentro) {
       if (el.screen) el.screen.style.cssText = '';
+      mostraSchermata(null);
       return;
     }
     ancoraTerminale();
     if (el.bg && !el.bg.complete) el.bg.addEventListener('load', ancoraTerminale, { once: true });
+  }
+
+  /* La schermata che il Mac mostra prima del terminale. E' un'immagine dentro
+     il vetro, non un fondale: prende lo stesso riquadro del terminale
+     (ancoraTerminale) e si accende con apparira(), perche' quello che ha
+     addosso l'<img> e' della scena di prima. */
+  function mostraSchermata(id) {
+    if (!el || !el.schermata) return;
+    if (!id) {
+      el.schermata.classList.remove('on');
+      el.propwrap.classList.remove('conschermata');
+      return;
+    }
+    el.propwrap.classList.add('conschermata');
+    apparira(el.schermata, assetUrl('props', fmt(id)), el.schermata);
+    el.schermata.classList.add('on');
   }
 
   var termRows = [];
@@ -5099,6 +5127,7 @@
       nero: $('nero'),
       boot: $('boot'), bootbar: $('bootbar'), logo: $('logo'), logoImg: $('logoImg'),
       avatar: $('avatar'), propwrap: $('propwrap'), prop: $('prop'), screen: $('screen'),
+      schermata: $('schermata'),
       boxwrap: $('boxwrap'), name: $('name'), nametxt: $('nametxt'), voce: $('voce'),
       txt: $('txt'), arrow: $('arrow'),
       choices: $('choices'), inputform: $('inputform'), ti: $('ti'), tok: $('tok'),
