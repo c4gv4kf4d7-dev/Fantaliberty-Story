@@ -133,6 +133,8 @@
       "name": "Francesca",
       "defaultBody": "idle",
       "defaultHead": "neutro",
+      "voltoScala": 0.85,
+      "_notaVoltoScala": "Correzione sopra l'ancoraggio del viso: col viso alto come quello di Lucas la sua testa veniva molto piu' grossa, perche' l'hijab la allarga. Non e' una svista dell'inquadratura, e' che la testa non finisce col viso.",
       "bodies": {
         "idle": "chars/chr_francesca_idle.webp",
         "benvenuto": "chars/chr_francesca_benvenuto.webp",
@@ -506,24 +508,32 @@
           "text": "E in che dipartimento?",
           "options": [
             {
-              "label": "Operation",
-              "value": "operation"
+              "label": "Business",
+              "value": "business"
             },
             {
-              "label": "Support",
-              "value": "support"
-            },
-            {
-              "label": "Shopping",
-              "value": "shopping"
+              "label": "Forum",
+              "value": "forum"
             },
             {
               "label": "Leadership",
               "value": "leadership"
             },
             {
+              "label": "Operation",
+              "value": "operation"
+            },
+            {
               "label": "People",
               "value": "people"
+            },
+            {
+              "label": "Shopping",
+              "value": "shopping"
+            },
+            {
+              "label": "Support",
+              "value": "support"
             }
           ]
         },
@@ -1522,8 +1532,7 @@
             {
               "id": "hall_of_fame",
               "bg": "lobby_z2_hall_of_fame_parete",
-              "who": "francesca",
-              "body": "presenta",
+              "dice": "francesca",
               "say": "La Hall of Fame. Qui finiscono quelli che per un anno possono dire di averci visto lungo.",
               "hotspots": [
                 {
@@ -1555,16 +1564,12 @@
                 }
               ],
               "_nota": "La zona si guarda come una piccola galleria: la parete con i tre vincitori delle edizioni passate, e ogni quadro si apre per conto suo. Niente seconda battuta prima delle immagini — la zona la presenta Francesca con una riga sola, il resto lo dice il disegno. Due misure da non perdere: \"bgFx\": \"basso\" taglia il fondale in alto invece che in basso (i quadri stanno nella meta' bassa dell'immagine e senza questo finivano sotto il box del dialogo), e le tre aree sono misurate su quella inquadratura li'. Francesca e' piu' piccola e in un angolo apposta: alla misura normale copriva il terzo quadro.",
-              "scala": 0.62,
-              "bottom": "0%",
-              "right": "-8%",
               "bgFx": "basso"
             },
             {
               "id": "regolamento",
               "bg": "lobby_z3_regolamento",
-              "who": "francesca",
-              "body": "tablet",
+              "dice": "francesca",
               "say": "Il regolamento e' li' sul cartellone, se ti serve. Non e' lungo: abbiamo preferito lasciarti qualche possibilita' di sbagliare.",
               "hotspots": [
                 {
@@ -1605,7 +1610,7 @@
                   "say": "Ti ho sentito.",
                   "after": [
                     {
-                      "who": "francesca",
+                      "dice": "francesca",
                       "text": "Perfetto. È ancora vivo."
                     }
                   ]
@@ -1613,7 +1618,8 @@
               ],
               "resta": true,
               "_nota": "Peter e' scenografia, non la guida: nella zona gia' vista resta in scena (\"resta\": true) invece di uscire come fa Francesca. Senza, tornando sulla zona il tavolino era vuoto e non si capiva piu' dove fosse il quiz.",
-              "scala": 0.62,
+              "_notaMisura": "La scala e' tarata sulla testa di Lucas, che e' il metro del gioco: con lo 0.62 di prima Peter veniva grande la meta' di chiunque altro, con lo scalaHub del cast (1.15) copriva il tavolino da toccare.",
+              "scala": 0.85,
               "bottom": "16%"
             },
             {
@@ -1643,7 +1649,8 @@
               ],
               "resta": true,
               "_nota": "Peter e' scenografia, non la guida: nella zona gia' vista resta in scena (\"resta\": true) invece di uscire come fa Francesca. Senza, tornando sulla zona il tavolino era vuoto e non si capiva piu' dove fosse il quiz.",
-              "scala": 0.62,
+              "_notaMisura": "La scala e' tarata sulla testa di Lucas, che e' il metro del gioco: con lo 0.62 di prima Peter veniva grande la meta' di chiunque altro, con lo scalaHub del cast (1.15) copriva il tavolino da toccare.",
+              "scala": 0.85,
               "bottom": "16%"
             },
             {
@@ -1660,7 +1667,7 @@
                   "y": "28%",
                   "w": "40%",
                   "h": "58%",
-                  "who": "francesca",
+                  "dice": "francesca",
                   "suono": "porta_negata",
                   "say": "Eh no. Il badge non ti dà ancora tutto questo potere. Torna più tardi."
                 }

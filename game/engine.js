@@ -1294,7 +1294,14 @@
       if (!a) return;
       var sh = el.stage.clientHeight, sw = el.stage.clientWidth;
       if (!sh || !sw) return;
-      var altezzaImg = (VOLTO_H * sh) / v.h;           // quanto deve venire alta l'immagine
+      // "voltoScala": una correzione per personaggio sopra l'ancoraggio del
+      // viso. Il viso uguale non basta a farli sembrare uguali quando la testa
+      // non finisce col viso — Francesca porta l'hijab, che le allarga la testa
+      // di un terzo: col viso alto come quello di Lucas la sua testa veniva
+      // molto piu' grossa della sua. Si tocca il viso di riferimento, non
+      // l'ancoraggio: la figura resta inquadrata nello stesso punto.
+      var altoVolto = VOLTO_H * ((c && c.voltoScala) || 1);
+      var altezzaImg = (altoVolto * sh) / v.h;         // quanto deve venire alta l'immagine
       var boxW = a > NPC_AR ? altezzaImg * a : altezzaImg * NPC_AR;
       var boxH = a > NPC_AR ? boxW / NPC_AR : altezzaImg;
       // Il riquadro cambia misura da una posa all'altra (il disegno include piu'
@@ -3815,13 +3822,34 @@
       });
     }
 
+    /* Chi risponde a un tocco, e se deve farsi vedere.
+       "who" = e' li' in scena (e se non c'e' rientra); "dice" = si sente e
+       basta, come Francesca nella Hall of Fame e davanti alla porta STAFF
+       ONLY: li' la parete e' la scena, e una figura in mezzo copriva i quadri.
+       La riga puo' dichiararlo per conto suo, se no vale l'hotspot, se no la
+       zona. */
+    function chiRisponde(r, h) {
+      var z = zones[cur];
+      var fonti = [r || {}, h || {}, z];
+      for (var i = 0; i < fonti.length; i++) {
+        if (fonti[i].dice) return { chi: fonti[i].dice, inScena: false };
+        // "zona": chi risponde e' il personaggio della zona, quindi entra con le
+        // misure della zona (scala, bottom, right) e non con quelle di default.
+        if (fonti[i].who) return { chi: fonti[i].who, inScena: true, zona: fonti[i].who === z.who };
+      }
+      return { chi: null, inScena: false };
+    }
+
     function tocca(h, bloccato) {
       if (uscito) return;
       if (bloccato) {
-        var bw = h.who || zones[cur].who;
+        var v = chiRisponde(null, h);
+        var bw = v.chi;
         el.boxwrap.classList.remove('muto');
         el.boxwrap.classList.add('in');
-        if (bw && current.who !== bw) showChar(perHub(bw === zones[cur].who ? zones[cur] : { who: bw }));
+        if (bw && v.inScena && current.who !== bw) {
+          showChar(perHub(v.zona ? zones[cur] : { who: bw }));
+        }
         setSpeaker(bw);
         typeKeep(fmt(h.bloccato || 'Non ancora: prima guardati intorno.'));
         return;
@@ -3856,19 +3884,19 @@
           return VN.speed ? global.setTimeout(lanciaCorsa, 650) : lanciaCorsa();
         }
         if (h.say) {                      // commento e basta: si resta nell'hub
-          var righe = [{ who: h.who || zones[cur].who, text: h.say }].concat(h.after || []);
+          var righe = [{ text: h.say }].concat(h.after || []);
           var k = 0;
           var parla = function () {
             var r = righe[k++];
-            var rw = r.who || h.who || zones[cur].who;
+            var v = chiRisponde(r, h);
+            var rw = v.chi;
             el.boxwrap.classList.remove('muto');
             el.boxwrap.classList.add('in');
             // nelle zone gia' viste il personaggio non e' in scena: se e' lui a
-            // rispondere al tocco, rientra invece di parlare da fuori campo
-            if (rw && current.who !== rw) {
-              showChar(perHub(rw === zones[cur].who
-                ? zones[cur]
-                : { who: rw }));
+            // rispondere al tocco, rientra invece di parlare da fuori campo.
+            // Chi risponde con "dice" invece non entra: e' una voce.
+            if (rw && v.inScena && current.who !== rw) {
+              showChar(perHub(v.zona ? zones[cur] : { who: rw }));
             }
             setSpeaker(rw);
             typeKeep(fmt(r.text || ''));
@@ -4494,6 +4522,12 @@
 
     var parti = function () {
       if (musNodo !== nodo) return;               // scena cambiata nel frattempo
+      // Musica spenta: il brano resta pronto ma non parte. Non basta metterlo a
+      // volume zero — sul telefono il volume di un <audio> non si puo'
+      // cambiare da codice (iOS lo ignora), quindi partiva a volume pieno a
+      // ogni cambio di scena anche con l'interruttore su OFF. Riaccendendola,
+      // aggiornaVolumi() fa partire questo stesso nodo.
+      if (!audio.mus) return;
       try {
         var p = nodo.play();
         if (p && p.catch) p.catch(function () { musAttesa = parti; });

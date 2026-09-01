@@ -18,7 +18,14 @@
    schermo e' area dialogo: i fondali non ci mettono dettagli importanti. */
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:none;
- font-family:'Press Start 2P',ui-monospace,monospace;-webkit-text-size-adjust:100%}
+ font-family:'Press Start 2P',ui-monospace,monospace;-webkit-text-size-adjust:100%;
+ touch-action:manipulation}
+/* "manipulation" toglie il doppio tocco che ingrandisce la pagina: sul telefono
+   il gioco e' fatto di tocchi ravvicinati (si tocca per far scorrere il
+   dialogo) e il browser li leggeva come "ingrandisci qui", lasciando la scena
+   zoomata a meta'. Non toglie lo scorrimento ne' il pizzicare a due dita. Va
+   sia su body sia su #stage, perche' l'attributo non si eredita: lo decide
+   l'elemento che riceve il tocco. */
 
 /* "clip" e non solo "hidden": con hidden il riquadro resta comunque scorribile
    dal browser, e quando il fuoco finisce su un bottone il browser lo porta in
@@ -28,7 +35,7 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
    proprio un contenitore scorribile. I browser che non conoscono clip tengono
    hidden, che e' la riga prima. */
 #stage{position:relative;width:100vw;height:100vh;height:100svh;overflow:hidden;overflow:clip;
- cursor:pointer;-webkit-tap-highlight-color:transparent}
+ cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 
 /* ---------- fondale ---------- */
 /* il fondale sta su un layer suo: cosi' il testo che si scrive non lo fa ridisegnare */
@@ -500,8 +507,10 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  border:2px solid rgba(255,255,255,.35)}
 .hdot.seen{background:rgba(255,255,255,.5)}
 .hdot.sel{background:#fff;border-color:#fff;transform:scale(1.25)}
-/* zona ancora chiusa a chiave: il pallino resta spento */
-.hdot.chiuso{background:transparent;border-style:dashed}
+/* Zona ancora chiusa a chiave: il pallino resta spento. Il bordo tratteggiato
+   su un cerchio da 9px non si legge come un pallino vuoto ma come un segno
+   rotto (sembrava una rotella che gira): resta pieno, solo piu' scuro. */
+.hdot.chiuso{background:transparent;border-color:rgba(255,255,255,.22)}
 
 /* ---------- platea e ospiti di scena ----------
    La reazione della platea e' un layer sopra il fondale del palco. Sta sotto ai

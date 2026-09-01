@@ -387,6 +387,14 @@ colorato). Due modi per dichiararlo, non intercambiabili:
 
 ## Non tutti gli sprite si mostrano alla stessa misura
 
+**Il metro di paragone e' Lucas.** Francesca passa dall'ancoraggio sul viso
+(`volti` nel cast + `inquadra()`), che le mette la faccia alta come la sua;
+sopra c'e' `voltoScala` (0.85 per lei), perche' il viso uguale non basta quando
+la testa non finisce col viso — con l'hijab veniva molto piu' grossa di quella
+di Lucas. Peter invece non ha `volti`: va a `scala`/`scalaHub`, e nella lobby
+la zona dichiara 0.85. Chi ritocca uno di questi numeri li guarda **accanto a
+Lucas**, non da soli.
+
 `#npc` è tarato su una **figura intera** (56% altezza). Prima di collegare
 uno sprite nuovo, guardare **cosa inquadra** — figura intera, mezzo busto,
 solo testa — e dare al `show` la misura giusta (es. un primo piano di sola
@@ -583,8 +591,13 @@ Tre misure che sembrano dettagli e non lo sono:
 2. **Le tre aree sono misurate su quell'inquadratura li'.** Se la parete viene
    ridisegnata o cambia il taglio, vanno rimisurate — il modo piu' rapido e'
    disegnarle a schermo con un `outline` e guardarle.
-3. **Francesca e' piu' piccola e in un angolo** (`scala`, `bottom`, `right`
-   nella zona). Alla misura normale dell'hub copriva il terzo quadro.
+3. **Francesca qui non si vede: parla e basta** (`"dice": "francesca"` nella
+   zona, senza `who`). Rimpicciolirla in un angolo era il ripiego di prima:
+   alla misura normale copriva il terzo quadro, a quella piccola sembrava
+   un'altra persona. Nella lobby **si vede solo davanti alla tenda** — nelle
+   altre zone e' una voce nel box, perche' la parete dei quadri e il cartellone
+   del regolamento *sono* la scena. Lo stesso vale per gli hotspot: `who` =
+   e' li' (e se non c'e' rientra), `dice` = si sente e basta.
 
 Chi aggiunge una classe nuova al fondale via `bgFx` la deve aggiungere anche
 all'elenco che `applicaFx()` toglie: una classe che non viene tolta resta
@@ -736,6 +749,13 @@ sempre uguale.
    qualunque riproduzione prima che la persona tocchi lo schermo: la prima
    musica resta in `musAttesa` e parte al primo `pointerdown`. Insistere con un
    timer non serve a niente.
+4. **Sul telefono il volume di un `<audio>` non si cambia da codice.** iOS
+   ignora `nodo.volume`: mettere la musica a zero **non** la zittisce. Quindi
+   con l'interruttore su OFF il brano non si mette a volume zero, **non parte
+   proprio** (`musicaScena()` prepara il nodo e si ferma li'); a riaccenderla
+   ci pensa `aggiornaVolumi()`, che fa partire quello stesso nodo. Senza,
+   bastava cambiare stanza e la musica tornava a volume pieno con il pannello
+   che diceva OFF.
 
 **Gli applausi arrivano dopo l'annuncio, non sul tocco.** Il giocatore sceglie
 un pronostico, il personaggio lo annuncia, e **poi** (420 ms) la platea
@@ -877,6 +897,13 @@ legge su un telefono.
   fa niente (`senzaSalto` in `typeLines`, e `skip()` che si ferma prima) — e
   solo dopo arriva la freccia. `ritmo` sullo step `title` scala insieme
   velocità di scrittura e pause.
+- **Il doppio tocco del browser ingrandiva la pagina.** Il gioco si gioca a
+  tocchi ravvicinati (si tocca per far scorrere il dialogo) e Safari li leggeva
+  come "ingrandisci qui", lasciando la scena zoomata a meta'. Si toglie con
+  `touch-action:manipulation`, che va messo **sia** su `body` **sia** su
+  `#stage`: non si eredita, lo decide l'elemento che riceve il tocco.
+  (`user-scalable=no` nel viewport iOS lo ignora dal 2016: non e' quella la
+  strada.)
 - **Le sostituzioni di stringhe lunghe su questo file falliscono in
   silenzio.** Apostrofi curvi e accenti spesso non combaciano e
   `str.replace`/`Edit` non protestano. **Dopo ogni modifica a CLAUDE.md,
