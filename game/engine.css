@@ -404,7 +404,7 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 #choices.due.on{display:grid}
 #choices.due .ch{font-size:clamp(7px,2vw,11px);padding:10px 9px;text-align:center}
 .ch{background:#2a3050;border:3px solid #fff;border-radius:8px;padding:11px 13px;color:#fff;
- font-family:inherit;font-size:clamp(8px,2.35vw,12px);cursor:pointer;text-align:left;
+ font-family:inherit;font-size:clamp(8px,2.35vw,12px);cursor:pointer;text-align:center;
  box-shadow:0 3px 0 rgba(0,0,0,.5)}
 .ch:hover,.ch:focus{background:#3d466e;outline:none}
 /* voce visibile ma non toccabile: dice perche' quella strada e' chiusa */
