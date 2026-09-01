@@ -2897,7 +2897,7 @@ function apriMoltiplicatori(stato, extra) {
 {
   VN.clearSave();
   let spedito = null;
-  window.fetch = (url, opt) => { spedito = JSON.parse(opt.body); return Promise.resolve({ ok: true }); };
+  window.fetch = (url, opt) => { spedito = JSON.parse(opt.body).p; return Promise.resolve({ ok: true }); };
   apriMoltiplicatori({ mult_bank: 0.15,
     nome: 'Tester', genere: 'f', store: 'liberty', reparto: 'operation',
     anni: '2', device: '13 mini', stile: 'drip',
@@ -2929,7 +2929,7 @@ function apriMoltiplicatori(stato, extra) {
 {
   VN.clearSave();
   let spedito = null;
-  window.fetch = (url, opt) => { spedito = JSON.parse(opt.body); return Promise.resolve({ ok: true }); };
+  window.fetch = (url, opt) => { spedito = JSON.parse(opt.body).p; return Promise.resolve({ ok: true }); };
   apriMoltiplicatori({ mult_bank: 0.05, runner_record: 4200,
     quiz: { base: { passato: true, tentativi: 1, pool: 0, seconda: false, vinto: 0.05 } } },
     { backend: { url: 'https://esempio', chiave: 'x' } });
@@ -2946,12 +2946,12 @@ function apriMoltiplicatori(stato, extra) {
   VN.clearSave();
   window.localStorage.removeItem('fl_nexus_da_inviare');   // niente code di test precedenti
   const inviati = [];
-  let intestazioni = null;
+  const url_chiamate = [];
   // la prima spedizione viene rifiutata (colonna mancante, rete): finisce in
   // coda e riparte dopo. Deve tornare come la stessa riga, non come una nuova.
   window.fetch = (url, opt) => {
-    inviati.push(JSON.parse(opt.body));
-    intestazioni = opt.headers;
+    inviati.push(JSON.parse(opt.body).p);
+    url_chiamate.push(url);
     return Promise.resolve({ ok: inviati.length > 1, status: 400, text: () => Promise.resolve('') });
   };
   apriMoltiplicatori({ mult_bank: 0.05,
@@ -2967,8 +2967,8 @@ function apriMoltiplicatori(stato, extra) {
   assert.match(inviati[0].run_id, /^[0-9a-f-]{36}$/, 'la schedina porta un id di partita');
   assert.equal(new Set(inviati.map((x) => x.run_id)).size, 1,
     'tutte le spedizioni della stessa partita portano lo stesso id: una riga sola');
-  assert.match(intestazioni.Prefer, /merge-duplicates/,
-    'e chiedono a Supabase di riscrivere la riga invece di aggiungerne una');
+  assert.ok(url_chiamate.every((u) => /\/rpc\/upsert_run$/.test(u)),
+    'passa dalla funzione upsert_run (bypassa la RLS del chiamante), non da un POST diretto sulla tabella');
   delete window.fetch;
 }
 

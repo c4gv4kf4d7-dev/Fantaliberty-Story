@@ -2556,17 +2556,29 @@
     var corpo = dati || payload();
     if (!cfg.url || !cfg.chiave) return accoda(corpo);      // non configurato: in coda
     if (typeof global.fetch !== 'function') return accoda(corpo);
-    global.fetch(cfg.url.replace(/\/+$/, '') + '/rest/v1/' + (cfg.tabella || 'runs'), {
+    // Passa dalla funzione upsert_run (SECURITY DEFINER), non da un POST diretto
+    // sulla tabella con Prefer: resolution=merge-duplicates: quella scorciatoia
+    // fa scattare in Postgres un INSERT ... ON CONFLICT DO UPDATE, che per
+    // trovare l'eventuale riga da riscrivere deve poter LEGGERE la tabella
+    // secondo le policy RLS — e la chiave anon non ha (apposta) una policy di
+    // select su 'runs'. Il risultato era un 401/42501 su ogni invio, non solo
+    // sui duplicati: la funzione bypassa la RLS del chiamante (e' definita dal
+    // proprietario della tabella) e fa l'upsert al posto suo, senza dare ad
+    // anon nessun permesso di lettura in piu'. Vedi docs/backend.sql.
+    global.fetch(cfg.url.replace(/\/+$/, '') + '/rest/v1/rpc/upsert_run', {
       method: 'POST',
       headers: {
         'apikey': cfg.chiave,
         'Authorization': 'Bearer ' + cfg.chiave,
         'Content-Type': 'application/json',
-        // merge-duplicates: se la riga con questo run_id c'e' gia' (la prima
-        // spedizione), viene riscritta invece di aggiungerne una seconda
-        'Prefer': 'return=minimal,resolution=merge-duplicates'
+        'Prefer': 'return=minimal'
       },
-      body: JSON.stringify(corpo)
+      // La funzione prende un unico parametro jsonb ('p'): coi parametri
+      // nominati uno per campo, dentro la funzione un identificatore come
+      // 'run_id' e' ambiguo (puo' essere il parametro o la colonna della
+      // tabella, Postgres si rifiuta con 42702) proprio perche' i nomi dei
+      // parametri ricalcano apposta quelli del payload.
+      body: JSON.stringify({ p: corpo })
     }).then(function (r) {
       if (r.ok) return svuotaCoda();
       // Un rifiuto va in coda e si riprova al prossimo avvio, ma resta muto per

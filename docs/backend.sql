@@ -63,34 +63,98 @@ create table if not exists public.runs (
 
 alter table public.runs enable row level security;
 
--- Il gioco e' un sito statico: la chiave che sta nel browser puo' solo
--- INSERIRE. Non puo' leggere le altre schedine, non puo' modificarle, non puo'
--- cancellarle. La classifica si legge dal pannello di Supabase o con la chiave
--- service_role, che nel sito non c'e'.
-drop policy if exists "chiunque puo inserire la propria schedina" on public.runs;
-create policy "chiunque puo inserire la propria schedina"
-  on public.runs for insert to anon with check (true);
-
 -- Una riga per partita, non una per spedizione.
 --
 -- Il gioco spedisce due volte: alla conferma delle previsioni e quando assegna
 -- i moltiplicatori del quiz, che arrivano giorni dopo. Le due spedizioni
 -- portano lo stesso run_id, e la seconda riscrive la prima invece di
--- aggiungere una riga (PostgREST: Prefer: resolution=merge-duplicates).
---
--- Servono due cose: l'indice unico su cui agganciare l'upsert, e il permesso
--- di aggiornare. Il permesso e' largo come quello di inserire — chi conosce un
--- run_id puo' riscrivere quella riga — ma il run_id e' un uuid casuale che sta
--- solo nel telefono di chi gioca, e non compare da nessuna parte.
+-- aggiungere una riga.
 create unique index if not exists runs_run_id_key on public.runs (run_id);
 
+-- 1 settembre 2026: qui c'erano due policy dirette (insert e update per anon,
+-- entrambe "with check (true)") e il motore scriveva con un POST diretto su
+-- /rest/v1/runs con "Prefer: resolution=merge-duplicates" (upsert lato
+-- PostgREST). Sembrava a posto — le policy c'erano, i permessi pure — ma ogni
+-- invio veniva rifiutato con 401 / 42501 "new row violates row-level security
+-- policy for table runs", anche il primissimo di una partita mai vista prima.
+--
+-- Il motivo: "resolution=merge-duplicates" fa scattare in Postgres un
+-- INSERT ... ON CONFLICT (run_id) DO UPDATE, e per sapere se una riga con
+-- quel run_id esiste gia' Postgres deve poterla LEGGERE secondo le policy
+-- RLS di chi sta chiamando — anche se poi non serve rileggerla per davvero
+-- ("return=minimal" evita solo di rispedirla nella risposta, non evita il
+-- controllo). Senza una policy di select per anon, quella lettura e' vietata
+-- e l'intero upsert viene rifiutato — sempre, non solo sui duplicati.
+--
+-- Dare ad anon una policy di select larga come le altre ("using (true)")
+-- avrebbe risolto, ma avrebbe anche reso leggibile l'intera tabella con un
+-- semplice GET (nome, cognome, email, previsioni di chiunque): esattamente
+-- quello che il regolamento promette non succeda ("la chiave nel sito puo'
+-- solo inserire, non legge, non modifica, non cancella"). La soluzione che
+-- non rompe quella promessa: una funzione SECURITY DEFINER, che gira con i
+-- permessi di chi possiede la tabella (bypassa la RLS di chi la chiama) e fa
+-- l'upsert al posto del client. Ad anon si concede solo il permesso di
+-- eseguire la funzione, non di leggere o scrivere la tabella direttamente.
+drop policy if exists "chiunque puo inserire la propria schedina" on public.runs;
 drop policy if exists "chiunque puo aggiornare la propria schedina" on public.runs;
-create policy "chiunque puo aggiornare la propria schedina"
-  on public.runs for update to anon using (true) with check (true);
+revoke insert, update, select, delete on public.runs from anon;
 
--- Nessuna policy di select: di default RLS nega tutto quello che non e'
--- esplicitamente permesso. L'upsert funziona lo stesso, perche' con
--- "return=minimal" non deve rileggere niente.
+-- Se la funzione esisteva gia' con un parametro per campo (una versione di
+-- passaggio di questa stessa correzione, il 1 settembre 2026): dentro la
+-- funzione un identificatore come "run_id" risultava ambiguo — poteva essere
+-- il parametro o la colonna della tabella, e Postgres si rifiutava con 42702
+-- "column reference is ambiguous" — proprio perche' i nomi dei parametri
+-- ricalcavano apposta quelli del payload. Va tolta prima di ricrearla con un
+-- unico parametro jsonb, che non ha questo problema:
+drop function if exists public.upsert_run(
+  uuid, text, text, text, text, text, text, text, text, integer,
+  jsonb, jsonb, jsonb, jsonb, text, text
+);
+
+create or replace function public.upsert_run(p jsonb)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.runs (
+    run_id, nome, cognome, genere, store, reparto, anni, device, stile,
+    punti, picks, flags, quiz, runner, email, versione
+  ) values (
+    (p->>'run_id')::uuid,
+    p->>'nome',
+    p->>'cognome',
+    p->>'genere',
+    p->>'store',
+    p->>'reparto',
+    p->>'anni',
+    p->>'device',
+    p->>'stile',
+    (p->>'punti')::integer,
+    coalesce(p->'picks', '{}'::jsonb),
+    coalesce(p->'flags', '{}'::jsonb),
+    coalesce(p->'quiz', '{}'::jsonb),
+    coalesce(p->'runner', '{}'::jsonb),
+    p->>'email',
+    p->>'versione'
+  )
+  on conflict (run_id) do update set
+    nome = excluded.nome, cognome = excluded.cognome, genere = excluded.genere,
+    store = excluded.store, reparto = excluded.reparto, anni = excluded.anni,
+    device = excluded.device, stile = excluded.stile, punti = excluded.punti,
+    picks = excluded.picks, flags = excluded.flags, quiz = excluded.quiz,
+    runner = excluded.runner, email = excluded.email, versione = excluded.versione;
+end;
+$$;
+
+revoke all on function public.upsert_run(jsonb) from public;
+grant execute on function public.upsert_run(jsonb) to anon;
+
+-- Nessuna policy di select sulla tabella: di default RLS nega tutto quello
+-- che non e' esplicitamente permesso, e ora anon non ha nemmeno il grant di
+-- base per provarci. L'unica porta e' la funzione qui sopra, che il motore
+-- chiama con POST /rest/v1/rpc/upsert_run (game/engine.js, invia()).
 
 
 -- ---------------------------------------------------------------------------
@@ -134,16 +198,17 @@ create policy "chiunque puo aggiornare la propria schedina"
 -- ---------------------------------------------------------------------------
 -- Chi puo' leggere
 --
--- La chiave che sta nel sito e' la anon e puo' solo INSERIRE (vedi la policy
--- qui sopra). Le schedine si leggono dal pannello di Supabase, cioe' solo dagli
--- organizzatori che hanno le credenziali del progetto. Per verificarlo dal
--- vivo, con la chiave anon:
+-- La chiave che sta nel sito e' la anon e puo' solo chiamare la funzione
+-- upsert_run qui sopra: nessun grant diretto sulla tabella, quindi nessun
+-- modo di leggerla, modificarla o cancellarla scavalcando la funzione. Le
+-- schedine si leggono dal pannello di Supabase, cioe' solo dagli organizzatori
+-- che hanno le credenziali del progetto. Per verificarlo dal vivo, con la
+-- chiave anon:
 --
---   POST   /rest/v1/runs                      -> 201
---   GET    /rest/v1/runs?select=*             -> []      (nessuna policy di select)
---   PATCH  /rest/v1/runs?id=eq...             -> []      (nessuna policy di update)
---   DELETE /rest/v1/runs?id=eq...             -> []      (nessuna policy di delete)
---   POST   con Prefer: return=representation  -> 401     (non puo' rileggere)
+--   POST  /rest/v1/rpc/upsert_run              -> 200/204 (l'unica via di scrittura)
+--   GET   /rest/v1/runs?select=*               -> 401     (nessun grant di select)
+--   PATCH /rest/v1/runs?run_id=eq...           -> 401     (nessun grant di update)
+--   DELETE /rest/v1/runs?run_id=eq...          -> 401     (nessun grant di delete)
 --
 -- ---------------------------------------------------------------------------
 -- Cancellazione dei dati a fine iniziativa
