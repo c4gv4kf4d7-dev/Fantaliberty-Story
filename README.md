@@ -32,6 +32,7 @@ tools/
   optimize_assets.py    resize + quantizzazione colore (Pillow)
   build_single_file.py  compila tutto in dist/nexus_game.html (asset inline base64)
   taratura_pista.html   traccia a mano i bordi della pista della corsa [S9]
+  verifica-corsa.mjs    gioca una partita intera ad Apple Campus Run (npm run corsa)
 docs/
   script-master.md      DOCUMENTO UNICO di riferimento: scene S0B-S9, formule
   manifest-asset.md     quale file grafico serve in quale scena
@@ -611,6 +612,16 @@ due tabelle — non c'e' altro da toccare.
 
 Un file grafico che manca **non rompe niente**: al suo posto la corsa disegna un
 segnaposto e va avanti (`run_traguardo` e' proprio in quel caso).
+
+**`npm run corsa`** gioca una partita intera in un browser vero — apre la corsa
+dalla porta STAFF ONLY, prende una botta, recupera un cuore, passa un traguardo,
+apre il menu, muore, riparte ed esce — e controlla che ogni comando risponda.
+Serve perche' `npm test` gira in jsdom: non disegna, non anima e non clicca,
+quindi tutto quello che si rompe dentro la corsa si rompe in silenzio. Va
+lanciato con `npm run serve` attivo in un altro terminale. Due difetti li ha
+gia' trovati: un "annulla" scollegato che lasciava il giocatore chiuso nella
+conferma d'uscita, e la classifica che si apriva sotto il menu, che le mangiava
+i tocchi.
 
 ### Le pose che dipendono da una variabile
 

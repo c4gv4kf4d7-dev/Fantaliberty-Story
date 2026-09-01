@@ -12,7 +12,8 @@
     "transizioni": "node tools/verifica-transizioni.mjs",
     "bump": "python3 tools/bump_version.py",
     "indice": "python3 tools/indice_domande.py",
-    "supabase": "python3 tools/controlla_supabase.py"
+    "supabase": "python3 tools/controlla_supabase.py",
+    "corsa": "node tools/verifica-corsa.mjs"
   },
   "devDependencies": {
     "jsdom": "^24.0.0",
