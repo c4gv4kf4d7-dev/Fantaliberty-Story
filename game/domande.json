@@ -1,1 +1,19 @@
-PLACEHOLDER
+{
+  "_nota": "Banca domande dei pronostici [S5]. Fonte: docs/script-master.md. Gli id sono STABILI: non rinominarli tra revisioni, altrimenti si rompe la corrispondenza con le run gia' salvate in run.picks. Ogni opzione ha una battuta unica per ciascuno dei 4 stili: non sono template generici, sono scritte una per una.",
+  "_formule": {
+    "core": "punti = diff (1-5) + bonus tipo (consenso 0, plausibile 1, controcorrente 1)",
+    "extra": "punti = val secco dell'opzione (1, 2 o 3), nessuna difficolta'",
+    "intermezzi": "come extra: val secco",
+    "micro_eventi": "micro-challenge opache: a ogni attivazione le tre opzioni ricevono una permutazione casuale di +1, 0 e -1; il valore non viene mostrato"
+  },
+  "categorie": {
+    "iphone": {"nome":"iPhone","n_core":6,"n_extra_da_pescare":3,"core":[],"extra":[]},
+    "watch": {"nome":"Watch","n_core":3,"n_extra_da_pescare":3,"core":[],"extra":[]},
+    "altro": {"nome":"Altro","n_core":3,"n_extra_da_pescare":3,"core":[],"extra":[]}
+  },
+  "intermezzi": [],
+  "intermezzi_riserva": [],
+  "micro_eventi": [],
+  "eventi_personali": {},
+  "reazioni_platea": ["pla_platea_idle","pla_applauso_pieno","pla_applauso_tiepido","pla_risata","pla_silenzio_imbarazzato"]
+}
