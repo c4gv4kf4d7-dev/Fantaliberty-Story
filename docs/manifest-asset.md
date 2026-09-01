@@ -204,7 +204,7 @@ un segnaposto e va avanti.
 | `run_montante` | Il montante del vetro, ridisegnato a ogni profondità mentre scorre verso di noi |
 | `run_parete_costola` | La costola della parete interna, stessa meccanica dei montanti |
 | `run_pg_corsa` | Il personaggio che corre — foglio da 4 fotogrammi (consegnato come `run_pg_run.png`) |
-| `run_pg_salto` | Il salto — 4 fotogrammi |
+| `run_pg_salto` | Il salto — 4 fotogrammi che vanno dallo **stacco all'apice**, non un salto intero: il motore li fa scorrere in avanti salendo e all'indietro scendendo, e l'altezza in aria la aggiunge lui. Chi rigenera questa tavola deve disegnare la testa alla **stessa altezza** in tutti e quattro, se no il salto viene il doppio e sembra un rimbalzo |
 | `run_pg_scivolata` | La scivolata — un fotogramma solo |
 | `run_ost_carrello` | Ostacolo da schivare cambiando corsia |
 | `run_ost_cartello` | Ostacolo da saltare |
