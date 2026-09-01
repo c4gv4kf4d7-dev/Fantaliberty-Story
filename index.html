@@ -22,7 +22,7 @@
   gtag('js', new Date());
   gtag('config', 'G-SYX1RZLNNE');
 </script>
-<link rel="stylesheet" href="./game/engine.css?v=127">
+<link rel="stylesheet" href="./game/engine.css?v=128">
 </head>
 <body>
 <div id="stage">
@@ -84,6 +84,15 @@
   </div>
   <div id="coriandoli"></div>
 
+  <!-- le frecce e i pallini della lobby: fuori dal box del dialogo, in un
+       punto fisso dello schermo. Dentro al box salivano e scendevano con lui
+       (Francesca parla: su; zona muta: giu'), e il giocatore se le trovava
+       ogni volta in un posto diverso. -->
+  <div id="hubnav">
+    <button id="hprev" aria-label="Zona precedente">◀</button>
+    <div id="hdots"></div>
+    <button id="hnext" aria-label="Zona successiva">▶</button>
+  </div>
   <!-- hub della lobby: quattro zone che si scorrono di lato. Le aree toccabili
        vengono disegnate dal motore dentro #hubspots, sopra il fondale. -->
   <div id="hub">
@@ -108,11 +117,6 @@
     <div id="quizbar">
       <div id="qinfo"></div>
       <div id="qtimer"><div id="qbar"></div><span id="qsec"></span></div>
-    </div>
-    <div id="hubnav">
-      <button id="hprev" aria-label="Zona precedente">◀</button>
-      <div id="hdots"></div>
-      <button id="hnext" aria-label="Zona successiva">▶</button>
     </div>
     <!-- la scheda: chi e', in una riga. Nessuna meccanica di gioco qui —
          i perk si spiegano al quiz, non mentre ci si veste. -->
@@ -334,8 +338,8 @@
   </div>
 </div>
 
-<script src="./game/analytics.js?v=127"></script>
-<script src="./game/engine.js?v=127"></script>
+<script src="./game/analytics.js?v=128"></script>
+<script src="./game/engine.js?v=128"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -425,7 +429,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=127', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=128', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e
