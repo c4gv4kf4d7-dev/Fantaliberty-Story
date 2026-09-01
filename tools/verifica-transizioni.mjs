@@ -36,7 +36,7 @@ p.on('pageerror', (e) => errori.push('JS: ' + e.message));
 await p.route('**/assets/chars/**', async (r) => { await new Promise((s) => setTimeout(s, LENTEZZA_CHARS)); r.continue(); });
 await p.route('**/assets/bg/**', async (r) => { await new Promise((s) => setTimeout(s, LENTEZZA_BG)); r.continue(); });
 
-await p.goto('http://localhost:8080/', { waitUntil: 'domcontentloaded' });
+await p.goto('http://localhost:8080/?subito', { waitUntil: 'domcontentloaded' });
 await p.waitForFunction(() => window.VN && VN.story, null, { timeout: 30000 });
 
 // il registratore: un fotogramma alla volta, perche' un lampo dura meno di

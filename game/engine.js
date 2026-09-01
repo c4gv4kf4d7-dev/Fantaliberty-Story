@@ -5565,5 +5565,9 @@
     if (pending) { var f = pending; pending = null; el.arrow.style.opacity = 0; f(); }
   };
 
+  // La porta d'ingresso (index.html) lo chiama sul tocco di GIOCA: quel gesto
+  // e' il primo sulla pagina, e il telefono concede l'audio solo li' dentro.
+  VN.sbloccaAudio = sbloccaAudio;
+
   global.VN = VN;
 })(typeof window !== 'undefined' ? window : globalThis);
