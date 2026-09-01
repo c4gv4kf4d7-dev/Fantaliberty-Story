@@ -1718,8 +1718,13 @@
           "t": "show",
           "who": "peter",
           "body": "alza_occhi",
+          "se": {
+            "var": "quiz_visto",
+            "is": false
+          },
           "height": "44%",
-          "bottom": "34%"
+          "bottom": "13%",
+          "_nota": "Peter e' disegnato seduto e la sua figura finisce con il piano del tavolo tagliato di netto: quel taglio deve stare DIETRO l'interfaccia in basso, se no il tavolo galleggia sopra il pavimento. Mentre presenta il quiz sotto c'e' solo il box del dialogo, che e' basso: qui sta a 13% (misurato sul box piu' corto, due righe, dall'iPhone piu' piccolo al piu' grande). Le battute si dicono solo la prima volta e questo passo le segue: tornando dalla griglia si entra direttamente con la misura da pannello, qui sotto."
         },
         {
           "t": "say",
@@ -1762,6 +1767,14 @@
           "value": true
         },
         {
+          "t": "show",
+          "who": "peter",
+          "body": "alza_occhi",
+          "height": "44%",
+          "bottom": "34%",
+          "_nota": "La griglia dei livelli occupa la meta' bassa dello schermo: Peter sale, e il taglio del tavolo finisce dietro al box come nelle domande. E' la stessa misura di [S8.LOOP] e di [S8.FINALE], cosi' fra griglia, domande e moltiplicatori non si sposta mai. Chi ci arriva la prima volta lo vede salire mentre la griglia si apre; tornando da un livello si entra direttamente cosi'."
+        },
+        {
           "t": "quizhub",
           "who": "peter",
           "goto": "quiz_livello",
@@ -1799,7 +1812,9 @@
           "ritenta": "{giuste} su {n}. Ne servivano {soglia}. Ti resta un tentativo, e domande diverse.",
           "bruciato": "{giuste} su {n}. Basta cosi': questo livello per te e' chiuso.",
           "assorbito": "{giuste} su {n}. Guarda, facciamo che questo giro non l'ho visto. Rifallo.",
-          "bottom": "34%"
+          "bottom": "34%",
+          "bottomDialogo": "13%",
+          "_nota": "Due misure, e non e' un capriccio: la figura di Peter finisce con il piano del tavolo tagliato, e quel taglio deve stare dietro l'interfaccia. Con le domande a schermo (barra del tempo + box + risposte) sta a 34%, come nella griglia. All'ultima riga del livello barra e risposte se ne vanno e resta solo il box, basso: li' Peter torna seduto a 13% (vedi fine() in engine.js). Durante le domande non si muove mai — il verdetto non toglie le risposte, le spegne."
         }
       ],
       "next": "quiz"

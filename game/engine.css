@@ -371,6 +371,14 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 /* ---------- scelte / input ---------- */
 #choices{margin-top:10px;display:none;flex-direction:column;gap:7px;overflow-y:auto}
 #choices.on{display:flex}
+/* Risposte date, verdetto di Peter a schermo: restano dove sono, spente.
+   Sparendo si portavano dietro l'ingombro sotto al box e tutta la parte bassa
+   si riassestava a ogni domanda — con il tavolino di Peter che restava
+   scoperto a mezz'aria. Non e' 'on': cosi' la barra spaziatrice continua a far
+   avanzare (vedi il controllo su #choices.on in onkeydown) e il tocco passa
+   attraverso, che qui vuol dire "vai avanti". */
+#choices.fermo{display:flex;opacity:.45;pointer-events:none}
+#choices.due.fermo{display:grid}
 /* Liste lunghe (i cinque dipartimenti) su due colonne: incolonnate tutte,
    l'ultima voce finiva sotto il bordo dello schermo e non si vedeva. */
 #choices.due{display:none;grid-template-columns:1fr 1fr;gap:7px}
