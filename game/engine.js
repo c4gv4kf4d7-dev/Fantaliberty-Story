@@ -5008,6 +5008,14 @@
       });
       st.punti = somma;
 
+      // schedina chiusa: la sequenza di ritorno in lobby (Francesca che si
+      // congratula) l'ha gia' vista, altrimenti saltare qui alla lobby
+      // significherebbe ritoccare quella sequenza a ogni prova invece di
+      // arrivare subito all'hub — dove adesso c'e' anche la zona 5, la
+      // porta STAFF ONLY di Apple Campus Run, gia' raggiungibile a colpo
+      // di swipe come le altre.
+      if (st.locked) st.post_lobby_visto = true;
+
       // schedina chiusa = il quiz e' aperto: si finge anche un livello gia'
       // passato, altrimenti saltare a [S8.FINALE] mostra una banca vuota, la
       // conferma spenta e nessuna via d'uscita

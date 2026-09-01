@@ -76,6 +76,15 @@ e il recap di S6 e' una pagina bianca. Con "pronostici gia' fatti" le risposte
 vengono riempite dalla banca e il punteggio calcolato di conseguenza, cosi' S6 e
 S7 hanno qualcosa da mostrare.
 
+Con la schedina anche **chiusa** ("Schedina: Chiusa (locked)"), saltando alla
+scena `lobby` si arriva **direttamente** all'hub, gia' aperto sulla zona di
+Peter: la sequenza di ritorno di Francesca ("Ah, eccoti...") si salta da sola
+(`post_lobby_visto` parte gia' a `true`), cosi' non tocca ritoccarla a ogni
+prova. Da li' un giro di swipe (o le frecce ai lati) porta a tutte le zone,
+compresa la 5 — la porta **STAFF ONLY** di Apple Campus Run, gia' sbloccata:
+e' cosi' che si prova la corsa senza dover rigiocare fino in fondo le
+previsioni ogni volta.
+
 L'elenco delle scene **non e' scritto a mano**: si ricava seguendo i `next` a
 partire da `meta.start`, e chi resta fuori (le scene che si raggiungono solo con
 un `goto`) finisce in coda. Una scena nuova in `story.json` compare da sola.
