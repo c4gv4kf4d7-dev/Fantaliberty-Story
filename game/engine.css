@@ -1232,16 +1232,16 @@ html.inattesa, html.inattesa body{background:#0a0a0f;overflow:hidden}
 /* I due bottoni agli angoli (Esci a sinistra, audio a destra) sono solo
    l'icona, scontornata: niente riquadro scuro dietro, che sul fondale
    chiaro si vedeva come una macchia. Stessa misura tutti e due: il
-   cartello EXIT e' largo il doppio che alto, quindi lo si misura sulla
-   larghezza del bottone, non sull'altezza. Un'ombra morbida al posto del
+   cartello EXIT e' alto quanto l'altoparlante (36px) e largo quel che viene:
+   e' il bottone ad allargarsi attorno. Un'ombra morbida al posto del
    riquadro li tiene leggibili anche sul chiaro. */
 #btnEsciGioco{position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;
-  z-index:6;width:48px;height:48px;padding:0;border:0;border-radius:8px;
+  z-index:6;width:auto;height:48px;padding:0 6px;border:0;border-radius:8px;
   background:transparent;
   display:none;align-items:center;justify-content:center;
   opacity:.85;cursor:pointer;transition:opacity .2s}
 #btnEsciGioco.on{display:flex}
-#btnEsciGioco img{width:48px;height:auto;display:block;image-rendering:pixelated;
+#btnEsciGioco img{height:36px;width:auto;display:block;image-rendering:pixelated;
   filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))}
 #btnEsciGioco:hover,#btnEsciGioco:focus-visible{opacity:1}
 #curtain.on ~ #btnEsciGioco{opacity:.28}
