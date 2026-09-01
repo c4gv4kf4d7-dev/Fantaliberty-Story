@@ -124,6 +124,25 @@
     revealUI = null;
   }
 
+  /* Le finestre che, quando sono aperte, si prendono loro il comando: finche'
+     una di queste e' a schermo, la barra spaziatrice non deve far scorrere il
+     dialogo che sta dietro. Il tocco lo sapeva gia' (l'onclick di #stage
+     ignora i tocchi che finiscono dentro questi riquadri), la tastiera no: il
+     suo elenco era scritto a mano ed era rimasto indietro di tre finestre — il
+     pannello dell'audio, la card di fine previsioni e il camerino. Da qui in
+     poi l'elenco e' uno solo, quindi non puo' piu' divergere. */
+  var APERTI = ['inputform', 'choices', 'listform', 'griglia', 'monitorwrap',
+    'countdown', 'multwrap', 'regole', 'quadrowrap', 'runwrap', 'emailwrap',
+    'modal', 'audiowrap', 'cardwrap', 'carosello'];
+
+  function qualcosaAperto() {
+    for (var i = 0; i < APERTI.length; i++) {
+      var n = el[APERTI[i]];
+      if (n && n.classList.contains('on')) return true;
+    }
+    return false;
+  }
+
   function chiudiHub() {
     if (!el.hub) return;
     el.hub.classList.remove('on');
@@ -5482,17 +5501,7 @@
         || (el.carosello && el.carosello.classList.contains('on'));
       if (hubTasti && scorribile && hubTasti(e.key)) return;
       if (e.key !== ' ' && e.key !== 'Enter') return;
-      if (el.inputform.classList.contains('on') || el.choices.classList.contains('on') ||
-          (el.listform && el.listform.classList.contains('on')) ||
-          (el.griglia && el.griglia.classList.contains('on')) ||
-          (el.monitorwrap && el.monitorwrap.classList.contains('on')) ||
-          (el.countdown && el.countdown.classList.contains('on')) ||
-          (el.multwrap && el.multwrap.classList.contains('on')) ||
-          (el.regole && el.regole.classList.contains('on')) ||
-          (el.quadrowrap && el.quadrowrap.classList.contains('on')) ||
-          (el.runwrap && el.runwrap.classList.contains('on')) ||
-          (el.emailwrap && el.emailwrap.classList.contains('on')) ||
-          (el.modal && el.modal.classList.contains('on'))) return;
+      if (qualcosaAperto()) return;
       VN.step();
     };
 
