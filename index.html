@@ -35,7 +35,7 @@
   gtag('js', new Date());
   gtag('config', 'G-SYX1RZLNNE');
 </script>
-<link rel="stylesheet" href="./game/engine.css?v=139">
+<link rel="stylesheet" href="./game/engine.css?v=140">
 </head>
 <body>
 <div id="stage">
@@ -255,6 +255,17 @@
     </div>
   </div>
 
+  <!-- Le battute gia' dette durante il keynote. Si apre dalla freccia in alto
+       a sinistra, si scorre, si chiude: il giocatore resta esattamente dov'era
+       e la partita non si e' mossa. Non e' una scena e non tocca lo stato. -->
+  <div id="registro">
+    <div id="regibox">
+      <div id="regitit">GIA' DETTO</div>
+      <div id="regicorpo"></div>
+      <button id="regiok">TORNA AL KEYNOTE</button>
+    </div>
+  </div>
+
   <!-- un quadro della Hall of Fame. Si apre da solo, uno per volta: le tre
        si guardano uno alla volta, non tutti insieme dopo il tocco.
        Non e' una scena e non tocca la partita, come il regolamento. -->
@@ -296,6 +307,20 @@
        bottone che compete con la scena. L'icona (il cartello EXIT in pixel
        art, props/prop_exit) si assegna in VN.boot, come il logo dello
        studio: non e' contenuto di scena, quindi non passa da story.json. -->
+  <!-- La freccia che riapre le battute gia' dette. Si accende solo durante il
+       keynote (aggiornaBottoneRegistro() in engine.js) e apre un pannello che
+       si legge e si chiude: NON fa tornare indietro la storia, non tocca la
+       partita — stesso contratto del regolamento e dei quadri della Hall of
+       Fame. La freccia e' disegnata qui in SVG, come l'altoparlante
+       dell'audio: un'icona in piu' da scaricare per una freccia non ha senso.
+       Sta prima del cartello EXIT: cosi', quando ci sono tutti e due, il CSS
+       puo' spostare l'EXIT di fianco. -->
+  <button id="btnRegistro" aria-label="Rileggi le battute">
+    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <path d="M7 3h2v1H8v1H7v1H6v1h8v2H6v1h1v1h1v1h1v1H7v-1H6v-1H5v-1H4v-1H3v-1H2V7h1V6h1V5h1V4h1V3h1z"/>
+    </svg>
+  </button>
+
   <button id="btnEsciGioco" aria-label="Esci dal gioco">
     <img id="btnEsciIcon" alt="">
   </button>
@@ -359,12 +384,12 @@
      telefono, cosi' la sigla dello studio si sente davvero. Si salta con
      ?subito (i tool di verifica), ?dev e ?scene= (sviluppo). -->
 <div id="home" hidden>
-  <img id="homeBg" src="./assets/bg/bg_intro.webp?v=139" alt="">
+  <img id="homeBg" src="./assets/bg/bg_intro.webp?v=140" alt="">
   <button id="homeGioca" type="button">GIOCA</button>
 </div>
 
-<script src="./game/analytics.js?v=139"></script>
-<script src="./game/engine.js?v=139"></script>
+<script src="./game/analytics.js?v=140"></script>
+<script src="./game/engine.js?v=140"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -484,7 +509,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=139', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=140', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e

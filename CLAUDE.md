@@ -401,6 +401,43 @@ colorato). Due modi per dichiararlo, non intercambiabili:
   introDomanda, scarica, improvvisazione, caos, critica), usate solo sui
   micro-eventi.
 
+## La freccia in alto a sinistra apre un pannello, non torna indietro
+
+`#btnRegistro` (la freccia `←`) apre l'elenco delle battute gia' dette. E' un
+**pannello che si legge e si chiude**, con lo stesso contratto di `#regole` e
+`#quadrowrap`: si mostra sopra quello che c'e', alla chiusura il giocatore e'
+esattamente dov'era, e la partita non si e' mossa di un passo.
+
+Le quattro cose che lo tengono in piedi, e che sono la richiesta esplicita
+dell'utente:
+
+1. **Non tocca `VN.i` e non chiama `exec()`.** Non fa avanzare niente e non fa
+   tornare niente. Rimettere in scena un passo passato vorrebbe dire
+   rieseguirlo, e a quel punto un pannello che si legge diventerebbe una
+   seconda strada dentro la storia.
+2. **Non scrive dentro `VN.state`.** Leggere non cambia la partita, quindi non
+   c'e' nessun salvataggio da aggiornare. Il test fotografa `VN.state` prima di
+   aprire e lo riconfronta dopo aver chiuso, come per il regolamento.
+3. **L'elenco lo riempie `type()`**, l'unico posto da cui passa una battuta del
+   box del dialogo (`annota()`). Il nome di chi parla e' quello che il box ha
+   addosso in quel momento: `setSpeaker()` viene sempre prima di `type()`. Chi
+   scrivesse una battuta senza passare da `type()` non la vedrebbe comparire.
+4. **La freccia c'e' solo durante il keynote** — `SCENE_REGISTRO` in
+   `engine.js`: `keynote`, `argomenti`, `argomento`. E' li' che si legge in
+   fretta fra una domanda e l'altra. Altrove il gioco ha gia' i suoi posti dove
+   fermarsi, e un pannello in piu' sarebbe una seconda via verso qualcosa che
+   non manca a nessuno. Il pannello non sopravvive a un cambio di scena
+   (`goScene()` chiama `chiudiRegistro()`, come per il regolamento) e con il
+   pannello aperto la freccia si spegne: sta piu' in alto del pannello, come il
+   cartello EXIT, e resterebbe li' a invitare un secondo tocco.
+
+Una versione precedente faceva navigare davvero: rimetteva in scena il passo
+lasciato ricostruendolo con `restore()`, e lasciava cambiare la risposta gia'
+data. E' stata **bocciata dall'utente** — non e' quello che serve, e portava
+dietro tutta una coda di problemi (che fare dei sorteggi gia' fatti, delle
+battute pescate a caso, del punteggio da non sommare due volte). Non
+reintrodurla.
+
 ## Non tutti gli sprite si mostrano alla stessa misura
 
 **Il metro di paragone e' Lucas.** Francesca passa dall'ancoraggio sul viso
@@ -495,6 +532,18 @@ Tre cose tarate insieme (agosto 2026, misurate con
   5-6 su 21 risposte e il sacchetto si svuotava sempre; a 0.15 ne escono ~3 e
   restano una sorpresa. L'evento personale dello stile e' in testa al sacchetto
   (`sacchettoEventi()`), cosi' non lo si perde.
+- **gli imprevisti sono pochi apposta.** Due micro-eventi per partita, pescati
+  a caso fra i cinque della banca, piu' l'evento personale dello stile, che
+  sta in testa al sacchetto: tre in tutto (`MAX_MICRO_EVENTI` in `engine.js`,
+  ripetuto in `tools/simula_partite.py`). Prima entravano tutti nel sacchetto.
+  Il keynote e' fatto di pronostici, e un imprevisto ogni tre domande smette di
+  essere un imprevisto.
+- **gli intermezzi di regia sono un pool solo di sette.** Non esistono piu' i
+  "fissi" e la "riserva" (`intermezzi_riserva` non c'e' piu' in banca; il
+  motore la legge ancora solo per non rompere una banca vecchia). A ogni
+  partita se ne mescolano quattro — tanti quanti sono i punti dello script che
+  ne chiedono uno — e mai due volte lo stesso. Un test non puo' aspettarsi R1
+  come primo: quale esca cambia a ogni partita.
 - **micro-eventi ±1, non ±3.** A ±3 la fortuna spostava 3,7 posizioni in
   classifica, quanto tutto il quiz di Peter (3,9). A ±1 sposta 1,7 e il quiz
   5,4.

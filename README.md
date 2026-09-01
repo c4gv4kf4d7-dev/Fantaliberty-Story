@@ -337,6 +337,29 @@ L'inquadratura ha due posti fissi: **il giocatore a sinistra** (step `io`, sprit
 dello stile scelto in S3) e **gli NPC a destra** (step `show`). Da S4 in poi i
 due condividono la scena.
 
+### La freccia `←`: rileggere quello che e' gia' stato detto
+
+Durante il keynote, in alto a sinistra, una freccia apre l'elenco delle battute
+gia' scritte: chi ha letto male una riga o vuole ricontrollare come era posta
+una domanda se la rilegge, e chiude.
+
+**Non e' una navigazione: e' un pannello.** Vale lo stesso contratto del
+regolamento e dei quadri della Hall of Fame — si mostra sopra quello che c'e',
+alla chiusura il giocatore e' dov'era, la partita non si e' mossa. Quindi non
+tocca `VN.i`, non chiama `exec()`, non scrive dentro `VN.state`, e non
+ricostruisce nessuna scena: sono battute gia' scritte, non schermate da
+rimettere in piedi.
+
+| pezzo | dove |
+|---|---|
+| l'elenco si riempie | `annota()`, chiamata da `type()` — l'unico passaggio di ogni battuta del box |
+| chi parla | il nome che il box ha addosso: `setSpeaker()` viene sempre prima di `type()` |
+| dove si vede la freccia | `SCENE_REGISTRO` in `engine.js`: `keynote`, `argomenti`, `argomento` |
+| quanto tiene | le ultime `MAX_REGISTRO` battute (60) |
+
+Il pannello non sopravvive a un cambio di scena (`goScene()` chiama
+`chiudiRegistro()`) e il registro riparte vuoto a ogni `VN.boot()`.
+
 ### Parlare in cuffia
 
 Chi parla dalla regia non ha uno sprite in scena: al suo posto compare l'icona
@@ -392,8 +415,13 @@ Tre regole dello script che il codice deve rispettare:
 * **la reazione della platea e' sempre casuale**, mai legata a quale opzione e'
   stata scelta: se lo fosse, il gioco suggerirebbe le risposte. Il quiz di Peter
   in S8 e' l'eccezione dichiarata, li' le risposte sono oggettive;
-* **gli eventi non si ripetono**: si pescano da un sacchetto senza rimessa, con
-  dentro i cinque micro-eventi piu' quello personale dello stile scelto.
+* **gli eventi non si ripetono e sono pochi**: si pescano da un sacchetto senza
+  rimessa che tiene **due** micro-eventi presi a caso fra i cinque della banca,
+  piu' quello personale dello stile scelto, in testa. Tre imprevisti per
+  partita;
+* **gli intermezzi di regia sono un pool solo di sette**: si mescolano a inizio
+  partita e se ne giocano al massimo quattro (`VN.state.intermezzi_sacchetto`),
+  mai due volte lo stesso.
 
 ### Le battute della regia
 

@@ -942,12 +942,21 @@ assert.equal(VN.state.sfacciato, false);
   assert.ok(story.regia.apertura.includes(txt()), 'la battuta d\'apertura viene dal pool');
   VN.step();
 
-  // [S5.INTERMEZZO.R1]: una sola scommessa di regia prima di cominciare — la
-  // seconda (la luce per Craig) e' stata tolta per non allungare l'apertura
-  assert.match(txt(), /chi si fa vedere stasera/, 'primo intermezzo');
+  // [S5.INTERMEZZO]: una sola scommessa di regia prima di cominciare — la
+  // seconda (la luce per Craig) e' stata tolta per non allungare l'apertura.
+  // Quale delle sette esca non si sa: a ogni partita se ne mescolano quattro.
+  const primoInt = banca.intermezzi.filter((q) => txt().includes(q.q))[0];
+  assert.ok(primoInt, `il primo intermezzo viene dal pool: "${txt()}"`);
+  assert.equal(VN.state.intermezzi_sacchetto.length, 4,
+    'quattro intermezzi pescati sui sette del pool');
+  assert.equal(VN.state.intermezzi_sacchetto[0], primoInt.id,
+    'si giocano nell\'ordine in cui sono stati pescati');
+  assert.equal(new Set(VN.state.intermezzi_sacchetto).size, 4,
+    'mai due volte lo stesso intermezzo nella stessa partita');
   assert.equal($('nametxt').textContent, 'Susan');
-  scegli(1);                                                   // John Ternus, val 2
-  assert.equal(VN.state.punti, 2, 'gli intermezzi valgono il "val" secco');
+  scegli(1);
+  assert.equal(VN.state.punti, primoInt.opzioni[1].val,
+    'gli intermezzi valgono il "val" secco');
   assert.equal(VN.state.intermezzi, 1, 'gli intermezzi si consumano in ordine');
   assert.equal(banca.intermezzi.some((i) => /Craig/.test(i.q)), false,
     'la domanda su Craig non e\' piu\' nella banca');
@@ -1300,10 +1309,24 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   }
   assert.equal(VN.state.intermezzi, 4, 'quattro intermezzi: uno all\'inizio e uno per macroargomento');
   assert.ok(VN.state.punti > 0, 'il punteggio si accumula');
-  // il sacchetto degli eventi non si ripete: ogni evento al massimo una volta
+  /* Il sacchetto degli eventi: due micro-eventi generali pescati a caso piu'
+     l'evento personale dello stile, in testa. Nessuno si ripete, e non se ne
+     giocano piu' di tre in una partita: il keynote e' fatto di pronostici, non
+     di imprevisti. Si consuma man mano, quindi il sorteggio di partenza sono
+     quelli giocati piu' quelli rimasti. */
   assert.ok(VN.state.eventi_sacchetto, 'il sacchetto degli eventi e\' stato creato');
-  const tutti = banca.micro_eventi.length + 1;
-  assert.ok(VN.state.eventi_sacchetto.length < tutti, 'e qualche evento e\' uscito');
+  {
+    const giocati = Object.keys((VN.state.picks.micro_eventi || {}).r || {});
+    const pescati = giocati.concat([...VN.state.eventi_sacchetto]);
+    assert.equal(pescati.length, 3,
+      'tre eventi in tutto: due micro-eventi piu\' quello personale dello stile');
+    assert.equal(new Set(pescati).size, 3, 'mai due volte lo stesso evento');
+    assert.equal(pescati[0], banca.eventi_personali[VN.state.stile].id,
+      'quello dello stile e\' il primo del sacchetto');
+    const generali = pescati.filter((id) => banca.micro_eventi.some((e) => e.id === id));
+    assert.equal(generali.length, 2, 'al massimo due micro-eventi generali per partita');
+    assert.ok(giocati.length >= 1, 'e qualche evento e\' uscito');
+  }
 
   /* ---------- S6: la sala regia, modifica, blocco ---------- */
   // si arriva qui con una partita vera alle spalle: e' il momento giusto per
@@ -1362,6 +1385,78 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.equal(coda.punti, VN.state.punti);
   assert.ok(coda.picks.iphone.core, 'e porta con se\' tutte le risposte');
   assert.ok(!('submitted_at' in coda), 'il timestamp lo mette il server, non il client');
+}
+
+/* ---------- 5r. la freccia riapre le battute gia' dette ----------
+   Non e' una navigazione: e' un pannello che si legge e si chiude, come il
+   regolamento e i quadri della Hall of Fame. Le due cose da presidiare sono
+   che NON tocchi la partita (ne' lo stato, ne' il punto in cui si e') e che
+   ci sia solo dove serve, cioe' durante il keynote. */
+{
+  const scegli = (i) => [...$('choices').querySelectorAll('.ch')][i].onclick({ stopPropagation() {} });
+  const apri = () => $('btnRegistro').onclick({ stopPropagation() {} });
+  const righe = () => [...$('regicorpo').querySelectorAll('.regitesto')].map((n) => n.textContent);
+
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'keynote' });
+  VN.state.genere = 'f'; VN.state.stile = 'drip'; VN.state.nome = 'Franca';
+
+  // la prima battuta e' gia' nel registro, e la freccia si vede
+  const apertura = txt();
+  assert.ok($('btnRegistro').classList.contains('on'),
+    'durante il keynote la freccia c\'e\'');
+
+  VN.step();                                                   // -> l'intermezzo di regia
+  const domandaInt = txt();
+  assert.notEqual(domandaInt, apertura);
+
+  /* Aprire e chiudere non deve muovere niente: lo stato si fotografa prima e
+     si riconfronta dopo, come per il regolamento. */
+  const prima = JSON.stringify(VN.state);
+  const doveEro = { scena: VN.sceneId, i: VN.i };
+
+  apri();
+  assert.ok($('registro').classList.contains('on'), 'il pannello si apre');
+  assert.deepEqual(righe(), [apertura, domandaInt],
+    'ci sono le battute gia' + ' scritte, nell\'ordine in cui sono uscite');
+  assert.equal($('regicorpo').querySelectorAll('.regichi')[0].textContent, 'Susan',
+    'e accanto a ognuna chi l\'ha detta');
+  assert.equal(txt(), domandaInt, 'la battuta sotto resta quella di prima');
+  assert.equal(VN.sceneId, doveEro.scena, 'aprire non cambia scena');
+  assert.equal(VN.i, doveEro.i, 'e non muove VN.i');
+  assert.equal(JSON.stringify(VN.state), prima, 'ne\' tocca lo stato della partita');
+
+  // un tocco sullo schermo con il pannello aperto non fa avanzare la storia
+  VN.step();
+  assert.equal(VN.i, doveEro.i, 'e nemmeno un tap mentre e\' aperto');
+
+  $('regiok').onclick({ stopPropagation() {} });
+  assert.equal($('registro').classList.contains('on'), false, 'e si chiude');
+  assert.equal(txt(), domandaInt, 'chiudendo si e\' esattamente dov\'eravamo');
+  assert.equal(VN.i, doveEro.i);
+  assert.equal(JSON.stringify(VN.state), prima, 'e la partita non si e\' mossa');
+
+  // da qui si prosegue normalmente: la storia non si e' accorta di niente
+  const q = banca.intermezzi.filter((x) => txt().includes(x.q))[0];
+  assert.ok(q, 'l\'intermezzo viene dal pool');
+  scegli(0);
+  assert.equal(VN.state.picks.intermezzi.r[q.id].v, q.opzioni[0].label,
+    'si risponde come sempre');
+
+  // il registro non si porta dietro le battute della scena chiusa
+  assert.equal(VN.sceneId, 'argomenti');
+  assert.equal($('registro').classList.contains('on'), false,
+    'il pannello non sopravvive a un cambio di scena');
+}
+
+/* ---------- 5r-bis. la freccia c'e' solo durante il keynote ---------- */
+{
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'lobby' });
+  VN.state.nome = 'Franca';
+  for (let k = 0; k < 6 && !$('hub').classList.contains('on'); k++) VN.step();
+  assert.equal($('btnRegistro').classList.contains('on'), false,
+    'in lobby no: li\' il gioco ha gia\' i suoi posti dove fermarsi');
 }
 
 /* ---------- 5g. S5: la regola d'oro della platea ----------
@@ -2233,10 +2328,14 @@ for (const [cat, c] of Object.entries(domande.categorie)) {
 assert.equal(idsDomande.size, 29, '29 domande: 12 core + 17 facoltative');
 assert.equal(nOpzioni, 79, '79 opzioni in totale');
 assert.equal(nBattute, 316, '316 battute: una per opzione per ciascuno dei 4 stili');
-assert.equal(domande.intermezzi.length, 3, '3 intermezzi di regia fissi');
-// tre fissi e quattro macroargomenti-piu'-apertura da coprire: l'ultimo giro
-// pesca dalla riserva, che serve esattamente a questo
-assert.ok(domande.intermezzi_riserva.length >= 1, 'e almeno uno di riserva');
+// Un pool solo di sette, senza piu' "fissi" e "riserva": a ogni partita se ne
+// mescolano quattro, quanti sono i punti dello script che ne chiedono uno.
+assert.equal(domande.intermezzi.length, 7, '7 intermezzi di regia in un pool solo');
+assert.equal(domande.intermezzi_riserva, undefined,
+  'la riserva non esiste piu\': valgono tutti uguale');
+assert.deepEqual(domande.intermezzi.map((q) => q.id).sort(),
+  ['R1', 'R4', 'R5', 'RS1', 'RS2', 'RS3', 'RS4'],
+  'gli id degli intermezzi non cambiano fra revisioni');
 assert.equal(Object.keys(domande.eventi_personali).length, 4, 'un evento personale per stile');
 for (const s of STILI) assert.ok(domande.eventi_personali[s], `manca l'evento personale di ${s}`);
 

@@ -16,6 +16,12 @@ BANCA, QUIZ, STORY = carica('domande.json'), carica('quiz.json'), carica('story.
 CATEGORIE = BANCA['categorie']
 STILI = list(STORY['stili'].keys())
 
+# Quanti micro-eventi generali entrano nel sacchetto di una partita (piu'
+# l'evento personale dello stile, che sta in testa). Sta anche in engine.js.
+MAX_MICRO_EVENTI = 2
+TUTTI_EVENTI = {e['id']: e for e in BANCA['micro_eventi']}
+TUTTI_EVENTI.update({e['id']: e for e in BANCA['eventi_personali'].values()})
+
 # Come sceglie un giocatore fra consenso / plausibile / controcorrente.
 PROFILI = {
     'gregario':    {'consenso': 6, 'plausibile': 3, 'controcorrente': 1},
@@ -50,26 +56,30 @@ def gioca_previsioni(g, rnd):
             risposte.append((cat, d['id'], i, d['opzioni'][i].get('val', 0)))
             n_domande += 1
 
-    # intermezzi: uno all'apertura del keynote + uno per macroargomento
-    fissi = BANCA['intermezzi'] + BANCA['intermezzi_riserva']
+    # intermezzi: uno all'apertura del keynote + uno per macroargomento,
+    # pescati a caso dal pool unico dei sette
     n_int = 1 + len(CATEGORIE)
-    for d in fissi[:n_int]:
+    pool_int = rnd.sample(BANCA['intermezzi'], n_int)
+    for d in pool_int:
         i = rnd.randrange(len(d['opzioni']))
         risposte.append((None, d['id'], i, d['opzioni'][i].get('val', 0)))
 
-    # micro-eventi: sacchetto senza rimessa, 30% dopo ogni domanda,
-    # e a ogni evento i tre esiti (+3/0/-3) sono mescolati
+    # micro-eventi: sacchetto corto e senza rimessa (due generali a caso piu'
+    # l'evento personale dello stile, in testa). Il punteggio di ogni risposta
+    # e' quello scritto in banca, non un abbinamento a caso.
     sacchetto = [e['id'] for e in BANCA['micro_eventi']]
-    mio = BANCA['eventi_personali'].get(g['stile'])
-    if mio: sacchetto.append(mio['id'])
     rnd.shuffle(sacchetto)
+    sacchetto = sacchetto[:MAX_MICRO_EVENTI]
+    mio = BANCA['eventi_personali'].get(g['stile'])
+    if mio: sacchetto.insert(0, mio['id'])
     prob = STORY.get('regia', {}).get('probabilitaEvento', 0.3)
     micro = 0
     for _ in range(n_domande):
         if sacchetto and rnd.random() < prob:
-            sacchetto.pop()
-            esiti = [1, 0, -1]; rnd.shuffle(esiti)
-            risposte.append((None, 'EV', rnd.randrange(3), esiti[rnd.randrange(3)]))
+            ev = TUTTI_EVENTI[sacchetto.pop(0)]
+            i = rnd.randrange(len(ev['opzioni']))
+            e = ev['opzioni'][i]['editoriale']
+            risposte.append((None, 'EV', i, 1 if e > 0 else -1 if e < 0 else 0))
             micro += 1
     return risposte, n_int, micro
 
