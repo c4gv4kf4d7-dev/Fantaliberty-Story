@@ -2034,8 +2034,11 @@
     if (VN.state.eventi_sacchetto) return VN.state.eventi_sacchetto;
     var b = VN.banca || {};
     var v = mescola((b.micro_eventi || []).map(function (e) { return e.id; }));
+    // L'evento dello stile va in TESTA, non a caso: con la probabilita' a
+    // 0.15 escono circa tre eventi a partita su sei, e messo a caso uno su
+    // due non lo vedeva. E' l'unico legato alla scelta del camerino.
     var mio = (b.eventi_personali || {})[VN.state.stile];
-    if (mio) v.splice(Math.floor(Math.random() * (v.length + 1)), 0, mio.id);
+    if (mio) v.unshift(mio.id);
     VN.state.eventi_sacchetto = v;
     return v;
   }
@@ -3493,9 +3496,24 @@
             fl: 'gioco', tipo: 'apri', esci: etichetta,
             playerId: idPartita(),
             playerName: VN.state.nome || '',
-            backend: VN.backend || null
+            backend: VN.backend || null,
+            musica: !!audio.mus
           }, '*');
         } catch (err) { /* niente: resta la via di sicurezza */ }
+        return;
+      }
+      /* La musica che si sente durante la corsa e' quella del gioco grande: la
+         corsa non ne ha una sua, e il riquadro copre lo schermo ma non ferma
+         l'audio di sotto. Quindi l'interruttore del suo menu chiede qui, e
+         passa dallo stesso stato del pannello audio del gioco: uno solo,
+         altrimenti si spegne in un posto e resta acceso nell'altro. */
+      if (m.tipo === 'musica') {
+        audio.mus = !audio.mus;
+        aggiornaVolumi(); aggiornaBottoneAudio(); aggiornaToggle(); salvaAudio();
+        try {
+          el.runframe.contentWindow.postMessage(
+            { fl: 'gioco', tipo: 'musica', on: !!audio.mus }, '*');
+        } catch (err) {}
         return;
       }
       if (m.tipo === 'fine') return segnaCorsa(m);

@@ -474,8 +474,10 @@ Tutti e 3 i macroargomenti completati → [S6.01]
   3. Il giocatore sceglie → run.picks[categoria][core|extra][ID]
   4. Il personaggio annuncia alla platea con la battuta del suo stile
      (da game/domande.json, campo `battute[run.style]`)
-  5. SE random() < probabilità: micro-evento generale, oppure l'evento
-     personale dello stile se non ancora mostrato in questa run
+  5. SE random() < probabilità (0.15, `regia.probabilitaEvento`): il prossimo
+     evento del sacchetto. Il sacchetto si mescola una volta per partita e
+     l'evento personale dello stile sta in testa, quindi è il primo a uscire:
+     in media 3 eventi su 21 risposte, uno ogni sette domande
   6. Il micro-evento, se estratto, presenta tre reazioni rapide: il valore di
      ciascuna è +1 / 0 / -1, fisso — quello scritto dall'autore in banca
      (`editoriale`, sul segno) — e non viene mai mostrato al giocatore

@@ -488,6 +488,10 @@ Tre cose tarate insieme (agosto 2026, misurate con
   bene, non l'aver scelto la casella marcata "controcorrente". Se si tocca il
   bonus, i `pt` di `domande.json` vanno ricalcolati — `npm test` li ricontrolla
   uno per uno dalla formula.
+- **micro-eventi: probabilita' 0.15 per risposta, non 0.3.** A 0.3 ne uscivano
+  5-6 su 21 risposte e il sacchetto si svuotava sempre; a 0.15 ne escono ~3 e
+  restano una sorpresa. L'evento personale dello stile e' in testa al sacchetto
+  (`sacchettoEventi()`), cosi' non lo si perde.
 - **micro-eventi ±1, non ±3.** A ±3 la fortuna spostava 3,7 posizioni in
   classifica, quanto tutto il quiz di Peter (3,9). A ±1 sposta 1,7 e il quiz
   5,4.
@@ -712,17 +716,28 @@ Sei cose da non annullare per sbaglio:
    posizione si chiedono insieme (`Promise.all`) e le prime dieci si chiedono
    dopo: ogni viaggio in fila e' un secondo in cui il giocatore rischia di
    andarsene senza aver visto dov'e' arrivato.
-8. **La X in alto a sinistra apre un menu, non esce.** E' l'unica via d'uscita
-   mentre si corre, e uscire e' l'unica cosa irreversibile che si puo' fare li'
-   dentro: chiede conferma, e **mentre chiede il mondo si ferma**
-   (`apriUscita` mette `S.fase = 'menu'`, `chiudiUscita` rimette la fase di
-   prima). Chiedere "sei sicuro?" lasciando arrivare i carrelli sarebbe una
-   domanda a tradimento. La X non c'e' sulla schermata di morte — li' l'uscita
-   c'e' gia', e un tasto fuori dal congelamento mentre qualcuno pesta sullo
-   schermo e' esattamente il difetto che il congelamento serve a togliere — e
-   non c'e' nemmeno aprendo `game/runner/` da soli, dove non c'e' niente da cui
-   uscire. E' disegnata dal codice (`disegnaX`), non caricata: e' una croce di
+8. **La barra e' una targa sola, e l'ingranaggio apre un menu che ferma il
+   gioco.** In alto a sinistra faccia + cuori + anello con il punteggio stanno
+   nello stesso pannello: sono la stessa informazione — come sto andando — e
+   insieme si leggono con un'occhiata invece che con due. In alto a destra
+   l'ingranaggio apre il menu, e **aprendolo il mondo si ferma**
+   (`apriMenu` mette `S.fase = 'menu'`, `chiudiMenu` rimette la fase di prima):
+   cambiare le cose mentre arrivano i carrelli non ha senso, e la conferma
+   dell'uscita a maggior ragione. Ne' l'ingranaggio ne' il menu ci sono sulla
+   schermata di morte — li' l'uscita c'e' gia', e un tasto fuori dal
+   congelamento mentre qualcuno pesta sullo schermo e' il difetto che il
+   congelamento serve a togliere.
+   **La musica non e' della corsa**: e' quella del gioco grande, che continua a
+   suonare sotto il riquadro. L'interruttore del menu la chiede a lui con un
+   messaggio e passa dallo stesso stato del pannello audio, uno solo — se no si
+   spegne in un posto e resta accesa nell'altro. Aprendo `game/runner/` da
+   soli quella voce non compare proprio: non c'e' nessuna musica da spegnere.
+   Ingranaggio e X di prima sono **disegnati dal codice**, non caricati: sono
    quadretti, e cosi' non c'e' un asset in piu' da pubblicare e da invalidare.
+   La faccia invece e' una tavola (`run_avatar`, tre espressioni in fila) e
+   cambia su due cose sole, quelle che il giocatore sente addosso: la botta e
+   il cuore recuperato. Torna neutra da sola — un'espressione appiccicata
+   smette di voler dire qualcosa.
 9. **Il livello e' un tratto con un cuore dentro.** Ogni mille punti si
    attraversa la riga dorata e la velocita' sale di uno scalino; dentro ogni
    livello esce **un cuore di ricarica solo**, a un punto a caso del tratto

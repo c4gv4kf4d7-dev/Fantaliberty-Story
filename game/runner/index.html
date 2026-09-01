@@ -29,37 +29,79 @@
   }
   #hud{
     display:flex; justify-content:space-between; align-items:flex-start;
-    padding:14px 16px; font-weight:700; color:#2a2a28;
-    text-shadow:0 1px 0 rgba(255,255,255,.7);
-    transition:opacity .25s;
+    padding:12px 12px; transition:opacity .25s;
   }
   /* cuori e punteggio non hanno senso prima di cominciare, e dietro al
      velo della schermata iniziale si intravedevano */
   #hud.spento{ opacity:0; }
-  /* la colonna si dimensiona sul testo piu' largo, non sul numero:
-     con un punteggio a una cifra "record" traboccava fuori schermo */
-  #segna{ display:flex; flex-direction:column; align-items:flex-end; }
-  #punti{ font-size:26px; letter-spacing:.5px; }
-  #record{ font-size:13px; opacity:.65; font-weight:600; white-space:nowrap; }
 
-  /* i cuori: uno per tentativo */
+  /* ---- la targa in alto a sinistra ----
+     Una targa sola invece di due angoli separati: la faccia, i cuori e il
+     punteggio sono la stessa informazione — come sto andando — e stando
+     insieme si leggono con un'occhiata sola invece che due.
+
+     I bordi sono duri e a gradini, senza raggi ne' sfumature: e' il linguaggio
+     del resto del gioco, e sul corridoio chiarissimo un pannello scuro con il
+     bordo nero e' l'unica cosa che resta leggibile sempre. */
+  #targa{
+    display:inline-flex; flex-direction:column; gap:6px;
+    padding:7px 9px 8px; background:#2b2521; color:#f4f4f0;
+    box-shadow:0 0 0 3px #100e0d,
+               inset 2px 2px 0 rgba(255,255,255,.10),
+               inset -2px -2px 0 rgba(0,0,0,.45),
+               0 3px 0 4px rgba(0,0,0,.28);
+  }
+  #targaAlto{ display:flex; align-items:center; gap:9px; }
+  #ritratto{
+    width:52px; height:52px; flex:none; background:#4a3f37;
+    box-shadow:0 0 0 3px #100e0d,
+               inset 2px 2px 0 rgba(255,255,255,.12),
+               inset -2px -2px 0 rgba(0,0,0,.4);
+    overflow:hidden;
+  }
+  /* Il foglio ha tre facce in fila: si scorre con la posizione dello sfondo,
+     cosi' cambiare espressione non ricarica niente e non puo' sfarfallare. */
+  #faccia{
+    width:100%; height:100%;
+    background-repeat:no-repeat; background-size:300% 100%;
+    background-position:0% 0; image-rendering:pixelated;
+    transform:scale(1.18); transform-origin:50% 22%;
+  }
+  #faccia.male{ background-position:50% 0; }
+  #faccia.contento{ background-position:100% 0; }
+
+  #targaBasso{ display:flex; align-items:center; gap:7px; }
+  #anellino{ width:22px; height:22px; flex:none; display:block;
+    image-rendering:pixelated; animation:giraAnello 2.4s linear infinite; }
+  @keyframes giraAnello{ to{ transform:rotate(360deg) } }
+  #punti{ font-family:'Press Start 2P', monospace; font-size:15px;
+    color:#f0b722; text-shadow:2px 2px 0 #100e0d; letter-spacing:1px; }
+  #record{ font-family:'Press Start 2P', monospace; font-size:9px;
+    color:#8f8880; margin-left:auto; padding-left:8px; white-space:nowrap; }
+
+  /* ---- l'ingranaggio in alto a destra ----
+     Stessa pastiglia della X di prima, altro colore: qui non si esce, si apre
+     un menu, e l'oro e' il colore dei comandi in tutto il resto della corsa. */
+  #btnIng{
+    pointer-events:auto; border:0; background:transparent; padding:0; margin:0;
+    width:38px; height:38px; cursor:pointer; flex:none; display:block;
+    opacity:.95; transition:opacity .2s;
+  }
+  #btnIng[hidden]{ display:none !important; }
+  #btnIng:active{ transform:translateY(1px); }
+  #btnIng svg{ display:block; width:100%; height:100%;
+    filter:drop-shadow(0 2px 0 rgba(0,0,0,.45)); }
+
+  /* i cuori: uno per tentativo. Al posto della barra della vita del pacchetto
+     di riferimento: qui le vite sono tre e contarle e' piu' immediato che
+     leggere quanto e' piena una barra. */
   /* La X sta in alto a sinistra, prima dei cuori, che si spostano di conseguenza:
      e' l'angolo dove la si cerca, ed e' l'unica via d'uscita mentre si corre.
      #hud non prende tocchi (sta dentro .ui), quindi il tasto se li riprende. */
   #sinistra{ display:flex; align-items:center; gap:10px; }
-  #btnX{
-    pointer-events:auto; border:0; background:transparent; padding:0; margin:0;
-    width:34px; height:34px; cursor:pointer; opacity:.9; transition:opacity .2s;
-    display:block; flex:none;
-  }
-  #btnX[hidden]{ display:none !important; }
-  #btnX:active{ transform:translateY(1px); }
-  #btnX svg{ display:block; width:100%; height:100%;
-    filter:drop-shadow(0 1px 2px rgba(0,0,0,.35)); }
-
-  #vite{ display:flex; gap:5px; font-size:25px; line-height:1; }
-  #vite span{ color:#d9453f; text-shadow:0 1px 0 rgba(255,255,255,.7); }
-  #vite span.spenta{ color:#b9b9b3; opacity:.45; }
+  #vite{ display:flex; gap:4px; font-size:24px; line-height:1; }
+  #vite span{ color:#e04b44; text-shadow:2px 2px 0 #100e0d; }
+  #vite span.spenta{ color:#5a5049; text-shadow:2px 2px 0 #100e0d; opacity:1; }
   #vite.colpito span{ animation: tremaCuore .45s ease-out; }
   #vite.guarito span:not(.spenta){ animation: pulsaCuore .5s ease-out; }
   @keyframes tremaCuore{
@@ -208,7 +250,12 @@
   .velo button.secondario[hidden]{ display:none !important; }
   /* fondo pieno: sotto c'e' la schermata chiara del fine partita, e in
      trasparenza si leggeva attraverso i punteggi */
-  #veloClassifica{ background:#16161a; justify-content:flex-start;
+  /* Sopra il menu (6), non sotto: la classifica si apre anche da li', e
+     restando sotto il suo CHIUDI non si poteva premere — il menu se lo
+     mangiava, e chi ci entrava restava incastrato. Cosi' invece il menu resta
+     aperto dietro, il gioco resta in pausa, e chiudendo la classifica si torna
+     al menu da cui si era partiti. */
+  #veloClassifica{ background:#16161a; justify-content:flex-start; z-index:7;
     padding:calc(28px + env(safe-area-inset-top)) 20px 24px; gap:0; }
   #veloClassifica h1.titoloClassifica{ color:#f0b722; font-size:18px;
     text-shadow:4px 4px 0 #4aa8cc; margin-bottom:20px; }
@@ -263,6 +310,43 @@
   }
   #uscita button.resto:active{ box-shadow:0 2px 0 #a8a8a0, 0 2px 0 4px #1d1d1b; }
 
+  /* ---- il menu dell'ingranaggio ----
+     Ferma il gioco, come il menu dell'uscita: e' l'unico posto da cui si
+     cambiano le cose, e cambiarle mentre arrivano i carrelli non ha senso. */
+  #menu{
+    position:absolute; inset:0; z-index:6; pointer-events:auto;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:0; text-align:center; padding:24px;
+    background:rgba(28,28,26,.86); backdrop-filter:blur(3px);
+  }
+  #menu[hidden]{ display:none !important; }
+  #menu h2{
+    font-family:'Press Start 2P', monospace; font-size:16px; line-height:1.8;
+    color:#f0b722; text-shadow:3px 3px 0 #100e0d; margin:0 0 22px;
+  }
+  #menu .voci{ display:flex; flex-direction:column; gap:12px; width:100%; max-width:17em; }
+  #menu button{
+    font-family:'Press Start 2P', monospace; font-size:12px; letter-spacing:1px;
+    padding:14px 12px; border-radius:0; cursor:pointer; width:100%;
+    background:#e9e9e4; color:#1d1d1b; border:4px solid #1d1d1b;
+    box-shadow:0 6px 0 #a8a8a0, 0 6px 0 4px #1d1d1b;
+    transition:transform .05s, box-shadow .05s;
+  }
+  #menu button:active{ transform:translateY(4px);
+    box-shadow:0 2px 0 #a8a8a0, 0 2px 0 4px #1d1d1b; }
+  #menu button.primo{
+    background:#f0b722; color:#2a1d00; border-color:#2a1d00;
+    box-shadow:0 6px 0 #a97c12, 0 6px 0 4px #2a1d00;
+  }
+  #menu button.primo:active{ box-shadow:0 2px 0 #a97c12, 0 2px 0 4px #2a1d00; }
+  #menu button.uscire{ background:#d8564e; color:#2a0b09; border-color:#2a0b09;
+    box-shadow:0 6px 0 #8f2f2a, 0 6px 0 4px #2a0b09; }
+  #menu button.uscire:active{ box-shadow:0 2px 0 #8f2f2a, 0 2px 0 4px #2a0b09; }
+  /* il record in fondo al menu: e' l'informazione che in sala giochi sta
+     sempre sotto il titolo, e nella targa non ci sta comoda */
+  #menuRecord{ font-family:'Press Start 2P', monospace; font-size:10px;
+    color:#8f8880; margin-top:20px; }
+
   /* La lezione non copre la scena: spiega una cosa che si sta vedendo,
      quindi resta in basso e lascia guardare il corridoio. */
   #lezione{
@@ -305,12 +389,21 @@
   <canvas id="cv"></canvas>
 
   <div class="ui">
-    <div id="hud">
-      <div id="sinistra">
-        <button id="btnX" aria-label="Esci dalla corsa" hidden></button>
-        <div id="vite"><span>♥</span><span>♥</span><span>♥</span></div>
+    <!-- spenta di partenza: la targa non ha senso prima di cominciare, e sotto
+         il velo della schermata iniziale sarebbe solo un rettangolo scuro -->
+    <div id="hud" class="spento">
+      <div id="targa">
+        <div id="targaAlto">
+          <div id="ritratto"><div id="faccia"></div></div>
+          <div id="vite"><span>♥</span><span>♥</span><span>♥</span></div>
+        </div>
+        <div id="targaBasso">
+          <img id="anellino" alt="">
+          <span id="punti">0</span>
+          <span id="record">HI 0</span>
+        </div>
       </div>
-      <div id="segna"><div id="punti">0</div><div id="record">record 0</div></div>
+      <button id="btnIng" aria-label="Menu" hidden></button>
     </div>
     <div id="fps"></div>
   </div>
@@ -326,6 +419,18 @@
          e il database, come per quello di fine partita. -->
     <button id="btnClassificaInizio" class="secondario" hidden>CLASSIFICA</button>
     <button id="btnEsciStart" class="esci" hidden>ESCI</button>
+  </div>
+
+  <div id="menu" hidden>
+    <h2>PAUSA</h2>
+    <div class="voci">
+      <button id="mnRiprendi" class="primo">RIPRENDI</button>
+      <button id="mnMusica">MUSICA: ON</button>
+      <button id="mnComandi">COME SI GIOCA</button>
+      <button id="mnClassifica">CLASSIFICA</button>
+      <button id="mnEsci" class="uscire">ESCI DAL GIOCO</button>
+    </div>
+    <div id="menuRecord">RECORD 0</div>
   </div>
 
   <div id="uscita" hidden>
@@ -797,16 +902,30 @@ const LEZIONI = {
 function spiega(quale){
   if (giaImparato || S.imparate[quale]) return;
   S.imparate[quale] = true;
+  mostraLezione(quale);
+}
+/* La coda serve al "come si gioca" del menu: le due schede si rivedono una
+   dopo l'altra, e alla fine si torna a correre. In partita ne esce una alla
+   volta e la coda resta vuota. */
+let codaLezioni = [];
+function mostraLezione(quale){
   S.lezione = quale;
   S.fase = 'lezione';                       // il mondo si ferma, il disegno no
   document.getElementById('lezTitolo').textContent = LEZIONI[quale].titolo;
   document.getElementById('lezCorpo').innerHTML   = LEZIONI[quale].corpo;
   document.getElementById('lezione').hidden = false;
 }
+function rivediLezioni(){
+  codaLezioni = Object.keys(LEZIONI).slice(1);
+  mostraLezione(Object.keys(LEZIONI)[0]);
+}
 function riprendi(){
   document.getElementById('lezione').hidden = true;
   S.lezione = null;
-  if (S.fase === 'lezione') S.fase = 'corsa';
+  if (S.fase === 'lezione'){
+    if (codaLezioni.length) return mostraLezione(codaLezioni.shift());
+    S.fase = 'corsa';
+  } else codaLezioni.length = 0;
 }
 document.getElementById('lezOk').onclick = riprendi;
 
@@ -1098,7 +1217,7 @@ function aggiorna(dt){
         S.raccolti += ANELLI[c.anello].valore;
       } else if (c.tipo === 'vita'){
         c.presa = true;
-        if (S.vite < VITE){ S.vite++; mostraVite('guarito'); segnale(c, '+♥', true); }
+        if (S.vite < VITE){ S.vite++; mostraVite('guarito'); faccia('contento'); segnale(c, '+♥', true); }
         else { S.raccolti += 25; segnale(c, '+25', true); }   // col cuore pieno vale punti
       } else if (c.tipo === 'malus'){
         c.presa = true;
@@ -1437,6 +1556,7 @@ function scoppiaCuore(){
 }
 
 function colpito(){
+  faccia('male');
   S.vite--;
   S.scossa = 0.3;           // un sussulto breve: il gioco non si ferma mai
   S.intoccabile = 2.0;      // due secondi lampeggiando, poi si riparte
@@ -1454,7 +1574,7 @@ function via(){
   nuovaQuotaVita(); mostraVite(null);
   S.imparate = {}; S.collezione = {}; riprendi();
   chiudiUscita();
-  if (uscitaPronta) document.getElementById('btnX').hidden = false;
+  document.getElementById('btnIng').hidden = false;
   document.getElementById('veloStart').hidden = true;
   document.getElementById('veloFine').hidden  = true;
   document.getElementById('veloFine').classList.remove('congelato');
@@ -1496,7 +1616,7 @@ function finisci(){
     record = S.punti;
     try { localStorage.setItem(RECORD, record); } catch(e){}
   }
-  document.getElementById('record').textContent = 'record ' + record;
+  mostraRecord();
   document.getElementById('finePunti').textContent = S.punti;
   document.getElementById('fineNota').textContent =
     S.punti >= record ? 'Nuovo record.' : 'Il record resta ' + record + '.';
@@ -1505,7 +1625,7 @@ function finisci(){
   // sulla schermata di morte la X sparisce: li' l'uscita c'e' gia', e restando
   // sarebbe un tasto fuori dal congelamento proprio mentre qualcuno pesta
   chiudiUscita();
-  document.getElementById('btnX').hidden = true;
+  document.getElementById('btnIng').hidden = true;
   // prima si congela, poi si chiede la posizione: al contrario, quando non c'e'
   // nessuna classifica da aspettare, mostraPosizione scongelava un attimo prima
   // che congelassi, e i tasti restavano spenti fino al tetto dei tre secondi
@@ -1625,7 +1745,7 @@ async function claAggiorna(punti){
     if (CLA.mio > record) {
       record = CLA.mio;
       try { localStorage.setItem(RECORD, record); } catch(e){}
-      document.getElementById('record').textContent = 'record ' + record;
+      mostraRecord();
     }
     mostraPosizione(primaEro);
 
@@ -1742,6 +1862,7 @@ document.getElementById('btnChiudiClassifica').onclick = () => {
   document.getElementById('veloClassifica').hidden = true;
 };
 
+
 /* ---------- la porta verso il gioco grande ----------
    Aprendo questa pagina da sola non c'e' nessun posto dove tornare, quindi il
    bottone d'uscita non esiste proprio. Dentro FantaLiberty invece la corsa sta
@@ -1762,33 +1883,65 @@ function avvisa(tipo){
   try { window.parent.postMessage({ fl:'runner', tipo, punti:S.punti|0, record:record|0 }, '*'); } catch(e){}
 }
 
-/* ---------- la X in alto a sinistra ----------
-   Disegnata qui e non caricata come immagine: e' una croce di quadretti, il
+/* ---------- la targa: faccia, anello, record ----------
+   La faccia cambia su due cose sole, quelle che il giocatore sente addosso: la
+   botta e il cuore recuperato. Torna neutra da sola — un'espressione che resta
+   appiccicata smette di voler dire qualcosa. */
+let facciaId = null;
+function faccia(quale, ms){
+  const f = document.getElementById('faccia');
+  f.classList.remove('male', 'contento');
+  if (quale) f.classList.add(quale);
+  clearTimeout(facciaId);
+  if (quale) facciaId = setTimeout(() => faccia(null), ms || 1100);
+}
+
+function mostraRecord(){
+  const r = document.getElementById('record');
+  if (r) r.textContent = 'HI ' + record;
+  const m = document.getElementById('menuRecord');
+  if (m) m.textContent = 'RECORD ' + record;
+}
+
+function montaTarga(){
+  document.getElementById('faccia').style.backgroundImage =
+    'url(' + ((INLINE && INLINE['run_avatar.webp']) || (CARTELLA + 'run_avatar.webp' + VERSIONE)) + ')';
+  document.getElementById('anellino').src =
+    (INLINE && INLINE['run_anello_rosso.webp']) || (CARTELLA + 'run_anello_rosso.webp' + VERSIONE);
+  mostraRecord();
+}
+
+/* ---------- l'ingranaggio in alto a destra ----------
+   Disegnato qui e non caricato come immagine: e' una ruota di quadretti, il
    codice che la genera e' piu' corto del file che la conterrebbe, e non c'e' un
    asset in piu' da pubblicare e da invalidare quando cambia.
 
-   La griglia e' dispari perche' le due diagonali si incrocino su un quadretto
-   solo: il corpo rosso e' la diagonale spessa tre, il contorno nero e' tutto
-   quello che le sta attaccato attorno. */
-function disegnaX(nodo){
-  const N = 15, SPESSA = 2;      // 5 quadretti di rosso su 15: come il riferimento
-  const suX = (x, y) => Math.abs(x - y) <= SPESSA || Math.abs(x + y - (N - 1)) <= SPESSA;
-  const corpo = [], bordo = [];
-  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++){
-    if (suX(x, y)) { corpo.push([x, y]); continue; }
-    let tocca = false;
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++){
-      const a = x + dx, b = y + dy;
-      if (a >= 0 && a < N && b >= 0 && b < N && suX(a, b)) tocca = true;
+   E' una corona piu' otto denti quadrati, non una formula polare: a quindici
+   quadretti il coseno dell'angolo fa denti di larghezza diversa e la ruota
+   sembra un fiocco di neve. Cosi' invece i denti sono tutti uguali. */
+function disegnaIngranaggio(nodo){
+  const N = 15, C = (N - 1) / 2, R_INT = 2.4, R_EST = 4.8;
+  const DENTI = [[6,0],[6,12],[0,6],[12,6],[2,2],[10,2],[2,10],[10,10]];
+  const g = [];
+  for (let y = 0; y < N; y++){
+    g.push([]);
+    for (let x = 0; x < N; x++){
+      const r = Math.hypot(x - C, y - C);
+      g[y].push(r >= R_INT && r <= R_EST ? 1 : 0);
     }
-    if (tocca) bordo.push([x, y]);
   }
-  const quad = (l, c) => l.map(([x, y]) =>
-    '<rect x="' + x + '" y="' + y + '" width="1" height="1" fill="' + c + '"/>').join('');
+  DENTI.forEach(([x0, y0]) => {
+    for (let y = y0; y < y0 + 3; y++) for (let x = x0; x < x0 + 3; x++)
+      if (x >= 0 && x < N && y >= 0 && y < N) g[y][x] = 1;
+  });
+  const pezzi = [];
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++)
+    if (g[y][x]) pezzi.push('<rect x="' + x + '" y="' + y + '" width="1" height="1"/>');
   nodo.innerHTML =
     '<svg viewBox="-1 -1 ' + (N + 2) + ' ' + (N + 2) + '" shape-rendering="crispEdges" aria-hidden="true">' +
-    '<rect x="-1" y="-1" width="' + (N + 2) + '" height="' + (N + 2) + '" rx="1.6" fill="#ececeb"/>' +
-    quad(bordo, '#141414') + quad(corpo, '#b81414') + '</svg>';
+    '<rect x="-1" y="-1" width="' + (N + 2) + '" height="' + (N + 2) + '" fill="#100e0d"/>' +
+    '<rect x="-0.4" y="-0.4" width="' + (N + 0.8) + '" height="' + (N + 0.8) + '" fill="#f0b722"/>' +
+    '<g fill="#241c05">' + pezzi.join('') + '</g></svg>';
 }
 
 /* ---------- uscire mentre si corre ----------
@@ -1800,6 +1953,36 @@ let faseFermata = null;
 // vero quando una via d'uscita esiste davvero: dentro il gioco grande, o con
 // la scorciatoia ?esci= che serve a provare questa parte da soli
 let uscitaPronta = false;
+
+/* ---------- il menu dell'ingranaggio ----------
+   Ferma il gioco come il menu dell'uscita, e per la stessa ragione: e' l'unico
+   posto da cui si cambiano le cose, e cambiarle mentre arrivano i carrelli non
+   ha senso. La musica non e' della corsa — e' quella del gioco grande, che
+   continua a suonare sotto — quindi l'interruttore la chiede a lui, e se non
+   c'e' nessun gioco grande la voce non compare proprio. */
+let musicaOn = null;
+
+function scriviMusica(){
+  const b = document.getElementById('mnMusica');
+  if (musicaOn === null) { b.hidden = true; return; }
+  b.hidden = false;
+  b.textContent = 'MUSICA: ' + (musicaOn ? 'ON' : 'OFF');
+}
+
+function apriMenu(){
+  if (S.fase === 'attesa' || S.fase === 'fine') return;
+  if (!document.getElementById('menu').hidden) return;
+  faseFermata = S.fase;
+  S.fase = 'menu';
+  mostraRecord();
+  document.getElementById('menu').hidden = false;
+}
+
+function chiudiMenu(){
+  document.getElementById('menu').hidden = true;
+  if (S.fase === 'menu') S.fase = faseFermata || 'corsa';
+  faseFermata = null;
+}
 
 function apriUscita(){
   if (S.fase === 'fine' || S.fase === 'attesa') return;
@@ -1823,19 +2006,23 @@ function mostraUscita(etichetta){
     b.onclick = () => avvisa('esci');
   });
   uscitaPronta = true;
-  const x = document.getElementById('btnX');
-  disegnaX(x);
-  x.onclick = apriUscita;
-  if (S.fase !== 'attesa' && S.fase !== 'fine') x.hidden = false;
+  const g = document.getElementById('btnIng');
+  if (S.fase !== 'attesa' && S.fase !== 'fine') g.hidden = false;
   document.getElementById('btnEsciSi').textContent = etichetta.toUpperCase();
   document.getElementById('btnEsciSi').onclick = () => avvisa('esci');
-  document.getElementById('btnEsciNo').onclick = chiudiUscita;
 }
 
 addEventListener('message', e => {
   const m = e && e.data;
-  if (!m || m.fl !== 'gioco' || m.tipo !== 'apri') return;
+  if (!m || m.fl !== 'gioco') return;
+  // il gioco grande risponde all'interruttore dicendo com'e' andata a finire
+  if (m.tipo === 'musica'){
+    if (typeof m.on === 'boolean') { musicaOn = m.on; scriviMusica(); }
+    return;
+  }
+  if (m.tipo !== 'apri') return;
   mostraUscita(m.esci || 'ESCI');
+  if (typeof m.musica === 'boolean') { musicaOn = m.musica; scriviMusica(); }
   // l'identita' e' quella che il giocatore ha gia': non si chiede niente qui
   if (m.playerId) { CLA.id = String(m.playerId); CLA.nome = String(m.playerName || ''); }
   if (m.backend) CLA.cfg = m.backend;
@@ -1857,9 +2044,29 @@ try {
   const q = new URLSearchParams(location.search).get('esci');
   if (q) mostraUscita(q);
 } catch(e){}
+/* ---------- il menu, montato una volta sola ----------
+   L'ingranaggio e le sue voci non dipendono dal gioco grande, tranne la musica
+   (che e' sua) e l'uscita (che senza di lui non porta da nessuna parte). */
+disegnaIngranaggio(document.getElementById('btnIng'));
+document.getElementById('btnIng').onclick = apriMenu;
+document.getElementById('mnRiprendi').onclick = chiudiMenu;
+document.getElementById('mnMusica').onclick = () => avvisa('musica');
+document.getElementById('mnComandi').onclick = () => { chiudiMenu(); rivediLezioni(); };
+document.getElementById('mnClassifica').onclick = () => {
+  disegnaTabellone();
+  document.getElementById('veloClassifica').hidden = false;
+  claCarica();
+};
+document.getElementById('mnEsci').onclick = () => { chiudiMenu(); apriUscita(); };
+// "annulla" chiude e basta: non dipende dal gioco grande, quindi si collega
+// qui e non insieme all'etichetta dell'uscita, che invece arriva da fuori
+document.getElementById('btnEsciNo').onclick = chiudiUscita;
+scriviMusica();
+montaTarga();
+
 document.getElementById('btnVia').onclick    = via;
 document.getElementById('btnAncora').onclick = via;
-document.getElementById('record').textContent = 'record ' + record;
+mostraRecord();
 
 PRONTI.then(() => {
   // Un asset che non arriva non si racconta al giocatore: al suo posto il

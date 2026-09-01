@@ -44,7 +44,11 @@ def corsa_inline():
     corsa disegna il suo segnaposto e va avanti, esattamente come sul sito.
     """
     pagina = read("game", "runner", "index.html")
-    nomi = sorted(set(re.findall(r"carica\('[^']+',\s*'([^']+)'\)", pagina)))
+    # Ogni nome di file citato nella pagina, non solo quelli che passano da
+    # carica(): il ritratto della targa e l'anello del punteggio entrano dal
+    # CSS e da un <img>, e cercandoli solo nel caricatore del canvas la build
+    # li lasciava fuori — a schermo, offline, restava un buco.
+    nomi = sorted(set(re.findall(r"'(run_[a-z0-9_]+\.webp)'", pagina)))
     if not nomi:
         sys.exit("non trovo le immagini che la corsa carica")
     dentro = {}
