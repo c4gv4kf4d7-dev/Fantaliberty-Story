@@ -498,6 +498,10 @@
             {
               "label": "Fiordaliso",
               "value": "fiordaliso"
+            },
+            {
+              "label": "Altro",
+              "value": "altro"
             }
           ]
         },
@@ -510,6 +514,10 @@
             {
               "label": "Business",
               "value": "business"
+            },
+            {
+              "label": "Corporate",
+              "value": "corporate"
             },
             {
               "label": "Forum",
@@ -2119,7 +2127,7 @@
         {
           "t": "say",
           "who": "lucas",
-          "text": "Ciao! Io sono Lucas... {g:benvenuto|benvenuta} allo Steve Jobs Theater!"
+          "text": "Ciao! Io sono Lucas... e questo e' lo Steve Jobs Theater. Vieni, vieni!"
         }
       ],
       "next": "registrazione",

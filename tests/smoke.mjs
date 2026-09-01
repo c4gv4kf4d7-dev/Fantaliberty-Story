@@ -618,7 +618,7 @@ assert.equal($('tval_store').textContent, 'LIBERTY');
 
 // dipartimento (campo aggiunto dallo script master v4.0)
 assert.match(txt(), /in che dipartimento/);
-[...$('choices').querySelectorAll('.ch')][5].onclick({ stopPropagation() {} });   // Shopping (sesto dei sette, in ordine alfabetico)
+[...$('choices').querySelectorAll('.ch')][6].onclick({ stopPropagation() {} });   // Shopping (settimo degli otto, in ordine alfabetico)
 assert.equal(VN.state.reparto, 'shopping');
 assert.equal($('tval_reparto').textContent, 'SHOPPING');
 
