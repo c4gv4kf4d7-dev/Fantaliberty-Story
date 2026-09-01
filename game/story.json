@@ -349,7 +349,8 @@
         },
         {
           "t": "wait",
-          "ms": 6200
+          "ms": 3100,
+          "_nota": "Era 6200: il vialetto durava troppo. Dimezzato, lo zoom lento resta lo stesso, si vede solo per meta' strada."
         }
       ],
       "next": "ingresso",
@@ -2127,7 +2128,7 @@
         {
           "t": "say",
           "who": "lucas",
-          "text": "Ciao! Io sono Lucas... e questo e' lo Steve Jobs Theater. Vieni, vieni!"
+          "text": "Ciao! Io sono Lucas... e questo e' lo Steve Jobs Theater.\nVieni, vieni!"
         }
       ],
       "next": "registrazione",
