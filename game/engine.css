@@ -323,7 +323,6 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
    #boxwrap e devono restare. Si spegne il fumetto, non il contenitore. */
 #boxwrap.muto #box,#boxwrap.muto #name{display:none}
 #boxwrap.muto{pointer-events:none}
-#boxwrap.muto #hubnav{pointer-events:auto}
 /* Riga di sistema: non la dice nessuno, e' il gioco che avvisa ("il badge e'
    in stampa"). Cornice tratteggiata e testo centrato, perche' si distingua da
    una battuta di un personaggio. */
@@ -524,8 +523,12 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 .hspot.chiuso i{background:rgba(255,255,255,.35);box-shadow:none;animation:none}
 .hspot.chiuso i::before,.hspot.chiuso i::after{animation:none;opacity:0}
 
-#hubnav{display:none;align-items:center;justify-content:space-between;gap:10px;
- margin-bottom:10px}
+/* Posizione fissa sullo schermo, sempre la stessa in ogni zona e in ogni
+   momento: appena sopra la fascia del dialogo (che al massimo arriva all'80%
+   dell'altezza) e sotto gli hotspot dell'hub (che finiscono al 66%). Sta
+   sopra il box (z-index 3 > 2) e sotto i pannelli. */
+#hubnav{position:absolute;left:4%;right:4%;top:66%;z-index:3;display:none;
+ align-items:center;justify-content:space-between;gap:10px;pointer-events:auto}
 #hubnav.on{display:flex}
 #hprev,#hnext{background:#2a3050;border:3px solid #fff;border-radius:8px;color:#fff;
  font-family:inherit;font-size:clamp(10px,3vw,15px);padding:8px 16px;cursor:pointer;

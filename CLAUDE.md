@@ -219,10 +219,13 @@ deve restarci anche quando la zona non parla piu'. Lo dice `"resta": true`
 nella zona (le due zone del quiz ce l'hanno). Senza, tornando li' il tavolino
 era vuoto e non si capiva piu' dove fosse il quiz.
 
-**Le frecce per cambiare zona (`#hubnav`) stanno dentro `#boxwrap`.** Quindi in
-una zona muta non si spegne il contenitore (`in`), che porterebbe via anche
-quelle e lascerebbe il giocatore senza comandi visibili: si spegne solo il
-fumetto, con la classe `muto`.
+**Le frecce per cambiare zona (`#hubnav`) stanno fuori da `#boxwrap`, in un
+punto fisso dello schermo (66% dell'altezza).** Prima stavano dentro il box e
+si muovevano con lui: su quando Francesca parlava, giu' nella zona muta — il
+giocatore se le trovava ogni volta in un posto diverso, ed e' stato bocciato.
+Il 66% e' sotto gli hotspot dell'hub (finiscono al 66%) e sopra la fascia del
+dialogo (al massimo arriva all'80%): sono sempre li', con o senza fumetto.
+In una zona muta si spegne solo il fumetto, con la classe `muto` su `#boxwrap`.
 
 ## Il pulsante Esci: solo dove non c'e' gia' un punto di pausa
 
