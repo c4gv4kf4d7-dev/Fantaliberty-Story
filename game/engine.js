@@ -1902,15 +1902,23 @@
   function showDomande(st) {
     var cat = catCorrente();
     if (!cat) return next();
+    var tipo = st.set === 'extra' ? 'extra' : 'core';
     var lista = st.set === 'extra'
       ? (VN.state.pescate || []).map(function (id) {
           return (cat.extra || []).filter(function (d) { return d.id === id; })[0];
         }).filter(Boolean)
       : (cat.core || []);
+    // Il salvataggio non tiene il punto esatto dentro il giro di domande (VN.i
+    // resta fermo sullo step "domande" per tutta la categoria): senza questo
+    // filtro, riprendere una partita a meta' categoria rifaceva vedere anche le
+    // domande a cui si era gia' risposto, da capo. Le gia' risposte restano
+    // fuori dal giro; il primo tocco dopo la ripresa cade sempre sulla prima
+    // ancora senza risposta.
+    var risposte = ((VN.state.picks || {})[VN.state.categoria] || {})[tipo] || {};
+    lista = lista.filter(function (d) { return !risposte[d.id]; });
     if (!lista.length) return next();
 
     var i = 0;
-    var tipo = st.set === 'extra' ? 'extra' : 'core';
 
     function intro() {
       if (i >= lista.length) { hideUI(); return next(); }
@@ -5379,6 +5387,11 @@
       // variabili vengono rimesse a posto da restore(), ma la card di ripresa si
       // scrive prima. Senza questa riga usciva un asterisco a schermo.
       VN.state = save.state || VN.state;
+      // Il pulsante Esci legge raggiunto_s2/post_lobby_visto da VN.state: senza
+      // aggiornarlo qui, la card "Bentornato, riprendere?" restava senza — e chi
+      // aveva salvato durante i pronostici si ritrovava senza via d'uscita
+      // proprio nel momento in cui stava decidendo se rientrare o no.
+      aggiornaBottoneEsci();
       var resumeUI = function () {
         showChoices({
           options: [
