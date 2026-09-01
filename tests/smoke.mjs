@@ -2946,12 +2946,12 @@ function apriMoltiplicatori(stato, extra) {
   VN.clearSave();
   window.localStorage.removeItem('fl_nexus_da_inviare');   // niente code di test precedenti
   const inviati = [];
-  let intestazioni = null;
+  const url_chiamate = [];
   // la prima spedizione viene rifiutata (colonna mancante, rete): finisce in
   // coda e riparte dopo. Deve tornare come la stessa riga, non come una nuova.
   window.fetch = (url, opt) => {
     inviati.push(JSON.parse(opt.body));
-    intestazioni = opt.headers;
+    url_chiamate.push(url);
     return Promise.resolve({ ok: inviati.length > 1, status: 400, text: () => Promise.resolve('') });
   };
   apriMoltiplicatori({ mult_bank: 0.05,
@@ -2967,8 +2967,8 @@ function apriMoltiplicatori(stato, extra) {
   assert.match(inviati[0].run_id, /^[0-9a-f-]{36}$/, 'la schedina porta un id di partita');
   assert.equal(new Set(inviati.map((x) => x.run_id)).size, 1,
     'tutte le spedizioni della stessa partita portano lo stesso id: una riga sola');
-  assert.match(intestazioni.Prefer, /merge-duplicates/,
-    'e chiedono a Supabase di riscrivere la riga invece di aggiungerne una');
+  assert.ok(url_chiamate.every((u) => /\/rpc\/upsert_run$/.test(u)),
+    'passa dalla funzione upsert_run (bypassa la RLS del chiamante), non da un POST diretto sulla tabella');
   delete window.fetch;
 }
 

@@ -1,19 +1,28 @@
 #!/usr/bin/env python3
-"""Controlla che la tabella di Supabase accetti davvero la schedina.
+"""Controlla che Supabase accetti davvero la schedina.
 
-Legge i campi che il gioco spedisce (payload() in game/engine.js) e chiede a
-Supabase, colonna per colonna, se esiste. Non scrive niente: usa una GET, che la
-chiave anon non puo' comunque leggere (RLS), ma che risponde lo stesso "column
-... does not exist" quando la colonna manca.
+Legge i campi che il gioco spedisce (payload() in game/engine.js) e li manda
+per davvero alla funzione upsert_run() con la chiave anon — la stessa strada
+che usa il gioco (game/engine.js, invia(): POST /rest/v1/rpc/upsert_run).
 
-Una colonna mancante non si vede giocando: il gioco non lo dice al giocatore,
-mette la schedina in coda e riprova. Sembra tutto a posto e non arriva niente.
+Non e' piu' una GET colonna per colonna: dal 1 settembre 2026 anon non ha
+nessun grant diretto sulla tabella 'runs' (vedi docs/backend.sql), quindi una
+GET restituirebbe sempre "permission denied" a prescindere dalle colonne, e
+il controllo direbbe sempre "manca tutto" anche a schema giusto. L'unica
+interfaccia che anon puo' davvero usare e' la funzione, quindi e' quella che
+si controlla: se una colonna manca sul serio, l'errore di Postgres la nomina
+per esteso ("column ... does not exist").
+
+Lascia una riga di prova nella tabella (run_id fisso, nome
+"_controllo_supabase"): si puo' cancellare a mano, come le altre righe di
+collaudo — vedi docs/backend.sql in fondo.
 
   python3 tools/controlla_supabase.py
 """
 import json, os, re, sys, urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+RUN_ID_PROVA = '00000000-0000-4000-8000-000000000000'
 
 def campi_del_payload():
     """I nomi dei campi come li scrive payload() nel motore."""
@@ -31,19 +40,29 @@ def campi_del_payload():
         elif prof == 0: campi.append(pezzo.group(1))
     return campi
 
-def esiste(cfg, colonna):
-    url = cfg['url'].rstrip('/') + '/rest/v1/' + cfg.get('tabella', 'runs') + '?select=' + colonna
-    req = urllib.request.Request(url, headers={
-        'apikey': cfg['chiave'], 'Authorization': 'Bearer ' + cfg['chiave']})
+DUMMY = {
+    'run_id': RUN_ID_PROVA, 'nome': '_controllo_supabase', 'cognome': None,
+    'genere': 'm', 'store': None, 'reparto': None, 'anni': None, 'device': None,
+    'stile': None, 'punti': 0, 'picks': {}, 'flags': {}, 'quiz': {}, 'runner': {},
+    'email': None, 'versione': 'controllo_supabase',
+}
+
+def prova_upsert(cfg, campi):
+    corpo = {c: DUMMY.get(c) for c in campi}
+    url = cfg['url'].rstrip('/') + '/rest/v1/rpc/upsert_run'
+    req = urllib.request.Request(url, data=json.dumps(corpo).encode(), method='POST', headers={
+        'apikey': cfg['chiave'], 'Authorization': 'Bearer ' + cfg['chiave'],
+        'Content-Type': 'application/json', 'Prefer': 'return=minimal'})
     try:
         urllib.request.urlopen(req, timeout=20)
         return True, ''
     except Exception as e:
         testo = e.read().decode() if hasattr(e, 'read') else str(e)
         try:
-            return False, json.loads(testo).get('message', testo)
+            j = json.loads(testo)
+            return False, (j.get('message', '') + ' ' + (j.get('hint') or '')).strip()
         except Exception:
-            return False, testo[:120]
+            return False, testo[:200]
 
 # La classifica della corsa e' una tabella a parte, e a differenza delle
 # schedine si deve poter LEGGERE: senza la policy di select la classifica
@@ -74,26 +93,31 @@ def main():
         print('game/backend.json non e\' configurato: il gioco terrebbe tutto in coda.')
         return 1
     campi = campi_del_payload()
-    print('tabella: %s/rest/v1/%s' % (cfg['url'].rstrip('/'), cfg.get('tabella', 'runs')))
-    mancanti = []
-    for c in campi:
-        ok, msg = esiste(cfg, c)
-        print('  %-10s %s' % (c, 'ok' if ok else 'MANCA  (' + msg + ')'))
-        if not ok: mancanti.append(c)
+    url_rpc = cfg['url'].rstrip('/') + '/rest/v1/rpc/upsert_run'
+    print('funzione: %s' % url_rpc)
+    ok, msg = prova_upsert(cfg, campi)
+    if ok:
+        print('  upsert_run  ok — la schedina di prova e\' stata accettata')
+        print('  (riga di prova nella tabella: run_id %s, nome "_controllo_supabase";' % RUN_ID_PROVA)
+        print('   si cancella a mano dall\'SQL Editor come le altre righe di collaudo)')
+    else:
+        print('  upsert_run  RIFIUTATA  (' + msg + ')')
     print()
     ok_classifica = controlla_classifica(cfg)
     print()
-    if not mancanti and not ok_classifica:
-        return 1
-    if not mancanti:
-        print('Tutte le colonne ci sono: la schedina viene accettata.')
+    if ok and ok_classifica:
+        print('Tutto a posto: la schedina viene accettata.')
         return 0
-    print('%d colonne mancanti. Finche\' mancano, OGNI schedina viene rifiutata con un' % len(mancanti))
-    print('400 e resta in coda nel telefono del giocatore, senza che nessuno se ne accorga.')
-    print('Da incollare nell\'SQL Editor di Supabase:\n')
-    for c in mancanti:
-        tipo = {'email': 'text', 'run_id': 'uuid', 'cognome': 'text'}.get(c, 'jsonb')
-        print('  alter table public.runs add column if not exists %s %s;' % (c, tipo))
+    if not ok:
+        print('La schedina viene rifiutata. Il messaggio sopra dice perche\':')
+        print('  - "function ... does not exist" / "PGRST202"  -> la funzione upsert_run')
+        print('    non esiste ancora: va incollato il blocco SQL da docs/backend.sql')
+        print('    nell\'SQL Editor di Supabase.')
+        print('  - "column ... does not exist"                 -> una colonna manca sulla')
+        print('    tabella runs: aggiungerla con alter table (vedi docs/backend.sql).')
+        print('  - "permission denied" / "42501"                -> il grant di esecuzione ad')
+        print('    anon sulla funzione non c\'e\' (grant execute ... to anon, in fondo al')
+        print('    blocco SQL).')
     return 1
 
 if __name__ == '__main__':

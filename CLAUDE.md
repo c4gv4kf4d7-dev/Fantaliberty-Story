@@ -406,23 +406,42 @@ l'elenco dei campi cambia da solo.
   previsioni e di nuovo quando si assegnano i moltiplicatori del quiz, che
   arrivano giorni dopo. Le due spedizioni portano lo stesso `run_id` (generato
   una volta, salvato con la partita) e Supabase riscrive la riga invece di
-  aggiungerne un'altra (`Prefer: resolution=merge-duplicates`). Perche' regga
-  servono **due cose nel database**: l'indice unico su `run_id` e la policy di
-  update — senza l'indice l'upsert non ha su cosa agganciarsi e tornano le due
-  righe, in silenzio. Stanno in `docs/backend.sql`.
+  aggiungerne un'altra. Perche' regga serve l'indice unico su `run_id` —
+  senza, l'upsert non ha su cosa agganciarsi e tornano le due righe, in
+  silenzio. Sta in `docs/backend.sql`.
+- **La scrittura non passa da un POST diretto sulla tabella, passa dalla
+  funzione `upsert_run`** (SECURITY DEFINER, in `docs/backend.sql`; il motore
+  la chiama in `invia()` con `POST /rest/v1/rpc/upsert_run`). Non e' un
+  capriccio stilistico: un POST diretto con `Prefer:
+  resolution=merge-duplicates` fa scattare in Postgres un `INSERT ... ON
+  CONFLICT DO UPDATE`, e per sapere se la riga col run_id esiste gia' Postgres
+  deve poterla **leggere** secondo le policy RLS di chi chiama — anche con
+  `return=minimal`, che evita solo di rispedirla nella risposta, non il
+  controllo. La chiave anon non ha (apposta) una policy di select su `runs`,
+  quindi quel controllo falliva sempre, non solo sui duplicati: **ogni singolo
+  invio veniva rifiutato con 401/42501** ("new row violates row-level security
+  policy"), scoperto il 1 settembre 2026 la sera prima del lancio. Dare ad
+  anon una select larga avrebbe risolto ma reso leggibile l'intera tabella con
+  un GET — la funzione bypassa la RLS del chiamante senza concederle nessun
+  permesso di lettura in piu'.
 - **`anni` e' il codice della fascia, non l'etichetta**: `'0'` = 0-2 anni,
   `'1'` = 3-7, `'2'` = 8-12, `'3'` = piu' di 12. Serve al `rookieBonus`.
-- **`npm run supabase` dice se la tabella e' pronta.** Confronta i campi che
-  `payload()` spedisce con le colonne che esistono davvero, senza scrivere
-  niente. Va lanciato dopo ogni campo nuovo e prima di pubblicare: il 31 agosto
-  2026 mancavano `quiz`, `email` e `runner`, cioe' **nessuna schedina sarebbe
-  arrivata** e il gioco non l'avrebbe detto a nessuno.
+- **`npm run supabase` dice se la schedina viene accettata davvero.** Non
+  legge piu' colonna per colonna con una GET (anon non ha nessun grant diretto
+  sulla tabella, quindi risponderebbe sempre "permission denied" a prescindere
+  dallo schema): manda una schedina di prova vera alla funzione `upsert_run`,
+  la stessa strada del gioco, e lascia una riga taggata (`nome:
+  "_controllo_supabase"`) da cancellare a mano. Va lanciato dopo ogni campo
+  nuovo e prima di pubblicare: il 31 agosto 2026 mancavano `quiz`, `email` e
+  `runner`, cioe' **nessuna schedina sarebbe arrivata** e il gioco non
+  l'avrebbe detto a nessuno.
 - **Un rifiuto e' muto per il giocatore ma non invisibile**: la schedina torna
   in coda (`fl_nexus_da_inviare`) e riparte al prossimo avvio, e il motivo
   finisce in console. Il caso tipico e' una colonna che manca nella tabella
   (400, `PGRST204`): `docs/backend.sql` ha gli `alter table` pronti.
-- **La chiave nel sito puo' solo inserire.** Non legge, non modifica, non
-  cancella. La verifica dal vivo e le query di cancellazione stanno in fondo a
+- **La chiave nel sito puo' solo chiamare `upsert_run`.** Non ha nessun grant
+  diretto sulla tabella: non legge, non modifica, non cancella scavalcando la
+  funzione. La verifica dal vivo e le query di cancellazione stanno in fondo a
   `docs/backend.sql`.
 - **`cognome` e' facoltativo e non e' il nickname.** Si chiede subito dopo il
   nome nel terminale (`opzionale:true` sullo step `input` — il bottone resta
