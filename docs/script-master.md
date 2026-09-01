@@ -476,9 +476,9 @@ Tutti e 3 i macroargomenti completati → [S6.01]
      (da game/domande.json, campo `battute[run.style]`)
   5. SE random() < probabilità: micro-evento generale, oppure l'evento
      personale dello stile se non ancora mostrato in questa run
-  6. Il micro-evento, se estratto, presenta tre reazioni rapide: il valore
-     interno è una permutazione runtime di +3 / 0 / -3 e non viene mai mostrato
-     al giocatore
+  6. Il micro-evento, se estratto, presenta tre reazioni rapide: il valore di
+     ciascuna è +1 / 0 / -1, fisso — quello scritto dall'autore in banca
+     (`editoriale`, sul segno) — e non viene mai mostrato al giocatore
   7. Reazione platea A CASO — mai legata al contenuto della risposta
   8. → prossima domanda, o [S5.BIVIO] se era l'ultima core
 ```
@@ -519,11 +519,12 @@ completamento) più quattro di riserva: i giri da coprire sono quattro, quindi
 l'ultimo pesca dalla riserva — è esattamente a questo che serve. R2 (la luce per
 Craig) e R3 (il primo piano) sono state tolte per non allungare le previsioni.
 
-I micro-eventi non sono più passivi: ogni voce contiene tre `opzioni`. I valori
-editoriali indicano il tono previsto della battuta, ma il motore mescola a ogni
-attivazione i tre esiti numerici `+3`, `0`, `-3`. L'interfaccia non deve mostrare
-mai numeri, badge, popup, "bonus" o "malus": l'esito deve restare leggibile solo
-come conseguenza narrativa.
+I micro-eventi non sono più passivi: ogni voce contiene tre `opzioni`, ognuna
+con un `editoriale` (`+3`/`0`/`-3`) che è insieme il tono della battuta e il
+punteggio vero — il motore lo traduce nel segno (`+1`/`0`/`-1`), fisso, mai
+mescolato: la stessa risposta vale sempre lo stesso punto. L'interfaccia non
+deve mostrare mai numeri, badge, popup, "bonus" o "malus": l'esito deve
+restare leggibile solo come conseguenza narrativa.
 
 ## Le domande
 
@@ -797,7 +798,8 @@ Punteggio domanda core = difficoltà (1-5) + bonus opzione
 
 Punteggio facoltativa/intermezzo = valore secco dell'opzione (1, 2 o 3)
 
-Punteggio micro-evento = permutazione runtime opaca di +1 / 0 / -1
+Punteggio micro-evento (ed evento personale dello stile) = +1 / 0 / -1, fisso
+  per opzione (dal segno di "editoriale" in banca), mai a caso e mai mostrato
 
 Moltiplicatore pool = opzione scelta da <10% dei giocatori  ×1.5
                                         10-30%             ×1.25

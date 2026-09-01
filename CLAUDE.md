@@ -440,6 +440,14 @@ Tre cose tarate insieme (agosto 2026, misurate con
 - **micro-eventi ±1, non ±3.** A ±3 la fortuna spostava 3,7 posizioni in
   classifica, quanto tutto il quiz di Peter (3,9). A ±1 sposta 1,7 e il quiz
   5,4.
+- **il punteggio di un micro-evento (e dell'evento personale dello stile) e'
+  fisso, non a caso.** Ogni opzione vale il segno del suo `editoriale` in
+  `domande.json` (`puntoMicroEvento()` in `engine.js`) — la stessa risposta
+  vale lo stesso punto a ogni partita e per ogni giocatore. Una versione
+  precedente rimescolava +1/0/-1 fra le tre opzioni a ogni attivazione,
+  apposta perche' chi rigiocava non imparasse "la B e' quella buona": decisione
+  poi ribaltata dall'utente, che vuole i punteggi definiti dall'autore, non
+  casuali. Il giocatore continua a non vederli — lo dice solo Susan, a parole.
 - **niente bonus per gli intermezzi completati.** La vecchia formula ne
   chiedeva cinque, il giro ne fa giocare quattro (uno all'apertura del keynote,
   uno per macroargomento): era un bonus che nessuno poteva prendere.

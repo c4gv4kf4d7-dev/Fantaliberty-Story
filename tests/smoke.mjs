@@ -1022,8 +1022,10 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
 
 /* ---------- 5j. micro-eventi interattivi ----------
    Ogni micro-evento e' una micro-challenge a tre risposte: il dato editoriale
-   resta in banca per revisione testi, ma il motore assegna a runtime una
-   permutazione opaca di +3, 0 e -3. */
+   in banca (-3/0/+3) NON e' solo per la revisione dei testi, e' il punteggio
+   vero. Ogni risposta vale sempre lo stesso punto (+1/0/-1, dal segno di
+   "editoriale"), a ogni partita: niente rimescolamento a runtime — deciso
+   con l'utente per evitare punteggi arbitrari che l'autore non controlla. */
 {
   assert.equal(banca.micro_eventi.length, 5, 'cinque micro-eventi generali');
   const visti = new Set();
@@ -1044,27 +1046,35 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
       `${e.id}: il mapping editoriale deve contenere -3, 0 e +3 una volta`);
   }
   const engineSrc = fs.readFileSync(path.join(ROOT, 'game/engine.js'), 'utf8');
-  assert.match(engineSrc, /mescola\(valori\.slice\(\)\)/, 'il mapping A/B/C dei micro-eventi viene mescolato a runtime');
+  assert.doesNotMatch(engineSrc, /mescola\(valori\.slice\(\)\)/,
+    'niente piu\' mapping a caso: il punteggio di un micro-evento e\' quello scritto in banca');
   assert.doesNotMatch(engineSrc, /Momentum|Chaos/i, 'non introdurre Momentum/Chaos');
 
-  /* La randomizzazione non basta scriverla: se la prima opzione prendesse sempre
-     lo stesso valore, chi rigioca imparerebbe la risposta buona e i micro-eventi
-     non varrebbero piu' niente. Qui si gioca lo stesso evento tante volte e si
-     controlla che ogni posizione abbia visto tutti e tre gli esiti. */
-  const storyRnd = JSON.parse(JSON.stringify(story));
-  storyRnd.regia.probabilitaEvento = 1;
-  const vistiPerPosizione = [new Set(), new Set(), new Set()];
-  for (let giro = 0; giro < 60; giro++) {
-    const posto = giro % 3;
+  /* Il punteggio e' fisso: si gioca lo stesso evento piu' volte e si
+     controlla che il punto salvato sia sempre quello dell'"editoriale"
+     dell'opzione scelta — mai un altro valore, mai diverso fra un giro e
+     l'altro. */
+  const storyFisso = JSON.parse(JSON.stringify(story));
+  storyFisso.regia.probabilitaEvento = 1;
+  const marimba = banca.micro_eventi.find((e) => e.id === 'MARIMBA');
+  let etichettaVista = null;
+  for (let giro = 0; giro < 5; giro++) {
     VN.clearSave();
-    VN.boot(storyRnd, { speed: 0, banca, quiz, scene: 'keynote' });
+    VN.boot(storyFisso, { speed: 0, banca, quiz, scene: 'keynote' });
     VN.state.genere = 'f'; VN.state.stile = 'drip'; VN.state.nome = 'Franca';
     VN.state.eventi_sacchetto = ['MARIMBA'];
     for (let g = 0; g < 40; g++) {
       if (txt().includes('Marimba')) {
-        VN.step();                                             // la battuta della regia
-        [...$('choices').querySelectorAll('.ch')][posto].onclick({ stopPropagation() {} });
-        vistiPerPosizione[posto].add(VN.state.picks.micro_eventi.r.MARIMBA.p);
+        VN.step();
+        const bottoni = [...$('choices').querySelectorAll('.ch')];
+        if (etichettaVista == null) etichettaVista = bottoni[0].textContent;
+        assert.equal(bottoni[0].textContent, etichettaVista,
+          `giro ${giro}: le tre opzioni di MARIMBA restano nello stesso ordine, non si rimescolano`);
+        const scelto = marimba.opzioni.find((o) => o.label === bottoni[0].textContent);
+        const atteso = scelto.editoriale > 0 ? 1 : scelto.editoriale < 0 ? -1 : 0;
+        bottoni[0].onclick({ stopPropagation() {} });
+        assert.equal(VN.state.picks.micro_eventi.r.MARIMBA.p, atteso,
+          `giro ${giro}: la prima opzione di MARIMBA deve valere sempre lo stesso punto`);
         break;
       }
       if ($('griglia').classList.contains('on')) {
@@ -1075,10 +1085,6 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
       } else VN.step();
     }
   }
-  vistiPerPosizione.forEach((visti, i) => {
-    assert.deepEqual([...visti].sort((a, b) => a - b), [-1, 0, 1],
-      `la risposta in posizione ${i + 1} non ha visto tutti e tre gli esiti: il mapping non e' davvero casuale`);
-  });
 }
 
 
@@ -1867,7 +1873,7 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.equal(teste[0].querySelector('.regsegno').textContent, '+');
 
   // i contenuti: quelli di prima non si sono persi, quelli nuovi ci sono
-  assert.match($('regcorpo').textContent, /\+3, 0 oppure -3/, 'i micro-eventi');
+  assert.match($('regcorpo').textContent, /\+1, 0 oppure -1/, 'i micro-eventi');
   assert.match($('regcorpo').textContent, /Peter/, 'il quiz finale');
   assert.match($('regcorpo').textContent, /volontaria e gratuita/, 'la partecipazione');
   assert.match($('regcorpo').textContent, /Apple Inc/, 'i marchi');
