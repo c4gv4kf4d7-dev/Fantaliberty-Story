@@ -212,6 +212,7 @@ un segnaposto e va avanti.
 | `run_anello_verde` `run_anello_blu` `run_anello_rosso` | Gli anelli da raccogliere, 10 / 25 / 50 punti |
 | `run_bonus_iphone` `run_bonus_computer` `run_bonus_visore` | I tre prodotti nelle bolle, 100 punti l'uno; presi tutti e tre, bonus |
 | `run_vita` | L'icona Salute: restituisce una vita |
+| `run_malus_cuffie` `run_malus_cavo` `run_malus_batteria` | Le tre fregature: cuffie aggrovigliate, cavo sfilacciato, batteria all'1%. Stessa forma delle chicche — un oggetto dentro una bolla — ma la bolla e' **rossa**, ed e' quello a dire la regola. Tolgono 25 / 50 / 100 punti. **Attenzione a `togli_bianchi.py` su questi**: il connettore del cavo e i riflessi della batteria sono bianchi di disegno, e verrebbero mangiati — basta `rimuovi_sfondo.py` |
 | `run_traguardo` | ⚠️ GAP — l'insegna dei traguardi (1000, 2000, …) non è ancora disegnata: al suo posto una piastrella dorata |
 
 Le tavole arrivano con il fondo bianco e vanno preparate prima di entrare in
