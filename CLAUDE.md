@@ -997,9 +997,19 @@ niente immagine da scaricare. Tre cose da sapere:
    `?apri`, `?dev` e `?scene=` — l'utente il gioco lo prova dal dominio
    pubblico, non dall'indirizzo github.io: chi tocca quel controllo non deve
    togliere quelle porte.
-3. **Si toglie da solo** a `APERTURA` (2 settembre 2026, ora italiana): non
-   serve un altro deploy per aprire il sito, ma spostare la data e' una
-   modifica sola in `index.html`.
+3. **Si toglie da solo** a `APERTURA` (2 settembre 2026 alle 10:00, ora
+   italiana): non serve un altro deploy per aprire il sito, ma spostare la
+   data e' una modifica sola in `index.html`.
+
+Dopo il cartello c'e' **la porta d'ingresso** (`#home` in `index.html`): il
+fondale `bg_intro` e un bottone GIOCA, e basta. Non e' una schermata di
+caricamento: i dati si scaricano intanto, e il motore parte **al tocco**
+(`avvia()` aspetta tutti e due). Quel tocco e' anche il primo gesto sulla
+pagina, cioe' l'unico momento in cui il telefono concede l'audio: il bottone
+chiama `VN.sbloccaAudio()` prima di far partire la sigla, se no il jingle dello
+studio esce muto. Chi la toglie "perche' tanto c'e' gia' la sigla" perde
+l'audio all'apertura. I tool (`verifica-transizioni`, `screenshots`) aprono la
+pagina con `?subito`, che la salta; la saltano anche `?dev` e `?scene=`.
 
 Il motore non parte proprio quando il cartello e' su (`return` prima di
 `VN.boot`): niente salvataggi toccati, niente richieste ai JSON.

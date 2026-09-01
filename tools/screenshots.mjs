@@ -10,7 +10,7 @@ p.on('pageerror', e => errs.push('JS: ' + e.message));
 p.on('console', m => { if (m.type() === 'error') errs.push('CONSOLE: ' + m.text()); });
 p.on('requestfailed', r => errs.push('404?: ' + r.url()));
 // intro a velocita' reale: cartello nero, poi accensione
-await p.goto('http://localhost:8080/', { waitUntil: 'networkidle' });
+await p.goto('http://localhost:8080/?subito', { waitUntil: 'networkidle' });
 await p.waitForTimeout(1500);
 await p.screenshot({ path: 'shots/0-sigla.png' });        // logo acceso
 await p.waitForTimeout(3300);
