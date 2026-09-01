@@ -914,6 +914,11 @@ legge su un telefono.
   fa niente (`senzaSalto` in `typeLines`, e `skip()` che si ferma prima) — e
   solo dopo arriva la freccia. `ritmo` sullo step `title` scala insieme
   velocità di scrittura e pause.
+- **Il campo del terminale non si puo' scrivere piccolo.** Sotto i 16px di
+  font iOS ingrandisce la pagina appena lo si tocca. Per farlo uguale al box
+  (~10px) `#ti` resta a 16px ed e' scalato a 0.6 dentro `#tiwrap`, che e'
+  l'unico a contare per il layout. Abbassare il `font-size` "per semplificare"
+  riporta lo zoom.
 - **Il doppio tocco del browser ingrandiva la pagina.** Il gioco si gioca a
   tocchi ravvicinati (si tocca per far scorrere il dialogo) e Safari li leggeva
   come "ingrandisci qui", lasciando la scena zoomata a meta'. Si toglie con

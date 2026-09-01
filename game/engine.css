@@ -249,10 +249,22 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
    Lucas lo consegna a fine registrazione: l'immagine porta la mela, il nome
    del giocatore ci viene scritto sopra. Se l'immagine non c'e' ancora, la
    cornice viene disegnata in CSS: il nome resta leggibile lo stesso. */
-#badgewrap{position:absolute;left:50%;top:16%;width:58%;max-width:320px;z-index:3;
- opacity:0;transform:translate(-50%,26px) scale(.9);pointer-events:none;
- transition:opacity .5s ease, transform .6s cubic-bezier(.2,.9,.3,1)}
-#badgewrap.in{opacity:1;transform:translate(-50%,0) scale(1)}
+/* Il badge pende dall'alto: il laccetto entra dal bordo superiore dello
+   schermo (il riquadro parte sopra lo schermo, "top" negativo) invece di
+   cominciare a mezz'aria, e la tessera scende e si assesta con una piccola
+   oscillazione, come una cosa appesa davvero. Il perno e' in alto al centro,
+   dove il laccetto esce dallo schermo. */
+#badgewrap{position:absolute;left:50%;top:-4%;width:68%;max-width:360px;z-index:3;
+ opacity:0;transform:translate(-50%,-60px);transform-origin:50% 0;pointer-events:none;
+ transition:opacity .4s ease}
+#badgewrap.in{opacity:1;transform:translate(-50%,0);
+ animation:badgeScende 1.6s cubic-bezier(.2,.8,.3,1) forwards}
+@keyframes badgeScende{
+  0%{transform:translate(-50%,-60px) rotate(-4deg)}
+  45%{transform:translate(-50%,0) rotate(3deg)}
+  70%{transform:translate(-50%,0) rotate(-1.5deg)}
+  100%{transform:translate(-50%,0) rotate(0)}
+}
 /* Coriandoli: partono dietro alla tessera e si aprono a ventaglio. Ogni pezzo
    ha traiettoria, giro e durata suoi, passati come variabili dal motore. */
 #coriandoli{position:absolute;left:50%;top:40%;width:0;height:0;z-index:4;pointer-events:none}
@@ -401,8 +413,23 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 
 #inputform{margin-top:10px;display:none;gap:7px}
 #inputform.on{display:flex}
-#ti{flex:1;min-width:0;background:#0d1020;border:3px solid #fff;border-radius:8px;color:#fff;
- font-family:inherit;font-size:16px;padding:10px 11px;outline:none}   /* 16px: iOS non zooma */
+/* Il campo ha la stessa veste del box del dialogo: stesso sfondo, stesso
+   font, stessa misura del testo. La misura pero' non si puo' scrivere piccola
+   sul campo: sotto i 16px iOS ingrandisce la pagina appena lo si tocca.
+   Quindi il font resta 16px e si rimpicciolisce il campo intero con una
+   scala (0.6 -> ~9.6px a schermo, come il testo del box): il campo sta
+   dentro #tiwrap, e' disegnato grande il doppio e scalato giu' — per il
+   layout conta solo il contenitore, alto come il bottone OK. */
+#tiwrap{flex:1;min-width:0;position:relative;overflow:hidden;border-radius:8px}
+#ti{position:absolute;left:0;top:0;width:calc(100% / .6);height:calc(100% / .6);
+ transform:scale(.6);transform-origin:0 0;
+ background:#1b1f33;border:3px solid #fff;border-radius:13px;color:#fff;
+ font-family:inherit;font-size:16px;padding:0 14px;outline:none}
+#ti::placeholder{color:rgba(255,255,255,.4)}
+/* Safari riempie di giallo il campo che crede di poter completare da solo: il
+   colore va detto esplicitamente anche in quel caso, se no il tema salta. */
+#ti:-webkit-autofill,#ti:-webkit-autofill:focus{
+ -webkit-box-shadow:0 0 0 100px #1b1f33 inset;-webkit-text-fill-color:#fff;caret-color:#fff}
 #tok{background:#2a3050;border:3px solid #fff;border-radius:8px;color:#fff;font-family:inherit;
  font-size:clamp(8px,2.35vw,12px);padding:10px 13px;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.5)}
 #tok:disabled{opacity:.35;cursor:default}
@@ -507,10 +534,9 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
  border:2px solid rgba(255,255,255,.35)}
 .hdot.seen{background:rgba(255,255,255,.5)}
 .hdot.sel{background:#fff;border-color:#fff;transform:scale(1.25)}
-/* Zona ancora chiusa a chiave: il pallino resta spento. Il bordo tratteggiato
-   su un cerchio da 9px non si legge come un pallino vuoto ma come un segno
-   rotto (sembrava una rotella che gira): resta pieno, solo piu' scuro. */
-.hdot.chiuso{background:transparent;border-color:rgba(255,255,255,.22)}
+/* La zona chiusa a chiave NON ha un pallino diverso: era prima tratteggiato,
+   poi piu' scuro, e in tutti e due i casi sembrava un difetto, non
+   un'informazione. Sono cinque pallini uguali e basta. */
 
 /* ---------- platea e ospiti di scena ----------
    La reazione della platea e' un layer sopra il fondale del palco. Sta sotto ai
@@ -1201,13 +1227,20 @@ html.inattesa, html.inattesa body{background:#0a0a0f;overflow:hidden}
    come l'audio — qui il disegno c'era gia'. Compare solo da [S2] fino al
    ritorno in lobby dopo le previsioni confermate: display:none di base, .on
    lo accende (aggiornaBottoneEsci() in engine.js). */
+/* I due bottoni agli angoli (Esci a sinistra, audio a destra) sono solo
+   l'icona, scontornata: niente riquadro scuro dietro, che sul fondale
+   chiaro si vedeva come una macchia. Stessa misura tutti e due: il
+   cartello EXIT e' largo il doppio che alto, quindi lo si misura sulla
+   larghezza del bottone, non sull'altezza. Un'ombra morbida al posto del
+   riquadro li tiene leggibili anche sul chiaro. */
 #btnEsciGioco{position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;
   z-index:6;width:48px;height:48px;padding:0;border:0;border-radius:8px;
-  background:rgba(10,10,15,.45);
+  background:transparent;
   display:none;align-items:center;justify-content:center;
-  opacity:.5;cursor:pointer;transition:opacity .2s}
+  opacity:.85;cursor:pointer;transition:opacity .2s}
 #btnEsciGioco.on{display:flex}
-#btnEsciGioco img{width:36px;height:auto;display:block;image-rendering:pixelated}
+#btnEsciGioco img{width:48px;height:auto;display:block;image-rendering:pixelated;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))}
 #btnEsciGioco:hover,#btnEsciGioco:focus-visible{opacity:1}
 #curtain.on ~ #btnEsciGioco{opacity:.28}
 
@@ -1217,14 +1250,15 @@ html.inattesa, html.inattesa body{background:#0a0a0f;overflow:hidden}
    tranne il sipario e i cartelli a schermo pieno. */
 #audiobtn{position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);right:8px;
   z-index:6;width:48px;height:48px;padding:0;border:0;border-radius:8px;
-  background:rgba(10,10,15,.45);color:#f2f2f7;
+  background:transparent;color:#f2f2f7;
   display:flex;align-items:center;justify-content:center;
-  opacity:.5;cursor:pointer;transition:opacity .2s}
+  opacity:.85;cursor:pointer;transition:opacity .2s}
 /* Icona in pixel art disegnata a mano (niente emoji: cambia da telefono a
    telefono). shape-rendering:crispEdges tiene i bordi duri, anche sulle
    diagonali della croce. La croce rossa e' l'unico segno del muto: le onde
    restano, come sul simbolo di riferimento. */
-#audiobtn svg{width:36px;height:36px;display:block;shape-rendering:crispEdges}
+#audiobtn svg{width:36px;height:36px;display:block;shape-rendering:crispEdges;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))}
 #audiobtn .cono,#audiobtn .onde rect{fill:currentColor}
 #audiobtn .ics{display:none;stroke:#e01b1b;stroke-width:2.4;stroke-linecap:butt}
 #audiobtn.muto .ics{display:block}
