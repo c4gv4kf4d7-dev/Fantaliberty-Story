@@ -1325,7 +1325,15 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
       'quello dello stile e\' il primo del sacchetto');
     const generali = pescati.filter((id) => banca.micro_eventi.some((e) => e.id === id));
     assert.equal(generali.length, 2, 'al massimo due micro-eventi generali per partita');
-    assert.ok(giocati.length >= 1, 'e qualche evento e\' uscito');
+    /* Quanti ne escano davvero e' fortuna: a 0.15 per risposta capita (circa
+       una partita su settanta) che non ne esca nessuno. Quello che si presidia
+       e' che ognuno di quelli usciti venga dal sacchetto e sia stato giocato
+       una volta sola — non che la moneta sia caduta bene. */
+    assert.ok(giocati.length <= 3, 'mai piu\' di tre eventi in una partita');
+    assert.equal(new Set(giocati).size, giocati.length,
+      'ogni evento uscito e\' stato giocato una volta sola');
+    assert.deepEqual(giocati, pescati.slice(0, giocati.length),
+      'e sono usciti nell\'ordine del sacchetto');
   }
 
   /* ---------- S6: la sala regia, modifica, blocco ---------- */
@@ -1387,76 +1395,112 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.ok(!('submitted_at' in coda), 'il timestamp lo mette il server, non il client');
 }
 
-/* ---------- 5r. la freccia riapre le battute gia' dette ----------
-   Non e' una navigazione: e' un pannello che si legge e si chiude, come il
-   regolamento e i quadri della Hall of Fame. Le due cose da presidiare sono
-   che NON tocchi la partita (ne' lo stato, ne' il punto in cui si e') e che
-   ci sia solo dove serve, cioe' durante il keynote. */
+/* ---------- 5r. il riavvolgimento ----------
+   La freccia rimette in scena il passo appena lasciato: una battuta da
+   rileggere, una domanda a cui si e' risposto di fretta. Le due cose che
+   possono rompersi, e che qui si presidiano, sono il punteggio (cambiare
+   risposta deve SOSTITUIRE, mai sommare una seconda volta) e le eccezioni
+   (non si torna prima dell'inizio, non si attraversa un cambio di scena, non
+   si riapre una fase conclusa). */
 {
   const scegli = (i) => [...$('choices').querySelectorAll('.ch')][i].onclick({ stopPropagation() {} });
-  const apri = () => $('btnRegistro').onclick({ stopPropagation() {} });
-  const righe = () => [...$('regicorpo').querySelectorAll('.regitesto')].map((n) => n.textContent);
 
   VN.clearSave();
   VN.boot(story, { speed: 0, banca, quiz, scene: 'keynote' });
   VN.state.genere = 'f'; VN.state.stile = 'drip'; VN.state.nome = 'Franca';
 
-  // la prima battuta e' gia' nel registro, e la freccia si vede
-  const apertura = txt();
-  assert.ok($('btnRegistro').classList.contains('on'),
-    'durante il keynote la freccia c\'e\'');
+  // primo passo della scena: non c'e' niente alle spalle, la freccia e' spenta
+  assert.equal(VN.puoTornare(), false, 'dal primo passo non si torna indietro');
+  assert.equal($('btnIndietro').classList.contains('on'), false, 'e la freccia non si vede');
 
+  const apertura = txt();
   VN.step();                                                   // -> l'intermezzo di regia
   const domandaInt = txt();
   assert.notEqual(domandaInt, apertura);
+  assert.ok(VN.puoTornare(), 'sulla battuta dopo la freccia c\'e\'');
+  assert.ok($('btnIndietro').classList.contains('on'), 'e si vede');
 
-  /* Aprire e chiudere non deve muovere niente: lo stato si fotografa prima e
-     si riconfronta dopo, come per il regolamento. */
-  const prima = JSON.stringify(VN.state);
-  const doveEro = { scena: VN.sceneId, i: VN.i };
+  // si torna: la battuta d'apertura e' di nuovo a schermo, si rilegge
+  VN.indietro();
+  assert.equal(txt(), apertura, 'il riavvolgimento rimette in scena la battuta di prima');
+  assert.equal(VN.puoTornare(), false, 'e da li\' non si torna oltre');
 
-  apri();
-  assert.ok($('registro').classList.contains('on'), 'il pannello si apre');
-  assert.deepEqual(righe(), [apertura, domandaInt],
-    'ci sono le battute gia' + ' scritte, nell\'ordine in cui sono uscite');
-  assert.equal($('regicorpo').querySelectorAll('.regichi')[0].textContent, 'Susan',
-    'e accanto a ognuna chi l\'ha detta');
-  assert.equal(txt(), domandaInt, 'la battuta sotto resta quella di prima');
-  assert.equal(VN.sceneId, doveEro.scena, 'aprire non cambia scena');
-  assert.equal(VN.i, doveEro.i, 'e non muove VN.i');
-  assert.equal(JSON.stringify(VN.state), prima, 'ne\' tocca lo stato della partita');
-
-  // un tocco sullo schermo con il pannello aperto non fa avanzare la storia
+  // ...e si riprende normalmente da dove si era
   VN.step();
-  assert.equal(VN.i, doveEro.i, 'e nemmeno un tap mentre e\' aperto');
+  assert.equal(txt(), domandaInt, 'da li\' si prosegue come prima');
 
-  $('regiok').onclick({ stopPropagation() {} });
-  assert.equal($('registro').classList.contains('on'), false, 'e si chiude');
-  assert.equal(txt(), domandaInt, 'chiudendo si e\' esattamente dov\'eravamo');
-  assert.equal(VN.i, doveEro.i);
-  assert.equal(JSON.stringify(VN.state), prima, 'e la partita non si e\' mossa');
-
-  // da qui si prosegue normalmente: la storia non si e' accorta di niente
+  // l'intermezzo chiude [S5]: si risponde e si passa alla griglia. Il passo
+  // indietro non attraversa i cambi di scena — rientrare in una scena chiusa
+  // vorrebbe dire rigiocarla.
   const q = banca.intermezzi.filter((x) => txt().includes(x.q))[0];
   assert.ok(q, 'l\'intermezzo viene dal pool');
+  const sacchetto = [...VN.state.intermezzi_sacchetto];
   scegli(0);
-  assert.equal(VN.state.picks.intermezzi.r[q.id].v, q.opzioni[0].label,
-    'si risponde come sempre');
+  assert.equal(VN.sceneId, 'argomenti', 'l\'intermezzo chiude [S5] e apre la griglia');
+  assert.equal(VN.puoTornare(), false, 'il riavvolgimento non attraversa i cambi di scena');
+  assert.equal(VN.state.intermezzi_sacchetto.join(), sacchetto.join(),
+    'il sorteggio della partita non si rimescola per un riavvolgimento');
 
-  // il registro non si porta dietro le battute della scena chiusa
-  assert.equal(VN.sceneId, 'argomenti');
-  assert.equal($('registro').classList.contains('on'), false,
-    'il pannello non sopravvive a un cambio di scena');
+  /* Le domande dei pronostici: qui il riavvolgimento serve davvero. Si risponde,
+     si torna sulla stessa domanda, si cambia risposta. Il punto della prima
+     risposta non deve restare sommato da nessuna parte. */
+  const celle = () => [...$('griglia').querySelectorAll('.gcell')];
+  celle()[1].onclick({ stopPropagation() {} });                // Watch
+  assert.equal(VN.sceneId, 'argomento');
+
+  const core = banca.categorie.watch.core;
+  const d0 = core[0];
+  const schermata = txt();
+  assert.ok(schermata.includes(d0.q), 'la prima core della categoria');
+  assert.equal(VN.puoTornare(), false,
+    'sulla prima domanda non c\'e\' niente alle spalle dentro questa scena');
+
+  const primaDelleDomande = VN.state.punti;                    // l'intermezzo gia' risposto
+  scegli(0);
+  assert.equal(VN.state.punti, primaDelleDomande + d0.opzioni[0].pt,
+    'il punteggio della prima risposta');
+  VN.step();                                                   // via la battuta annunciata
+  // si tira avanti fino alla domanda dopo (in mezzo puo' capitare un imprevisto)
+  for (let g = 0; g < 12 && !txt().includes(core[1].q); g++) {
+    if ($('choices').classList.contains('on')) scegli(0);
+    else VN.step();
+  }
+  assert.ok(txt().includes(core[1].q), 'si e\' arrivati alla seconda domanda');
+  assert.ok(VN.puoTornare(), 'e da qui si puo\' tornare alla prima');
+
+  VN.indietro();
+  assert.equal(txt(), schermata,
+    'il riavvolgimento rimette in scena la domanda di prima, parola per parola');
+  const segnate = [...$('choices').querySelectorAll('.ch')].filter((b) => b.classList.contains('gia'));
+  assert.equal(segnate.length, 1, 'la risposta data si vede gia\' segnata');
+  assert.equal(segnate[0].textContent, d0.opzioni[0].label, 'ed e\' proprio quella');
+
+  // il totale prima del cambio: fra le due domande puo' essersi intromesso un
+  // micro-evento, che ha portato il suo punto e se lo tiene
+  const primaDelCambio = VN.state.punti;
+  scegli(1);
+  assert.equal(VN.state.picks.watch.core[d0.id].v, d0.opzioni[1].label,
+    'la risposta nuova sostituisce la vecchia');
+  assert.equal(Object.keys(VN.state.picks.watch.core).length, 1,
+    'una risposta sola per domanda: il riavvolgimento non ne crea una seconda');
+  assert.equal(VN.state.punti, primaDelCambio - d0.opzioni[0].pt + d0.opzioni[1].pt,
+    'il totale cambia della sola differenza fra le due risposte: la vecchia non resta sommata');
+
+  // il salvataggio segue: chi riaprisse il gioco troverebbe la risposta nuova
+  assert.equal(VN.readSave().state.picks.watch.core[d0.id].v, d0.opzioni[1].label,
+    'nel salvataggio resta solo la risposta finale');
 }
 
-/* ---------- 5r-bis. la freccia c'e' solo durante il keynote ---------- */
+/* ---------- 5r-bis. il riavvolgimento si spegne a previsioni confermate ---------- */
 {
   VN.clearSave();
-  VN.boot(story, { speed: 0, banca, quiz, scene: 'lobby' });
-  VN.state.nome = 'Franca';
-  for (let k = 0; k < 6 && !$('hub').classList.contains('on'); k++) VN.step();
-  assert.equal($('btnRegistro').classList.contains('on'), false,
-    'in lobby no: li\' il gioco ha gia\' i suoi posti dove fermarsi');
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'keynote' });
+  VN.state.genere = 'f'; VN.state.stile = 'drip'; VN.state.nome = 'Franca';
+  VN.step();
+  assert.ok(VN.puoTornare(), 'prima della conferma si torna indietro');
+  VN.state.locked = true;
+  assert.equal(VN.puoTornare(), false,
+    'a previsioni confermate no: quella fase e\' conclusa e non si riapre');
 }
 
 /* ---------- 5g. S5: la regola d'oro della platea ----------
