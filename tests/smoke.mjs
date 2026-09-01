@@ -2453,6 +2453,37 @@ function apriQuizHub(stile) {
     'con "finestra_ore" torna spenta finche\' non si e\' dentro la finestra');
 }
 
+/* 10a-bis-ter. dopo aver assegnato i moltiplicatori, il quiz e' chiuso per
+   davvero: nessun livello si rigioca piu', anche se non era ne' passato ne'
+   bruciato. Senza questo, chi assegnava presto (appena vinto un livello)
+   poteva continuare a giocare gli altri e accumulare mult_bank che non
+   sarebbe piu' servito a niente — e soprattutto restava dentro il quiz
+   quando "ha finito" per davvero. */
+{
+  VN.clearSave();
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'quiz' });
+  VN.state.stile = 'showman';                   // livelli tutti sbloccati da subito
+  VN.state.mult_bank = 0.3;
+  VN.state.quiz = { base: { passato: true, tentativi: 1, pool: 0, seconda: false, vinto: 0.3 } };
+  VN.state.moltiplicatori = { iphone: 0.3, watch: 0, altro: 0 };   // gia' confermati
+  for (let i = 0; i < 20 && !$('griglia').classList.contains('on'); i++) VN.step();
+
+  const celle = cellePerLivello();
+  const avanzato = celle[1];   // non passato ne' bruciato: senza il blocco resterebbe giocabile
+  assert.ok(avanzato.className.includes('fatta'),
+    'un livello mai giocato, ma con i moltiplicatori gia\' assegnati, e\' comunque chiuso');
+  assert.match(avanzato.querySelector('.gstato').textContent, /moltiplicatori assegnati/,
+    'l\'etichetta dice perche\' e\' chiuso, non "chiuso" e basta');
+  avanzato.onclick({ stopPropagation() {} });
+  assert.equal(VN.sceneId, 'quiz', 'il tocco non porta da nessuna parte: il livello non si apre');
+  assert.equal(VN.state.quiz.avanzato.tentativi, 0, 'e non lascia partire un tentativo');
+
+  assert.match($('txt').textContent, /Con me hai finito/,
+    'la battuta dice che ha finito, non "da dove vuoi cominciare"');
+  assert.deepEqual(azioniQuiz().map((b) => b.textContent), ['Rivedi i moltiplicatori', 'Basta cosi\', torno in lobby'],
+    'sotto la griglia resta solo la revisione (consultabile) e l\'uscita');
+}
+
 /* 10a-ter. "se" salta uno step quando la condizione e' falsa: le battute di
    presentazione non si ripetono a ogni ritorno alla griglia */
 {
