@@ -1804,6 +1804,8 @@
           "t": "show",
           "who": "susan",
           "body": "sollievo",
+          "height": "50%",
+          "bottom": "14%",
           "pop": true
         },
         {
@@ -1814,7 +1816,9 @@
         {
           "t": "show",
           "who": "susan",
-          "body": "sguardo_in_alto"
+          "body": "sguardo_in_alto",
+          "height": "50%",
+          "bottom": "14%"
         },
         {
           "t": "say",
