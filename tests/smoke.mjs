@@ -523,7 +523,12 @@ for (const [who, c] of Object.entries(story.cast || {})) {
 /* ---------- 3. flusso di gioco in jsdom ---------- */
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8')
   .replace(/<script src=".*?"><\/script>/, '')
-  .replace(/<script>[\s\S]*?<\/script>/, '');           // via il bootstrap con fetch
+  // via lo script del redirect http->https (usa location.replace, non serve
+  // e non deve girare qui) e quello di gtag (dataLayer/gtag('config'...):
+  // mirati per contenuto, non per posizione — un nuovo <script> messo prima
+  // di questi non deve far sparire quello sbagliato.
+  .replace(/<script>(?:(?!<\/script>)[\s\S])*?location\.replace[\s\S]*?<\/script>/, '')
+  .replace(/<script>(?:(?!<\/script>)[\s\S])*?gtag\('config'[\s\S]*?<\/script>/, '');
 
 const dom = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://fantaliberty.com/' });
 dom.window.eval(fs.readFileSync(path.join(ROOT, 'game/engine.js'), 'utf8'));
