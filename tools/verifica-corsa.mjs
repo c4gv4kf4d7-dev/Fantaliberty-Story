@@ -166,6 +166,8 @@ dice('e si riaccende', (await pagina.evaluate(() => VN.audio.stato.mus)) === tru
 await corsa.click('#mnClassifica');
 await pagina.waitForTimeout(600);
 dice('la classifica si apre', await corsa.$eval('#veloClassifica', (e) => !e.hidden));
+dice('il tabellone ha tre colonne (nick, punti, tempo)',
+  await corsa.$eval('#tabellone', (e) => !!e.querySelector('.riga .tempo') || !e.querySelector('.riga')));
 await corsa.click('#btnChiudiClassifica');       // sopra il menu: se ci finisse sotto, qui si pianta
 await pagina.waitForTimeout(300);
 dice('e si chiude tornando al menu', await corsa.$eval('#menu', (e) => !e.hidden));
@@ -183,6 +185,23 @@ dice('si muore e compare la schermata', (await nelRiquadro(() => RUN.fase)) === 
 dice('la targa sparisce', await nascosto('#hud'));
 dice('l\'ingranaggio sparisce', await nascosto('#btnIng'));
 dice('i tasti sono congelati', await corsa.$eval('#veloFine', (e) => e.classList.contains('congelato')));
+
+/* ---------- il nick, alla prima morte ---------- */
+dice('alla prima morte si chiede il nick', await corsa.$eval('#nickWrap', (e) => !e.hidden));
+dice('la prima volta non c\'e\' ANNULLA', await nascosto('#nickNo'));
+dice('proposto il nome della registrazione, in maiuscolo',
+  (await corsa.$eval('#nick', (e) => e.value)) === 'COLLAUDO');
+await corsa.fill('#nick', 'a');
+await corsa.click('#nickOk');
+await pagina.waitForTimeout(200);
+dice('un nick troppo corto viene rifiutato', (await corsa.$eval('#nickErr', (e) => e.textContent)) !== '');
+await corsa.fill('#nick', 'collaudo 1');
+await corsa.click('#nickOk');
+for (let i = 0; i < 60 && !(await corsa.$eval('#nickWrap', (e) => e.hidden)); i++) await pagina.waitForTimeout(100);
+dice('con un nick buono la finestra si chiude', await corsa.$eval('#nickWrap', (e) => e.hidden));
+dice('il nick e\' quello in classifica', (await nelRiquadro(() => CLA.nome)) === 'COLLAUDO 1');
+dice('e resta nel telefono', (await nelRiquadro(() => localStorage.getItem('fl_runner_nick'))) === 'COLLAUDO 1');
+dice('dopo l\'OK i tasti sono ancora congelati', await corsa.$eval('#veloFine', (e) => e.classList.contains('congelato')));
 await nelRiquadro(() => {
   window.__colpi = 0;
   document.getElementById('btnAncora').addEventListener('click', () => window.__colpi++);
@@ -196,6 +215,19 @@ for (let i = 0; i < 40 && await corsa.$eval('#veloFine', (e) => e.classList.cont
   await pagina.waitForTimeout(100);
 }
 dice('poi i tasti si riaccendono', !(await corsa.$eval('#veloFine', (e) => e.classList.contains('congelato'))));
+
+await corsa.click('#btnClassifica');
+await pagina.waitForTimeout(400);
+dice('dal tabellone si puo\' cambiare nick', !(await nascosto('#btnCambiaNick')));
+await corsa.click('#btnCambiaNick');
+await pagina.waitForTimeout(200);
+dice('e stavolta c\'e\' ANNULLA', await corsa.$eval('#nickWrap', (e) => !e.hidden) && !(await nascosto('#nickNo')));
+await corsa.click('#nickNo');
+await pagina.waitForTimeout(200);
+dice('annullando resta il nick di prima', await corsa.$eval('#nickWrap', (e) => e.hidden) &&
+  (await nelRiquadro(() => CLA.nome)) === 'COLLAUDO 1');
+await corsa.click('#btnChiudiClassifica');
+await pagina.waitForTimeout(300);
 
 /* ---------- ancora, e uscire ---------- */
 await corsa.click('#btnAncora');

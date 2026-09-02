@@ -797,6 +797,23 @@ Sei cose da non annullare per sbaglio:
    (`Prefer: count=exact`), non scaricando la tabella; e la classifica non
    ferma mai il gioco — quella di fine partita parte dopo aver mostrato il
    game over, e ANCORA resta premibile mentre carica.
+   **In classifica si va col nick, non col nome della registrazione.** Due
+   "Marco" erano indistinguibili. Il nick si chiede **alla prima morte** con
+   una classifica davanti (`#nickWrap`, "INSERISCI IL TUO NICK" — voluto cosi',
+   "come ti firmi" e' stato bocciato), proposto dal nome di [S0] in maiuscolo,
+   2-10 caratteri `[A-Z0-9 _-]`, e si cambia dal tabellone (CAMBIA NICK →
+   `claRinomina()`). E' **unico**: `claNickLibero()` controlla prima, ma con
+   un tempo massimo (`NICK_ATTESA`) e se il server tace si prova a salvare lo
+   stesso — la guardia vera e' l'indice unico `lower(player_name)` in
+   `docs/backend.sql`, e un 409 riporta alla finestra con "GIA' PRESO". Vive
+   in `fl_runner_nick` nel telefono, non nel salvataggio del gioco grande:
+   nel messaggio `apri` `playerName` e' solo la proposta. Finche' la finestra
+   e' aperta la schermata di morte resta congelata (`scongelaFine` non fa
+   niente), e all'OK il congelamento riparte: il dito che ha appena premuto
+   non deve finire su ESCI. Il tabellone ha **tre colonne** — nick, punti,
+   tempo (`best_time_s`, i secondi della partita migliore) — ma l'ordine e'
+   **per punti e basta**; la colonna del tempo puo' mancare sul server
+   (`CLA.conTempo`, si riprova senza al primo 400), il gioco non se ne accorge.
 5. **Il record si tiene, i punti no.** `VN.state.runner_record` entra nel
    salvataggio; come i punti della corsa si sommino alla classifica dei
    pronostici **non e' deciso** — non inventarlo.
