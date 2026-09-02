@@ -265,16 +265,26 @@
     text-shadow:4px 4px 0 #4aa8cc; margin-bottom:20px; }
   #tabellone{ width:100%; max-width:340px; flex:1 1 auto; overflow:auto;
     font-family:'Press Start 2P', monospace; font-size:10px; line-height:1.8; }
-  #tabellone .riga{ display:flex; align-items:baseline; gap:8px;
-    padding:7px 8px; color:#cfcfc8; border:3px solid transparent; }
-  #tabellone .riga .pos{ width:2.6em; text-align:right; color:#8a8a84; }
-  #tabellone .riga .nome{ flex:1 1 auto; overflow:hidden;
-    text-overflow:ellipsis; white-space:nowrap; }
-  #tabellone .riga .punti{ color:#f4f4f0; }
-  /* la terza colonna: il tempo della partita migliore. Si legge, non conta —
-     l'ordine resta per punti */
-  #tabellone .riga .tempo{ width:3.4em; text-align:right; color:#8a8a84; font-size:9px; }
+  /* quattro colonne fisse, come su un cabinet: posizione, nick, punti, tempo.
+     A griglia, non a flex: cosi' i numeri stanno incolonnati riga per riga
+     anche quando un nick e' lungo o il tempo manca */
+  #tabellone .riga{ display:grid; grid-template-columns:2.8em 1fr 5.2em 4.2em;
+    align-items:baseline; column-gap:6px;
+    padding:7px 6px; color:#cfcfc8; border:3px solid transparent; }
+  #tabellone .riga .pos{ text-align:right; color:#8a8a84; }
+  #tabellone .riga .nome{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    text-align:left; }
+  #tabellone .riga .punti{ color:#f4f4f0; text-align:right; }
+  /* la quarta colonna: il tempo della partita migliore. Si legge, non conta —
+     l'ordine resta per punti. Chi ha giocato prima che esistesse ha "n.p." */
+  #tabellone .riga .tempo{ text-align:right; color:#8a8a84; font-size:9px; }
+  #tabellone .riga .tempo.np{ color:#5e5e5a; }
   #tabellone .riga.io .tempo{ color:#79c245; }
+  /* la misura in em delle colonne si calcola sul font della riga: l'intestazione
+     rimpicciolisce le sue scritte, non la riga, se no le colonne si stringono */
+  #tabellone .testa{ border-color:transparent; color:#6f6f6a; padding-bottom:0; }
+  #tabellone .testa span{ text-align:right; font-size:7px; }
+  #tabellone .testa .nome{ text-align:left; }
   #classificaAzioni{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
 
   /* ---- il nick ----
@@ -329,7 +339,7 @@
   #tabellone .riga.io{ border-color:#79c245; background:rgba(121,194,69,.12);
     color:#f4f4f0; }
   #tabellone .riga.io .pos{ color:#79c245 }
-  #tabellone .riga .tu{ color:#79c245; font-size:8px; }
+  #tabellone .riga .tu{ color:#79c245; font-size:7px; margin-left:6px; }
   #tabellone .stacco{ margin:12px 0; border-top:3px dashed #4a4a46; }
   #tabellone .stato{ color:#8a8a84; text-align:center; padding:24px 0;
     line-height:2; }
@@ -472,7 +482,7 @@
   <div id="nickWrap" hidden>
     <h2>INSERISCI IL TUO NICK</h2>
     <p class="nota">E' il nome con cui finisci in classifica. Da 2 a 10 caratteri, e non ce ne sono due uguali.</p>
-    <input id="nick" type="text" maxlength="10" autocomplete="off" autocapitalize="characters"
+    <input id="nick" type="text" maxlength="10" enterkeyhint="done" autofocus autocomplete="off" autocapitalize="characters"
            spellcheck="false" placeholder="AAA">
     <div id="nickErr"></div>
     <div class="voci">
@@ -1920,6 +1930,7 @@ function disegnaTabellone(){
     box.appendChild(p);
     return;
   }
+  box.appendChild(testaClassifica());
   const medaglie = ['oro', 'argento', 'bronzo'];
   let ioNelleDieci = false;
   CLA.top.forEach((r, i) => {
@@ -1947,13 +1958,24 @@ function rigaClassifica(pos, nome, punti, classi, secondi){
   d.className = 'riga ' + (classi || '');
   const p = document.createElement('span'); p.className = 'pos'; p.textContent = pos + '.';
   const n = document.createElement('span'); n.className = 'nome'; n.textContent = nome || 'Anonimo';
-  const v = document.createElement('span'); v.className = 'punti'; v.textContent = punti;
-  const t = document.createElement('span'); t.className = 'tempo'; t.textContent = minuti(secondi);
-  d.appendChild(p); d.appendChild(n); d.appendChild(v); d.appendChild(t);
   if (/\bio\b/.test(classi || '')) {
     const tu = document.createElement('span'); tu.className = 'tu'; tu.textContent = 'TU';
-    d.appendChild(tu);
+    n.appendChild(tu);
   }
+  const v = document.createElement('span'); v.className = 'punti'; v.textContent = punti;
+  const t = document.createElement('span'); t.className = 'tempo';
+  const mm = minuti(secondi);
+  t.textContent = mm || 'n.p.';
+  if (!mm) t.classList.add('np');
+  d.appendChild(p); d.appendChild(n); d.appendChild(v); d.appendChild(t);
+  return d;
+}
+function testaClassifica(){
+  const d = document.createElement('div');
+  d.className = 'riga testa';
+  [['pos',''], ['nome','NICK'], ['punti','PUNTI'], ['tempo','TEMPO']].forEach(([c, t]) => {
+    const e = document.createElement('span'); e.className = c; e.textContent = t; d.appendChild(e);
+  });
   return d;
 }
 
@@ -2016,8 +2038,26 @@ function apriNick(primaVolta){
   document.getElementById('nickNo').hidden = primaVolta;   // la prima volta non si scappa
   document.getElementById('nickOk').disabled = false;
   w.hidden = false;
-  try { inp.focus(); inp.select(); } catch(e){}
+  fuocoNick();
 }
+
+/* La tastiera del telefono si apre solo su un focus dato dentro un tocco: la
+   finestra invece compare da sola, quando si muore. Si prova subito lo stesso
+   (sul computer basta), e poi al primo tocco sulla finestra, ovunque cada,
+   il fuoco va sul campo: cosi' non serve centrare la casella. */
+function fuocoNick(){
+  const inp = document.getElementById('nick');
+  try { inp.focus({ preventScroll: true }); inp.select(); } catch(e){}
+}
+document.getElementById('nickWrap').addEventListener('pointerdown', e => {
+  if (e.target.closest('button') || e.target.id === 'nick') return;
+  e.preventDefault();
+  fuocoNick();
+});
+document.getElementById('nickWrap').addEventListener('click', e => {
+  if (e.target.closest('button') || e.target.id === 'nick') return;
+  fuocoNick();
+});
 
 function chiudiNick(){
   document.getElementById('nickWrap').hidden = true;
