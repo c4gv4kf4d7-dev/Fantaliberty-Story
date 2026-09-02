@@ -9,8 +9,10 @@
     "genderVar": "genere",
     "genderOrder": [
       "m",
-      "f"
+      "f",
+      "n"
     ],
+    "_nota_genere": "Quattro scelte a [S0.03]: m = maschile, f = femminile, n = neutro, x = preferisco non specificarlo. Le ultime due si leggono uguali: ogni {g:...} porta tre varianti (maschile|femminile|neutra), quante sono le voci di genderOrder; x non sta in genderOrder e fmt() lo manda sull'ultima variante. La variante neutra non usa desinenze inventate: riformula la frase (\"Confermi?\" al posto di \"Sei sicuro/a?\").",
     "note": "Formato: iPhone portrait 390x844. Il terzo inferiore e' area dialogo.",
     "keynote": "2026-09-09T19:00:00+02:00",
     "_nota_keynote": "Data e ora del keynote vero, ora locale italiana. Il countdown di S7 conta fin qui. Confermata dall'utente il 30 agosto 2026: 9 settembre, ore 19:00.",
@@ -441,21 +443,23 @@
         {
           "t": "input",
           "who": "lucas",
-          "var": "nome",
-          "max": 14,
-          "placeholder": "Nome",
-          "text": "Ti registro subito al terminale. Nome e cognome?",
-          "_nota": "Il nome vero non serve: e' l'etichetta con cui il gioco si rivolge al giocatore e con cui compare in classifica. Il regolamento (zona 3 della lobby) lo chiama nickname, e deve restare coerente con quello che si chiede qui."
-        },
-        {
-          "t": "input",
-          "who": "lucas",
-          "var": "cognome",
-          "max": 18,
-          "opzionale": true,
-          "placeholder": "Cognome (se vuoi)",
-          "_nota_domanda": "Niente \"text\": la domanda l'ha gia' fatta il campo prima (\"Nome e cognome?\") e quella battuta resta a schermo. Quale dei due campi si sta scrivendo lo dice il suggerimento dentro al campo.",
-          "_nota": "Facoltativo davvero: il bottone resta cliccabile a campo vuoto (st.opzionale in showInput). Usato solo per identificare il giocatore nei punteggi come 'Nome C.' — non e' il nickname con cui il gioco si rivolge a lui, quello resta 'nome'."
+          "text": "Ti registro subito al terminale. Come ti chiami?",
+          "campi": [
+            {
+              "var": "nome",
+              "max": 14,
+              "placeholder": "Nome",
+              "_nota": "Il nome vero non serve: e' l'etichetta con cui il gioco si rivolge al giocatore e con cui compare in classifica. Il regolamento (zona 3 della lobby) lo chiama nickname, e deve restare coerente con quello che si chiede qui."
+            },
+            {
+              "var": "cognome",
+              "max": 18,
+              "opzionale": true,
+              "placeholder": "Cognome (se vuoi)",
+              "_nota": "Facoltativo davvero: OK resta premibile a campo vuoto. Usato solo per identificare il giocatore nei punteggi come 'Nome C.' — non e' il nickname con cui il gioco si rivolge a lui, quello resta 'nome'."
+            }
+          ],
+          "_nota": "Nome e cognome nella stessa schermata, uno sotto l'altro. Erano due campi di fila con la stessa battuta sopra e i giocatori non capivano che il secondo era un altro campo (segnalato il 2/9/2026, giorno del lancio)."
         },
         {
           "t": "prop",
@@ -480,6 +484,14 @@
             {
               "label": "Femminile",
               "value": "f"
+            },
+            {
+              "label": "Neutro",
+              "value": "n"
+            },
+            {
+              "label": "Preferisco non specificarlo",
+              "value": "x"
             }
           ]
         },
@@ -972,7 +984,7 @@
           "_nota": "S3.02-S3.03. Le opzioni vengono da story.stili, non da qui: le stesse pose e gli stessi perk servono a S5 e S8. La conferma e' irreversibile — dopo, niente riscrive 'stile'. Niente 'etichettaPerk': il perk e' una meccanica del quiz e sulla scheda confondeva, si spiega a S8.",
           "conferma_label": "Sono io",
           "conferma": {
-            "text": "Sei {g:sicuro|sicura}? Questo stile ti accompagna per tutta la partita. Non si cambia.",
+            "text": "{g:Sei sicuro|Sei sicura|Confermi}? Questo stile ti accompagna per tutta la partita. Non si cambia.",
             "si": "Si', sono io",
             "no": "Fammi ripensare"
           }
@@ -993,7 +1005,7 @@
           "by": "stile",
           "text": {
             "hawaiano": "Ok. Relax. Ottimo. Proprio quello che mi serviva in una situazione del genere.",
-            "showman": "Perfetto. {g:Uno|Una} che non avra' problemi a parlare. Il problema sara' farlo smettere.",
+            "showman": "Perfetto. {g:Uno|Una|Ecco chi} non avra' problemi a parlare. Il problema sara' farlo smettere.",
             "drip": "Va bene. Non ho idea di cosa significhi, ma evidentemente tu si'.",
             "ingegnere": "Ingegnere. Perfetto. Finalmente qualcuno che puo' spiegarmi perche' tutto sta andando storto.",
             "*": "Bene. Adesso muoviti, che ci aspettano."
@@ -1048,8 +1060,8 @@
           "who": "susan",
           "by": "studiato",
           "text": {
-            "true": "Che {g:bugiardo|bugiarda}. Adoro, sei gia' nel personaggio.",
-            "false": "{g:Onesto|Onesta}. Sara' un problema tuo, non mio. Vai."
+            "true": "Che {g:bugiardo|bugiarda|bugia}. Adoro, sei gia' nel personaggio.",
+            "false": "{g:Onesto|Onesta|Onesta'}. Sara' un problema tuo, non mio. Vai."
           }
         },
         {
@@ -1244,7 +1256,7 @@
           "completato": "COMPLETATO",
           "bottone": "CONFERMA IL TUO KEYNOTE",
           "lock": {
-            "text": "{g:Sicuro|Sicura}? Dopo questo le tue previsioni sono definitive.",
+            "text": "{g:Sicuro|Sicura|Confermi}? Dopo questo le tue previsioni sono definitive.",
             "si": "Si', confermo",
             "no": "Fammi rileggere"
           },
@@ -1308,7 +1320,7 @@
         {
           "t": "say",
           "who": "francesca",
-          "text": "Quando sei pront{g:o|a}, vai verso la tenda. Da li' in poi... sei a teatro.",
+          "text": "Quando {g:sei pronto|sei pronta|te la senti}, vai verso la tenda. Da li' in poi... sei a teatro.",
           "se": [
             { "var": "locked", "is": false },
             { "var": "esci_ritorno", "is": false }
@@ -1324,7 +1336,7 @@
         {
           "t": "say",
           "who": "francesca",
-          "text": "{g:Bentornato|Bentornata}. Non pensavo saresti {g:scappato|scappata} cosi' presto. Il teatro e' da quella parte. Continua quando vuoi.",
+          "text": "{g:Bentornato|Bentornata|Rieccoti}. Non pensavo {g:saresti scappato|saresti scappata|te la saresti data a gambe} cosi' presto. Il teatro e' da quella parte. Continua quando vuoi.",
           "se": { "var": "esci_ritorno", "is": true }
         },
         {
@@ -1397,6 +1409,23 @@
           "t": "show",
           "who": "francesca",
           "body": "idle",
+          "se": [
+            {
+              "var": "locked",
+              "is": true
+            },
+            {
+              "var": "post_lobby_visto",
+              "is": false
+            },
+            { "var": "esci_ritorno", "is": false }
+          ]
+        },
+        {
+          "t": "say",
+          "who": "francesca",
+          "text": "Il badge adesso apre anche la porta STAFF ONLY. Non chiedermi cosa c'è dietro.",
+          "_nota": "[POST-L04b] Il promemoria per la porta di Campus Run: e' l'unico momento in cui la porta si e' appena sbloccata. Insieme alla battuta del rifiuto in zona 5 e' il doppio promemoria chiesto dall'utente: senza, solo i piu' svegli trovavano la corsa.",
           "se": [
             {
               "var": "locked",
@@ -1487,7 +1516,7 @@
               "ritorno": {
                 "who": "francesca",
                 "body": "indica_tenda",
-                "say": "Sei {g:pronto|pronta}? Dietro questa tenda comincia lo show.",
+                "say": "{g:Sei pronto|Sei pronta|Ci sei}? Dietro questa tenda comincia lo show.",
                 "_nota": "Dalla seconda volta sulla zona tenda in poi. Nelle altre zone non c'e' 'ritorno': chi ha gia' fatto il giro le rivede in silenzio, senza Francesca e senza box."
               },
               "hotspots": [
@@ -1651,7 +1680,7 @@
                   "h": "23%",
                   "conferma": {
                     "text": "Cominciamo il quiz?",
-                    "si": "Si', sono {g:pronto|pronta}",
+                    "si": "Si', {g:sono pronto|sono pronta|ci sono}",
                     "no": "Fra poco"
                   },
                   "goto": "quiz"
@@ -1679,7 +1708,7 @@
                   "h": "58%",
                   "dice": "francesca",
                   "suono": "porta_negata",
-                  "say": "Eh no. Il badge non ti dà ancora tutto questo potere. Torna più tardi."
+                  "say": "Eh no. Il badge non ti dà ancora tutto questo potere. Di là c'è la sala giochi dello staff: prima le previsioni, poi ti sblocco la porta."
                 }
               ],
               "_nota": "Zona 5, sempre visibile ma chiusa finche' le previsioni non sono confermate (run.locked). Campus Run non e' piu' una sfida di Peter: si raggiunge solo da qui, dopo lo sblocco. Il lettore badge rosso/verde e' disegnato dentro il fondale stesso (bg_staff_door_locked / bg_staff_door_authorized): non c'e' nessun layer separato da accendere."
@@ -2100,6 +2129,11 @@
             {
               "label": "La tua card",
               "card": true
+            },
+            {
+              "label": "Le tue previsioni",
+              "previsioni": true,
+              "_nota": "Sola lettura: la stessa lista della sala regia di S6, ma senza tocchi che cambiano risposta. Nei sette giorni fra le previsioni e il keynote il giocatore vuole ricordarsi cosa ha detto. Suggerito da un giocatore il 2/9/2026."
             }
           ]
         }
@@ -2164,7 +2198,7 @@
           "by": "anni",
           "text": {
             "0": "Da poco in Apple, quindi. Allora questo e' uno dei tuoi primi Keynote: guardati intorno stasera, lo ricorderai.",
-            "1": "Qualche anno alle spalle: abbastanza per sapere come gira, non abbastanza da {g:esserti stufato|esserti stufata}. Il momento migliore, secondo me.",
+            "1": "Qualche anno alle spalle: abbastanza per sapere come gira, non abbastanza da {g:esserti stufato|esserti stufata|averne abbastanza}. Il momento migliore, secondo me.",
             "2": "Dagli otto ai dodici anni: i Keynote li hai gia' visti tutti. Ma da qui dentro e' un'altra storia, fidati.",
             "3": "Piu' di dodici anni. Tu c'eri quando certe cose le annunciavano ancora su un palco piccolo. Goditela stasera.",
             "*": "Comunque sia andata finora, stasera si riparte da zero come tutti."
@@ -2173,7 +2207,7 @@
         {
           "t": "say",
           "who": "lucas",
-          "text": "{g:Benvenuto|Benvenuta} allo Steve Jobs Theater. Adesso pero' non restare qui {g:impalato|impalata}: ti aspettano dentro."
+          "text": "{g:Benvenuto|Benvenuta|Ti do il benvenuto} allo Steve Jobs Theater. Adesso pero' non restare qui {g:impalato|impalata|come un palo}: ti aspettano dentro."
         },
         {
           "t": "nero",
@@ -2363,7 +2397,7 @@
     ],
     "_nota_esiti": "I tre pool qui sotto sono la conseguenza di un micro-evento, uno per esito. Il giocatore non vede numeri: capisce come e' andata solo da come gliela racconta Susan. Non aggiungere qui niente che dica quanto vale.",
     "improvvisazione": [
-      "{g:Bravissimo|Bravissima}. Hai appena improvvisato e nessuno se n'e' accorto.\nCredo.",
+      "{g:Bravissimo|Bravissima|Complimenti}. Hai appena improvvisato e nessuno se n'e' accorto.\nCredo.",
       "Ok...\nSta funzionando.\nNon dirlo ad alta voce. Porta sfortuna."
     ],
     "caos": [
@@ -2570,7 +2604,7 @@
     ],
     "chiusa": {
       "titolo": "REGOLA NON SCRITTA",
-      "testo": "Se sei {g:sicuro|sicura} al 100%, probabilmente hai gia' perso."
+      "testo": "{g:Se sei sicuro|Se sei sicura|Se la tua certezza e'} al 100%, probabilmente hai gia' perso."
     },
     "bottone": "HO CAPITO"
   },

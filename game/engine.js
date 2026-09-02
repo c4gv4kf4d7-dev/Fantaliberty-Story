@@ -76,17 +76,20 @@
 
   /* ---------------- testo: interpolazione ---------------- */
   // {nome} valore · {NOME} maiuscolo · {label:anni} etichetta scelta
-  // {g:uno|una} variante per la variabile di genere (m|f), nell'ordine di
-  // meta.genderOrder. Se il genere non e' ancora stato scelto si usa la prima
-  // variante: capita solo nelle righe prima di [S0.03].
+  // {g:uno|una|chi} variante per la variabile di genere, nell'ordine di
+  // meta.genderOrder (m|f|n). "Preferisco non specificarlo" (x) non sta
+  // nell'ordine: un valore scelto ma sconosciuto prende l'ultima variante, la
+  // neutra. Se il genere non e' ancora stato scelto si usa la prima variante:
+  // capita solo nelle righe prima di [S0.03].
   function fmt(s) {
     if (!s) return '';
     var genderVar = (VN.story.meta && VN.story.meta.genderVar) || 'genere';
     var order = (VN.story.meta && VN.story.meta.genderOrder) || ['m', 'f'];
     s = s.replace(/\{g:([^}]*)\}/g, function (_, body) {
       var parts = body.split('|');
-      var idx = order.indexOf(VN.state[genderVar]);
-      if (idx < 0) idx = 0;
+      var g = VN.state[genderVar];
+      var idx = order.indexOf(g);
+      if (idx < 0) idx = g == null ? 0 : parts.length - 1;
       return parts[Math.min(idx, parts.length - 1)] || '';
     });
     s = s.replace(/\{label:(\w+)\}/g, function (_, k) {
@@ -2052,6 +2055,42 @@
     var acceso = id === 'palco_schermo_categorie';
     el.emblemi.classList.toggle('on', acceso);
     if (acceso) aggiornaEmblemi(null);
+    ledPerFondale(id);
+  }
+
+  /* ---------------- il led del lettore badge (lobby, zona 5) ----------------
+     Sul fondale della porta autorizzata il lettore verde e' disegnato: qui si
+     aggiunge solo un alone che pulsa, cosi' l'occhio cade sulla porta appena
+     sbloccata in una scena altrimenti ferma. Vive su un fondale solo, come gli
+     emblemi, e si spegne da setBg() su qualunque altro.
+
+     La posizione e' in percentuale dell'IMMAGINE (misurata sui pixel del led,
+     tools: vedi CLAUDE.md), non dello schermo: il fondale e' "cover", quindi
+     viene ingrandito e tagliato in modo diverso su ogni finestra, e il calcolo
+     rifa' quello che fa il browser — stessa strada di ancoraTerminale(). */
+  var LED_PORTA = { bg: 'staff_door_authorized', x: 87.7, y: 46.5, d: 9 };
+  function ledPerFondale(id) {
+    var led = el.ledporta;
+    if (!led) return;
+    var acceso = id === LED_PORTA.bg;
+    led.classList.toggle('on', acceso);
+    if (acceso) posizionaLed();
+  }
+  function posizionaLed() {
+    var led = el.ledporta, img = el.bg;
+    if (!led || !img || !led.classList.contains('on')) return;
+    var nw = img.naturalWidth, nh = img.naturalHeight;
+    if (!nw || !nh) { img.addEventListener('load', posizionaLed, { once: true }); return; }
+    var W = img.clientWidth, H = img.clientHeight;
+    var scala = Math.max(W / nw, H / nh);
+    var dw = nw * scala, dh = nh * scala;
+    var ox = (W - dw) / 2;
+    // #bg e' ancorato in alto (object-position: center top), o in basso con 'basso'
+    var oy = img.classList.contains('basso') ? (H - dh) : 0;
+    var d = Math.round(dw * LED_PORTA.d / 100);
+    led.style.width = led.style.height = d + 'px';
+    led.style.left = Math.round(ox + dw * LED_PORTA.x / 100 - d / 2) + 'px';
+    led.style.top = Math.round(oy + dh * LED_PORTA.y / 100 - d / 2) + 'px';
   }
 
   function chiudiGriglia() {
@@ -3054,6 +3093,7 @@
       b.onclick = function (ev) {
         if (ev && ev.stopPropagation) ev.stopPropagation();
         if (a.card) return mostraCard(st);
+        if (a.previsioni) return mostraPrevisioni(st);
         // la corsa si apre sopra il countdown e lo lascia acceso sotto: alla
         // chiusura si e' di nuovo davanti al conto alla rovescia, senza aver
         // cambiato scena
@@ -3072,6 +3112,57 @@
     if (cId) { clearInterval(cId); cId = null; }
     if (el.countdown) el.countdown.classList.remove('on');
     if (el.cardwrap) el.cardwrap.classList.remove('on');
+    if (el.monitorwrap) el.monitorwrap.classList.remove('sololettura');
+    chiudiRecap();
+  }
+
+  /* ---------------- le previsioni, in sola lettura ----------------
+     Dal countdown: la stessa lista del dettaglio della sala regia (S6), con
+     tutte e tre le categorie in fila, ma niente tocchi che cambiano risposta e
+     nessun bottone di conferma — le previsioni sono gia' fatte. Si apre sopra
+     il countdown come il regolamento e i quadri: alla chiusura si e' dov'era,
+     e lo stato della partita non si tocca. Non si mostrano punti ne' l'etichetta
+     controcorrente: solo la domanda e cosa si e' scelto, altrimenti diventa un
+     posto dove ripensarci su una cosa che non si puo' piu' cambiare. */
+  function mostraPrevisioni(st) {
+    if (!el.monitorwrap || !el.mondettaglio) return;
+    var argomenti = VN.story[st.da || 'argomenti'] || {};
+    el.montesta.innerHTML = '';
+    var tit = global.document.createElement('div');
+    tit.className = 'montit';
+    tit.textContent = fmt(st.titoloPrevisioni || 'LE TUE PREVISIONI');
+    el.montesta.appendChild(tit);
+
+    el.monlista.innerHTML = '';
+    Object.keys(argomenti).forEach(function (k) {
+      var s = statoCategoria(argomenti, k);
+      var cat = global.document.createElement('div');
+      cat.className = 'moncat';
+      cat.textContent = s.nome;
+      el.monlista.appendChild(cat);
+      var righe = s.core.map(function (d) { return [d, (s.date.core || {})[d.id]]; });
+      s.extraGiocate.forEach(function (id) {
+        var q = s.extra.filter(function (d) { return d.id === id; })[0];
+        if (q) righe.push([q, s.date.extra[id]]);
+      });
+      righe.forEach(function (r) {
+        var d = global.document.createElement('div');
+        d.className = 'monriga sola';
+        d.innerHTML = '<span class="monq"></span><span class="monv"></span>';
+        d.querySelector('.monq').textContent = fmt(r[0].q);
+        d.querySelector('.monv').textContent = r[1] ? fmt(r[1].v) : '\u2014';
+        el.monlista.appendChild(d);
+      });
+    });
+
+    el.mondietro.textContent = '\u25C0 ' + fmt(st.chiudiPrevisioni || 'Countdown');
+    el.mondietro.onclick = function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      el.monitorwrap.classList.remove('on', 'sololettura');
+      el.mondettaglio.classList.remove('on');
+    };
+    el.monitorwrap.classList.add('on', 'sololettura');
+    el.mondettaglio.classList.add('on');
   }
 
   /* ---------------- la card condivisibile ----------------
@@ -3435,7 +3526,11 @@
       el.quizbar.classList.add('on');
       disegnaTimer();
 
-      opzioni(d, d.opzioni.map(function (_, k) { return k; }));
+      // Le risposte si mescolano a ogni domanda: nel file la giusta sta quasi
+      // sempre nella stessa casella (in Base tutte in alto a destra), e i
+      // giocatori se n'erano accorti il giorno del lancio. "ok" resta l'indice
+      // nel file; qui gira solo l'ordine con cui si disegnano.
+      opzioni(d, mescola(d.opzioni.map(function (_, k) { return k; })));
 
       VN.quizScadenza = function () { rispondi(d, -1); };
       if (VN.speed) {
@@ -4372,29 +4467,56 @@
     el.choices.classList.add('on');
   }
 
+  /* Uno step "input" chiede un campo (var/max/placeholder/opzionale) oppure
+     due insieme con "campi": [nome, cognome], uno sotto l'altro nella stessa
+     schermata. Erano due schermate di fila con la stessa battuta sopra, e i
+     giocatori non capivano che il secondo campo era un altro (2/9/2026). Il
+     bottone OK sta accanto all'ultimo campo e si accende quando tutti i campi
+     obbligatori hanno qualcosa dentro. */
   function showInput(st) {
-    var max = st.max || 24;
-    // Il limite lo dichiara la scena (story.json), non l'HTML: due limiti
-    // diversi sullo stesso campo sono due verita' che prima o poi divergono.
-    // Passarlo anche al campo fa smettere di accettare invece di tagliare zitto.
-    el.ti.maxLength = max;
-    var re = st.pattern ? new RegExp(st.pattern, 'g') : /[^A-Za-zÀ-ÿ0-9' ]/g;
-    el.ti.value = '';
-    // il suggerimento dentro al campo: quando due campi di fila arrivano con una
-    // domanda sola, e' l'unica cosa che dice quale dei due si sta scrivendo
-    el.ti.placeholder = fmt(st.placeholder || '');
+    var campi = st.campi || [st];
+    var due = campi.length > 1;
+    var nodi = [el.ti, el.ti2];
+    if (el.tiriga2) el.tiriga2.hidden = !due;
+    // OK sta nella riga dell'ultimo campo visibile
+    (due ? el.tiriga2 : el.tiriga1).appendChild(el.tok);
+
+    function pronto() {
+      return campi.every(function (c, i) {
+        return c.opzionale || String(nodi[i].value || '').trim().length > 0;
+      });
+    }
+    campi.forEach(function (c, i) {
+      var input = nodi[i];
+      if (!input) return;
+      var max = c.max || 24;
+      // Il limite lo dichiara la scena (story.json), non l'HTML: due limiti
+      // diversi sullo stesso campo sono due verita' che prima o poi divergono.
+      // Passarlo anche al campo fa smettere di accettare invece di tagliare zitto.
+      input.maxLength = max;
+      var re = c.pattern ? new RegExp(c.pattern, 'g') : /[^A-Za-zÀ-ÿ0-9' ]/g;
+      input.value = '';
+      // il suggerimento dentro al campo dice cosa ci va
+      input.placeholder = fmt(c.placeholder || '');
+      input.oninput = function () {
+        tastiera();                       // un colpo di tasti, non uno per lettera
+        var v = input.value.replace(re, '').slice(0, max);
+        input.value = v;
+        VN.state[c.var] = v;
+        termSet(c.var);
+        el.tok.disabled = !pronto();
+      };
+      // Invio: sul primo campo passa al secondo, sull'ultimo conferma
+      input.onkeydown = function (e) {
+        if (e.key !== 'Enter') return;
+        var prossimo = nodi[i + 1];
+        if (due && prossimo && i < campi.length - 1) { try { prossimo.focus(); } catch (err) {} return; }
+        if (!el.tok.disabled) el.tok.click();
+      };
+    });
     // Un campo opzionale (es. il cognome) lascia il bottone premibile anche
     // a vuoto: si continua senza aver scritto niente, non e' un errore.
-    el.tok.disabled = !st.opzionale;
-    el.ti.oninput = function () {
-      tastiera();                       // un colpo di tasti, non uno per lettera
-      var v = el.ti.value.replace(re, '').slice(0, max);
-      el.ti.value = v;
-      VN.state[st.var] = v;
-      termSet(st.var);
-      el.tok.disabled = !st.opzionale && v.trim().length === 0;
-    };
-    el.ti.onkeydown = function (e) { if (e.key === 'Enter' && !el.tok.disabled) el.tok.click(); };
+    el.tok.disabled = !pronto();
     el.tok.onclick = function (ev) {
       if (ev && ev.stopPropagation) ev.stopPropagation();
       if (el.tok.disabled) return;
@@ -4635,6 +4757,7 @@
       termOsservatore = true;
     }
     global.addEventListener('resize', ancoraTerminale);
+    global.addEventListener('resize', posizionaLed);
   }
 
   function termSet(varName) {
@@ -5567,7 +5690,8 @@
         box.appendChild(r);
       };
 
-      gruppo('GENERE', [{ label: 'Maschile', value: 'm' }, { label: 'Femminile', value: 'f' }], 'genere');
+      gruppo('GENERE', [{ label: 'Maschile', value: 'm' }, { label: 'Femminile', value: 'f' },
+        { label: 'Neutro', value: 'n' }, { label: 'Non specificato', value: 'x' }], 'genere');
       gruppo('ANNI IN APPLE', [{ label: '0-2', value: 0 }, { label: '3-7', value: 1 },
         { label: '8-12', value: 2 }, { label: '12+', value: 3 }], 'anni');
       gruppo('STILE (scelto in S3)', Object.keys(story.stili || {}).map(function (k) {
@@ -5681,6 +5805,7 @@
       boxwrap: $('boxwrap'), box: $('box'), name: $('name'), nametxt: $('nametxt'), voce: $('voce'),
       txt: $('txt'), arrow: $('arrow'),
       choices: $('choices'), inputform: $('inputform'), ti: $('ti'), tok: $('tok'),
+      tiriga1: $('tiriga1'), tiriga2: $('tiriga2'), ti2: $('ti2'),
       listform: $('listform'), tsel: $('tsel'), tselok: $('tselok'),
       badgewrap: $('badgewrap'), badgeImg: $('badgeImg'), badgeName: $('badgeName'),
       coriandoli: $('coriandoli'),
@@ -5699,7 +5824,7 @@
       regole: $('regole'), regtit: $('regtit'), regcorpo: $('regcorpo'), regok: $('regok'),
       quadrowrap: $('quadrowrap'), quadroImg: $('quadroImg'), quadrochiudi: $('quadrochiudi'),
       runwrap: $('runwrap'), runframe: $('runframe'), runchiudi: $('runchiudi'),
-      emblemi: $('emblemi'), emblemaIphone: $('emblema-iphone'),
+      ledporta: $('ledporta'), emblemi: $('emblemi'), emblemaIphone: $('emblema-iphone'),
       emblemaWatch: $('emblema-watch'), emblemaAltro: $('emblema-altro'),
       emailwrap: $('emailwrap'), emailbox: $('emailbox'), emailtit: $('emailtit'),
       emailtesto: $('emailtesto'), emaillabel: $('emaillabel'), emailin: $('emailin'),
@@ -5747,6 +5872,7 @@
     if (el.propwrap) el.propwrap.classList.remove('in', 'fondale');
     if (el.platea) el.platea.classList.remove('on');
     if (el.emblemi) el.emblemi.classList.remove('on');
+    if (el.ledporta) el.ledporta.classList.remove('on');
     // Un <img> senza src disegna l'icona di immagine rotta: si mette un pixel
     // trasparente, che e' "niente" per davvero.
     if (el.bg) el.bg.src = PIXEL_VUOTO;
@@ -5843,7 +5969,7 @@
           ]
         });
       };
-      type(fmt('{g:Bentornato|Bentornata}! Eri arrivat{g:o|a} fino a "' + where + '". Vuoi riprendere da li\'?'), resumeUI);
+      type(fmt('{g:Bentornato|Bentornata|Rieccoti}! {g:Eri arrivato|Eri arrivata|La partita era arrivata} fino a "' + where + '". Vuoi riprendere da li\'?'), resumeUI);
       revealUI = resumeUI;
       return;
     }

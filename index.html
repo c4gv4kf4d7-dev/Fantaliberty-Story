@@ -48,7 +48,7 @@
   gtag('js', new Date());
   gtag('config', 'G-SYX1RZLNNE');
 </script>
-<link rel="stylesheet" href="./game/engine.css?v=144">
+<link rel="stylesheet" href="./game/engine.css?v=150">
 </head>
 <body>
 <div id="stage">
@@ -60,6 +60,7 @@
        quando il giocatore sceglie un macroargomento. Layer suo, non #propwrap:
        li' durante le domande c'e' gia' la slide della categoria. Sta sopra il
        fondale e sotto i personaggi, e non prende tocchi. -->
+  <div id="ledporta" aria-hidden="true"></div>
   <div id="emblemi" aria-hidden="true">
     <img id="emblema-iphone" alt="">
     <img id="emblema-watch" alt="">
@@ -173,9 +174,12 @@
       <div id="multresto"></div>
       <button id="multok">CONFERMA</button>
     </div>
+    <!-- uno o due campi (nome e cognome insieme, uno sotto l'altro): il
+         secondo compare solo se lo step lo chiede ("campi" in story.json).
+         OK sta sempre accanto all'ultimo campo visibile. -->
     <div id="inputform">
-      <div id="tiwrap"><input id="ti" type="text" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Il tuo nome"></div>
-      <button id="tok">OK</button>
+      <div class="tiriga" id="tiriga1"><div id="tiwrap" class="tiwrap"><input id="ti" class="ti" type="text" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Il tuo nome"></div></div>
+      <div class="tiriga" id="tiriga2" hidden><div id="tiwrap2" class="tiwrap"><input id="ti2" class="ti" type="text" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Il tuo cognome"></div><button id="tok">OK</button></div>
     </div>
     <!-- lista a tendina: per le scelte troppo lunghe da fare a bottoni (i 31
          modelli di iPhone). Un <select> vero apre il selettore nativo di iOS. -->
@@ -386,12 +390,12 @@
      telefono, cosi' la sigla dello studio si sente davvero. Si salta con
      ?subito (i tool di verifica), ?dev e ?scene= (sviluppo). -->
 <div id="home" hidden>
-  <img id="homeBg" src="./assets/bg/bg_intro.webp?v=144" alt="">
+  <img id="homeBg" src="./assets/bg/bg_intro.webp?v=150" alt="">
   <button id="homeGioca" type="button">GIOCA</button>
 </div>
 
-<script src="./game/analytics.js?v=144"></script>
-<script src="./game/engine.js?v=144"></script>
+<script src="./game/analytics.js?v=150"></script>
+<script src="./game/engine.js?v=150"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -511,8 +515,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=144', { cache: 'no-cache' })
-      .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
+    return fetch('./game/' + nome + '?v=150', { cache: 'no-cache' })      .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e
   // l'invio resta in coda per il prossimo avvio

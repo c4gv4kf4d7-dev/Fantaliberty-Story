@@ -124,8 +124,12 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
    Prima di entrare passa dal terminale e registrati. Ci vuole un minuto."
   → [S0.02]
 
-[S0.02] TERMINALE — campo 1
+[S0.02] TERMINALE — campo 1 (e campo 2 nella stessa schermata)
   Asset: bg_esterno_ingresso + obj_terminale_accrediti + chr_lucas_idle
+  Lucas: "Ti registro subito al terminale. Come ti chiami?"
+  Nome e Cognome stanno uno sotto l'altro nella stessa schermata, OK accanto
+  al cognome (dal 2/9/2026: come due schermate di fila i giocatori non
+  capivano che il secondo campo era un altro).
   Label: "Nome"   Tipo: testo libero
   Salva in: run.nome. Non serve il nome vero: e' il nickname con cui il
   gioco si rivolge al giocatore e con cui compare in classifica.
@@ -139,8 +143,12 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
 
 [S0.03] TERMINALE — campo 3
   Label: "Genere" (per come il gioco si rivolge a te — non legato allo stile)
-  Tipo: 2 bottoni — Maschile | Femminile
-  Salva in: run.gender
+  Tipo: 4 bottoni — Maschile | Femminile | Neutro | Preferisco non specificarlo
+  Salva in: run.gender (m | f | n | x)
+  Con Neutro o Preferisco non specificarlo tutti gli NPC si rivolgono al
+  giocatore in forma neutra: niente desinenze inventate, la frase si
+  riformula ("Confermi?" al posto di "Sei sicuro/a?", "Ci sei?" al posto di
+  "Sei pronto/a?"). Aggiunto il 2/9/2026, il giorno del lancio.
 
 [S0.04] TERMINALE — campo 4
   Label: "Store"   Tipo: lista — Piazza Liberty | Carosello | Fiordaliso
@@ -711,6 +719,11 @@ Indice degli id in `docs/indice-domande.md`.
      ora autorizzata)
   C: LA TUA CARD → genera ed esporta obj_card_condivisibile client-side
      (1080x1920 / 1080x1350)
+  D: LE TUE PREVISIONI → la lista delle risposte date (domanda + scelta, per
+     macroargomento), in sola lettura: niente tocchi che cambiano, niente
+     punti ne' etichetta controcorrente. Si apre sopra il countdown e alla
+     chiusura si e' dov'era. Aggiunto il 2/9/2026 su suggerimento di un
+     giocatore.
 ```
 
 ---
@@ -817,6 +830,12 @@ tolgono cuori (se ne parte con tre). Si
 riprova quante volte si vuole. Il record resta nel salvataggio
 (run.runner_record).
 
+Classifica globale: alla PRIMA morte compare "INSERISCI IL TUO NICK" (proposto
+il nome di [S0] in maiuscolo, 2-10 caratteri, unico: se è già di un altro,
+"GIÀ PRESO, SCEGLINE UN ALTRO"). Da lì in poi in classifica si è quel nick, e
+lo si cambia dal tabellone (CAMBIA NICK). Tabellone da cabinet: tre colonne —
+nick, punti, tempo della partita migliore — ordinato per punti e basta.
+
 Ogni mille punti si cambia livello: si attraversa una riga dorata che pulsa
 sul pavimento, sotto la stella del traguardo, e da lì in poi si corre più
 veloce (dieci scalini, fino a 10.000 punti). In ogni livello c'è **un solo
@@ -884,6 +903,9 @@ nome — **non** derivato dallo stile scelto in S3.
   Drip/Ingegnere femminili) **non ha alcun effetto sul testo**: una giocatrice
   che dichiara "femminile" e sceglie Showman riceve battute al femminile, anche
   se lo sprite è un uomo. Viceversa per chi sceglie Drip o Ingegnere.
+- Chi sceglie **Neutro** o **Preferisco non specificarlo** riceve una terza
+  variante, riformulata senza genere: ogni `{g:...}` in `story.json` porta tre
+  forme (maschile|femminile|neutra).
 - **Convenzione di scrittura:** quando cambia solo la desinenza (bugiardo/a,
   onesto/a, sicuro/a) si scrive **inline con lo slash**, una riga sola. Quando
   la frase cambia in modo più sostanziale, o quando si può evitare del tutto una

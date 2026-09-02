@@ -528,8 +528,11 @@ l'elenco dei campi cambia da solo.
   funzione. La verifica dal vivo e le query di cancellazione stanno in fondo a
   `docs/backend.sql`.
 - **`cognome` e' facoltativo e non e' il nickname.** Si chiede subito dopo il
-  nome nel terminale (`opzionale:true` sullo step `input` — il bottone resta
-  premibile a campo vuoto, vedi `showInput`). Serve solo a distinguere due
+  nome nel terminale, **nella stessa schermata**: lo step `input` porta
+  `campi: [nome, cognome]` e `showInput` mostra i due campi uno sotto l'altro
+  con OK accanto all'ultimo (`opzionale:true` sul cognome — il bottone si
+  accende col solo nome). Erano due schermate di fila con la stessa battuta
+  sopra, e i giocatori non capivano che il secondo era un altro campo. Serve solo a distinguere due
   giocatori con lo stesso nome nei punteggi: si mostra come iniziale
   puntata, "Lorenzo B.", mai per esteso — il nickname con cui il gioco si
   rivolge al giocatore resta `nome`, da solo.
@@ -672,7 +675,16 @@ Tre cose da non rompere:
    rigiocare lo show. La tenda a show finito porta al **countdown**, ed e'
    l'unico modo di tornarci dalla lobby: senza, chi entrava in lobby si
    ritrovava il conto alla rovescia raggiungibile solo riaprendo l'app.
-3. **L'email non e' obbligatoria e non deve diventarlo.** Campo vuoto +
+3. **Le previsioni si rileggono dal countdown, e basta.** Il quarto bottone
+   ("Le tue previsioni", `previsioni: true` nell'azione) apre
+   `mostraPrevisioni()` in `engine.js`: riusa il pannello di dettaglio della
+   sala regia (`#mondettaglio`) con la classe `sololettura` su `#monitorwrap`,
+   che nasconde i tre monitor e il bottone di conferma. Le righe sono `div`,
+   non bottoni: non si risponde di nuovo. Non mostra punti ne' l'etichetta
+   controcorrente, apposta — e' un promemoria, non un posto dove ripensarci.
+   Sta solo nel countdown: e' la schermata su cui si riapre il gioco nei
+   giorni di attesa, e la lobby ha gia' abbastanza.
+4. **L'email non e' obbligatoria e non deve diventarlo.** Campo vuoto +
    CONTINUA vale come saltare, e il salto e' un bottone dichiarato. La partita
    va in coda al momento della conferma e la spedisce la schermata dell'email:
    una riga sola, con l'email dentro se c'e'. Se cambia il payload cambia anche
@@ -715,7 +727,7 @@ Il genere lo sceglie chi gioca a [S0.03] e vive in `VN.state.genere`; lo stile
 si sceglie dopo, in camerino, e i quattro sprite hanno un aspetto loro. Le due
 cose sono **indipendenti apposta**: si puo' essere maschile e vestirsi da Drip.
 Quindi ogni parola declinata riferita al giocatore passa da
-`{g:maschile|femminile}` — vale per i dialoghi, per i bottoni che preme lui
+`{g:maschile|femminile|neutro}` — vale per i dialoghi, per i bottoni che preme lui
 ("Si', sono {g:pronto|pronta}"), per le modali di conferma e per i testi della
 banca domande, che passano tutti da `fmt()`.
 
@@ -724,6 +736,19 @@ che nel gioco riguardano sempre il giocatore ("sei/sono + aggettivo", le
 esclamazioni tipo "Bravo!", "Sicuro?") e fallisce se ne trova una fuori da
 `{g:...}`. Chi ne incontra una nuova la aggiunge all'elenco insieme alla
 correzione.
+
+**Le scelte a [S0.03] sono quattro** (dal 2 settembre 2026, giorno del
+lancio): Maschile (`m`), Femminile (`f`), Neutro (`n`), Preferisco non
+specificarlo (`x`). Le ultime due si leggono uguali: la **terza variante** di
+ogni `{g:...}`, che non usa desinenze inventate ma **riformula la frase**
+("Confermi?" per "Sei sicuro/a?", "Ci sono" per "sono pronto/a", "Ti do il
+benvenuto" per "Benvenuto/a", "te la sei data a gambe" per "sei scappato/a").
+`meta.genderOrder` dichiara **tre** voci (`m`,`f`,`n`) e `npm test` pretende
+tre varianti in ogni `{g:...}`; `x` non sta nell'ordine apposta, e' `fmt()` a
+mandare un valore scelto ma sconosciuto sull'ultima variante (la neutra), mentre
+un genere ancora nullo — le righe prima di [S0.03] — prende la prima. Chi
+aggiunge una battuta declinata scrive tutte e tre le forme, e la terza la
+riformula: non e' "la femminile con lo schwa".
 
 Nel menu di sviluppo (`?dev`) il genere parte da **femminile** con lo stile
 **showman**: e' una coppia mista di proposito, serve a far saltare fuori
@@ -761,6 +786,23 @@ Sei cose da non annullare per sbaglio:
    secondo accesso (un bottone nel countdown, un link nel quiz) scavalca
    apposta la porta, che e' l'unico punto narrativo del gioco per questa
    attivita': non farlo.
+   **La porta pero' non e' muta: ha tre indizi, e sono tutto quello che c'e'.**
+   Solo i piu' svegli la trovavano (Lollo, 2 settembre 2026). (a) Il rifiuto
+   prima delle previsioni dice cosa c'e' dietro ("la sala giochi dello
+   staff: prima le previsioni, poi ti sblocco la porta"); (b) alle
+   congratulazioni post-previsioni Francesca lo ricorda ([POST-L04b], "Il
+   badge adesso apre anche la porta STAFF ONLY"), che e' l'unico momento in
+   cui la porta si e' appena sbloccata; (c) sul fondale autorizzato il led del
+   lettore **pulsa** (`#ledporta`, `ledPerFondale()` in `engine.js`): e' un
+   alone sopra il led gia' disegnato, posizionato in **percentuale
+   dell'immagine** (`LED_PORTA`, misurata sui pixel verdi del file) e
+   ricalcolato come fa il browser col `cover`, perche' le percentuali dello
+   schermo cambiano forma con la finestra — se il fondale viene ridisegnato si
+   rimisura `LED_PORTA`, non si cerca a occhio. Si accende e si spegne da
+   `setBg()` come gli emblemi: su qualunque altro fondale resterebbe appeso.
+   Niente frecce, niente tutorial sopra la porta, niente musica che trapela
+   (chi gioca senza audio non la sentirebbe): il piacere della porta e'
+   scoprirla.
 3. **La corsa non e' un livello del quiz e non e' un'azione del countdown.**
    Non sta sotto la griglia dei tre livelli (i pannelli dicono a che punto
    sono le domande, un elemento in piu' toglie loro quel significato) e non
@@ -784,6 +826,23 @@ Sei cose da non annullare per sbaglio:
    (`Prefer: count=exact`), non scaricando la tabella; e la classifica non
    ferma mai il gioco — quella di fine partita parte dopo aver mostrato il
    game over, e ANCORA resta premibile mentre carica.
+   **In classifica si va col nick, non col nome della registrazione.** Due
+   "Marco" erano indistinguibili. Il nick si chiede **alla prima morte** con
+   una classifica davanti (`#nickWrap`, "INSERISCI IL TUO NICK" — voluto cosi',
+   "come ti firmi" e' stato bocciato), proposto dal nome di [S0] in maiuscolo,
+   2-10 caratteri `[A-Z0-9 _-]`, e si cambia dal tabellone (CAMBIA NICK →
+   `claRinomina()`). E' **unico**: `claNickLibero()` controlla prima, ma con
+   un tempo massimo (`NICK_ATTESA`) e se il server tace si prova a salvare lo
+   stesso — la guardia vera e' l'indice unico `lower(player_name)` in
+   `docs/backend.sql`, e un 409 riporta alla finestra con "GIA' PRESO". Vive
+   in `fl_runner_nick` nel telefono, non nel salvataggio del gioco grande:
+   nel messaggio `apri` `playerName` e' solo la proposta. Finche' la finestra
+   e' aperta la schermata di morte resta congelata (`scongelaFine` non fa
+   niente), e all'OK il congelamento riparte: il dito che ha appena premuto
+   non deve finire su ESCI. Il tabellone ha **tre colonne** — nick, punti,
+   tempo (`best_time_s`, i secondi della partita migliore) — ma l'ordine e'
+   **per punti e basta**; la colonna del tempo puo' mancare sul server
+   (`CLA.conTempo`, si riprova senza al primo 400), il gioco non se ne accorge.
 5. **Il record si tiene, i punti no.** `VN.state.runner_record` entra nel
    salvataggio; come i punti della corsa si sommino alla classifica dei
    pronostici **non e' deciso** — non inventarlo.

@@ -201,7 +201,13 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
    intera — e resta solo il terminale, che engine.js incolla in pixel sopra lo
    schermo del CRT (ancoraTerminale): con le percentuali il testo sarebbe
    finito fuori dal vetro su ogni finestra di forma diversa dal telefono. */
-#propwrap.fondale{left:0;top:0;width:100%;max-width:none;height:100%}
+#propwrap.fondale{left:0;top:0;width:100%;max-width:none;height:100%;
+ transform:none;transition:opacity .6s ease}
+/* Niente scivolata: la posizione di partenza di #propwrap (spostato e
+   rimpicciolito, per gli oggetti appoggiati) non vale qui, dove il pannello
+   e' incollato in pixel sul vetro del CRT. Con la transizione sul transform
+   il "hello." arrivava in trascinamento da sinistra, invece di accendersi
+   dov'e' lo schermo (segnalato il 2/9/2026). */
 #propwrap.fondale.in,#propwrap.fondale.out{transform:none}
 #propwrap.fondale #prop{display:none}
 /* Sullo schermo del Mac c'e' gia' disegnata una finestra di sistema: il
@@ -412,8 +418,11 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 .ch.spento{opacity:.45;cursor:default;border-color:rgba(255,255,255,.35);box-shadow:none}
 .ch.spento:hover{background:#2a3050}
 
-#inputform{margin-top:10px;display:none;gap:7px}
+#inputform{margin-top:10px;display:none;flex-direction:column;gap:7px}
 #inputform.on{display:flex}
+/* una riga per campo; OK sta nella riga dell'ultimo campo visibile (lo
+   sposta showInput). La riga senza bottone prende comunque la sua altezza. */
+.tiriga{display:flex;gap:7px;min-height:38px}
 /* Il campo ha la stessa veste del box del dialogo: stesso sfondo, stesso
    font, stessa misura del testo. La misura pero' non si puo' scrivere piccola
    sul campo: sotto i 16px iOS ingrandisce la pagina appena lo si tocca.
@@ -421,15 +430,15 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
    scala (0.6 -> ~9.6px a schermo, come il testo del box): il campo sta
    dentro #tiwrap, e' disegnato grande il doppio e scalato giu' — per il
    layout conta solo il contenitore, alto come il bottone OK. */
-#tiwrap{flex:1;min-width:0;position:relative;overflow:hidden;border-radius:8px}
-#ti{position:absolute;left:0;top:0;width:calc(100% / .6);height:calc(100% / .6);
+.tiwrap{flex:1;min-width:0;position:relative;overflow:hidden;border-radius:8px}
+.ti{position:absolute;left:0;top:0;width:calc(100% / .6);height:calc(100% / .6);
  transform:scale(.6);transform-origin:0 0;
  background:#1b1f33;border:3px solid #fff;border-radius:13px;color:#fff;
  font-family:inherit;font-size:16px;padding:0 14px;outline:none}
-#ti::placeholder{color:rgba(255,255,255,.4)}
+.ti::placeholder{color:rgba(255,255,255,.4)}
 /* Safari riempie di giallo il campo che crede di poter completare da solo: il
    colore va detto esplicitamente anche in quel caso, se no il tema salta. */
-#ti:-webkit-autofill,#ti:-webkit-autofill:focus{
+.ti:-webkit-autofill,.ti:-webkit-autofill:focus{
  -webkit-box-shadow:0 0 0 100px #1b1f33 inset;-webkit-text-fill-color:#fff;caret-color:#fff}
 #tok{background:#2a3050;border:3px solid #fff;border-radius:8px;color:#fff;font-family:inherit;
  font-size:clamp(8px,2.35vw,12px);padding:10px 13px;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.5)}
@@ -601,6 +610,15 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
    dentro un monitor: sta fisso sulla plancia, sempre nello stesso posto. */
 #monitorwrap{position:absolute;inset:0;z-index:7;display:none;pointer-events:none}
 #monitorwrap.on{display:block}
+/* sola lettura (dal countdown): niente monitor sul fondale, niente bottone
+   di conferma, righe che non si toccano */
+#monitorwrap.sololettura #monschermi,#monitorwrap.sololettura #monconferma{display:none}
+#monitorwrap.sololettura{z-index:8}
+.moncat{flex:none;margin-top:8px;padding-bottom:3px;color:#8fe8b4;letter-spacing:.08em;
+ font-size:clamp(7px,2.2vw,10px);border-bottom:1px solid rgba(120,220,180,.3)}
+.moncat:first-child{margin-top:0}
+.monriga.sola{cursor:default}
+.monriga.sola:hover{background:#1a2233}
 
 #monschermi{position:absolute;inset:0}
 
@@ -1005,6 +1023,19 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
    si vede a 390x844: il fondale e' ritagliato in "cover", quindi non
    corrispondono alle percentuali dell'immagine sorgente. Se il fondale viene
    ridisegnato vanno rimisurate a occhio. */
+/* ---------- il led del lettore badge (lobby, zona 5) ----------
+   Il lettore verde e' disegnato dentro bg_staff_door_authorized: qui sopra ci
+   sta solo un alone che pulsa, per far cadere l'occhio sulla porta appena
+   sbloccata. La posizione la calcola il motore (ledPerFondale) dai pixel veri
+   dell'immagine, perche' il fondale e' "cover" e le percentuali dello schermo
+   cambiano con la forma della finestra. Sta sotto personaggi e box, come gli
+   emblemi, e non prende tocchi. */
+#ledporta{position:absolute;z-index:0;display:none;pointer-events:none;
+ border-radius:50%;mix-blend-mode:screen;
+ background:radial-gradient(closest-side,rgba(160,255,170,1),rgba(90,240,120,.7) 40%,rgba(60,200,90,0) 100%);
+ animation:pulsaLed 1.6s ease-in-out infinite}
+#ledporta.on{display:block}
+@keyframes pulsaLed{0%,100%{opacity:.5;transform:scale(.8)}50%{opacity:1;transform:scale(1.25)}}
 #emblemi{position:absolute;inset:0;z-index:0;display:none;pointer-events:none}
 #emblemi.on{display:block}
 #emblemi img{position:absolute;opacity:0;pointer-events:none;

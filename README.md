@@ -645,6 +645,12 @@ finisce sul bottone d'uscita ("Torna da Peter", "Torna al countdown"). Aprendo
 dietro. `#runchiudi`, nel gioco grande, e' solo la via di sicurezza: compare
 dopo sei secondi se la pagina non ha dato segni di vita.
 
+**In classifica si va con un nick**, non col nome della registrazione (due
+omonimi sarebbero indistinguibili): la corsa lo chiede alla prima morte, e'
+unico (indice sul database, vedi `docs/backend.sql`) e si cambia dal tabellone.
+Il tabellone mostra nick, punti e tempo della partita migliore, ordinato solo
+per punti.
+
 **Il record entra nel salvataggio** (`VN.state.runner_record`) ma **non nei punti
 delle previsioni**: come le due cose si sommano e' una decisione ancora aperta.
 
@@ -659,7 +665,8 @@ segnaposto e va avanti (`run_traguardo` e' proprio in quel caso).
 
 **`npm run corsa`** gioca una partita intera in un browser vero — apre la corsa
 dalla porta STAFF ONLY, prende una botta, recupera un cuore, passa un traguardo,
-apre il menu, muore, riparte ed esce — e controlla che ogni comando risponda.
+apre il menu, muore, sceglie il nick, riparte ed esce — e controlla che ogni
+comando risponda.
 Serve perche' `npm test` gira in jsdom: non disegna, non anima e non clicca,
 quindi tutto quello che si rompe dentro la corsa si rompe in silenzio. Va
 lanciato con `npm run serve` attivo in un altro terminale. Due difetti li ha

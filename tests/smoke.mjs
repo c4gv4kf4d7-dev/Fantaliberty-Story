@@ -154,7 +154,7 @@ for (const [id, sc] of Object.entries(story.scenes)) {
     if (st.t === 'countdown') {
       assert.ok(st.azioni?.length, `scena ${id}: countdown senza vie d'uscita`);
       for (const a of st.azioni) {
-        assert.ok(a.goto || a.card || a.corsa, `scena ${id}: azione "${a.label}" non fa niente`);
+        assert.ok(a.goto || a.card || a.corsa || a.previsioni, `scena ${id}: azione "${a.label}" non fa niente`);
         if (a.goto) assert.ok(story.scenes[a.goto], `scena ${id}: countdown verso "${a.goto}", che non esiste`);
       }
       // senza una data il countdown non conta niente
@@ -582,27 +582,24 @@ assert.ok($('npcBody').getAttribute('src').includes('chr_lucas_neutro'), 'posa n
 
 VN.step();                                              // -> scena registrazione
 
-// input nome
+// nome e cognome: due campi nella stessa schermata, uno sotto l'altro
 assert.ok($('inputform').classList.contains('on'), 'form nome visibile');
-assert.match(txt(), /Nome e cognome/, 'una domanda sola per i primi due campi');
-assert.equal($('ti').placeholder, 'Nome', 'il campo dice quale dei due si sta scrivendo');
+assert.match(txt(), /Come ti chiami/, 'una domanda sola per i due campi');
+assert.equal($('ti').placeholder, 'Nome', 'il primo campo e\' il nome');
+assert.equal($('tiriga2').hidden, false, 'il secondo campo e\' gia\' a schermo');
+assert.match($('ti2').placeholder, /Cognome/, 'il secondo campo e\' il cognome');
+assert.equal($('tok').parentNode.id, 'tiriga2', 'OK sta accanto all\'ultimo campo');
+assert.equal($('tok').disabled, true, 'senza nome non si va avanti');
 $('ti').value = 'Fr@nc€sco!!!';
 $('ti').oninput();
 assert.equal(VN.state.nome, 'Frncsco', 'sanitizzazione input');
 assert.equal($('tval_nome').textContent, 'FRNCSCO', 'terminale aggiornato live');
 $('ti').value = 'Franco';
 $('ti').oninput();
-$('tok').onclick();
-
-// input cognome: facoltativo, il bottone resta premibile anche a campo vuoto
-assert.ok($('inputform').classList.contains('on'), 'form cognome visibile');
-// nessuna seconda domanda: resta a schermo quella di prima, e a dire che ora
-// tocca al cognome ci pensa il suggerimento dentro al campo
-assert.match(txt(), /Nome e cognome/, 'la battuta non viene riscritta per il secondo campo');
-assert.match($('ti').placeholder, /Cognome/, 'il campo dice che ora tocca al cognome');
+// cognome facoltativo: OK e' gia' premibile con il solo nome
 assert.equal($('tok').disabled, false, 'campo facoltativo: si puo\' continuare anche vuoto');
-$('ti').value = 'Ross@i!!!';
-$('ti').oninput();
+$('ti2').value = 'Ross@i!!!';
+$('ti2').oninput();
 assert.equal(VN.state.cognome, 'Rossi', 'sanitizzazione input, come per il nome');
 assert.equal($('tval_cognome').textContent, 'ROSSI', 'terminale aggiornato live');
 $('tok').onclick();
@@ -610,7 +607,7 @@ $('tok').onclick();
 // scelta genere -> interpolazione {NOME}
 assert.match(txt(), /Perfetto, FRANCO/, 'interpolazione {NOME}');
 const opts = [...$('choices').querySelectorAll('.ch')];
-assert.equal(opts.length, 2, 'lo script master prescrive due bottoni: Maschile | Femminile');
+assert.equal(opts.length, 4, 'lo script master prescrive quattro bottoni: Maschile | Femminile | Neutro | Preferisco non specificarlo');
 opts[1].onclick({ stopPropagation() {} });              // femminile
 assert.equal(VN.state.genere, 'f');
 assert.equal($('tval_genere').textContent, 'F');
@@ -675,8 +672,6 @@ assert.equal($('badgewrap').classList.contains('in'), false, 'il badge sparisce 
 assert.match(txt(), /otto ai dodici anni/, 'Lucas commenta la fascia di anzianita\' scelta');
 VN.step();
 assert.match(txt(), /^Benvenuta allo Steve Jobs Theater\./, 'variante di genere');
-
-
 
 /* ---------- 4. salvataggio / ripresa ---------- */
 assert.ok(VN.hasSave(story), 'partita salvata in localStorage');
@@ -1174,8 +1169,10 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
      dell'improvvisazione ha dentro "{g:Bravissimo|Bravissima}", quindi a
      schermo arriva declinata. Confrontare la stringa grezza faceva fallire il
      test ogni volta che usciva proprio quella (due volte su tre). */
-  const declina = (t) => String(t).replace(/\{g:([^|}]*)\|([^}]*)\}/g,
-    (_, m, f) => (VN.state.genere === 'm' ? m : f));
+  const declina = (t) => String(t).replace(/\{g:([^}]*)\}/g, (_, v) => {
+    const p = v.split('|');
+    return VN.state.genere === 'm' ? p[0] : VN.state.genere === 'f' ? p[1] : p[p.length - 1];
+  });
   const conseguenze = new Set([...story.regia.improvvisazione, ...story.regia.caos,
     ...story.regia.critica].flatMap((t) => [t, declina(t)]));
   let visto = false;
@@ -1567,8 +1564,28 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
     `il tempo che manca non e' formattato: "${$('cdtempo').textContent}"`);
   const azioni = [...$('cdbtn').querySelectorAll('.ch')];
   assert.deepEqual(azioni.map((b) => b.textContent),
-    ['Il quiz di Peter', 'Torna in lobby', 'La tua card'],
+    ['Il quiz di Peter', 'Torna in lobby', 'La tua card', 'Le tue previsioni'],
     'nessun bottone diretto alla corsa: si raggiunge solo dalla porta STAFF ONLY in lobby');
+
+  // "Le tue previsioni": si rileggono, non si cambiano. Si apre sopra il
+  // countdown e alla chiusura non ha toccato niente.
+  const primaDi = JSON.stringify(VN.state);
+  azioni[3].onclick({ stopPropagation() {} });
+  assert.ok($('monitorwrap').classList.contains('on') && $('monitorwrap').classList.contains('sololettura'),
+    'le previsioni si aprono in sola lettura');
+  assert.ok($('mondettaglio').classList.contains('on'), 'direttamente la lista, non i tre monitor');
+  assert.ok($('countdown').classList.contains('on'), 'il countdown resta acceso sotto');
+  const righe = [...$('monlista').querySelectorAll('.monriga')];
+  assert.ok(righe.length >= 3, 'ci sono le righe delle previsioni');
+  assert.ok(righe.every((r) => r.tagName !== 'BUTTON' && !r.onclick), 'nessuna riga si tocca');
+  assert.equal($('monlista').querySelectorAll('.moncat').length, Object.keys(story.argomenti).length,
+    'una testata per macroargomento');
+  assert.ok(righe.some((r) => r.querySelector('.monv').textContent === 'x'), 'la risposta data si legge');
+  assert.ok(!$('monlista').textContent.includes('controcorrente'), 'niente etichette di punteggio');
+  $('mondietro').onclick({ stopPropagation() {} });
+  assert.equal($('monitorwrap').classList.contains('on'), false, 'si chiude');
+  assert.ok($('countdown').classList.contains('on'), 'e si e\' di nuovo sul countdown');
+  assert.equal(JSON.stringify(VN.state), primaDi, 'rileggere non tocca la partita');
 
   azioni[1].onclick({ stopPropagation() {} });
   assert.equal(VN.sceneId, 'lobby', 'da qui si torna in lobby');
@@ -2299,8 +2316,7 @@ VN.clearSave();
 VN.boot(story, { speed: 0, banca, quiz });
 VN.step();                    // luci
 VN.step();                    // prima battuta di Lucas
-$('ti').value = 'Luca'; $('ti').oninput(); $('tok').onclick();
-$('tok').onclick();           // cognome facoltativo: salta senza scrivere niente
+$('ti').value = 'Luca'; $('ti').oninput(); $('tok').onclick();   // cognome facoltativo: resta vuoto
 const scegli = (i) => [...$('choices').querySelectorAll('.ch')][i].onclick({ stopPropagation() {} });
 scegli(0);   // maschile
 scegli(0);   // store: Piazza Liberty
@@ -2384,6 +2400,23 @@ assert.deepEqual(domande.intermezzi.map((q) => q.id).sort(),
   'gli id degli intermezzi non cambiano fra revisioni');
 assert.equal(Object.keys(domande.eventi_personali).length, 4, 'un evento personale per stile');
 for (const s of STILI) assert.ok(domande.eventi_personali[s], `manca l'evento personale di ${s}`);
+
+/* Neutro ("n") e "Preferisco non specificarlo" ("x") si leggono uguali: la
+   terza variante, riformulata senza genere. "x" non sta in genderOrder apposta,
+   e' fmt() a mandarlo sull'ultima variante — un valore scelto ma sconosciuto
+   non deve mai ricadere sul maschile. */
+for (const g of ['n', 'x']) {
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'badge' });
+  VN.state.genere = g; VN.state.nome = 'Franco'; VN.state.anni = 2;
+  let giri = 0;
+  while (!/Steve Jobs Theater/.test(txt()) && giri++ < 40) VN.step();
+  assert.match(txt(), /^Ti do il benvenuto allo Steve Jobs Theater\./, `genere "${g}": forma neutra`);
+  assert.match(txt(), /come un palo/, `genere "${g}": niente "impalato/a"`);
+}
+VN.boot(story, { speed: 0, banca, quiz, scene: 'badge' });
+VN.state.genere = 'f'; VN.state.nome = 'Franco'; VN.state.anni = 2;
+{ let giri = 0; while (!/Steve Jobs Theater/.test(txt()) && giri++ < 40) VN.step(); }
+assert.match(txt(), /^Benvenuta allo Steve Jobs Theater\./, 'e al femminile resta com\'era');
 
 /* ---------- 8b. il giocatore non ha un genere fisso ----------
    Il genere lo sceglie chi gioca a [S0.03] e NON c'entra con lo stile: si puo'
@@ -2558,7 +2591,8 @@ function apriQuizHub(stile) {
   // All'accensione il Mac mostra il "hello." di MacPaint, e il terminale arriva
   // solo dopo i primi dati: l'ordine e' la battuta, non un dettaglio.
   const iHello = reg.steps.findIndex((x) => x.t === 'prop' && x.schermata === 'mac_hello');
-  const iCognome = reg.steps.findIndex((x) => x.t === 'input' && x.var === 'cognome');
+  const iCognome = reg.steps.findIndex((x) => x.t === 'input' &&
+    (x.var === 'cognome' || (x.campi || []).some((c) => c.var === 'cognome')));
   const iTerm = reg.steps.findIndex((x, k) => k > iCognome && x.t === 'prop' && x.show === true && !x.schermata);
   assert.ok(iHello >= 0 && iHello < iCognome, 'il "hello." e\' acceso prima dei primi dati');
   assert.ok(iTerm > iCognome, 'e lascia il posto al terminale dopo nome e cognome');
@@ -2827,14 +2861,18 @@ function apriQuizHub(stile) {
 
 /* 10c. giocare un livello: tutte giuste -> passato, e il moltiplicatore in banca */
 // risponde alla domanda a schermo: trova la domanda vera nel pool dal testo, e
-// clicca il bottone giusto (o uno sbagliato) — i bottoni seguono l'ordine delle
-// opzioni, quindi l'indice della risposta corretta e' proprio "ok"
+// clicca il bottone giusto (o uno sbagliato). I bottoni sono mescolati a ogni
+// domanda, quindi quello giusto si cerca dal testo, non da "ok".
 const tutteQuiz = Object.values(quiz.pool).flat(2);
+const posizioniGiusta = new Set();   // dove e' finita la risposta giusta, domanda dopo domanda
 function rispondiQuiz(giusto) {
   const d = tutteQuiz.find((x) => x.q === $('txt').textContent);
   assert.ok(d, `domanda a schermo non trovata nel pool: "${$('txt').textContent}"`);
   const btns = [...$('choices').querySelectorAll('.ch')].filter((b) => !b.classList.contains('perk'));
-  const i = giusto ? d.ok : (d.ok + 1) % btns.length;
+  const iOk = btns.findIndex((b) => b.textContent === d.opzioni[d.ok]);
+  assert.ok(iOk >= 0, 'la risposta giusta e\' fra i bottoni');
+  posizioniGiusta.add(iOk);
+  const i = giusto ? iOk : (iOk + 1) % btns.length;
   btns[i].onclick({ stopPropagation() {} });
   VN.step();                                 // via la reazione di Peter
   return d;
@@ -3237,7 +3275,7 @@ function apriMoltiplicatori(stato, extra) {
   }
 
   // il terminale si scrive a macchina: il tocco secco non e' il suo suono
-  assert.match(motore, /el\.ti\.oninput = function \(\) \{\n\s*tastiera\(\);/,
+  assert.match(motore, /input\.oninput = function \(\) \{\n\s*tastiera\(\);/,
     'il campo del terminale suona come una tastiera mentre si scrive');
 }
 
@@ -3474,7 +3512,7 @@ function apriMoltiplicatori(stato, extra) {
     const d = tutteQuiz.find((x) => x.q === $('txt').textContent);
     assert.ok(d, `domanda a schermo non trovata nel pool: "${$('txt').textContent}"`);
     const btns = [...$('choices').querySelectorAll('.ch')].filter((b) => !b.classList.contains('perk'));
-    btns[d.ok].onclick({ stopPropagation() {} });
+    btns.find((b) => b.textContent === d.opzioni[d.ok]).onclick({ stopPropagation() {} });
     VN.step();
   };
   for (const liv of ['base', 'avanzato', 'leggenda']) {
@@ -3514,4 +3552,11 @@ function apriMoltiplicatori(stato, extra) {
 
 if (todoAssets.size) console.log(`asset ancora da disegnare (${todoAssets.size}):`, [...todoAssets].join(', '));
 console.log(`banca domande: ${idsDomande.size} domande, ${nBattute} battute · quiz: ${idsQuiz.size} domande`);
+/* Le risposte del quiz si mescolano: nel file la giusta sta quasi sempre
+   nella stessa casella (in Base tutte in alto a destra), e i giocatori se
+   n'erano accorti il giorno del lancio. Dopo tutte le domande giocate sopra,
+   la giusta deve essere finita in caselle diverse. */
+assert.ok(posizioniGiusta.size >= 2,
+  `le risposte del quiz non si mescolano: la giusta e' sempre nella casella ${[...posizioniGiusta]}`);
+
 console.log('smoke test: OK');
