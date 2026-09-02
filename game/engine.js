@@ -4427,29 +4427,56 @@
     el.choices.classList.add('on');
   }
 
+  /* Uno step "input" chiede un campo (var/max/placeholder/opzionale) oppure
+     due insieme con "campi": [nome, cognome], uno sotto l'altro nella stessa
+     schermata. Erano due schermate di fila con la stessa battuta sopra, e i
+     giocatori non capivano che il secondo campo era un altro (2/9/2026). Il
+     bottone OK sta accanto all'ultimo campo e si accende quando tutti i campi
+     obbligatori hanno qualcosa dentro. */
   function showInput(st) {
-    var max = st.max || 24;
-    // Il limite lo dichiara la scena (story.json), non l'HTML: due limiti
-    // diversi sullo stesso campo sono due verita' che prima o poi divergono.
-    // Passarlo anche al campo fa smettere di accettare invece di tagliare zitto.
-    el.ti.maxLength = max;
-    var re = st.pattern ? new RegExp(st.pattern, 'g') : /[^A-Za-zÀ-ÿ0-9' ]/g;
-    el.ti.value = '';
-    // il suggerimento dentro al campo: quando due campi di fila arrivano con una
-    // domanda sola, e' l'unica cosa che dice quale dei due si sta scrivendo
-    el.ti.placeholder = fmt(st.placeholder || '');
+    var campi = st.campi || [st];
+    var due = campi.length > 1;
+    var nodi = [el.ti, el.ti2];
+    if (el.tiriga2) el.tiriga2.hidden = !due;
+    // OK sta nella riga dell'ultimo campo visibile
+    (due ? el.tiriga2 : el.tiriga1).appendChild(el.tok);
+
+    function pronto() {
+      return campi.every(function (c, i) {
+        return c.opzionale || String(nodi[i].value || '').trim().length > 0;
+      });
+    }
+    campi.forEach(function (c, i) {
+      var input = nodi[i];
+      if (!input) return;
+      var max = c.max || 24;
+      // Il limite lo dichiara la scena (story.json), non l'HTML: due limiti
+      // diversi sullo stesso campo sono due verita' che prima o poi divergono.
+      // Passarlo anche al campo fa smettere di accettare invece di tagliare zitto.
+      input.maxLength = max;
+      var re = c.pattern ? new RegExp(c.pattern, 'g') : /[^A-Za-zÀ-ÿ0-9' ]/g;
+      input.value = '';
+      // il suggerimento dentro al campo dice cosa ci va
+      input.placeholder = fmt(c.placeholder || '');
+      input.oninput = function () {
+        tastiera();                       // un colpo di tasti, non uno per lettera
+        var v = input.value.replace(re, '').slice(0, max);
+        input.value = v;
+        VN.state[c.var] = v;
+        termSet(c.var);
+        el.tok.disabled = !pronto();
+      };
+      // Invio: sul primo campo passa al secondo, sull'ultimo conferma
+      input.onkeydown = function (e) {
+        if (e.key !== 'Enter') return;
+        var prossimo = nodi[i + 1];
+        if (due && prossimo && i < campi.length - 1) { try { prossimo.focus(); } catch (err) {} return; }
+        if (!el.tok.disabled) el.tok.click();
+      };
+    });
     // Un campo opzionale (es. il cognome) lascia il bottone premibile anche
     // a vuoto: si continua senza aver scritto niente, non e' un errore.
-    el.tok.disabled = !st.opzionale;
-    el.ti.oninput = function () {
-      tastiera();                       // un colpo di tasti, non uno per lettera
-      var v = el.ti.value.replace(re, '').slice(0, max);
-      el.ti.value = v;
-      VN.state[st.var] = v;
-      termSet(st.var);
-      el.tok.disabled = !st.opzionale && v.trim().length === 0;
-    };
-    el.ti.onkeydown = function (e) { if (e.key === 'Enter' && !el.tok.disabled) el.tok.click(); };
+    el.tok.disabled = !pronto();
     el.tok.onclick = function (ev) {
       if (ev && ev.stopPropagation) ev.stopPropagation();
       if (el.tok.disabled) return;
@@ -5737,6 +5764,7 @@
       boxwrap: $('boxwrap'), box: $('box'), name: $('name'), nametxt: $('nametxt'), voce: $('voce'),
       txt: $('txt'), arrow: $('arrow'),
       choices: $('choices'), inputform: $('inputform'), ti: $('ti'), tok: $('tok'),
+      tiriga1: $('tiriga1'), tiriga2: $('tiriga2'), ti2: $('ti2'),
       listform: $('listform'), tsel: $('tsel'), tselok: $('tselok'),
       badgewrap: $('badgewrap'), badgeImg: $('badgeImg'), badgeName: $('badgeName'),
       coriandoli: $('coriandoli'),
