@@ -1301,12 +1301,18 @@ html.inattesa, html.inattesa body{background:#0a0a0f;overflow:hidden}
    In basso a destra, appena sopra il box del dialogo. Sta in un punto FISSO
    dello schermo, come le frecce della lobby (#hubnav, al 66%): dentro al box
    si muoverebbe con lui — su quando il box e' alto, giu' quando e' basso — e
-   il pollice se la ritroverebbe ogni volta altrove. Il 62% e' appena sopra il
-   bordo alto del box (che parte al massimo dal 62% dell'altezza) e sotto gli
-   hotspot dell'hub, che finiscono al 66%.
+   il pollice se la ritroverebbe ogni volta altrove.
+   Il 62% (bordo alto massimo teorico del box, cinque righe piu' risposte)
+   lasciava un vuoto enorme sopra una battuta corta, il caso di gran lunga piu'
+   comune: misurato dal vivo, anche una scelta a cinque opzioni (il caso piu'
+   alto visto davvero) non supera il 79% (top ~664px su 844). 77% tiene un
+   piccolo margine sopra quel caso e sta molto piu' vicino al box nei casi
+   normali. Se in futuro un testo molto lungo dovesse davvero superare quel
+   punto, la freccia finirebbe sopra il box invece che restarci fissa sopra:
+   da ricontrollare se capita.
    Veste dell'altoparlante e del cartello EXIT: solo l'icona, senza riquadro
    dietro, con un'ombra che la tiene leggibile anche sul fondale chiaro. */
-#btnIndietro{position:absolute;right:8px;top:62%;transform:translateY(-100%);
+#btnIndietro{position:absolute;right:8px;top:77%;transform:translateY(-100%);
   z-index:3;width:48px;height:48px;padding:0;border:0;border-radius:8px;
   background:transparent;
   display:none;align-items:center;justify-content:center;
