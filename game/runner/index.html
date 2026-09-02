@@ -1690,7 +1690,8 @@ function finisci(){
   mostraRecord();
   document.getElementById('finePunti').textContent = S.punti;
   document.getElementById('fineNota').textContent =
-    S.punti >= record ? 'Nuovo record.' : 'Il record resta ' + record + '.';
+    S.punti >= record ? 'Nuovo record.'
+                      : 'Non hai battuto il tuo record (' + record + '). Riprova!';
   document.getElementById('veloClassifica').hidden = true;
   document.getElementById('veloFine').hidden = false;
   // sulla schermata di morte la X sparisce: li' l'uscita c'e' gia', e restando
