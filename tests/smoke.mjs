@@ -1063,15 +1063,17 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
      controlla che il punto salvato sia sempre quello dell'"editoriale"
      dell'opzione scelta — mai un altro valore, mai diverso fra un giro e
      l'altro. */
-  const storyFisso = JSON.parse(JSON.stringify(story));
-  storyFisso.regia.probabilitaEvento = 1;
+  // L'evento si forza dalle quote: si dice quale imprevisto tocca a quale
+  // macroargomento e dopo quale domanda, invece di aspettare che capiti.
+  const quotaSu = (cat, id, dopo = 0) => ({ [cat]: { id, dopo } });
   const marimba = banca.micro_eventi.find((e) => e.id === 'MARIMBA');
   let etichettaVista = null;
   for (let giro = 0; giro < 5; giro++) {
     VN.clearSave();
-    VN.boot(storyFisso, { speed: 0, banca, quiz, scene: 'keynote' });
+    VN.boot(story, { speed: 0, banca, quiz, scene: 'keynote' });
     VN.state.genere = 'f'; VN.state.stile = 'drip'; VN.state.nome = 'Franca';
-    VN.state.eventi_sacchetto = ['MARIMBA'];
+    VN.state.eventi_quote = { ...quotaSu('iphone', 'MARIMBA'), ...quotaSu('watch', 'MARIMBA'),
+      ...quotaSu('altro', 'MARIMBA') };
     for (let g = 0; g < 40; g++) {
       if (txt().includes('Marimba')) {
         VN.step();
@@ -1162,11 +1164,7 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
 
   VN.clearSave();
 
-  // L'evento si forza invece di aspettare il 30%: qui interessa il giro, non il
-  // caso. Si lavora su una copia dello script, cosi' la probabilita' alzata non
-  // si porta dietro negli altri test.
-  const storyEvento = JSON.parse(JSON.stringify(story));
-  storyEvento.regia.probabilitaEvento = 1;
+  // L'evento si forza dalle quote: qui interessa il giro, non quando capita.
   /* Le battute di conseguenza passano da fmt() come tutte le altre: quella
      dell'improvvisazione ha dentro "{g:Bravissimo|Bravissima}", quindi a
      schermo arriva declinata. Confrontare la stringa grezza faceva fallire il
@@ -1177,9 +1175,9 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
     ...story.regia.critica].flatMap((t) => [t, declina(t)]));
   let visto = false;
   for (let tentativi = 0; tentativi < 5 && !visto; tentativi++) {
-    VN.boot(storyEvento, { speed: 0, banca, quiz, scene: 'keynote' });
+    VN.boot(story, { speed: 0, banca, quiz, scene: 'keynote' });
     VN.state.genere = 'f'; VN.state.stile = 'drip'; VN.state.nome = 'Franca';
-    VN.state.eventi_sacchetto = ['CLICKER'];
+    VN.state.eventi_quote = { watch: { id: 'CLICKER', dopo: 0 } };
     VN.state.categoria = 'watch';
     // si tira avanti finche' non compare la narrazione del clicker
     for (let g = 0; g < 60; g++) {
@@ -1226,14 +1224,12 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   assert.equal(ukulele.id, 'UKULELE');
   assert.ok(ukulele.prop, 'l\'evento porta anche un oggetto separato dalla posa');
 
-  const storyEvento = JSON.parse(JSON.stringify(story));
-  storyEvento.regia.probabilitaEvento = 1;
   let visto = false;
   for (let tentativi = 0; tentativi < 5 && !visto; tentativi++) {
     VN.clearSave();
-    VN.boot(storyEvento, { speed: 0, banca, quiz, scene: 'keynote' });
+    VN.boot(story, { speed: 0, banca, quiz, scene: 'keynote' });
     VN.state.genere = 'f'; VN.state.stile = 'hawaiano'; VN.state.nome = 'Franca';
-    VN.state.eventi_sacchetto = ['UKULELE'];
+    VN.state.eventi_quote = { watch: { id: 'UKULELE', dopo: 0 } };
     VN.state.categoria = 'watch';
     for (let g = 0; g < 60; g++) {
       if (txt().includes('Un ukulele')) {
@@ -1309,31 +1305,32 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
   }
   assert.equal(VN.state.intermezzi, 4, 'quattro intermezzi: uno all\'inizio e uno per macroargomento');
   assert.ok(VN.state.punti > 0, 'il punteggio si accumula');
-  /* Il sacchetto degli eventi: due micro-eventi generali pescati a caso piu'
-     l'evento personale dello stile, in testa. Nessuno si ripete, e non se ne
-     giocano piu' di tre in una partita: il keynote e' fatto di pronostici, non
-     di imprevisti. Si consuma man mano, quindi il sorteggio di partenza sono
-     quelli giocati piu' quelli rimasti. */
-  assert.ok(VN.state.eventi_sacchetto, 'il sacchetto degli eventi e\' stato creato');
+  /* Gli imprevisti: uno per macroargomento, tre per tutti, sempre. Il
+     sorteggio riguarda QUALI e QUANDO, mai QUANTI — prima era una monetina al
+     15% dopo ogni risposta, e chi saltava i bivi aveva una probabilita' su
+     sette di non vederne nemmeno uno: fino a tre punti di differenza fra due
+     partite giocate identiche, decisi dal caso. */
   {
+    const quote = VN.state.eventi_quote;
+    assert.ok(quote, 'le quote degli imprevisti sono state sorteggiate');
+    assert.deepEqual(Object.keys(quote).sort(), ['altro', 'iphone', 'watch'],
+      'un imprevisto per macroargomento');
+    const ids = Object.keys(quote).map((c) => quote[c].id);
+    assert.equal(new Set(ids).size, 3, 'mai due volte lo stesso imprevisto');
+    assert.ok(ids.includes(banca.eventi_personali[VN.state.stile].id),
+      'fra i tre c\'e\' sempre quello personale dello stile');
+    const generali = ids.filter((id) => banca.micro_eventi.some((e) => e.id === id));
+    assert.equal(generali.length, 2, 'gli altri due sono micro-eventi generali');
+    for (const cat of Object.keys(quote)) {
+      const core = banca.categorie[cat].core.length;
+      assert.ok(quote[cat].dopo >= 0 && quote[cat].dopo < core,
+        `${cat}: l'imprevisto esce dopo una delle sue domande obbligatorie`);
+    }
+    // e in partita sono usciti tutti e tre, senza doppioni
     const giocati = Object.keys((VN.state.picks.micro_eventi || {}).r || {});
-    const pescati = giocati.concat([...VN.state.eventi_sacchetto]);
-    assert.equal(pescati.length, 3,
-      'tre eventi in tutto: due micro-eventi piu\' quello personale dello stile');
-    assert.equal(new Set(pescati).size, 3, 'mai due volte lo stesso evento');
-    assert.equal(pescati[0], banca.eventi_personali[VN.state.stile].id,
-      'quello dello stile e\' il primo del sacchetto');
-    const generali = pescati.filter((id) => banca.micro_eventi.some((e) => e.id === id));
-    assert.equal(generali.length, 2, 'al massimo due micro-eventi generali per partita');
-    /* Quanti ne escano davvero e' fortuna: a 0.15 per risposta capita (circa
-       una partita su settanta) che non ne esca nessuno. Quello che si presidia
-       e' che ognuno di quelli usciti venga dal sacchetto e sia stato giocato
-       una volta sola — non che la moneta sia caduta bene. */
-    assert.ok(giocati.length <= 3, 'mai piu\' di tre eventi in una partita');
-    assert.equal(new Set(giocati).size, giocati.length,
-      'ogni evento uscito e\' stato giocato una volta sola');
-    assert.deepEqual(giocati, pescati.slice(0, giocati.length),
-      'e sono usciti nell\'ordine del sacchetto');
+    assert.equal(giocati.length, 3, 'tre imprevisti giocati, per tutti');
+    assert.deepEqual(giocati.slice().sort(), ids.slice().sort(),
+      'e sono esattamente quelli sorteggiati');
   }
 
   /* ---------- S6: la sala regia, modifica, blocco ---------- */

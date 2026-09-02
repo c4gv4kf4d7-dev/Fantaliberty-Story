@@ -428,18 +428,21 @@ Tre regole dello script che il codice deve rispettare:
 * **la reazione della platea e' sempre casuale**, mai legata a quale opzione e'
   stata scelta: se lo fosse, il gioco suggerirebbe le risposte. Il quiz di Peter
   in S8 e' l'eccezione dichiarata, li' le risposte sono oggettive;
-* **gli eventi non si ripetono e sono pochi**: si pescano da un sacchetto senza
-  rimessa che tiene **due** micro-eventi presi a caso fra i cinque della banca,
-  piu' quello personale dello stile scelto, in testa. Tre imprevisti per
-  partita;
+* **gli imprevisti sono tre per tutti, uno per macroargomento**: a inizio
+  partita si sorteggiano **quali** (due micro-eventi fra i cinque della banca
+  piu' quello personale dello stile, mescolati) e **dopo quale domanda
+  obbligatoria** di ciascun macroargomento escono (`VN.state.eventi_quote`).
+  Mai **quanti**: prima era una monetina al 15% dopo ogni risposta, e chi
+  saltava i bivi poteva finire la partita senza vederne nemmeno uno;
 * **gli intermezzi di regia sono un pool solo di sette**: si mescolano a inizio
   partita e se ne giocano al massimo quattro (`VN.state.intermezzi_sacchetto`),
   mai due volte lo stesso.
 
 ### Le battute della regia
 
-`story.regia` e' il blocco della regia: chi e' (`chi`), ogni quanto succede
-qualcosa (`probabilitaEvento`) e **i pool delle sue battute**.
+`story.regia` e' il blocco della regia: chi e' (`chi`) e **i pool delle sue
+battute**. Quando escono gli imprevisti non sta piu' qui: e' un sorteggio per
+partita, vedi sotto.
 
 Susan non parla dopo ogni singola scelta — sarebbe rumore, e la farebbe sembrare
 una commentatrice invece che una che sta lavorando. Le battute stanno in pool per

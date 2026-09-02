@@ -765,7 +765,7 @@
   var REVERSIBILI = { say: 1, choice: 1, list: 1, domande: 1, intermezzo: 1 };
 
   // i sorteggi fatti una volta per partita: composizione, non avanzamento
-  var SORTEGGI = ['intermezzi_sacchetto', 'eventi_sacchetto', 'pescate'];
+  var SORTEGGI = ['intermezzi_sacchetto', 'eventi_quote', 'pescate'];
 
   // i veli che si aprono SOPRA la scena: finche' c'e' uno di questi la freccia
   // non si vede (#choices e #griglia non sono veli, sono la scena)
@@ -2202,7 +2202,7 @@
     function dopoRisposta() {
       var reazione = aCaso(VN.story.reazioni || (VN.banca && VN.banca.reazioni_platea));
       platea(reazione);
-      var ev = pescaEvento();
+      var ev = eventoQui(tipo, i);
       i++;
       if (ev) return mostraEvento(ev, intro);
       intro();
@@ -2212,28 +2212,56 @@
   }
 
   /* ---------------- eventi: micro generali e personale dello stile ----------------
-     Si pescano da un sacchetto senza rimessa: cosi' non si ripetono nella stessa
-     partita e il loro numero e' limitato dal sacchetto, non dalla fortuna.
-     L'evento personale dello stile sta nel sacchetto insieme agli altri. */
-  /* Il sacchetto e' corto apposta: due micro-eventi generali pescati a caso fra
-     quelli in banca, piu' l'evento personale dello stile. Tre imprevisti per
-     partita, non sei: il keynote e' fatto di pronostici, e un imprevisto ogni
-     tre domande smetterebbe di essere un imprevisto. Quali due escano non si sa
-     in anticipo, e cambia a ogni partita. */
+     UN IMPREVISTO PER MACROARGOMENTO: tre per tutti, sempre.
+
+     Prima erano una monetina: dopo ogni risposta, il 15% di far uscire il
+     prossimo evento. Il numero veniva dalla fortuna — chi saltava i bivi aveva
+     una probabilita' su sette di non vederne nemmeno uno, chi le giocava tutte
+     ne vedeva tre — e siccome ognuno vale da -1 a +1, erano fino a tre punti di
+     differenza fra due partite giocate identiche. E' l'unico punto in cui il
+     caso spostava il punteggio senza che nessuno avesse deciso niente.
+
+     Adesso il sorteggio riguarda QUALI e QUANDO, mai QUANTI. A inizio partita
+     si pescano tre eventi (due micro-eventi generali fra i cinque in banca piu'
+     quello personale dello stile, mescolati fra loro) e si assegna un evento a
+     ciascun macroargomento, dopo una delle sue domande obbligatorie presa a
+     caso. Poi succede e basta.
+
+     Il giocatore non puo' prevedere ne' quale evento ne' in che punto: quello
+     che diventa uguale per tutti e' solo il numero. Ed e' lo stesso meccanismo
+     del cuore nella corsa — uno per livello, a un punto a caso del tratto — e
+     degli intermezzi, che sono gia' uno per macroargomento.
+
+     VN.state.eventi_quote e' il sorteggio della partita, uno per categoria:
+     { iphone: {id, dopo}, watch: {...}, altro: {...} }, dove "dopo" e' l'indice
+     della domanda obbligatoria dopo la quale l'evento esce. Entra nel
+     salvataggio e sta in SORTEGGI: riavvolgendo non si rimescola, e tornando su
+     una domanda si rivede lo stesso imprevisto, non un altro. */
   var MAX_MICRO_EVENTI = 2;
 
-  function sacchettoEventi() {
-    if (VN.state.eventi_sacchetto) return VN.state.eventi_sacchetto;
+  function quoteEventi() {
+    if (VN.state.eventi_quote) return VN.state.eventi_quote;
     var b = VN.banca || {};
     var v = mescola((b.micro_eventi || []).map(function (e) { return e.id; }))
       .slice(0, MAX_MICRO_EVENTI);
-    // L'evento dello stile va in TESTA, non a caso: con la probabilita' a
-    // 0.15 il sacchetto non si svuota per forza, e messo in fondo poteva
-    // restarci. E' l'unico legato alla scelta del camerino.
+    // L'evento dello stile sta fra gli altri, non in testa: adesso che escono
+    // tutti e tre non c'e' piu' il rischio che resti nel sacchetto, e in quale
+    // macroargomento capiti e' una sorpresa come per gli altri due.
     var mio = (b.eventi_personali || {})[VN.state.stile];
-    if (mio) v.unshift(mio.id);
-    VN.state.eventi_sacchetto = v;
-    return v;
+    if (mio) v.splice(Math.floor(Math.random() * (v.length + 1)), 0, mio.id);
+    v = mescola(v);
+
+    var quote = {};
+    var cats = Object.keys((b.categorie) || {});
+    cats.forEach(function (cat, k) {
+      var id = v[k];
+      if (id == null) return;                 // piu' macroargomenti che eventi
+      var core = (b.categorie[cat].core || []).length;
+      if (!core) return;
+      quote[cat] = { id: id, dopo: Math.floor(Math.random() * core) };
+    });
+    VN.state.eventi_quote = quote;
+    return quote;
   }
 
   function trovaEvento(id) {
@@ -2244,12 +2272,15 @@
     return mio && mio.id === id ? mio : null;
   }
 
-  function pescaEvento() {
-    var v = sacchettoEventi();
-    if (!v.length) return null;
-    var p = VN.story.regia && VN.story.regia.probabilitaEvento;
-    if (Math.random() >= (p == null ? 0.3 : p)) return null;
-    return trovaEvento(v.shift());
+  /* L'imprevisto di questo macroargomento esce dopo la domanda obbligatoria
+     sorteggiata a inizio partita: niente monetina, niente "forse". Le
+     facoltative non ne portano — le obbligatorie le gioca chiunque, quindi e'
+     li' che il conto torna uguale per tutti. */
+  function eventoQui(tipo, indice) {
+    if (tipo !== 'core') return null;
+    var q = quoteEventi()[VN.state.categoria];
+    if (!q || q.dopo !== indice) return null;
+    return trovaEvento(q.id);
   }
 
   /* Il punteggio di ogni risposta e' quello che l'autore ha scritto in banca
