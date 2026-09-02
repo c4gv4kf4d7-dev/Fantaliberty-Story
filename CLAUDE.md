@@ -555,12 +555,26 @@ Tre cose tarate insieme (agosto 2026, misurate con
   5-6 su 21 risposte e il sacchetto si svuotava sempre; a 0.15 ne escono ~3 e
   restano una sorpresa. L'evento personale dello stile e' in testa al sacchetto
   (`sacchettoEventi()`), cosi' non lo si perde.
-- **gli imprevisti sono pochi apposta.** Due micro-eventi per partita, pescati
-  a caso fra i cinque della banca, piu' l'evento personale dello stile, che
-  sta in testa al sacchetto: tre in tutto (`MAX_MICRO_EVENTI` in `engine.js`,
-  ripetuto in `tools/simula_partite.py`). Prima entravano tutti nel sacchetto.
-  Il keynote e' fatto di pronostici, e un imprevisto ogni tre domande smette di
-  essere un imprevisto.
+- **gli imprevisti sono tre per tutti: uno per macroargomento.** Il sorteggio
+  riguarda **quali** (due micro-eventi fra i cinque in banca piu' quello
+  personale dello stile, mescolati fra loro) e **quando** (dopo una delle
+  domande obbligatorie del macroargomento, presa a caso), mai **quanti**.
+  `quoteEventi()` in `engine.js` lo decide a inizio partita e lo scrive in
+  `VN.state.eventi_quote`, che sta in `SORTEGGI`: riavvolgendo non si
+  rimescola. Prima era una monetina (`probabilitaEvento: 0.15` dopo ogni
+  risposta), e il numero veniva dalla fortuna: chi saltava i bivi aveva una
+  probabilita' **su sette** di non vederne nemmeno uno, chi giocava tutte le
+  facoltative ne vedeva tre. Siccome ognuno vale da -1 a +1, erano fino a tre
+  punti di differenza fra due partite giocate identiche — l'unico punto in cui
+  il caso spostava il punteggio senza che nessuno avesse deciso niente. La
+  manopola `probabilitaEvento` non esiste piu': non rimetterla.
+- **l'evento personale dello stile non e' piu' in testa.** Stava in testa al
+  sacchetto perche' con la monetina rischiava di restarci dentro; adesso che
+  escono tutti e tre non serve, e in quale macroargomento capiti e' una
+  sorpresa come per gli altri due (deciso con l'utente).
+- **Gli imprevisti escono solo dopo le domande obbligatorie**, mai dopo una
+  facoltativa: le obbligatorie le gioca chiunque, quindi e' li' che il conto
+  torna uguale per tutti.
 - **gli intermezzi di regia sono un pool solo di sette.** Non esistono piu' i
   "fissi" e la "riserva" (`intermezzi_riserva` non c'e' piu' in banca; il
   motore la legge ancora solo per non rompere una banca vecchia). A ogni
