@@ -577,27 +577,24 @@ assert.ok($('npcBody').getAttribute('src').includes('chr_lucas_neutro'), 'posa n
 
 VN.step();                                              // -> scena registrazione
 
-// input nome
+// nome e cognome: due campi nella stessa schermata, uno sotto l'altro
 assert.ok($('inputform').classList.contains('on'), 'form nome visibile');
-assert.match(txt(), /Come ti chiami/, 'una domanda sola per i primi due campi');
-assert.equal($('ti').placeholder, 'Nome', 'il campo dice quale dei due si sta scrivendo');
+assert.match(txt(), /Come ti chiami/, 'una domanda sola per i due campi');
+assert.equal($('ti').placeholder, 'Nome', 'il primo campo e\' il nome');
+assert.equal($('tiriga2').hidden, false, 'il secondo campo e\' gia\' a schermo');
+assert.match($('ti2').placeholder, /Cognome/, 'il secondo campo e\' il cognome');
+assert.equal($('tok').parentNode.id, 'tiriga2', 'OK sta accanto all\'ultimo campo');
+assert.equal($('tok').disabled, true, 'senza nome non si va avanti');
 $('ti').value = 'Fr@nc€sco!!!';
 $('ti').oninput();
 assert.equal(VN.state.nome, 'Frncsco', 'sanitizzazione input');
 assert.equal($('tval_nome').textContent, 'FRNCSCO', 'terminale aggiornato live');
 $('ti').value = 'Franco';
 $('ti').oninput();
-$('tok').onclick();
-
-// input cognome: facoltativo, il bottone resta premibile anche a campo vuoto
-assert.ok($('inputform').classList.contains('on'), 'form cognome visibile');
-// nessuna seconda domanda: resta a schermo quella di prima, e a dire che ora
-// tocca al cognome ci pensa il suggerimento dentro al campo
-assert.match(txt(), /Come ti chiami/, 'la battuta non viene riscritta per il secondo campo');
-assert.match($('ti').placeholder, /Cognome/, 'il campo dice che ora tocca al cognome');
+// cognome facoltativo: OK e' gia' premibile con il solo nome
 assert.equal($('tok').disabled, false, 'campo facoltativo: si puo\' continuare anche vuoto');
-$('ti').value = 'Ross@i!!!';
-$('ti').oninput();
+$('ti2').value = 'Ross@i!!!';
+$('ti2').oninput();
 assert.equal(VN.state.cognome, 'Rossi', 'sanitizzazione input, come per il nome');
 assert.equal($('tval_cognome').textContent, 'ROSSI', 'terminale aggiornato live');
 $('tok').onclick();
@@ -2314,8 +2311,7 @@ VN.clearSave();
 VN.boot(story, { speed: 0, banca, quiz });
 VN.step();                    // luci
 VN.step();                    // prima battuta di Lucas
-$('ti').value = 'Luca'; $('ti').oninput(); $('tok').onclick();
-$('tok').onclick();           // cognome facoltativo: salta senza scrivere niente
+$('ti').value = 'Luca'; $('ti').oninput(); $('tok').onclick();   // cognome facoltativo: resta vuoto
 const scegli = (i) => [...$('choices').querySelectorAll('.ch')][i].onclick({ stopPropagation() {} });
 scegli(0);   // maschile
 scegli(0);   // store: Piazza Liberty
@@ -2590,7 +2586,8 @@ function apriQuizHub(stile) {
   // All'accensione il Mac mostra il "hello." di MacPaint, e il terminale arriva
   // solo dopo i primi dati: l'ordine e' la battuta, non un dettaglio.
   const iHello = reg.steps.findIndex((x) => x.t === 'prop' && x.schermata === 'mac_hello');
-  const iCognome = reg.steps.findIndex((x) => x.t === 'input' && x.var === 'cognome');
+  const iCognome = reg.steps.findIndex((x) => x.t === 'input' &&
+    (x.var === 'cognome' || (x.campi || []).some((c) => c.var === 'cognome')));
   const iTerm = reg.steps.findIndex((x, k) => k > iCognome && x.t === 'prop' && x.show === true && !x.schermata);
   assert.ok(iHello >= 0 && iHello < iCognome, 'il "hello." e\' acceso prima dei primi dati');
   assert.ok(iTerm > iCognome, 'e lascia il posto al terminale dopo nome e cognome');
@@ -3269,7 +3266,7 @@ function apriMoltiplicatori(stato, extra) {
   }
 
   // il terminale si scrive a macchina: il tocco secco non e' il suo suono
-  assert.match(motore, /el\.ti\.oninput = function \(\) \{\n\s*tastiera\(\);/,
+  assert.match(motore, /input\.oninput = function \(\) \{\n\s*tastiera\(\);/,
     'il campo del terminale suona come una tastiera mentre si scrive');
 }
 

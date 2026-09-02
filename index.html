@@ -160,9 +160,12 @@
       <div id="multresto"></div>
       <button id="multok">CONFERMA</button>
     </div>
+    <!-- uno o due campi (nome e cognome insieme, uno sotto l'altro): il
+         secondo compare solo se lo step lo chiede ("campi" in story.json).
+         OK sta sempre accanto all'ultimo campo visibile. -->
     <div id="inputform">
-      <div id="tiwrap"><input id="ti" type="text" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Il tuo nome"></div>
-      <button id="tok">OK</button>
+      <div class="tiriga" id="tiriga1"><div id="tiwrap" class="tiwrap"><input id="ti" class="ti" type="text" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Il tuo nome"></div></div>
+      <div class="tiriga" id="tiriga2" hidden><div id="tiwrap2" class="tiwrap"><input id="ti2" class="ti" type="text" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Il tuo cognome"></div><button id="tok">OK</button></div>
     </div>
     <!-- lista a tendina: per le scelte troppo lunghe da fare a bottoni (i 31
          modelli di iPhone). Un <select> vero apre il selettore nativo di iOS. -->

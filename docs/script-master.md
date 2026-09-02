@@ -124,8 +124,12 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
    Prima di entrare passa dal terminale e registrati. Ci vuole un minuto."
   → [S0.02]
 
-[S0.02] TERMINALE — campo 1
+[S0.02] TERMINALE — campo 1 (e campo 2 nella stessa schermata)
   Asset: bg_esterno_ingresso + obj_terminale_accrediti + chr_lucas_idle
+  Lucas: "Ti registro subito al terminale. Come ti chiami?"
+  Nome e Cognome stanno uno sotto l'altro nella stessa schermata, OK accanto
+  al cognome (dal 2/9/2026: come due schermate di fila i giocatori non
+  capivano che il secondo campo era un altro).
   Label: "Nome"   Tipo: testo libero
   Salva in: run.nome. Non serve il nome vero: e' il nickname con cui il
   gioco si rivolge al giocatore e con cui compare in classifica.

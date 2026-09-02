@@ -412,8 +412,11 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
 .ch.spento{opacity:.45;cursor:default;border-color:rgba(255,255,255,.35);box-shadow:none}
 .ch.spento:hover{background:#2a3050}
 
-#inputform{margin-top:10px;display:none;gap:7px}
+#inputform{margin-top:10px;display:none;flex-direction:column;gap:7px}
 #inputform.on{display:flex}
+/* una riga per campo; OK sta nella riga dell'ultimo campo visibile (lo
+   sposta showInput). La riga senza bottone prende comunque la sua altezza. */
+.tiriga{display:flex;gap:7px;min-height:38px}
 /* Il campo ha la stessa veste del box del dialogo: stesso sfondo, stesso
    font, stessa misura del testo. La misura pero' non si puo' scrivere piccola
    sul campo: sotto i 16px iOS ingrandisce la pagina appena lo si tocca.
@@ -421,15 +424,15 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
    scala (0.6 -> ~9.6px a schermo, come il testo del box): il campo sta
    dentro #tiwrap, e' disegnato grande il doppio e scalato giu' — per il
    layout conta solo il contenitore, alto come il bottone OK. */
-#tiwrap{flex:1;min-width:0;position:relative;overflow:hidden;border-radius:8px}
-#ti{position:absolute;left:0;top:0;width:calc(100% / .6);height:calc(100% / .6);
+.tiwrap{flex:1;min-width:0;position:relative;overflow:hidden;border-radius:8px}
+.ti{position:absolute;left:0;top:0;width:calc(100% / .6);height:calc(100% / .6);
  transform:scale(.6);transform-origin:0 0;
  background:#1b1f33;border:3px solid #fff;border-radius:13px;color:#fff;
  font-family:inherit;font-size:16px;padding:0 14px;outline:none}
-#ti::placeholder{color:rgba(255,255,255,.4)}
+.ti::placeholder{color:rgba(255,255,255,.4)}
 /* Safari riempie di giallo il campo che crede di poter completare da solo: il
    colore va detto esplicitamente anche in quel caso, se no il tema salta. */
-#ti:-webkit-autofill,#ti:-webkit-autofill:focus{
+.ti:-webkit-autofill,.ti:-webkit-autofill:focus{
  -webkit-box-shadow:0 0 0 100px #1b1f33 inset;-webkit-text-fill-color:#fff;caret-color:#fff}
 #tok{background:#2a3050;border:3px solid #fff;border-radius:8px;color:#fff;font-family:inherit;
  font-size:clamp(8px,2.35vw,12px);padding:10px 13px;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.5)}

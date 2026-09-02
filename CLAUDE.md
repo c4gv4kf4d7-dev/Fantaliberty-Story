@@ -528,8 +528,11 @@ l'elenco dei campi cambia da solo.
   funzione. La verifica dal vivo e le query di cancellazione stanno in fondo a
   `docs/backend.sql`.
 - **`cognome` e' facoltativo e non e' il nickname.** Si chiede subito dopo il
-  nome nel terminale (`opzionale:true` sullo step `input` — il bottone resta
-  premibile a campo vuoto, vedi `showInput`). Serve solo a distinguere due
+  nome nel terminale, **nella stessa schermata**: lo step `input` porta
+  `campi: [nome, cognome]` e `showInput` mostra i due campi uno sotto l'altro
+  con OK accanto all'ultimo (`opzionale:true` sul cognome — il bottone si
+  accende col solo nome). Erano due schermate di fila con la stessa battuta
+  sopra, e i giocatori non capivano che il secondo era un altro campo. Serve solo a distinguere due
   giocatori con lo stesso nome nei punteggi: si mostra come iniziale
   puntata, "Lorenzo B.", mai per esteso — il nickname con cui il gioco si
   rivolge al giocatore resta `nome`, da solo.
