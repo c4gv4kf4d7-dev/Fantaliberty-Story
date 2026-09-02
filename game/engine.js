@@ -76,17 +76,20 @@
 
   /* ---------------- testo: interpolazione ---------------- */
   // {nome} valore · {NOME} maiuscolo · {label:anni} etichetta scelta
-  // {g:uno|una} variante per la variabile di genere (m|f), nell'ordine di
-  // meta.genderOrder. Se il genere non e' ancora stato scelto si usa la prima
-  // variante: capita solo nelle righe prima di [S0.03].
+  // {g:uno|una|chi} variante per la variabile di genere, nell'ordine di
+  // meta.genderOrder (m|f|n). "Preferisco non specificarlo" (x) non sta
+  // nell'ordine: un valore scelto ma sconosciuto prende l'ultima variante, la
+  // neutra. Se il genere non e' ancora stato scelto si usa la prima variante:
+  // capita solo nelle righe prima di [S0.03].
   function fmt(s) {
     if (!s) return '';
     var genderVar = (VN.story.meta && VN.story.meta.genderVar) || 'genere';
     var order = (VN.story.meta && VN.story.meta.genderOrder) || ['m', 'f'];
     s = s.replace(/\{g:([^}]*)\}/g, function (_, body) {
       var parts = body.split('|');
-      var idx = order.indexOf(VN.state[genderVar]);
-      if (idx < 0) idx = 0;
+      var g = VN.state[genderVar];
+      var idx = order.indexOf(g);
+      if (idx < 0) idx = g == null ? 0 : parts.length - 1;
       return parts[Math.min(idx, parts.length - 1)] || '';
     });
     s = s.replace(/\{label:(\w+)\}/g, function (_, k) {
@@ -5567,7 +5570,8 @@
         box.appendChild(r);
       };
 
-      gruppo('GENERE', [{ label: 'Maschile', value: 'm' }, { label: 'Femminile', value: 'f' }], 'genere');
+      gruppo('GENERE', [{ label: 'Maschile', value: 'm' }, { label: 'Femminile', value: 'f' },
+        { label: 'Neutro', value: 'n' }, { label: 'Non specificato', value: 'x' }], 'genere');
       gruppo('ANNI IN APPLE', [{ label: '0-2', value: 0 }, { label: '3-7', value: 1 },
         { label: '8-12', value: 2 }, { label: '12+', value: 3 }], 'anni');
       gruppo('STILE (scelto in S3)', Object.keys(story.stili || {}).map(function (k) {
@@ -5843,7 +5847,7 @@
           ]
         });
       };
-      type(fmt('{g:Bentornato|Bentornata}! Eri arrivat{g:o|a} fino a "' + where + '". Vuoi riprendere da li\'?'), resumeUI);
+      type(fmt('{g:Bentornato|Bentornata|Rieccoti}! {g:Eri arrivato|Eri arrivata|La partita era arrivata} fino a "' + where + '". Vuoi riprendere da li\'?'), resumeUI);
       revealUI = resumeUI;
       return;
     }
