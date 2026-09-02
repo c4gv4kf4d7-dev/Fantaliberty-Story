@@ -715,6 +715,11 @@ Indice degli id in `docs/indice-domande.md`.
      ora autorizzata)
   C: LA TUA CARD → genera ed esporta obj_card_condivisibile client-side
      (1080x1920 / 1080x1350)
+  D: LE TUE PREVISIONI → la lista delle risposte date (domanda + scelta, per
+     macroargomento), in sola lettura: niente tocchi che cambiano, niente
+     punti ne' etichetta controcorrente. Si apre sopra il countdown e alla
+     chiusura si e' dov'era. Aggiunto il 2/9/2026 su suggerimento di un
+     giocatore.
 ```
 
 ---
