@@ -2055,6 +2055,42 @@
     var acceso = id === 'palco_schermo_categorie';
     el.emblemi.classList.toggle('on', acceso);
     if (acceso) aggiornaEmblemi(null);
+    ledPerFondale(id);
+  }
+
+  /* ---------------- il led del lettore badge (lobby, zona 5) ----------------
+     Sul fondale della porta autorizzata il lettore verde e' disegnato: qui si
+     aggiunge solo un alone che pulsa, cosi' l'occhio cade sulla porta appena
+     sbloccata in una scena altrimenti ferma. Vive su un fondale solo, come gli
+     emblemi, e si spegne da setBg() su qualunque altro.
+
+     La posizione e' in percentuale dell'IMMAGINE (misurata sui pixel del led,
+     tools: vedi CLAUDE.md), non dello schermo: il fondale e' "cover", quindi
+     viene ingrandito e tagliato in modo diverso su ogni finestra, e il calcolo
+     rifa' quello che fa il browser — stessa strada di ancoraTerminale(). */
+  var LED_PORTA = { bg: 'staff_door_authorized', x: 87.7, y: 46.5, d: 9 };
+  function ledPerFondale(id) {
+    var led = el.ledporta;
+    if (!led) return;
+    var acceso = id === LED_PORTA.bg;
+    led.classList.toggle('on', acceso);
+    if (acceso) posizionaLed();
+  }
+  function posizionaLed() {
+    var led = el.ledporta, img = el.bg;
+    if (!led || !img || !led.classList.contains('on')) return;
+    var nw = img.naturalWidth, nh = img.naturalHeight;
+    if (!nw || !nh) { img.addEventListener('load', posizionaLed, { once: true }); return; }
+    var W = img.clientWidth, H = img.clientHeight;
+    var scala = Math.max(W / nw, H / nh);
+    var dw = nw * scala, dh = nh * scala;
+    var ox = (W - dw) / 2;
+    // #bg e' ancorato in alto (object-position: center top), o in basso con 'basso'
+    var oy = img.classList.contains('basso') ? (H - dh) : 0;
+    var d = Math.round(dw * LED_PORTA.d / 100);
+    led.style.width = led.style.height = d + 'px';
+    led.style.left = Math.round(ox + dw * LED_PORTA.x / 100 - d / 2) + 'px';
+    led.style.top = Math.round(oy + dh * LED_PORTA.y / 100 - d / 2) + 'px';
   }
 
   function chiudiGriglia() {
@@ -4717,6 +4753,7 @@
       termOsservatore = true;
     }
     global.addEventListener('resize', ancoraTerminale);
+    global.addEventListener('resize', posizionaLed);
   }
 
   function termSet(varName) {
@@ -5783,7 +5820,7 @@
       regole: $('regole'), regtit: $('regtit'), regcorpo: $('regcorpo'), regok: $('regok'),
       quadrowrap: $('quadrowrap'), quadroImg: $('quadroImg'), quadrochiudi: $('quadrochiudi'),
       runwrap: $('runwrap'), runframe: $('runframe'), runchiudi: $('runchiudi'),
-      emblemi: $('emblemi'), emblemaIphone: $('emblema-iphone'),
+      ledporta: $('ledporta'), emblemi: $('emblemi'), emblemaIphone: $('emblema-iphone'),
       emblemaWatch: $('emblema-watch'), emblemaAltro: $('emblema-altro'),
       emailwrap: $('emailwrap'), emailbox: $('emailbox'), emailtit: $('emailtit'),
       emailtesto: $('emailtesto'), emaillabel: $('emaillabel'), emailin: $('emailin'),
@@ -5831,6 +5868,7 @@
     if (el.propwrap) el.propwrap.classList.remove('in', 'fondale');
     if (el.platea) el.platea.classList.remove('on');
     if (el.emblemi) el.emblemi.classList.remove('on');
+    if (el.ledporta) el.ledporta.classList.remove('on');
     // Un <img> senza src disegna l'icona di immagine rotta: si mette un pixel
     // trasparente, che e' "niente" per davvero.
     if (el.bg) el.bg.src = PIXEL_VUOTO;

@@ -35,7 +35,7 @@
   gtag('js', new Date());
   gtag('config', 'G-SYX1RZLNNE');
 </script>
-<link rel="stylesheet" href="./game/engine.css?v=148">
+<link rel="stylesheet" href="./game/engine.css?v=149">
 </head>
 <body>
 <div id="stage">
@@ -47,6 +47,7 @@
        quando il giocatore sceglie un macroargomento. Layer suo, non #propwrap:
        li' durante le domande c'e' gia' la slide della categoria. Sta sopra il
        fondale e sotto i personaggi, e non prende tocchi. -->
+  <div id="ledporta" aria-hidden="true"></div>
   <div id="emblemi" aria-hidden="true">
     <img id="emblema-iphone" alt="">
     <img id="emblema-watch" alt="">
@@ -376,12 +377,12 @@
      telefono, cosi' la sigla dello studio si sente davvero. Si salta con
      ?subito (i tool di verifica), ?dev e ?scene= (sviluppo). -->
 <div id="home" hidden>
-  <img id="homeBg" src="./assets/bg/bg_intro.webp?v=148" alt="">
+  <img id="homeBg" src="./assets/bg/bg_intro.webp?v=149" alt="">
   <button id="homeGioca" type="button">GIOCA</button>
 </div>
 
-<script src="./game/analytics.js?v=148"></script>
-<script src="./game/engine.js?v=148"></script>
+<script src="./game/analytics.js?v=149"></script>
+<script src="./game/engine.js?v=149"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -501,7 +502,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=148', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=149', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e

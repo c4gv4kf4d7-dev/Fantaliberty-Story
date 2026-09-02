@@ -786,6 +786,23 @@ Sei cose da non annullare per sbaglio:
    secondo accesso (un bottone nel countdown, un link nel quiz) scavalca
    apposta la porta, che e' l'unico punto narrativo del gioco per questa
    attivita': non farlo.
+   **La porta pero' non e' muta: ha tre indizi, e sono tutto quello che c'e'.**
+   Solo i piu' svegli la trovavano (Lollo, 2 settembre 2026). (a) Il rifiuto
+   prima delle previsioni dice cosa c'e' dietro ("la sala giochi dello
+   staff: prima le previsioni, poi ti sblocco la porta"); (b) alle
+   congratulazioni post-previsioni Francesca lo ricorda ([POST-L04b], "Il
+   badge adesso apre anche la porta STAFF ONLY"), che e' l'unico momento in
+   cui la porta si e' appena sbloccata; (c) sul fondale autorizzato il led del
+   lettore **pulsa** (`#ledporta`, `ledPerFondale()` in `engine.js`): e' un
+   alone sopra il led gia' disegnato, posizionato in **percentuale
+   dell'immagine** (`LED_PORTA`, misurata sui pixel verdi del file) e
+   ricalcolato come fa il browser col `cover`, perche' le percentuali dello
+   schermo cambiano forma con la finestra — se il fondale viene ridisegnato si
+   rimisura `LED_PORTA`, non si cerca a occhio. Si accende e si spegne da
+   `setBg()` come gli emblemi: su qualunque altro fondale resterebbe appeso.
+   Niente frecce, niente tutorial sopra la porta, niente musica che trapela
+   (chi gioca senza audio non la sentirebbe): il piacere della porta e'
+   scoprirla.
 3. **La corsa non e' un livello del quiz e non e' un'azione del countdown.**
    Non sta sotto la griglia dei tre livelli (i pannelli dicono a che punto
    sono le domande, un elemento in piu' toglie loro quel significato) e non
