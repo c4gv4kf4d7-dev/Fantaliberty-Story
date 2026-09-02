@@ -446,7 +446,7 @@
           "var": "nome",
           "max": 14,
           "placeholder": "Nome",
-          "text": "Ti registro subito al terminale. Nome e cognome?",
+          "text": "Ti registro subito al terminale. Come ti chiami?",
           "_nota": "Il nome vero non serve: e' l'etichetta con cui il gioco si rivolge al giocatore e con cui compare in classifica. Il regolamento (zona 3 della lobby) lo chiama nickname, e deve restare coerente con quello che si chiede qui."
         },
         {
@@ -456,7 +456,7 @@
           "max": 18,
           "opzionale": true,
           "placeholder": "Cognome (se vuoi)",
-          "_nota_domanda": "Niente \"text\": la domanda l'ha gia' fatta il campo prima (\"Nome e cognome?\") e quella battuta resta a schermo. Quale dei due campi si sta scrivendo lo dice il suggerimento dentro al campo.",
+          "_nota_domanda": "Niente \"text\": la domanda l'ha gia' fatta il campo prima (\"Come ti chiami?\" — non \"Nome e cognome?\": prometteva due cose e il campo ne chiedeva una, un giocatore l'ha trovato fuorviante il giorno del lancio) e quella battuta resta a schermo. Quale dei due campi si sta scrivendo lo dice il suggerimento dentro al campo.",
           "_nota": "Facoltativo davvero: il bottone resta cliccabile a campo vuoto (st.opzionale in showInput). Usato solo per identificare il giocatore nei punteggi come 'Nome C.' — non e' il nickname con cui il gioco si rivolge a lui, quello resta 'nome'."
         },
         {

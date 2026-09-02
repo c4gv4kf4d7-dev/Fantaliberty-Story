@@ -579,7 +579,7 @@ VN.step();                                              // -> scena registrazion
 
 // input nome
 assert.ok($('inputform').classList.contains('on'), 'form nome visibile');
-assert.match(txt(), /Nome e cognome/, 'una domanda sola per i primi due campi');
+assert.match(txt(), /Come ti chiami/, 'una domanda sola per i primi due campi');
 assert.equal($('ti').placeholder, 'Nome', 'il campo dice quale dei due si sta scrivendo');
 $('ti').value = 'Fr@nc€sco!!!';
 $('ti').oninput();
@@ -593,7 +593,7 @@ $('tok').onclick();
 assert.ok($('inputform').classList.contains('on'), 'form cognome visibile');
 // nessuna seconda domanda: resta a schermo quella di prima, e a dire che ora
 // tocca al cognome ci pensa il suggerimento dentro al campo
-assert.match(txt(), /Nome e cognome/, 'la battuta non viene riscritta per il secondo campo');
+assert.match(txt(), /Come ti chiami/, 'la battuta non viene riscritta per il secondo campo');
 assert.match($('ti').placeholder, /Cognome/, 'il campo dice che ora tocca al cognome');
 assert.equal($('tok').disabled, false, 'campo facoltativo: si puo\' continuare anche vuoto');
 $('ti').value = 'Ross@i!!!';
