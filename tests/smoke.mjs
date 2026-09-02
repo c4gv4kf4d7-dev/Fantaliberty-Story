@@ -2856,14 +2856,18 @@ function apriQuizHub(stile) {
 
 /* 10c. giocare un livello: tutte giuste -> passato, e il moltiplicatore in banca */
 // risponde alla domanda a schermo: trova la domanda vera nel pool dal testo, e
-// clicca il bottone giusto (o uno sbagliato) — i bottoni seguono l'ordine delle
-// opzioni, quindi l'indice della risposta corretta e' proprio "ok"
+// clicca il bottone giusto (o uno sbagliato). I bottoni sono mescolati a ogni
+// domanda, quindi quello giusto si cerca dal testo, non da "ok".
 const tutteQuiz = Object.values(quiz.pool).flat(2);
+const posizioniGiusta = new Set();   // dove e' finita la risposta giusta, domanda dopo domanda
 function rispondiQuiz(giusto) {
   const d = tutteQuiz.find((x) => x.q === $('txt').textContent);
   assert.ok(d, `domanda a schermo non trovata nel pool: "${$('txt').textContent}"`);
   const btns = [...$('choices').querySelectorAll('.ch')].filter((b) => !b.classList.contains('perk'));
-  const i = giusto ? d.ok : (d.ok + 1) % btns.length;
+  const iOk = btns.findIndex((b) => b.textContent === d.opzioni[d.ok]);
+  assert.ok(iOk >= 0, 'la risposta giusta e\' fra i bottoni');
+  posizioniGiusta.add(iOk);
+  const i = giusto ? iOk : (iOk + 1) % btns.length;
   btns[i].onclick({ stopPropagation() {} });
   VN.step();                                 // via la reazione di Peter
   return d;
@@ -3503,7 +3507,7 @@ function apriMoltiplicatori(stato, extra) {
     const d = tutteQuiz.find((x) => x.q === $('txt').textContent);
     assert.ok(d, `domanda a schermo non trovata nel pool: "${$('txt').textContent}"`);
     const btns = [...$('choices').querySelectorAll('.ch')].filter((b) => !b.classList.contains('perk'));
-    btns[d.ok].onclick({ stopPropagation() {} });
+    btns.find((b) => b.textContent === d.opzioni[d.ok]).onclick({ stopPropagation() {} });
     VN.step();
   };
   for (const liv of ['base', 'avanzato', 'leggenda']) {
@@ -3543,4 +3547,11 @@ function apriMoltiplicatori(stato, extra) {
 
 if (todoAssets.size) console.log(`asset ancora da disegnare (${todoAssets.size}):`, [...todoAssets].join(', '));
 console.log(`banca domande: ${idsDomande.size} domande, ${nBattute} battute · quiz: ${idsQuiz.size} domande`);
+/* Le risposte del quiz si mescolano: nel file la giusta sta quasi sempre
+   nella stessa casella (in Base tutte in alto a destra), e i giocatori se
+   n'erano accorti il giorno del lancio. Dopo tutte le domande giocate sopra,
+   la giusta deve essere finita in caselle diverse. */
+assert.ok(posizioniGiusta.size >= 2,
+  `le risposte del quiz non si mescolano: la giusta e' sempre nella casella ${[...posizioniGiusta]}`);
+
 console.log('smoke test: OK');
