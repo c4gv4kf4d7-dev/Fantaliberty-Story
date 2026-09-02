@@ -1289,7 +1289,7 @@
       "id": "APPLAUSO",
       "stile": "showman",
       "titolo": "L'applauso",
-      "testo": "«{g:BRAVO|BRAVA}!»\nParte un applauso.\nTu non hai ancora detto niente.\nSusan ti guarda dalla regia, confusa.",
+      "testo": "«{g:BRAVO|BRAVA|GRANDE}!»\nParte un applauso.\nTu non hai ancora detto niente.\nSusan ti guarda dalla regia, confusa.",
       "asset": "stili/stile_showman_evento_assolo.webp",
       "platea": "pla_coro_nome",
       "opzioni": [

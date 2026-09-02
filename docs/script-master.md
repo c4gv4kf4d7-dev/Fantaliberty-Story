@@ -139,8 +139,12 @@ altro colore. In `[S2]`, `[S3]` e `[S7]` invece è lì davanti, con il suo sprit
 
 [S0.03] TERMINALE — campo 3
   Label: "Genere" (per come il gioco si rivolge a te — non legato allo stile)
-  Tipo: 2 bottoni — Maschile | Femminile
-  Salva in: run.gender
+  Tipo: 4 bottoni — Maschile | Femminile | Neutro | Preferisco non specificarlo
+  Salva in: run.gender (m | f | n | x)
+  Con Neutro o Preferisco non specificarlo tutti gli NPC si rivolgono al
+  giocatore in forma neutra: niente desinenze inventate, la frase si
+  riformula ("Confermi?" al posto di "Sei sicuro/a?", "Ci sei?" al posto di
+  "Sei pronto/a?"). Aggiunto il 2/9/2026, il giorno del lancio.
 
 [S0.04] TERMINALE — campo 4
   Label: "Store"   Tipo: lista — Piazza Liberty | Carosello | Fiordaliso
@@ -884,6 +888,9 @@ nome — **non** derivato dallo stile scelto in S3.
   Drip/Ingegnere femminili) **non ha alcun effetto sul testo**: una giocatrice
   che dichiara "femminile" e sceglie Showman riceve battute al femminile, anche
   se lo sprite è un uomo. Viceversa per chi sceglie Drip o Ingegnere.
+- Chi sceglie **Neutro** o **Preferisco non specificarlo** riceve una terza
+  variante, riformulata senza genere: ogni `{g:...}` in `story.json` porta tre
+  forme (maschile|femminile|neutra).
 - **Convenzione di scrittura:** quando cambia solo la desinenza (bugiardo/a,
   onesto/a, sicuro/a) si scrive **inline con lo slash**, una riga sola. Quando
   la frase cambia in modo più sostanziale, o quando si può evitare del tutto una

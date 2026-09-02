@@ -605,7 +605,7 @@ $('tok').onclick();
 // scelta genere -> interpolazione {NOME}
 assert.match(txt(), /Perfetto, FRANCO/, 'interpolazione {NOME}');
 const opts = [...$('choices').querySelectorAll('.ch')];
-assert.equal(opts.length, 2, 'lo script master prescrive due bottoni: Maschile | Femminile');
+assert.equal(opts.length, 4, 'lo script master prescrive quattro bottoni: Maschile | Femminile | Neutro | Preferisco non specificarlo');
 opts[1].onclick({ stopPropagation() {} });              // femminile
 assert.equal(VN.state.genere, 'f');
 assert.equal($('tval_genere').textContent, 'F');
@@ -670,8 +670,6 @@ assert.equal($('badgewrap').classList.contains('in'), false, 'il badge sparisce 
 assert.match(txt(), /otto ai dodici anni/, 'Lucas commenta la fascia di anzianita\' scelta');
 VN.step();
 assert.match(txt(), /^Benvenuta allo Steve Jobs Theater\./, 'variante di genere');
-
-
 
 /* ---------- 4. salvataggio / ripresa ---------- */
 assert.ok(VN.hasSave(story), 'partita salvata in localStorage');
@@ -1169,8 +1167,10 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
      dell'improvvisazione ha dentro "{g:Bravissimo|Bravissima}", quindi a
      schermo arriva declinata. Confrontare la stringa grezza faceva fallire il
      test ogni volta che usciva proprio quella (due volte su tre). */
-  const declina = (t) => String(t).replace(/\{g:([^|}]*)\|([^}]*)\}/g,
-    (_, m, f) => (VN.state.genere === 'm' ? m : f));
+  const declina = (t) => String(t).replace(/\{g:([^}]*)\}/g, (_, v) => {
+    const p = v.split('|');
+    return VN.state.genere === 'm' ? p[0] : VN.state.genere === 'f' ? p[1] : p[p.length - 1];
+  });
   const conseguenze = new Set([...story.regia.improvvisazione, ...story.regia.caos,
     ...story.regia.critica].flatMap((t) => [t, declina(t)]));
   let visto = false;
@@ -2379,6 +2379,23 @@ assert.deepEqual(domande.intermezzi.map((q) => q.id).sort(),
   'gli id degli intermezzi non cambiano fra revisioni');
 assert.equal(Object.keys(domande.eventi_personali).length, 4, 'un evento personale per stile');
 for (const s of STILI) assert.ok(domande.eventi_personali[s], `manca l'evento personale di ${s}`);
+
+/* Neutro ("n") e "Preferisco non specificarlo" ("x") si leggono uguali: la
+   terza variante, riformulata senza genere. "x" non sta in genderOrder apposta,
+   e' fmt() a mandarlo sull'ultima variante — un valore scelto ma sconosciuto
+   non deve mai ricadere sul maschile. */
+for (const g of ['n', 'x']) {
+  VN.boot(story, { speed: 0, banca, quiz, scene: 'badge' });
+  VN.state.genere = g; VN.state.nome = 'Franco'; VN.state.anni = 2;
+  let giri = 0;
+  while (!/Steve Jobs Theater/.test(txt()) && giri++ < 40) VN.step();
+  assert.match(txt(), /^Ti do il benvenuto allo Steve Jobs Theater\./, `genere "${g}": forma neutra`);
+  assert.match(txt(), /come un palo/, `genere "${g}": niente "impalato/a"`);
+}
+VN.boot(story, { speed: 0, banca, quiz, scene: 'badge' });
+VN.state.genere = 'f'; VN.state.nome = 'Franco'; VN.state.anni = 2;
+{ let giri = 0; while (!/Steve Jobs Theater/.test(txt()) && giri++ < 40) VN.step(); }
+assert.match(txt(), /^Benvenuta allo Steve Jobs Theater\./, 'e al femminile resta com\'era');
 
 /* ---------- 8b. il giocatore non ha un genere fisso ----------
    Il genere lo sceglie chi gioca a [S0.03] e NON c'entra con lo stile: si puo'

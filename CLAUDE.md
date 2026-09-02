@@ -715,7 +715,7 @@ Il genere lo sceglie chi gioca a [S0.03] e vive in `VN.state.genere`; lo stile
 si sceglie dopo, in camerino, e i quattro sprite hanno un aspetto loro. Le due
 cose sono **indipendenti apposta**: si puo' essere maschile e vestirsi da Drip.
 Quindi ogni parola declinata riferita al giocatore passa da
-`{g:maschile|femminile}` — vale per i dialoghi, per i bottoni che preme lui
+`{g:maschile|femminile|neutro}` — vale per i dialoghi, per i bottoni che preme lui
 ("Si', sono {g:pronto|pronta}"), per le modali di conferma e per i testi della
 banca domande, che passano tutti da `fmt()`.
 
@@ -724,6 +724,19 @@ che nel gioco riguardano sempre il giocatore ("sei/sono + aggettivo", le
 esclamazioni tipo "Bravo!", "Sicuro?") e fallisce se ne trova una fuori da
 `{g:...}`. Chi ne incontra una nuova la aggiunge all'elenco insieme alla
 correzione.
+
+**Le scelte a [S0.03] sono quattro** (dal 2 settembre 2026, giorno del
+lancio): Maschile (`m`), Femminile (`f`), Neutro (`n`), Preferisco non
+specificarlo (`x`). Le ultime due si leggono uguali: la **terza variante** di
+ogni `{g:...}`, che non usa desinenze inventate ma **riformula la frase**
+("Confermi?" per "Sei sicuro/a?", "Ci sono" per "sono pronto/a", "Ti do il
+benvenuto" per "Benvenuto/a", "te la sei data a gambe" per "sei scappato/a").
+`meta.genderOrder` dichiara **tre** voci (`m`,`f`,`n`) e `npm test` pretende
+tre varianti in ogni `{g:...}`; `x` non sta nell'ordine apposta, e' `fmt()` a
+mandare un valore scelto ma sconosciuto sull'ultima variante (la neutra), mentre
+un genere ancora nullo — le righe prima di [S0.03] — prende la prima. Chi
+aggiunge una battuta declinata scrive tutte e tre le forme, e la terza la
+riformula: non e' "la femminile con lo schwa".
 
 Nel menu di sviluppo (`?dev`) il genere parte da **femminile** con lo stile
 **showman**: e' una coppia mista di proposito, serve a far saltare fuori
