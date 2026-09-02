@@ -10,7 +10,7 @@ nessun framework, nessun build step obbligatorio, nessun backend. Gira su GitHub
 index.html              il gioco (shell + bootstrap)
 game/
   engine.css            stile pixel-art + animazioni (@keyframes, non transition)
-  engine.js             motore VN data-driven (state machine, ~350 righe)
+  engine.js             motore VN data-driven (state machine, ~6000 righe)
   analytics.js         utility centralizzata per Google Analytics 4 (vedi docs/analytics.md)
   story.json            SCRIPT DEL GIOCO: scene, battute, scelte, asset  <- si edita qui
   domande.json          banca pronostici [S5]: 29 domande, 316 battute (una per stile)
@@ -39,6 +39,9 @@ docs/
   indice-domande.md     indice degli id, rigenerato da `npm run indice`
   backend.sql           schema e policy della tabella runs, da incollare in Supabase
   analytics.md          Google Analytics 4: eventi, funnel, tracking QR (vedi game/analytics.js)
+  regole-campus-run.md  le regole interne della corsa: leggilo prima di toccare game/runner/
+  collaudo-finale.md    la lista di controllo prima di pubblicare
+  storico-decisioni.md  il racconto delle scelte passate (non serve per lavorare)
 tests/smoke.mjs         smoke test headless con jsdom
 archivio/wwdc26/        edizione precedente (classifica, previsioni, pagina di manutenzione)
 ```
