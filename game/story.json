@@ -1422,6 +1422,23 @@
         {
           "t": "say",
           "who": "francesca",
+          "text": "Il badge adesso apre anche la porta STAFF ONLY. Non chiedermi cosa c'è dietro.",
+          "_nota": "[POST-L04b] Il promemoria per la porta di Campus Run: e' l'unico momento in cui la porta si e' appena sbloccata. Insieme alla battuta del rifiuto in zona 5 e' il doppio promemoria chiesto dall'utente: senza, solo i piu' svegli trovavano la corsa.",
+          "se": [
+            {
+              "var": "locked",
+              "is": true
+            },
+            {
+              "var": "post_lobby_visto",
+              "is": false
+            },
+            { "var": "esci_ritorno", "is": false }
+          ]
+        },
+        {
+          "t": "say",
+          "who": "francesca",
           "text": "Vai da Peter: ha una sfida per te, tutta di testa.",
           "se": [
             {
@@ -1689,7 +1706,7 @@
                   "h": "58%",
                   "dice": "francesca",
                   "suono": "porta_negata",
-                  "say": "Eh no. Il badge non ti dà ancora tutto questo potere. Torna più tardi."
+                  "say": "Eh no. Il badge non ti dà ancora tutto questo potere. Di là c'è la sala giochi dello staff: prima le previsioni, poi ti sblocco la porta."
                 }
               ],
               "_nota": "Zona 5, sempre visibile ma chiusa finche' le previsioni non sono confermate (run.locked). Campus Run non e' piu' una sfida di Peter: si raggiunge solo da qui, dopo lo sblocco. Il lettore badge rosso/verde e' disegnato dentro il fondale stesso (bg_staff_door_locked / bg_staff_door_authorized): non c'e' nessun layer separato da accendere."

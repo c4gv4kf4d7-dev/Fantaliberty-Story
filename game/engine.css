@@ -1014,6 +1014,19 @@ html,body{height:100%;background:#0a0a0f;overflow:hidden;overscroll-behavior:non
    si vede a 390x844: il fondale e' ritagliato in "cover", quindi non
    corrispondono alle percentuali dell'immagine sorgente. Se il fondale viene
    ridisegnato vanno rimisurate a occhio. */
+/* ---------- il led del lettore badge (lobby, zona 5) ----------
+   Il lettore verde e' disegnato dentro bg_staff_door_authorized: qui sopra ci
+   sta solo un alone che pulsa, per far cadere l'occhio sulla porta appena
+   sbloccata. La posizione la calcola il motore (ledPerFondale) dai pixel veri
+   dell'immagine, perche' il fondale e' "cover" e le percentuali dello schermo
+   cambiano con la forma della finestra. Sta sotto personaggi e box, come gli
+   emblemi, e non prende tocchi. */
+#ledporta{position:absolute;z-index:0;display:none;pointer-events:none;
+ border-radius:50%;mix-blend-mode:screen;
+ background:radial-gradient(closest-side,rgba(160,255,170,1),rgba(90,240,120,.7) 40%,rgba(60,200,90,0) 100%);
+ animation:pulsaLed 1.6s ease-in-out infinite}
+#ledporta.on{display:block}
+@keyframes pulsaLed{0%,100%{opacity:.5;transform:scale(.8)}50%{opacity:1;transform:scale(1.25)}}
 #emblemi{position:absolute;inset:0;z-index:0;display:none;pointer-events:none}
 #emblemi.on{display:block}
 #emblemi img{position:absolute;opacity:0;pointer-events:none;
