@@ -3526,7 +3526,11 @@
       el.quizbar.classList.add('on');
       disegnaTimer();
 
-      opzioni(d, d.opzioni.map(function (_, k) { return k; }));
+      // Le risposte si mescolano a ogni domanda: nel file la giusta sta quasi
+      // sempre nella stessa casella (in Base tutte in alto a destra), e i
+      // giocatori se n'erano accorti il giorno del lancio. "ok" resta l'indice
+      // nel file; qui gira solo l'ordine con cui si disegnano.
+      opzioni(d, mescola(d.opzioni.map(function (_, k) { return k; })));
 
       VN.quizScadenza = function () { rispondi(d, -1); };
       if (VN.speed) {
