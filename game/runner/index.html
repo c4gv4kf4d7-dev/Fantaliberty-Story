@@ -271,6 +271,56 @@
   #tabellone .riga .nome{ flex:1 1 auto; overflow:hidden;
     text-overflow:ellipsis; white-space:nowrap; }
   #tabellone .riga .punti{ color:#f4f4f0; }
+  /* la terza colonna: il tempo della partita migliore. Si legge, non conta —
+     l'ordine resta per punti */
+  #tabellone .riga .tempo{ width:3.4em; text-align:right; color:#8a8a84; font-size:9px; }
+  #tabellone .riga.io .tempo{ color:#79c245; }
+  #classificaAzioni{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+
+  /* ---- il nick ----
+     Alla prima partita, come sul cabinato: il gioco e' finito, il punteggio e'
+     li', e prima che entri in classifica si firma. Lettere grandi, maiuscole,
+     a quadretti — il campo e' libero ma il sapore e' quello delle tre lettere
+     con la manopola. */
+  #nickWrap{
+    position:absolute; inset:0; z-index:8; pointer-events:auto;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:10px; text-align:center; padding:24px;
+    background:rgba(28,28,26,.985);
+  }
+  #nickWrap[hidden]{ display:none !important; }
+  #nickWrap h2{
+    font-family:'Press Start 2P', monospace; font-size:14px; line-height:1.9;
+    color:#f0b722; text-shadow:3px 3px 0 #100e0d; margin:0 0 6px; max-width:16em;
+  }
+  #nickWrap .nota{ font-family:'Press Start 2P', monospace; font-size:8px; line-height:1.9;
+    color:#8f8880; margin:0 0 14px; max-width:22em; }
+  /* Almeno 16px, se no iOS ingrandisce la pagina appena lo tocchi. Qui e' un
+     dettaglio che aiuta: le lettere DEVONO essere grandi. */
+  #nick{
+    font-family:'Press Start 2P', monospace; font-size:22px; letter-spacing:4px;
+    text-transform:uppercase; text-align:center; width:100%; max-width:11em;
+    padding:14px 8px; border-radius:0; background:#0f0f12; color:#f4f4f0;
+    border:4px solid #f0b722; box-shadow:0 6px 0 #a97c12, 0 6px 0 4px #100e0d;
+    outline:none; caret-color:#f0b722;
+  }
+  #nick::placeholder{ color:#3c3c40; }
+  #nickErr{ font-family:'Press Start 2P', monospace; font-size:9px; line-height:1.8;
+    color:#e8615a; min-height:2.2em; margin-top:8px; }
+  #nickWrap .voci{ display:flex; gap:12px; margin-top:6px; }
+  #nickWrap button{
+    font-family:'Press Start 2P', monospace; font-size:13px; letter-spacing:1px;
+    padding:14px 24px; border-radius:0; cursor:pointer;
+    background:#f0b722; color:#2a1d00; border:4px solid #2a1d00;
+    box-shadow:0 6px 0 #a97c12, 0 6px 0 4px #2a1d00;
+    transition:transform .05s, box-shadow .05s;
+  }
+  #nickWrap button:active{ transform:translateY(4px); box-shadow:0 2px 0 #a97c12, 0 2px 0 4px #2a1d00; }
+  #nickWrap button.resto{ background:#e9e9e4; color:#1d1d1b; border-color:#1d1d1b;
+    box-shadow:0 6px 0 #a8a8a0, 0 6px 0 4px #1d1d1b; }
+  #nickWrap button.resto:active{ box-shadow:0 2px 0 #a8a8a0, 0 2px 0 4px #1d1d1b; }
+  #nickWrap button[hidden]{ display:none !important; }
+  #nickWrap button:disabled{ opacity:.5; pointer-events:none; }
   #tabellone .riga.oro   .pos{ color:#f0b722 } #tabellone .riga.oro   .nome{ color:#f0b722 }
   #tabellone .riga.argento .pos{ color:#cfcfc8 } #tabellone .riga.argento .nome{ color:#cfcfc8 }
   #tabellone .riga.bronzo .pos{ color:#c98a3f } #tabellone .riga.bronzo .nome{ color:#c98a3f }
@@ -419,6 +469,18 @@
     <button id="btnEsciStart" class="esci" hidden>ESCI</button>
   </div>
 
+  <div id="nickWrap" hidden>
+    <h2>INSERISCI IL TUO NICK</h2>
+    <p class="nota">E' il nome con cui finisci in classifica. Da 2 a 10 caratteri, e non ce ne sono due uguali.</p>
+    <input id="nick" type="text" maxlength="10" autocomplete="off" autocapitalize="characters"
+           spellcheck="false" placeholder="AAA">
+    <div id="nickErr"></div>
+    <div class="voci">
+      <button id="nickOk">OK</button>
+      <button id="nickNo" class="resto" hidden>ANNULLA</button>
+    </div>
+  </div>
+
   <div id="menu" hidden>
     <h2>PAUSA</h2>
     <div class="voci">
@@ -458,7 +520,10 @@
   <div class="velo" id="veloClassifica" hidden>
     <h1 class="titoloClassifica">CLASSIFICA</h1>
     <div id="tabellone"></div>
-    <button id="btnChiudiClassifica">CHIUDI</button>
+    <div id="classificaAzioni">
+      <button id="btnChiudiClassifica">CHIUDI</button>
+      <button id="btnCambiaNick" class="secondario" hidden>CAMBIA NICK</button>
+    </div>
   </div>
 </div></div>
 
@@ -651,6 +716,7 @@ const S = {
   scivola:0,
   salto:0,            // quanto manca alla fine del salto          // quanto manca alla fine della scivolata
   traguardo:0,        // l'ultimo migliaio gia' festeggiato
+  tempo:0,            // secondi di corsa vera, senza pause: la terza colonna della classifica
   vite:VITE,
   vitaData:false,     // il cuore di questo livello e' gia' uscito
   vitaQuota:0,        // ...e a che punteggio, dentro il livello, deve uscire
@@ -1151,6 +1217,7 @@ function passo(ora){
 }
 
 function aggiorna(dt){
+  S.tempo += dt;                                // gira solo in fase 'corsa': le pause non contano
   /* La velocita' non sale di continuo ma A SCALINI, uno per traguardo.
      Dieci scalini, non sei: fermandosi al sesto il gioco smetteva di
      complicarsi a 6000 punti e da li' in poi si andava avanti a memoria —
@@ -1561,7 +1628,7 @@ function via(){
   S.velocita = 0.62; S.distanza = 0; S.punti = 0; S.raccolti = 0;
   S.cose = []; S.prossimo = 0.4; S.respiro = false; S.scossa = 0; SEGNALI.length = 0;
   S.vite = VITE; S.intoccabile = 0; S.traguardo = 0; S.scivola = 0; S.salto = 0;
-  S.annuncio = null;
+  S.annuncio = null; S.tempo = 0;
   nuovaQuotaVita(); mostraVite(null);
   S.imparate = {}; S.collezione = {}; riprendi();
   chiudiUscita();
@@ -1589,6 +1656,9 @@ function congelaFine(){
 }
 
 function scongelaFine(){
+  // con la finestra del nick aperta i tasti sotto restano spenti: si riaccendono
+  // quando il nick e' dentro e la classifica ha risposto
+  if (!document.getElementById('nickWrap').hidden) return;
   const resta = FERMO_MIN - (performance.now() - fermoDa);
   clearTimeout(fermoId);
   if (resta > 0){ fermoId = setTimeout(scongelaFine, resta); return; }
@@ -1624,6 +1694,9 @@ function finisci(){
   mostraPosizione(0);                 // "aggiornamento..." finche' non torna
   document.getElementById('hud').classList.add('spento');
   avvisa('fine');
+  // la prima volta che si muore con una classifica davanti si chiede il nick:
+  // la partita si spedisce dopo, con quel nome, e la schermata resta congelata
+  if (claAttiva() && !nickScelto) { apriNick(true); return; }
   // parte per conto suo, e quando torna riaccende i tasti
   claAggiorna(S.punti | 0);
 }
@@ -1644,12 +1717,19 @@ function finisci(){
    telefono continua a valere e si riprova alla partita dopo. */
 // esposto per il collaudo automatico, come S: serve a simulare una classifica
 // lenta o assente senza toccare il database vero
+const NICK = 'fl_runner_nick';
+let nickSalvato = '';
+try { nickSalvato = String(localStorage.getItem(NICK) || ''); } catch(e){}
+
 const CLA = window.CLA = {
   id: null, nome: '', cfg: null,
+  conTempo: null,    // la colonna del tempo c'e'? null = non lo so ancora
+  mioTempo: null,    // il tempo della mia partita migliore, per la riga "TU"
   mio: 0,            // il miglior punteggio secondo il server
   posizione: 0, quanti: 0,
   top: null,         // le prime dieci, quando arrivano
-  inCorso: false, fallita: false
+  inCorso: false, fallita: false,
+  nickPreso: false   // l'ultimo invio e' stato rifiutato perche' il nick era gia' di un altro
 };
 
 function claAttiva(){ return !!(CLA.id && CLA.cfg && CLA.cfg.url && CLA.cfg.chiave); }
@@ -1673,15 +1753,60 @@ async function claMio(){
 
 /* Si scrive solo se il punteggio nuovo batte quello che c'e'. La riga e' una
    sola per giocatore: l'upsert la riscrive invece di aggiungerne un'altra. */
-async function claSalva(punti){
-  const r = await fetch(claUrl(''), {
+/* La colonna del tempo potrebbe non esserci ancora (va aggiunta a mano su
+   Supabase, vedi backend.sql): al primo 400 si prende nota e si riprova
+   senza. La classifica non deve fermare il gioco, e nemmeno una colonna in
+   meno. */
+function mancaColonna(r){ return r.status === 400 && CLA.conTempo !== false; }
+
+async function claSalva(punti, secondi){
+  const riga = { player_id: CLA.id, player_name: CLA.nome || 'Anonimo',
+                 best_score: punti, updated_at: new Date().toISOString() };
+  if (CLA.conTempo !== false && Number.isFinite(secondi)) riga.best_time_s = Math.round(secondi);
+  const manda = () => fetch(claUrl(''), {
     method: 'POST',
     headers: claTesta({ 'Content-Type': 'application/json',
                         Prefer: 'return=minimal,resolution=merge-duplicates' }),
-    body: JSON.stringify({ player_id: CLA.id, player_name: CLA.nome || 'Anonimo',
-                           best_score: punti, updated_at: new Date().toISOString() })
+    body: JSON.stringify(riga)
   });
+  let r = await manda();
+  if (mancaColonna(r) && 'best_time_s' in riga) {
+    CLA.conTempo = false; delete riga.best_time_s; r = await manda();
+  }
+  // 409: il nick e' di un altro (l'indice unico). Non e' un guasto, e' una
+  // risposta: si torna a chiederlo.
+  if (r.status === 409) throw Object.assign(new Error('nick preso'), { nick: true });
   if (!r.ok) throw new Error('scrittura ' + r.status);
+  if ('best_time_s' in riga) CLA.mioTempo = riga.best_time_s;
+}
+
+/* Solo il nome, niente punteggio: per chi lo cambia dalla classifica. Se una
+   riga ancora non c'e' (mai fatto un punteggio) non c'e' niente da rinominare,
+   il nick nuovo entrera' con il primo. */
+async function claRinomina(){
+  const r = await fetch(claUrl('?player_id=eq.' + encodeURIComponent(CLA.id)), {
+    method: 'PATCH',
+    headers: claTesta({ 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
+    body: JSON.stringify({ player_name: CLA.nome })
+  });
+  if (r.status === 409) throw Object.assign(new Error('nick preso'), { nick: true });
+  if (!r.ok) throw new Error('rinomina ' + r.status);
+}
+
+/* E' libero? Si guarda se qualcun altro ce l'ha gia', senza distinguere le
+   maiuscole. Il controllo vero lo fa l'indice del database: questo serve a
+   dirlo subito, prima di salvare. */
+/* Il controllo "e' libero?" e' una cortesia, non la guardia: quella e' l'indice
+   unico sul server, che rifiuta il doppione anche se qui non si e' controllato.
+   Quindi si aspetta poco (NICK_ATTESA): con il server muto si va avanti, e se
+   il nick era preso lo dice l'invio con un 409. */
+const NICK_ATTESA = 2500;
+async function claNickLibero(nick){
+  const r = await fetch(claUrl('?select=player_id&player_name=ilike.' + encodeURIComponent(nick)),
+    { headers: claTesta(), signal: AbortSignal.timeout(NICK_ATTESA) });
+  if (!r.ok) throw new Error('controllo nick ' + r.status);
+  const righe = await r.json();
+  return righe.every(x => x.player_id === CLA.id);
 }
 
 /* La posizione: quante persone hanno fatto piu' di te. Si chiede al database di
@@ -1701,8 +1826,11 @@ async function claConta(filtro){
 /* Le prime dieci: punteggio piu' alto per primo, e a parita' chi ci e' arrivato
    prima (updated_at crescente). */
 async function claTop(){
-  const r = await fetch(claUrl('?select=player_id,player_name,best_score,updated_at'
+  const chiedi = (conTempo) => fetch(claUrl('?select=player_id,player_name,best_score'
+    + (conTempo ? ',best_time_s' : '') + ',updated_at'
     + '&order=best_score.desc,updated_at.asc&limit=10'), { headers: claTesta() });
+  let r = await chiedi(CLA.conTempo !== false);
+  if (mancaColonna(r)) { CLA.conTempo = false; r = await chiedi(false); }
   if (!r.ok) throw new Error('classifica ' + r.status);
   return await r.json();
 }
@@ -1718,7 +1846,7 @@ async function claAggiorna(punti){
     const valido = Number.isFinite(punti) && punti >= 0;
     const p = valido ? Math.floor(punti) : 0;
     const suServer = await claMio();
-    if (p > suServer) { await claSalva(p); CLA.mio = p; }
+    if (p > suServer) { await claSalva(p, S.tempo); CLA.mio = p; }
     else CLA.mio = suServer;
 
     /* I due conteggi vanno insieme, non in fila: la riga della posizione e' la
@@ -1747,6 +1875,7 @@ async function claAggiorna(punti){
     catch (e) { console.warn('[run] tabellone non disponibile:', e && e.message); }
   } catch (e) {
     CLA.fallita = true;
+    CLA.nickPreso = !!(e && e.nick);
     mostraPosizione(0);
     console.warn('[run] classifica non disponibile:', e && e.message);
   }
@@ -1782,6 +1911,8 @@ function mostraPosizione(primaEro){
 function disegnaTabellone(){
   const box = document.getElementById('tabellone');
   box.innerHTML = '';
+  // il nick si cambia anche col server giu': la modifica parte quando risponde
+  document.getElementById('btnCambiaNick').hidden = !(claAttiva() && nickScelto);
   if (CLA.fallita || !CLA.top) {
     const p = document.createElement('div');
     p.className = 'stato';
@@ -1794,24 +1925,31 @@ function disegnaTabellone(){
   CLA.top.forEach((r, i) => {
     const mia = r.player_id === CLA.id;
     if (mia) ioNelleDieci = true;
+    if (mia && Number.isFinite(+r.best_time_s)) CLA.mioTempo = +r.best_time_s;
     box.appendChild(rigaClassifica(i + 1, r.player_name, r.best_score,
-      (medaglie[i] || '') + (mia ? ' io' : '')));
+      (medaglie[i] || '') + (mia ? ' io' : ''), r.best_time_s));
   });
   // fuori dalle prime dieci: si vede comunque dove si sta, sotto uno stacco
   if (!ioNelleDieci && CLA.posizione) {
     const st = document.createElement('div'); st.className = 'stacco';
     box.appendChild(st);
-    box.appendChild(rigaClassifica(CLA.posizione, CLA.nome || 'Tu', CLA.mio, 'io'));
+    box.appendChild(rigaClassifica(CLA.posizione, CLA.nome || 'Tu', CLA.mio, 'io', CLA.mioTempo));
   }
 }
 
-function rigaClassifica(pos, nome, punti, classi){
+function minuti(sec){
+  if (!Number.isFinite(+sec) || sec === null || sec < 0) return '';
+  const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+  return m + ':' + (s < 10 ? '0' : '') + s;
+}
+function rigaClassifica(pos, nome, punti, classi, secondi){
   const d = document.createElement('div');
   d.className = 'riga ' + (classi || '');
   const p = document.createElement('span'); p.className = 'pos'; p.textContent = pos + '.';
   const n = document.createElement('span'); n.className = 'nome'; n.textContent = nome || 'Anonimo';
   const v = document.createElement('span'); v.className = 'punti'; v.textContent = punti;
-  d.appendChild(p); d.appendChild(n); d.appendChild(v);
+  const t = document.createElement('span'); t.className = 'tempo'; t.textContent = minuti(secondi);
+  d.appendChild(p); d.appendChild(n); d.appendChild(v); d.appendChild(t);
   if (/\bio\b/.test(classi || '')) {
     const tu = document.createElement('span'); tu.className = 'tu'; tu.textContent = 'TU';
     d.appendChild(tu);
@@ -1852,6 +1990,104 @@ document.getElementById('btnClassificaInizio').onclick = () => {
 document.getElementById('btnChiudiClassifica').onclick = () => {
   document.getElementById('veloClassifica').hidden = true;
 };
+
+/* ---------- il nick ----------
+   In classifica non si va col nome della registrazione (due "Marco" sono
+   indistinguibili) ma con un nick da cabinet: si chiede alla PRIMA morte con
+   una classifica davanti, e si puo' cambiare dopo dal tabellone. Il nick e'
+   unico: qui si controlla prima di spedire, ma la guardia vera e' l'indice
+   unico sul database — se il controllo non risponde si prova a salvare lo
+   stesso, e un 409 riporta alla finestra. Vive nel telefono (fl_runner_nick),
+   fuori dal salvataggio del gioco grande. */
+let nickScelto = !!nickSalvato;
+let nickPrimaVolta = false;
+const NICK_OK = /^[A-Z0-9 _\-]{2,10}$/;
+
+function pulisciNick(t){
+  return String(t || '').toUpperCase().replace(/[^A-Z0-9 _\-]/g, '').trim().slice(0, 10);
+}
+
+function apriNick(primaVolta){
+  nickPrimaVolta = primaVolta;
+  const w = document.getElementById('nickWrap');
+  const inp = document.getElementById('nick');
+  inp.value = pulisciNick(nickSalvato || CLA.nome);
+  document.getElementById('nickErr').textContent = '';
+  document.getElementById('nickNo').hidden = primaVolta;   // la prima volta non si scappa
+  document.getElementById('nickOk').disabled = false;
+  w.hidden = false;
+  try { inp.focus(); inp.select(); } catch(e){}
+}
+
+function chiudiNick(){
+  document.getElementById('nickWrap').hidden = true;
+}
+
+function erroreNick(testo){
+  document.getElementById('nickErr').textContent = testo;
+  document.getElementById('nickOk').disabled = false;
+}
+
+async function confermaNick(){
+  const nick = pulisciNick(document.getElementById('nick').value);
+  if (!NICK_OK.test(nick)) { erroreNick('DA 2 A 10 CARATTERI: LETTERE, NUMERI, SPAZI'); return; }
+  document.getElementById('nickOk').disabled = true;
+  document.getElementById('nickErr').textContent = '';
+  let libero = true;
+  try { libero = await claNickLibero(nick); }
+  catch (e) { console.warn('[run] controllo nick non disponibile:', e && e.message); }
+  if (!libero) { erroreNick('GIA\' PRESO, SCEGLINE UN ALTRO'); return; }
+
+  const vecchio = CLA.nome;
+  CLA.nome = nick;
+  if (!nickPrimaVolta && CLA.mio) {
+    // il nome e' gia' sul server: si rinomina la riga, poi si ridisegna
+    try { await claRinomina(); }
+    catch (e) {
+      CLA.nome = vecchio;
+      if (e && e.nick) { erroreNick('GIA\' PRESO, SCEGLINE UN ALTRO'); return; }
+      console.warn('[run] rinomina non riuscita:', e && e.message);
+      erroreNick('IL SERVER NON RISPONDE, RIPROVA');
+      return;
+    }
+  }
+  nickSalvato = nick; nickScelto = true;
+  try { localStorage.setItem(NICK, nick); } catch(e){}
+  chiudiNick();
+  if (nickPrimaVolta) {
+    // ora la partita si spedisce davvero, e il congelamento riparte da qui:
+    // il dito che ha appena premuto OK non deve finire su ESCI
+    congelaFine();
+    mostraPosizione(0);
+    claAggiornaConNick(S.punti | 0);
+  } else {
+    if (CLA.top) CLA.top.forEach(r => { if (r.player_id === CLA.id) r.player_name = nick; });
+    disegnaTabellone();
+    claCarica();
+  }
+}
+
+/* Il primo invio col nick appena scelto: se il server dice che nel frattempo
+   qualcuno l'ha preso (409), si riapre la finestra invece di lasciare la
+   riga su "aggiornamento..." per sempre. */
+async function claAggiornaConNick(punti){
+  await claAggiorna(punti);
+  if (CLA.fallita && CLA.nickPreso) {
+    CLA.nickPreso = false;
+    nickScelto = false;
+    apriNick(true);
+    erroreNick('GIA\' PRESO, SCEGLINE UN ALTRO');
+  }
+}
+
+document.getElementById('nickOk').onclick = confermaNick;
+document.getElementById('nickNo').onclick = chiudiNick;
+document.getElementById('nick').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); confermaNick(); }
+  e.stopPropagation();     // la barra spaziatrice qui e' una lettera, non un salto
+});
+document.getElementById('nick').addEventListener('keyup', e => e.stopPropagation());
+document.getElementById('btnCambiaNick').onclick = () => apriNick(false);
 
 
 /* ---------- la porta verso il gioco grande ----------
@@ -2013,7 +2249,11 @@ addEventListener('message', e => {
   mostraUscita(m.esci || 'ESCI');
   if (typeof m.musica === 'boolean') { musicaOn = m.musica; scriviMusica(); }
   // l'identita' e' quella che il giocatore ha gia': non si chiede niente qui
-  if (m.playerId) { CLA.id = String(m.playerId); CLA.nome = String(m.playerName || ''); }
+  if (m.playerId) {
+    CLA.id = String(m.playerId);
+    // il nome della registrazione e' solo la proposta: in classifica vale il nick
+    CLA.nome = nickSalvato || String(m.playerName || '');
+  }
   if (m.backend) CLA.cfg = m.backend;
   // il bottone della schermata iniziale si vede da subito, non solo a fine
   // partita: non serve aver gia' giocato per guardare la classifica

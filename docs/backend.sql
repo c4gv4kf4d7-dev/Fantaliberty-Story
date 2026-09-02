@@ -269,15 +269,50 @@ drop policy if exists "il punteggio si aggiorna" on public.runner_leaderboard;
 create policy "il punteggio si aggiorna"
   on public.runner_leaderboard for update to anon using (true) with check (true);
 
+-- Il tempo della partita migliore, in secondi. E' la terza colonna della
+-- classifica: si mostra e basta, l'ordine resta per punti. Il gioco prova a
+-- scriverlo e, se questa colonna non c'e' ancora, riprova senza — quindi
+-- funziona anche prima di lanciare questa riga, solo senza tempo.
+alter table public.runner_leaderboard add column if not exists best_time_s integer;
+
+-- Il nome in classifica e' un nick scelto dal giocatore alla prima partita,
+-- ed e' UNICO (senza distinzione di maiuscole): due "Marco" in tabella non si
+-- distinguono, ed e' il motivo per cui il nick esiste. Il gioco controlla
+-- prima di salvare, ma due che firmano nello stesso istante li ferma solo
+-- l'indice. Prima di crearlo i doppioni gia' presenti vanno sciolti, se no
+-- la creazione fallisce: si tiene il nome a chi ha il punteggio piu' alto e
+-- agli altri si appende un numero.
+do $$
+declare r record; n int;
+begin
+  for r in
+    select lower(player_name) as chiave, array_agg(player_id order by best_score desc, updated_at asc) as ids
+    from public.runner_leaderboard
+    group by lower(player_name) having count(*) > 1
+  loop
+    for n in 2 .. array_length(r.ids, 1) loop
+      update public.runner_leaderboard
+        set player_name = player_name || ' ' || n
+        where player_id = r.ids[n];
+    end loop;
+  end loop;
+end $$;
+
+create unique index if not exists runner_leaderboard_nick
+  on public.runner_leaderboard (lower(player_name));
+
 -- Il punteggio non scende mai. Il gioco gia' controlla di scrivere solo quando
 -- il punteggio e' piu' alto, ma due partite chiuse nello stesso momento (o una
 -- risposta che arriva in ritardo) potrebbero riscrivere il record con uno
 -- peggiore: qui la regola e' del database, e non si puo' aggirare.
+-- Il tempo segue il punteggio: e' quello della partita migliore, quindi resta
+-- il vecchio se il punteggio non e' stato battuto.
 create or replace function public.runner_solo_meglio()
 returns trigger language plpgsql as $$
 begin
   if new.best_score < old.best_score then
     new.best_score := old.best_score;
+    new.best_time_s := old.best_time_s;
     new.updated_at := old.updated_at;
   end if;
   return new;

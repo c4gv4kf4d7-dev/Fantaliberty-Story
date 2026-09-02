@@ -35,7 +35,7 @@
   gtag('js', new Date());
   gtag('config', 'G-SYX1RZLNNE');
 </script>
-<link rel="stylesheet" href="./game/engine.css?v=143">
+<link rel="stylesheet" href="./game/engine.css?v=144">
 </head>
 <body>
 <div id="stage">
@@ -373,12 +373,12 @@
      telefono, cosi' la sigla dello studio si sente davvero. Si salta con
      ?subito (i tool di verifica), ?dev e ?scene= (sviluppo). -->
 <div id="home" hidden>
-  <img id="homeBg" src="./assets/bg/bg_intro.webp?v=143" alt="">
+  <img id="homeBg" src="./assets/bg/bg_intro.webp?v=144" alt="">
   <button id="homeGioca" type="button">GIOCA</button>
 </div>
 
-<script src="./game/analytics.js?v=143"></script>
-<script src="./game/engine.js?v=143"></script>
+<script src="./game/analytics.js?v=144"></script>
+<script src="./game/engine.js?v=144"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -498,7 +498,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=143', { cache: 'no-cache' })
+    return fetch('./game/' + nome + '?v=144', { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e

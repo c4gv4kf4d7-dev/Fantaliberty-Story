@@ -821,6 +821,12 @@ tolgono cuori (se ne parte con tre). Si
 riprova quante volte si vuole. Il record resta nel salvataggio
 (run.runner_record).
 
+Classifica globale: alla PRIMA morte compare "INSERISCI IL TUO NICK" (proposto
+il nome di [S0] in maiuscolo, 2-10 caratteri, unico: se è già di un altro,
+"GIÀ PRESO, SCEGLINE UN ALTRO"). Da lì in poi in classifica si è quel nick, e
+lo si cambia dal tabellone (CAMBIA NICK). Tabellone da cabinet: tre colonne —
+nick, punti, tempo della partita migliore — ordinato per punti e basta.
+
 Ogni mille punti si cambia livello: si attraversa una riga dorata che pulsa
 sul pavimento, sotto la stella del traguardo, e da lì in poi si corre più
 veloce (dieci scalini, fino a 10.000 punti). In ogni livello c'è **un solo
