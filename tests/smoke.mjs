@@ -154,7 +154,7 @@ for (const [id, sc] of Object.entries(story.scenes)) {
     if (st.t === 'countdown') {
       assert.ok(st.azioni?.length, `scena ${id}: countdown senza vie d'uscita`);
       for (const a of st.azioni) {
-        assert.ok(a.goto || a.card || a.corsa, `scena ${id}: azione "${a.label}" non fa niente`);
+        assert.ok(a.goto || a.card || a.corsa || a.previsioni, `scena ${id}: azione "${a.label}" non fa niente`);
         if (a.goto) assert.ok(story.scenes[a.goto], `scena ${id}: countdown verso "${a.goto}", che non esiste`);
       }
       // senza una data il countdown non conta niente
@@ -1562,8 +1562,28 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
     `il tempo che manca non e' formattato: "${$('cdtempo').textContent}"`);
   const azioni = [...$('cdbtn').querySelectorAll('.ch')];
   assert.deepEqual(azioni.map((b) => b.textContent),
-    ['Il quiz di Peter', 'Torna in lobby', 'La tua card'],
+    ['Il quiz di Peter', 'Torna in lobby', 'La tua card', 'Le tue previsioni'],
     'nessun bottone diretto alla corsa: si raggiunge solo dalla porta STAFF ONLY in lobby');
+
+  // "Le tue previsioni": si rileggono, non si cambiano. Si apre sopra il
+  // countdown e alla chiusura non ha toccato niente.
+  const primaDi = JSON.stringify(VN.state);
+  azioni[3].onclick({ stopPropagation() {} });
+  assert.ok($('monitorwrap').classList.contains('on') && $('monitorwrap').classList.contains('sololettura'),
+    'le previsioni si aprono in sola lettura');
+  assert.ok($('mondettaglio').classList.contains('on'), 'direttamente la lista, non i tre monitor');
+  assert.ok($('countdown').classList.contains('on'), 'il countdown resta acceso sotto');
+  const righe = [...$('monlista').querySelectorAll('.monriga')];
+  assert.ok(righe.length >= 3, 'ci sono le righe delle previsioni');
+  assert.ok(righe.every((r) => r.tagName !== 'BUTTON' && !r.onclick), 'nessuna riga si tocca');
+  assert.equal($('monlista').querySelectorAll('.moncat').length, Object.keys(story.argomenti).length,
+    'una testata per macroargomento');
+  assert.ok(righe.some((r) => r.querySelector('.monv').textContent === 'x'), 'la risposta data si legge');
+  assert.ok(!$('monlista').textContent.includes('controcorrente'), 'niente etichette di punteggio');
+  $('mondietro').onclick({ stopPropagation() {} });
+  assert.equal($('monitorwrap').classList.contains('on'), false, 'si chiude');
+  assert.ok($('countdown').classList.contains('on'), 'e si e\' di nuovo sul countdown');
+  assert.equal(JSON.stringify(VN.state), primaDi, 'rileggere non tocca la partita');
 
   azioni[1].onclick({ stopPropagation() {} });
   assert.equal(VN.sceneId, 'lobby', 'da qui si torna in lobby');

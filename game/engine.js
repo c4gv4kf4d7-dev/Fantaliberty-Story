@@ -3057,6 +3057,7 @@
       b.onclick = function (ev) {
         if (ev && ev.stopPropagation) ev.stopPropagation();
         if (a.card) return mostraCard(st);
+        if (a.previsioni) return mostraPrevisioni(st);
         // la corsa si apre sopra il countdown e lo lascia acceso sotto: alla
         // chiusura si e' di nuovo davanti al conto alla rovescia, senza aver
         // cambiato scena
@@ -3075,6 +3076,57 @@
     if (cId) { clearInterval(cId); cId = null; }
     if (el.countdown) el.countdown.classList.remove('on');
     if (el.cardwrap) el.cardwrap.classList.remove('on');
+    if (el.monitorwrap) el.monitorwrap.classList.remove('sololettura');
+    chiudiRecap();
+  }
+
+  /* ---------------- le previsioni, in sola lettura ----------------
+     Dal countdown: la stessa lista del dettaglio della sala regia (S6), con
+     tutte e tre le categorie in fila, ma niente tocchi che cambiano risposta e
+     nessun bottone di conferma — le previsioni sono gia' fatte. Si apre sopra
+     il countdown come il regolamento e i quadri: alla chiusura si e' dov'era,
+     e lo stato della partita non si tocca. Non si mostrano punti ne' l'etichetta
+     controcorrente: solo la domanda e cosa si e' scelto, altrimenti diventa un
+     posto dove ripensarci su una cosa che non si puo' piu' cambiare. */
+  function mostraPrevisioni(st) {
+    if (!el.monitorwrap || !el.mondettaglio) return;
+    var argomenti = VN.story[st.da || 'argomenti'] || {};
+    el.montesta.innerHTML = '';
+    var tit = global.document.createElement('div');
+    tit.className = 'montit';
+    tit.textContent = fmt(st.titoloPrevisioni || 'LE TUE PREVISIONI');
+    el.montesta.appendChild(tit);
+
+    el.monlista.innerHTML = '';
+    Object.keys(argomenti).forEach(function (k) {
+      var s = statoCategoria(argomenti, k);
+      var cat = global.document.createElement('div');
+      cat.className = 'moncat';
+      cat.textContent = s.nome;
+      el.monlista.appendChild(cat);
+      var righe = s.core.map(function (d) { return [d, (s.date.core || {})[d.id]]; });
+      s.extraGiocate.forEach(function (id) {
+        var q = s.extra.filter(function (d) { return d.id === id; })[0];
+        if (q) righe.push([q, s.date.extra[id]]);
+      });
+      righe.forEach(function (r) {
+        var d = global.document.createElement('div');
+        d.className = 'monriga sola';
+        d.innerHTML = '<span class="monq"></span><span class="monv"></span>';
+        d.querySelector('.monq').textContent = fmt(r[0].q);
+        d.querySelector('.monv').textContent = r[1] ? fmt(r[1].v) : '\u2014';
+        el.monlista.appendChild(d);
+      });
+    });
+
+    el.mondietro.textContent = '\u25C0 ' + fmt(st.chiudiPrevisioni || 'Countdown');
+    el.mondietro.onclick = function (ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      el.monitorwrap.classList.remove('on', 'sololettura');
+      el.mondettaglio.classList.remove('on');
+    };
+    el.monitorwrap.classList.add('on', 'sololettura');
+    el.mondettaglio.classList.add('on');
   }
 
   /* ---------------- la card condivisibile ----------------

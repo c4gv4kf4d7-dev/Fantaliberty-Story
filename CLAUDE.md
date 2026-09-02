@@ -672,7 +672,16 @@ Tre cose da non rompere:
    rigiocare lo show. La tenda a show finito porta al **countdown**, ed e'
    l'unico modo di tornarci dalla lobby: senza, chi entrava in lobby si
    ritrovava il conto alla rovescia raggiungibile solo riaprendo l'app.
-3. **L'email non e' obbligatoria e non deve diventarlo.** Campo vuoto +
+3. **Le previsioni si rileggono dal countdown, e basta.** Il quarto bottone
+   ("Le tue previsioni", `previsioni: true` nell'azione) apre
+   `mostraPrevisioni()` in `engine.js`: riusa il pannello di dettaglio della
+   sala regia (`#mondettaglio`) con la classe `sololettura` su `#monitorwrap`,
+   che nasconde i tre monitor e il bottone di conferma. Le righe sono `div`,
+   non bottoni: non si risponde di nuovo. Non mostra punti ne' l'etichetta
+   controcorrente, apposta — e' un promemoria, non un posto dove ripensarci.
+   Sta solo nel countdown: e' la schermata su cui si riapre il gioco nei
+   giorni di attesa, e la lobby ha gia' abbastanza.
+4. **L'email non e' obbligatoria e non deve diventarlo.** Campo vuoto +
    CONTINUA vale come saltare, e il salto e' un bottone dichiarato. La partita
    va in coda al momento della conferma e la spedisce la schermata dell'email:
    una riga sola, con l'email dentro se c'e'. Se cambia il payload cambia anche
