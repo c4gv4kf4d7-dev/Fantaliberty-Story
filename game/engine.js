@@ -6025,6 +6025,17 @@
     var start = opts.scene || (story.meta && story.meta.start) || Object.keys(story.scenes)[0];
 
     if (opts.dev) return pannelloSviluppo(story, opts);          // ?dev, menu di salto rapido
+    /* Apple Campus Run da sola, aperta dal menu iniziale da chi non sta
+       giocando la storia. Non e' una scena e non tocca la partita: si apre il
+       riquadro sopra lo schermo nero e alla chiusura si torna al menu.
+       Dentro il gioco la corsa resta raggiungibile SOLO dalla porta STAFF
+       ONLY — quella regola vale per la narrazione, e qui la narrazione non e'
+       ancora cominciata. */
+    if (opts.soloCorsa) {
+      var fine = opts.soloCorsa.fine;
+      return apriCorsa(opts.soloCorsa, function () { if (fine) fine(); });
+    }
+
     if (opts.scene) { VN.clearSave(); return goScene(start); }   // ?scene=lobby, per lo sviluppo
 
     if (opts.resume !== false && VN.hasSave(story)) {

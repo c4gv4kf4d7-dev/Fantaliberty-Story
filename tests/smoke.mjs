@@ -3585,6 +3585,38 @@ function apriMoltiplicatori(stato, extra) {
   delete window.gtag;
 }
 
+/* ---------- Apple Campus Run dal menu iniziale ----------
+   Si gioca senza aver fatto la storia. Dentro il gioco la corsa resta
+   raggiungibile solo dalla porta STAFF ONLY: questo non e' una scorciatoia
+   nella narrazione, e' l'ingresso di chi non la sta giocando. */
+{
+  const pagina = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  assert.match(pagina, /id="homeGioca"[^>]*>GIOCA LA STORIA</,
+    'il bottone principale dice che si gioca la STORIA, ora che non e\' l\'unica cosa');
+  assert.match(pagina, /id="homeCorsa"[^>]*>GIOCA A CAMPUS RUN</,
+    'e sotto c\'e\' la seconda voce');
+  assert.ok(pagina.indexOf('id="homeGioca"') < pagina.indexOf('id="homeCorsa"'),
+    'la storia resta la porta principale: sta prima');
+  // Regola di CLAUDE.md: una chiave fl_* nuova che non entra in CHIAVI non
+  // passa il ponte http->https, e l'identita' della corsa si perderebbe.
+  assert.match(pagina, /CHIAVI = \[[^\]]*'fl_runner_id'/,
+    'fl_runner_id passa il ponte, o chi traghetta perde la sua riga di classifica');
+
+  VN.clearSave();
+  const idFinto = '11111111-2222-4333-8444-555555555555';
+  VN.boot(story, { speed: 0, banca, quiz,
+    stato: { run_id: idFinto },
+    soloCorsa: { esci: 'Torna al menu', fine() {} } });
+  assert.ok($('runwrap').classList.contains('on'),
+    'dal menu la corsa si apre da sola, senza passare da una scena');
+  assert.equal($('runchiudi').textContent, 'Torna al menu',
+    'e si torna al menu, non "in lobby": chi entra da qui la lobby non l\'ha mai vista');
+  assert.equal(VN.state.run_id, idFinto,
+    'la corsa usa l\'identita\' passata dal menu: generandone una nuova a ogni '
+    + 'apertura la stessa persona si duplicherebbe in classifica');
+  $('runwrap').classList.remove('on');
+}
+
 /* ---------- il ponte http -> https ----------
    Il salvataggio e' legato all'origine: quello scritto sotto http:// non si
    vede da https://. Il ponte se lo porta dietro nel frammento dell'indirizzo.
