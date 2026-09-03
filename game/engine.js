@@ -897,6 +897,27 @@
     if (id === 'quiz') gaOnce('quiz_started', 'quiz_started', {});
   }
 
+  /* scene_view e' il livello di dettaglio "dove si ferma il giocatore":
+     parte a OGNI cambio scena (non solo per le location tracciate sopra, che
+     sono una lettura narrativa a parte), e porta con se' quanti secondi sono
+     durati sull'ultima scena. In GA4 e' cosi' che si legge il punto esatto di
+     abbandono di una sessione: l'ultimo scene_view registrato e' l'ultima
+     scena vista davvero, non solo "il funnel si e' fermato a un certo step".
+     Nessun dato personale: solo id di scena, mai testo, nome o risposte. */
+  var ultimaScenaVista = null;
+  var ultimoIngressoScena = 0;
+  function trackScenaVista(id) {
+    var ora = Date.now();
+    var params = { scene_id: id };
+    if (ultimaScenaVista && ultimoIngressoScena) {
+      params.previous_scene_id = ultimaScenaVista;
+      params.previous_scene_seconds = Math.round((ora - ultimoIngressoScena) / 1000);
+    }
+    ga('scene_view', params);
+    ultimaScenaVista = id;
+    ultimoIngressoScena = ora;
+  }
+
   function apreSulNero(sc) {
     var steps = sc.steps || [];
     for (var i = 0; i < steps.length; i++) {
@@ -951,6 +972,7 @@
     senzaSalto = false;
     VN.scene = sc; VN.sceneId = id; VN.i = 0;
     trackLocationScena(id);
+    trackScenaVista(id);
     /* Lo stacco di transizione solo sui cambi di POSTO dichiarati in
        story.audio.transizioni (la lobby, il palco, il camerino...), e solo se
        si arriva davvero da un'altra parte: rientrare nella stessa scena dopo un
@@ -1816,6 +1838,10 @@
       VN.progressed = true;
       VN.state[st.var] = o.id;
       VN.state['__label_' + st.var] = o.nome;
+      // Quale personaggio si sceglie non e' un dato personale (e' un
+      // personaggio del gioco, non un'informazione sul giocatore): utile a chi
+      // guarda i dati per sapere quale stile funziona di piu'.
+      if (st.var === 'stile') gaOnce('style_selected', 'style_selected', { style: o.id });
       termSet(st.var);
       chiudiCarosello();
       next();
@@ -3805,6 +3831,10 @@
 
   function apriCorsa(cfg, done) {
     suona('apri');
+    // Campus Run e' un segreto scoperto solo da chi trova la porta STAFF ONLY:
+    // sapere quanti ci arrivano davvero e' un dato a se', non coperto da
+    // nessuna location del funnel principale.
+    gaOnce('campus_run_opened', 'campus_run_opened', {});
     cfg = cfg || {};
     if (!el.runwrap || !el.runframe) return done && done();
     // Musica a caso per la corsa, non quella della scena sotto: si sente ogni

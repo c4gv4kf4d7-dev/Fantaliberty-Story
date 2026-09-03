@@ -67,10 +67,13 @@ la chiave nel registro include il valore (`loc:hall_of_fame`,
 | `quiz_complete` | Non resta piu' nessun livello giocabile (passati, bruciati o fuori portata: la griglia di Peter e' tutta spenta). Una volta per partita. | `highest_level_completed`: `base` / `avanzato` / `leggenda` (assente se nessun livello e' stato superato) |
 | `email_submitted` | L'email facoltativa viene inviata con un indirizzo valido (mai al salto, mai al campo vuoto). Una volta per partita. | `method: "optional_results_email"` — **mai l'indirizzo** |
 | `game_complete` | Si raggiunge il countdown (S7 finale): l'ultimo posto in cui il gioco lascia il giocatore dopo la parte narrativa. Una volta per partita — non a previsioni completate, non al ritorno in lobby, non a fine quiz da soli. | `predictions_completed` (`VN.state.locked`), `quiz_completed` (se `quiz_complete` e' gia' partito) — **mai punteggio, nome o email** |
+| `scene_view` | Ogni cambio scena, per **tutte** le scene (non solo le location narrative sopra). Non deduplicato — parte a ogni passaggio, anche rientrando. | `scene_id`; se non e' il primo cambio scena della sessione anche `previous_scene_id` e `previous_scene_seconds` (secondi passati sulla scena precedente) |
+| `style_selected` | Conferma dello stile nel camerino (S3). Una volta per partita. | `style`: `drip`, `showman`, `hawaiano`, `susan` (gli id in `story.stili`) |
+| `campus_run_opened` | Prima volta che si apre Apple Campus Run dalla porta STAFF ONLY. Una volta per partita. | — |
 
 Non implementato: la specifica chiedeva anche `game_abandoned` come evento *da
-non fare* — l'abbandono si legge dal funnel qui sotto, non da un evento
-inventato con un timer.
+non fare* — l'abbandono si legge dal funnel (o da `scene_view`, per il punto
+esatto) qui sotto, non da un evento inventato con un timer.
 
 ## Funnel
 
@@ -145,3 +148,33 @@ comunque visibili in Realtime, solo non nel dettaglio di DebugView.
 Per riconoscere una visita dal QR: Report → Acquisizione → Traffico di
 acquisizione, e filtrare per `Sessione origine/mezzo` = `qr_code / offline`,
 oppure per `Sessione contenuto della campagna` = `main` (o il valore usato).
+
+## Dashboard: dove si fermano davvero i giocatori
+
+`scene_view` (vedi tabella sopra) e' pensato apposta per questa domanda. In
+GA4:
+
+1. **Esplora → Esplorazione libera** (nuova esplorazione).
+2. Dimensione: **Nome evento**, filtrata a `scene_view`.
+3. Dimensione secondaria: **scene_id** (compare come parametro personalizzato
+   dell'evento — se non e' nell'elenco, va registrata una volta sola in
+   Amministrazione → Definizioni personalizzate → Crea dimensioni
+   personalizzate, ambito "Evento", parametro `scene_id`; lo stesso per
+   `previous_scene_seconds` come **metrica** personalizzata se si vuole il
+   tempo medio per scena).
+4. Metrica: **Conteggio eventi** e **Utenti attivi**.
+5. Trascina `scene_id` in righe: la tabella mostra quante sessioni hanno visto
+   ogni scena — dove il numero scende di colpo da una scena alla successiva,
+   li' i giocatori abbandonano.
+
+Per il **punto esatto di abbandono per sessione** (non solo aggregato): stessa
+esplorazione, ma come "Esplorazione a percorso" (Path exploration) partendo da
+`scene_view`, oppure — piu' semplice — Report → In tempo reale mentre il gioco
+e' live, guardando l'ultimo `scene_view` di ogni utente prima che sparisca
+dalla lista.
+
+Il **funnel narrativo** (Visit → Game Start → ... → Game Complete, elenco
+sopra) resta la vista di sintesi: dice a che punto della storia principale si
+perde la maggior parte dei giocatori. `scene_view` e' il livello sotto: dice
+la scena esatta, comprese quelle non narrative (regolamento, quadri della Hall
+of Fame, Campus Run).
