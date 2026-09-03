@@ -3550,6 +3550,70 @@ function apriMoltiplicatori(stato, extra) {
   delete window.gtag;
 }
 
+/* ---------- il ponte http -> https ----------
+   Il salvataggio e' legato all'origine: quello scritto sotto http:// non si
+   vede da https://. Il ponte se lo porta dietro nel frammento dell'indirizzo.
+   Qui lo si prova fuori da jsdom, con un browser finto, perche' serve far
+   girare lo stesso codice su DUE origini diverse. */
+{
+  const pagina = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const m = pagina.match(/<script>((?:(?!<\/script>)[\s\S])*?location\.replace[\s\S]*?)<\/script>/);
+  assert.ok(m, 'il ponte http->https e\' ancora nella pagina');
+  assert.ok(pagina.indexOf(m[0]) < pagina.indexOf('<meta name="viewport"'),
+    'il ponte deve restare il PRIMO script: gira prima che il motore legga il salvataggio');
+  const ponte = new Function('location', 'localStorage', 'history', m[1]);
+
+  const apri = ({ proto = 'https:', host = 'fantaliberty.com', hash = '', dati = {}, privato = false }) => {
+    const store = { ...dati };
+    const ctx = { andato: null, pulito: false, store };
+    ponte(
+      { protocol: proto, hostname: host, host, pathname: '/', search: '', hash,
+        replace(u) { ctx.andato = u; } },
+      { getItem(k) { if (privato) throw new Error('privato'); return k in store ? store[k] : null; },
+        setItem(k, v) { if (privato) throw new Error('privato'); store[k] = v; } },
+      { replaceState() { ctx.pulito = true; } },
+    );
+    return ctx;
+  };
+  const pacco = (url) => JSON.parse(decodeURIComponent(url.slice(url.indexOf('#ponte=') + 7)));
+
+  // --- di qua (http): raccoglie e porta ---
+  const salvataggio = JSON.stringify({ scene: 'lobby', punti: 12 });
+  let c = apri({ proto: 'http:', dati: { fl_nexus_save_v1: salvataggio, fl_runner_record: '9000' } });
+  assert.match(c.andato, /^https:\/\/fantaliberty\.com\//, 'da http si salta su https');
+  assert.deepEqual(pacco(c.andato), { fl_nexus_save_v1: salvataggio, fl_runner_record: '9000' },
+    'il salvataggio viaggia nel frammento, che il browser non manda al server');
+
+  c = apri({ proto: 'http:', dati: {} });
+  assert.ok(!/#ponte=/.test(c.andato), 'senza niente da portare non si appende un pacco vuoto');
+
+  c = apri({ proto: 'http:', privato: true });
+  assert.match(c.andato, /^https:\/\/fantaliberty\.com\//,
+    'in Safari privato il localStorage esplode: si salta di la\' comunque, a mani vuote');
+
+  // --- di la' (https): scarica, ma non copre mai ---
+  const url = '#ponte=' + encodeURIComponent(JSON.stringify({
+    fl_nexus_save_v1: salvataggio, fl_runner_record: '9000',
+  }));
+  c = apri({ hash: url });
+  assert.equal(c.store.fl_nexus_save_v1, salvataggio, 'la partita persa torna');
+  assert.equal(c.store.fl_runner_record, '9000', 'e con lei il record della corsa');
+  assert.ok(c.pulito, 'il pacco sparisce dall\'indirizzo: non resta in cronologia');
+
+  const nuovo = JSON.stringify({ scene: 'keynote', punti: 40 });
+  c = apri({ hash: url, dati: { fl_nexus_save_v1: nuovo } });
+  assert.equal(c.store.fl_nexus_save_v1, nuovo,
+    'chi ha gia\' ricominciato di qua tiene la partita nuova: il ponte non la copre');
+  assert.equal(c.store.fl_runner_record, '9000',
+    'ma le chiavi che di qua mancavano arrivano lo stesso');
+
+  c = apri({ host: 'c4gv4kf4d7-dev.github.io', hash: url });
+  assert.equal(c.store.fl_nexus_save_v1, undefined,
+    'fuori dal dominio pubblico il ponte non tocca niente');
+  c = apri({ proto: 'http:', host: 'localhost', dati: { fl_nexus_save_v1: salvataggio } });
+  assert.equal(c.andato, null, 'in locale non si redirige: si sviluppa in chiaro');
+}
+
 if (todoAssets.size) console.log(`asset ancora da disegnare (${todoAssets.size}):`, [...todoAssets].join(', '));
 console.log(`banca domande: ${idsDomande.size} domande, ${nBattute} battute · quiz: ${idsQuiz.size} domande`);
 /* Le risposte del quiz si mescolano: nel file la giusta sta quasi sempre
