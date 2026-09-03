@@ -522,7 +522,84 @@
 
     dati = { story: story, banca: banca, backend: backend, quiz: quiz };
     partito = true;
-    avvia();
+
+    // Codice di ripresa (#riprendi=<run_id>): si riprende la propria partita
+    // da un telefono che non l'ha mai vista. Prima di avviare si va a
+    // ripescarla, se no il motore parte da capo e il salvataggio nuovo
+    // coprirebbe quello che stiamo per recuperare.
+    var codice = codiceRipresa();
+    if (!codice) return avvia();
+    recupera(codice, backend, function (stato) {
+      if (stato) { opts.stato = stato; opts.scene = 'countdown'; }
+      avvia();
+    });
+  }
+
+  /* ---------------- il codice di ripresa ----------------
+     Il salvataggio vive nel browser: cambiare telefono, o perderlo, vuol dire
+     non ritrovare piu' la partita. La schedina pero' e' sul server, e il suo
+     run_id e' un UUID — non si indovina, come un link privato. Chi ce l'ha e'
+     il proprietario: non serve nessuna login.
+
+     Il codice viaggia nel FRAMMENTO, non nella query: cosi' non finisce nei
+     log del server che serve la pagina. Stessa ragione del ponte http->https.
+
+     Si torna al countdown con le previsioni gia' confermate, non al punto
+     esatto in cui si era: prima della conferma sul server non arriva niente,
+     quindi una partita a meta' non e' ricostruibile e non si finge che lo sia. */
+  function codiceRipresa() {
+    var m = /[#&]riprendi=([0-9a-fA-F-]{36})/.exec(location.hash || '');
+    return m ? m[1] : null;
+  }
+
+  function recupera(codice, backend, poi) {
+    // Via il codice dall'indirizzo subito: non deve restare in cronologia ne'
+    // essere ricondiviso per sbaglio. E' la chiave della partita di qualcuno.
+    try { history.replaceState(null, '', location.pathname + location.search); }
+    catch (e) {}
+    if (!backend || !backend.url || !backend.chiave) {
+      mostraErrore('Non riesco a raggiungere il server per riprendere la partita.');
+      return;
+    }
+    fetch(backend.url + '/rest/v1/rpc/riprendi_run', {
+      method: 'POST',
+      headers: { 'apikey': backend.chiave, 'Authorization': 'Bearer ' + backend.chiave,
+                 'Content-Type': 'application/json' },
+      body: JSON.stringify({ codice: codice })
+    }).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (riga) {
+        if (!riga) {
+          return mostraErrore('Questo codice di ripresa non risulta.<br>'
+            + '<small>Controlla di aver aperto il link per intero.</small>');
+        }
+        poi(statoDaRiga(riga));
+      })
+      .catch(function () {
+        mostraErrore('Non sono riuscito a recuperare la partita.<br>'
+          + '<small>Controlla la connessione e riapri il link.</small>');
+      });
+  }
+
+  // La riga del database e' il payload di engine.js (payload()) messo in
+  // colonne: qui si torna indietro. Chi aggiunge un campo al payload lo
+  // aggiunge anche qui, o al ritorno quel pezzo di partita manca.
+  function statoDaRiga(r) {
+    var quiz = r.quiz || {}, runner = r.runner || {}, flags = r.flags || {};
+    return {
+      run_id: r.run_id,
+      nome: r.nome, cognome: r.cognome || '', genere: r.genere,
+      store: r.store, reparto: r.reparto, anni: r.anni, device: r.device,
+      stile: r.stile, email: r.email || '',
+      punti: r.punti, picks: r.picks || {},
+      sfacciato: !!flags.sfacciato, studiato: flags.studiato,
+      quiz: quiz.livelli || {}, mult_bank: quiz.banca || 0,
+      moltiplicatori: quiz.moltiplicatori || null,
+      runner_record: Number(runner.record || 0),
+      // La partita e' oltre le previsioni: il pulsante Esci non deve tornare
+      // (post_lobby_visto), la lobby non deve rifare le presentazioni, e la
+      // tenda porta al countdown invece che allo show.
+      locked: true, raggiunto_s2: true, post_lobby_visto: true
+    };
   }
 
   // Parte solo quando ci sono tutte e due le cose: i dati, e il GIOCA premuto

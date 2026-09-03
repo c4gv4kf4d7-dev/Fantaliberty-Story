@@ -3614,6 +3614,76 @@ function apriMoltiplicatori(stato, extra) {
   assert.equal(c.andato, null, 'in locale non si redirige: si sviluppa in chiaro');
 }
 
+/* ---------- il codice di ripresa ----------
+   La schedina confermata sta sul server: il run_id e' un UUID, e chi ce l'ha
+   puo' rimettersi davanti al countdown da un telefono qualsiasi. Qui si
+   controlla che il codice si legga solo se e' un codice, e soprattutto che
+   il ritorno dal database rimetta a posto TUTTO quello che la schedina porta:
+   un campo dimenticato qui e' un pezzo di partita che non torna. */
+{
+  const pagina = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const pesca = (nome) => {
+    const m = pagina.match(new RegExp('function ' + nome + '\\s*\\([^)]*\\)\\s*\\{[\\s\\S]*?\\n  \\}'));
+    assert.ok(m, `manca ${nome}() in index.html`);
+    return m[0];
+  };
+  const codiceRipresa = new Function('location',
+    pesca('codiceRipresa') + '; return codiceRipresa();');
+  const statoDaRiga = new Function('riga', pesca('statoDaRiga') + '; return statoDaRiga(riga);');
+
+  const uuid = '3f2b8c10-4d5e-4a6b-8c7d-9e0f1a2b3c4d';
+  assert.equal(codiceRipresa({ hash: '#riprendi=' + uuid }), uuid, 'il codice si legge dal frammento');
+  assert.equal(codiceRipresa({ hash: '#ponte=x&riprendi=' + uuid }), uuid,
+    'convive col ponte http->https, che usa lo stesso frammento');
+  assert.equal(codiceRipresa({ hash: '' }), null, 'senza frammento non si riprende niente');
+  assert.equal(codiceRipresa({ hash: '#riprendi=pippo' }), null, 'e non si accetta un codice inventato');
+
+  // La riga finta ha ESATTAMENTE i campi che payload() spedisce (il test 10j
+  // sopra li fissa): se il payload cambia e questa mappa no, si vede qui.
+  const riga = {
+    run_id: uuid, nome: 'Lorenzo', cognome: 'Bandini', genere: 'm',
+    store: 'Roma', reparto: 'Genius', anni: '2', device: '15', stile: 'drip',
+    punti: 37, picks: { iphone: { core: { Q1: { v: 'a', p: 2 } } } },
+    flags: { sfacciato: true, studiato: 3 },
+    quiz: { livelli: { base: { passato: true } }, banca: 1.5, moltiplicatori: { iphone: 0.5 } },
+    runner: { record: 9000 }, email: 'x@y.it', versione: '4.0',
+  };
+  const st = statoDaRiga(riga);
+  assert.equal(st.nome, 'Lorenzo'); assert.equal(st.cognome, 'Bandini');
+  assert.equal(st.genere, 'm'); assert.equal(st.stile, 'drip');
+  assert.equal(st.store, 'Roma'); assert.equal(st.reparto, 'Genius');
+  assert.equal(st.anni, '2'); assert.equal(st.device, '15');
+  assert.equal(st.punti, 37); assert.deepEqual(st.picks, riga.picks);
+  assert.equal(st.sfacciato, true); assert.equal(st.studiato, 3);
+  assert.deepEqual(st.quiz, { base: { passato: true } }, 'i livelli del quiz tornano');
+  assert.equal(st.mult_bank, 1.5, 'e i moltiplicatori ancora da spendere');
+  assert.deepEqual(st.moltiplicatori, { iphone: 0.5 }, 'e quelli gia' + '\' assegnati');
+  assert.equal(st.runner_record, 9000, 'e il record della corsa');
+  assert.equal(st.email, 'x@y.it',
+    'l\'email torna indietro: senza, il secondo invio la sovrascriverebbe con null');
+  assert.equal(st.run_id, uuid,
+    'si riprende lo STESSO run_id, o la partita ripresa diventerebbe una riga nuova');
+  assert.equal(st.locked, true, 'la partita ripresa e\' oltre le previsioni');
+  assert.equal(st.post_lobby_visto, true, 'quindi il pulsante Esci non ricompare');
+
+  // Ogni campo della schedina o e' rimesso nello stato, o e' roba di servizio.
+  const diServizio = ['versione'];
+  for (const campo of Object.keys(riga)) {
+    if (diServizio.includes(campo)) continue;
+    const mappa = pesca('statoDaRiga');
+    assert.ok(mappa.includes(campo),
+      `statoDaRiga non rimette a posto "${campo}": la partita ripresa torna monca`);
+  }
+
+  const vuota = statoDaRiga({ run_id: uuid, nome: 'Ada' });
+  assert.equal(vuota.cognome, '', 'una schedina senza cognome non riporta "undefined"');
+  assert.equal(vuota.runner_record, 0, 'ne\' un record NaN');
+  assert.deepEqual(vuota.quiz, {}, 'ne\' un quiz indefinito');
+
+  assert.ok(/riprendi_run/.test(fs.readFileSync(path.join(ROOT, 'docs', 'backend.sql'), 'utf8')),
+    'la funzione riprendi_run sta in docs/backend.sql, come upsert_run');
+}
+
 if (todoAssets.size) console.log(`asset ancora da disegnare (${todoAssets.size}):`, [...todoAssets].join(', '));
 console.log(`banca domande: ${idsDomande.size} domande, ${nBattute} battute · quiz: ${idsQuiz.size} domande`);
 /* Le risposte del quiz si mescolano: nel file la giusta sta quasi sempre
