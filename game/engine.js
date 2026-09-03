@@ -3120,6 +3120,7 @@
         if (ev && ev.stopPropagation) ev.stopPropagation();
         if (a.card) return mostraCard(st);
         if (a.previsioni) return mostraPrevisioni(st);
+        if (a.ripresa) return mostraRipresa(st);
         // la corsa si apre sopra il countdown e lo lascia acceso sotto: alla
         // chiusura si e' di nuovo davanti al conto alla rovescia, senza aver
         // cambiato scena
@@ -3189,6 +3190,66 @@
     };
     el.monitorwrap.classList.add('on', 'sololettura');
     el.mondettaglio.classList.add('on');
+  }
+
+  /* ---------------- il link di ripresa ----------------
+     Il salvataggio vive nel browser: cambiare telefono, o perderlo, vuol dire
+     non ritrovare piu' la partita. E' successo davvero il giorno del lancio.
+
+     La schedina pero' e' sul server, e il suo run_id la riapre da qualunque
+     telefono (index.html, #riprendi=...). Qui si consegna quel link al
+     giocatore, prima che gli serva: sta nel countdown perche' e' la schermata
+     su cui si riapre il gioco nei giorni d'attesa, cioe' l'unico posto dove
+     qualcuno ci ripassa con calma.
+
+     Non e' una password e non si chiede a nessuno di ricordarlo: si condivide
+     con il foglio di sistema, che e' il modo in cui su un telefono ci si manda
+     le cose da soli. */
+  function linkRipresa() {
+    var codice = VN.state.run_id;
+    if (!codice) return null;      // partita mai spedita: non c'e' niente da riprendere
+    var base = '';
+    try { base = global.location.origin + global.location.pathname; } catch (e) { return null; }
+    return base + '#riprendi=' + codice;
+  }
+
+  function mostraRipresa(st) {
+    var link = linkRipresa();
+    if (!link) return;
+    // Il testo sta in story.json: qui non si scrivono battute.
+    mostraModale({
+      text: st.ripresaTesto || 'Questo link riapre la tua partita su qualunque telefono.',
+      si: st.ripresaCondividi || 'CONDIVIDI IL LINK',
+      no: st.ripresaChiudi || 'CHIUDI'
+    }, function () { condividiLink(link, st); });
+  }
+
+  /* Tre strade, in ordine di quanto sono comode, perche' nessuna funziona
+     dappertutto: il foglio di condivisione (il modo naturale su un telefono),
+     gli appunti, e in ultimo il link scritto a schermo — che si puo' sempre
+     selezionare o fotografare. L'ultima non fallisce mai, ed e' per questo che
+     c'e'. */
+  function condividiLink(link, st) {
+    var nav = global.navigator || {};
+    var scritto = function () {
+      mostraModale({ text: (st.ripresaCopiato || 'Copiato.'), si: st.ripresaChiudi || 'CHIUDI' });
+    };
+    var aMano = function () {
+      // Il link per esteso: brutto ma infallibile, si fotografa.
+      mostraModale({ text: link, si: st.ripresaChiudi || 'CHIUDI' });
+    };
+    if (nav.share) {
+      try {
+        var p = nav.share({ title: 'FantaLiberty', text: fmt(st.ripresaTitolo || 'La mia partita'), url: link });
+        // Annullare il foglio di condivisione non e' un errore: non si dice niente.
+        if (p && p.catch) p.catch(function () {});
+        return;
+      } catch (e) { /* si scende alla strada dopo */ }
+    }
+    if (nav.clipboard && nav.clipboard.writeText) {
+      try { return nav.clipboard.writeText(link).then(scritto, aMano); } catch (e) {}
+    }
+    aMano();
   }
 
   /* ---------------- la card condivisibile ----------------

@@ -154,7 +154,8 @@ for (const [id, sc] of Object.entries(story.scenes)) {
     if (st.t === 'countdown') {
       assert.ok(st.azioni?.length, `scena ${id}: countdown senza vie d'uscita`);
       for (const a of st.azioni) {
-        assert.ok(a.goto || a.card || a.corsa || a.previsioni, `scena ${id}: azione "${a.label}" non fa niente`);
+        assert.ok(a.goto || a.card || a.corsa || a.previsioni || a.ripresa,
+          `scena ${id}: azione "${a.label}" non fa niente`);
         if (a.goto) assert.ok(story.scenes[a.goto], `scena ${id}: countdown verso "${a.goto}", che non esiste`);
       }
       // senza una data il countdown non conta niente
@@ -1564,8 +1565,42 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
     `il tempo che manca non e' formattato: "${$('cdtempo').textContent}"`);
   const azioni = [...$('cdbtn').querySelectorAll('.ch')];
   assert.deepEqual(azioni.map((b) => b.textContent),
-    ['Il quiz di Peter', 'Torna in lobby', 'La tua card', 'Le tue previsioni'],
+    ['Il quiz di Peter', 'Torna in lobby', 'La tua card', 'Le tue previsioni',
+     'Il tuo link di ripresa'],
     'nessun bottone diretto alla corsa: si raggiunge solo dalla porta STAFF ONLY in lobby');
+
+  /* "Il tuo link di ripresa": il salvataggio vive nel browser, e cambiare
+     telefono vuol dire perderlo. Il link lo riapre da qualunque parte. */
+  {
+    const uuid = '3f2b8c10-4d5e-4a6b-8c7d-9e0f1a2b3c4d';
+    const primaDelLink = JSON.stringify(VN.state);
+    // Senza run_id la partita non e' mai stata spedita: non c'e' niente da
+    // riprendere e il bottone non deve inventarsi un link rotto.
+    delete VN.state.run_id;
+    azioni[4].onclick({ stopPropagation() {} });
+    assert.equal($('modal').classList.contains('on'), false,
+      'senza schedina spedita non si offre un link che non riaprirebbe niente');
+
+    VN.state.run_id = uuid;
+    azioni[4].onclick({ stopPropagation() {} });
+    assert.ok($('modal').classList.contains('on'), 'il link si offre in una modale');
+    assert.ok(/qualunque telefono/.test($('modaltxt').textContent),
+      'e si spiega a cosa serve, invece di mostrare un codice e basta');
+
+    let condiviso = null;
+    window.navigator.share = (d) => { condiviso = d; return Promise.resolve(); };
+    [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });
+    assert.ok(condiviso, 'CONDIVIDI apre il foglio di sistema: e\' cosi\' che ci si manda le cose');
+    assert.equal(condiviso.url, 'https://fantaliberty.com/#riprendi=' + uuid,
+      'il link porta il codice nel frammento, che non arriva al server');
+    delete window.navigator.share;
+
+    VN.state.run_id = undefined;
+    assert.equal(JSON.stringify(VN.state), primaDelLink,
+      'offrire il link non tocca la partita');
+    assert.ok($('countdown').classList.contains('on'), 'e il countdown resta sotto');
+    $('modal').classList.remove('on');
+  }
 
   // "Le tue previsioni": si rileggono, non si cambiano. Si apre sopra il
   // countdown e alla chiusura non ha toccato niente.

@@ -631,7 +631,23 @@ si arriva **dopo** il quiz, non prima.
    controcorrente, apposta — è un promemoria, non un posto dove ripensarci. Sta
    solo nel countdown: è la schermata su cui si riapre il gioco nei giorni di
    attesa, e la lobby ha già abbastanza.
-4. **L'email non è obbligatoria e non deve diventarlo.** Campo vuoto +
+4. **Il link di ripresa sta nel countdown, e solo lì** (`ripresa: true`
+   nell'azione → `mostraRipresa()`). È `#riprendi=<run_id>`: il salvataggio
+   vive nel browser, e cambiare telefono o vederselo cancellare vuol dire
+   perdere la partita — successo davvero il 2/9/2026. La schedina però è sul
+   server, e il `run_id` la riapre da qualunque parte. Sta nel countdown per la
+   stessa ragione delle previsioni: è la schermata su cui si riapre il gioco
+   nei giorni d'attesa, l'unico posto dove qualcuno ci ripassa con calma prima
+   che il link gli serva. Tre cose: si offre **solo** se `run_id` esiste (senza
+   schedina spedita non c'è niente da riprendere e il link sarebbe rotto); si
+   passa dal **foglio di condivisione** del telefono, con gli appunti e poi il
+   link scritto a schermo come ripieghi, perché nessuna delle tre funziona
+   dappertutto e l'ultima non fallisce mai; e il codice viaggia nel
+   **frammento**, che non arriva al server. Chi tocca la funzione
+   `riprendi_run` in `docs/backend.sql` ricordi che è l'unica strada di lettura
+   su `runs`: ad anon non si dà mai una select sulla tabella, o l'intera
+   tabella diventa scaricabile con una GET.
+5. **L'email non è obbligatoria e non deve diventarlo.** Campo vuoto +
    CONTINUA vale come saltare, e il salto è un bottone dichiarato. La partita
    va in coda al momento della conferma e la spedisce la schermata dell'email:
    una riga sola, con l'email dentro se c'è. Se cambia il payload cambia anche

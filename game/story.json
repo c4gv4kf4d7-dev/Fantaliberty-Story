@@ -2116,6 +2116,11 @@
           "arrivato": "E' iniziato. Buona visione.",
           "cardTitolo": "PREVISIONI COMPLETATE",
           "cardPunti": "PUNTI IN GIOCO",
+          "ripresaTitolo": "La mia partita a FantaLiberty",
+          "ripresaTesto": "Questo link riapre la tua partita su qualunque telefono, anche se cambi dispositivo o il browser cancella i dati. Mandatelo in chat, o salvalo in una nota. Vale solo per te: chi ce l'ha entra nella tua partita.",
+          "ripresaCondividi": "CONDIVIDI IL LINK",
+          "ripresaCopiato": "Link copiato. Incollalo dove lo ritrovi.",
+          "ripresaChiudi": "CHIUDI",
           "_nota_azioni": "E' la schermata su cui si riapre il gioco nei giorni fra le previsioni e il keynote. Il quiz di Peter sta qui, a un tocco: chi rientra non deve rifare il giro della lobby per arrivarci. Apple Campus Run NON c'e': niente bottone che scavalchi la porta STAFF ONLY, l'unico modo di raggiungere la corsa resta \"Torna in lobby\" e poi la zona 5.",
           "azioni": [
             {
@@ -2134,6 +2139,11 @@
               "label": "Le tue previsioni",
               "previsioni": true,
               "_nota": "Sola lettura: la stessa lista della sala regia di S6, ma senza tocchi che cambiano risposta. Nei sette giorni fra le previsioni e il keynote il giocatore vuole ricordarsi cosa ha detto. Suggerito da un giocatore il 2/9/2026."
+            },
+            {
+              "label": "Il tuo link di ripresa",
+              "ripresa": true,
+              "_nota": "Il salvataggio vive nel browser: cambiare telefono, o vederselo cancellare, vuol dire non ritrovare piu' la partita — successo davvero il 2/9/2026, a parecchie persone. La schedina pero' e' sul server e il suo run_id la riapre da qualunque telefono. Sta qui e non altrove perche' il countdown e' la schermata su cui si riapre il gioco nei giorni d'attesa: e' l'unico posto dove qualcuno ci ripassa con calma, prima che il link gli serva davvero."
             }
           ]
         }
