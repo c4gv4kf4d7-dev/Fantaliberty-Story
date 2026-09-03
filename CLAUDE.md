@@ -143,9 +143,9 @@ mancanti" ma **rinominare il cast e ricollegare le scene** al nome giusto.
 - I quattro stili vivono in `story.stili` (nome, descrizione, perk, 11 pose),
   non dentro la scena — li leggono sia S5 che S8.
 
-**Domanda aperta, da non decidere da soli:** il terminale dice "campo
-1/7"…"6/7" ma i campi elencati sono 6. O ne manca uno o l'etichetta è
-sbagliata — va chiesto, non inventato.
+**Domanda aperta, da non decidere da soli:** come i punti dell'Apple Campus
+Run si sommino alla classifica dei pronostici. `VN.state.runner_record` si
+salva e si spedisce, ma non c'è una formula — va chiesto, non inventato.
 
 ## Il camerino (S3): cosa regge la sezione
 
@@ -915,6 +915,41 @@ con `?subito`, che la salta; la saltano anche `?dev` e `?scene=`.
 
 Il motore non parte proprio quando il cartello è su (`return` prima di
 `VN.boot`): niente salvataggi toccati, niente richieste ai JSON.
+
+## Il ponte http → https: il salvataggio è legato all'origine
+
+Il salvataggio del browser vive **sotto un'origine**, e `http://fantaliberty.com`
+e `https://fantaliberty.com` per il browser sono due siti diversi. Chi aveva
+giocato in chiaro, riaprendo in sicuro non trovava più niente: sembrava che la
+partita fosse sparita, e invece era di là. È successo davvero, il giorno del
+lancio, a parecchie persone.
+
+Il redirect a https (primo `<script>` di `index.html`) impedisce nuovi danni ma
+**non restituisce niente**: da https il localStorage di http non si legge, e non
+si può nemmeno aprire quella pagina in un iframe (è contenuto misto, il browser
+lo blocca). L'unico istante in cui quei dati sono raggiungibili è **mentre la
+pagina http è ancora aperta**. Per questo il redirect, prima di saltare, si
+porta dietro le chiavi `fl_*` nel **frammento** dell'indirizzo (`#ponte=…`), che
+il browser non manda al server; di là il pacco viene scaricato e l'indirizzo
+ripulito con `history.replaceState`.
+
+Tre cose da non rompere:
+
+1. **Deve restare il primo script della pagina.** Gira prima che il motore
+   legga il salvataggio: dopo, sarebbe già stato deciso che la partita non c'è.
+   `npm test` controlla che stia prima del `<meta name="viewport">`.
+2. **Non copre mai una chiave già presente di qua.** Chi ha già ricominciato da
+   capo su https ha un salvataggio nuovo e più avanti: sovrascriverlo vorrebbe
+   dire cancellargli la partita in corso per restituirgli quella persa — il
+   danno che il ponte ripara, fatto al contrario. Si importa solo ciò che di qua
+   manca, chiave per chiave.
+3. **Chi aggiunge una chiave `fl_*` la aggiunge all'elenco `CHIAVI`**, o quella
+   non passa il ponte.
+
+**Accendere "Enforce HTTPS" su GitHub Pages spegne il ponte**: il redirect lo
+farebbe il server, la pagina http non verrebbe più eseguita, e i dati rimasti di
+là diventerebbero irrecuperabili per sempre. Va acceso solo quando si decide che
+non c'è più niente da recuperare.
 
 ## Errori già fatti (per non ripeterli)
 

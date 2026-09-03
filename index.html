@@ -3,17 +3,64 @@
 <head>
 <meta charset="utf-8">
 <script>
+  // IL PONTE http -> https. Deve restare il PRIMO script della pagina: gira
+  // prima che il motore legga il salvataggio.
+  //
   // Se il sito si apre in chiaro (http://), il salvataggio del browser
   // (localStorage) resta legato a QUELL'origine: non si vede piu' passando a
   // https://, e viceversa — al giocatore sembra che "la partita sparisca"
   // cambiando link, ma e' lo stesso sito, solo un indirizzo diverso agli
   // occhi del browser. GitHub Pages non forza da solo https su questo
-  // dominio, quindi il redirect lo fa la pagina, prima di qualunque altro
-  // script (persino prima del resto di <head>), cosi' nessun salvataggio
-  // finisce mai scritto sotto http://.
-  if (location.protocol === 'http:' && /(^|\.)fantaliberty\.com$/.test(location.hostname)) {
-    location.replace('https://' + location.host + location.pathname + location.search + location.hash);
-  }
+  // dominio, quindi il redirect lo fa la pagina.
+  //
+  // Il redirect da solo pero' impedisce nuovi danni e NON restituisce niente:
+  // le partite gia' scritte sotto http:// restano di la', irraggiungibili
+  // (https non puo' leggere il localStorage di http, e non puo' nemmeno
+  // aprirlo in un iframe: e' contenuto misto, il browser lo blocca). L'unico
+  // momento in cui quei dati sono a portata di mano e' mentre la pagina http
+  // e' ancora aperta — cioe' proprio qui. Quindi prima di saltare di la' se li
+  // porta dietro nel frammento dell'indirizzo (#ponte=...), che il browser
+  // NON manda al server: restano sul telefono.
+  (function () {
+    var CHIAVI = ['fl_nexus_save_v1', 'fl_nexus_da_inviare', 'fl_runner_record',
+                  'fl_runner_nick', 'fl_runner_tutorial', 'fl_audio'];
+    var PONTE = '#ponte=';
+    if (!/(^|\.)fantaliberty\.com$/.test(location.hostname)) return;
+
+    if (location.protocol === 'http:') {
+      var roba = {}, quante = 0, coda = '';
+      try {
+        for (var i = 0; i < CHIAVI.length; i++) {
+          var v = localStorage.getItem(CHIAVI[i]);
+          if (v !== null) { roba[CHIAVI[i]] = v; quante++; }
+        }
+        if (quante) coda = PONTE + encodeURIComponent(JSON.stringify(roba));
+      } catch (e) { coda = ''; }   // Safari privato: si passa di la' a mani vuote
+      location.replace('https://' + location.host + location.pathname
+                       + location.search + (coda || location.hash));
+      return;
+    }
+
+    // Di qua: si scarica il pacco, UNA CHIAVE ALLA VOLTA E MAI SOPRA UNA GIA'
+    // PRESENTE. Chi ha gia' ricominciato da capo di qua ha un salvataggio
+    // nuovo e piu' avanti del vecchio: coprirlo vorrebbe dire cancellargli la
+    // partita in corso per restituirgli quella persa — il danno che il ponte
+    // dovrebbe riparare, fatto al contrario.
+    if (location.hash.lastIndexOf(PONTE, 0) !== 0) return;
+    try {
+      var pacco = JSON.parse(decodeURIComponent(location.hash.slice(PONTE.length)));
+      for (var k = 0; k < CHIAVI.length; k++) {
+        var nome = CHIAVI[k];
+        if (typeof pacco[nome] !== 'string') continue;
+        if (localStorage.getItem(nome) !== null) continue;
+        try { localStorage.setItem(nome, pacco[nome]); } catch (e) {}
+      }
+    } catch (e) {}
+    // Via il pacco dall'indirizzo: non deve restare nella cronologia ne'
+    // finire in un link condiviso.
+    try { history.replaceState(null, '', location.pathname + location.search); }
+    catch (e) { location.hash = ''; }
+  })();
 </script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0f">
@@ -48,7 +95,7 @@
   gtag('js', new Date());
   gtag('config', 'G-SYX1RZLNNE');
 </script>
-<link rel="stylesheet" href="./game/engine.css?v=150">
+<link rel="stylesheet" href="./game/engine.css?v=151">
 </head>
 <body>
 <div id="stage">
@@ -390,12 +437,12 @@
      telefono, cosi' la sigla dello studio si sente davvero. Si salta con
      ?subito (i tool di verifica), ?dev e ?scene= (sviluppo). -->
 <div id="home" hidden>
-  <img id="homeBg" src="./assets/bg/bg_intro.webp?v=150" alt="">
+  <img id="homeBg" src="./assets/bg/bg_intro.webp?v=151" alt="">
   <button id="homeGioca" type="button">GIOCA</button>
 </div>
 
-<script src="./game/analytics.js?v=150"></script>
-<script src="./game/engine.js?v=150"></script>
+<script src="./game/analytics.js?v=151"></script>
+<script src="./game/engine.js?v=151"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -475,7 +522,84 @@
 
     dati = { story: story, banca: banca, backend: backend, quiz: quiz };
     partito = true;
-    avvia();
+
+    // Codice di ripresa (#riprendi=<run_id>): si riprende la propria partita
+    // da un telefono che non l'ha mai vista. Prima di avviare si va a
+    // ripescarla, se no il motore parte da capo e il salvataggio nuovo
+    // coprirebbe quello che stiamo per recuperare.
+    var codice = codiceRipresa();
+    if (!codice) return avvia();
+    recupera(codice, backend, function (stato) {
+      if (stato) { opts.stato = stato; opts.scene = 'countdown'; }
+      avvia();
+    });
+  }
+
+  /* ---------------- il codice di ripresa ----------------
+     Il salvataggio vive nel browser: cambiare telefono, o perderlo, vuol dire
+     non ritrovare piu' la partita. La schedina pero' e' sul server, e il suo
+     run_id e' un UUID — non si indovina, come un link privato. Chi ce l'ha e'
+     il proprietario: non serve nessuna login.
+
+     Il codice viaggia nel FRAMMENTO, non nella query: cosi' non finisce nei
+     log del server che serve la pagina. Stessa ragione del ponte http->https.
+
+     Si torna al countdown con le previsioni gia' confermate, non al punto
+     esatto in cui si era: prima della conferma sul server non arriva niente,
+     quindi una partita a meta' non e' ricostruibile e non si finge che lo sia. */
+  function codiceRipresa() {
+    var m = /[#&]riprendi=([0-9a-fA-F-]{36})/.exec(location.hash || '');
+    return m ? m[1] : null;
+  }
+
+  function recupera(codice, backend, poi) {
+    // Via il codice dall'indirizzo subito: non deve restare in cronologia ne'
+    // essere ricondiviso per sbaglio. E' la chiave della partita di qualcuno.
+    try { history.replaceState(null, '', location.pathname + location.search); }
+    catch (e) {}
+    if (!backend || !backend.url || !backend.chiave) {
+      mostraErrore('Non riesco a raggiungere il server per riprendere la partita.');
+      return;
+    }
+    fetch(backend.url + '/rest/v1/rpc/riprendi_run', {
+      method: 'POST',
+      headers: { 'apikey': backend.chiave, 'Authorization': 'Bearer ' + backend.chiave,
+                 'Content-Type': 'application/json' },
+      body: JSON.stringify({ codice: codice })
+    }).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (riga) {
+        if (!riga) {
+          return mostraErrore('Questo codice di ripresa non risulta.<br>'
+            + '<small>Controlla di aver aperto il link per intero.</small>');
+        }
+        poi(statoDaRiga(riga));
+      })
+      .catch(function () {
+        mostraErrore('Non sono riuscito a recuperare la partita.<br>'
+          + '<small>Controlla la connessione e riapri il link.</small>');
+      });
+  }
+
+  // La riga del database e' il payload di engine.js (payload()) messo in
+  // colonne: qui si torna indietro. Chi aggiunge un campo al payload lo
+  // aggiunge anche qui, o al ritorno quel pezzo di partita manca.
+  function statoDaRiga(r) {
+    var quiz = r.quiz || {}, runner = r.runner || {}, flags = r.flags || {};
+    return {
+      run_id: r.run_id,
+      nome: r.nome, cognome: r.cognome || '', genere: r.genere,
+      store: r.store, reparto: r.reparto, anni: r.anni, device: r.device,
+      stile: r.stile, email: r.email || '',
+      punti: r.punti, picks: r.picks || {},
+      sfacciato: !!flags.sfacciato, studiato: flags.studiato,
+      quiz: quiz.livelli || {}, mult_bank: quiz.banca || 0,
+      moltiplicatori: quiz.moltiplicatori || null,
+      runner_record: Number(runner.record || 0),
+      // La partita e' oltre le previsioni: il pulsante Esci non deve tornare
+      // (post_lobby_visto), la lobby non deve rifare le presentazioni, e la
+      // tenda porta al countdown invece che allo show.
+      locked: true, raggiunto_s2: true, post_lobby_visto: true
+    };
   }
 
   // Parte solo quando ci sono tutte e due le cose: i dati, e il GIOCA premuto
@@ -515,7 +639,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=150', { cache: 'no-cache' })      .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
+    return fetch('./game/' + nome + '?v=151', { cache: 'no-cache' })      .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e
   // l'invio resta in coda per il prossimo avvio
