@@ -631,7 +631,23 @@ si arriva **dopo** il quiz, non prima.
    controcorrente, apposta — è un promemoria, non un posto dove ripensarci. Sta
    solo nel countdown: è la schermata su cui si riapre il gioco nei giorni di
    attesa, e la lobby ha già abbastanza.
-4. **L'email non è obbligatoria e non deve diventarlo.** Campo vuoto +
+4. **Il link di ripresa sta nel countdown, e solo lì** (`ripresa: true`
+   nell'azione → `mostraRipresa()`). È `#riprendi=<run_id>`: il salvataggio
+   vive nel browser, e cambiare telefono o vederselo cancellare vuol dire
+   perdere la partita — successo davvero il 2/9/2026. La schedina però è sul
+   server, e il `run_id` la riapre da qualunque parte. Sta nel countdown per la
+   stessa ragione delle previsioni: è la schermata su cui si riapre il gioco
+   nei giorni d'attesa, l'unico posto dove qualcuno ci ripassa con calma prima
+   che il link gli serva. Tre cose: si offre **solo** se `run_id` esiste (senza
+   schedina spedita non c'è niente da riprendere e il link sarebbe rotto); si
+   passa dal **foglio di condivisione** del telefono, con gli appunti e poi il
+   link scritto a schermo come ripieghi, perché nessuna delle tre funziona
+   dappertutto e l'ultima non fallisce mai; e il codice viaggia nel
+   **frammento**, che non arriva al server. Chi tocca la funzione
+   `riprendi_run` in `docs/backend.sql` ricordi che è l'unica strada di lettura
+   su `runs`: ad anon non si dà mai una select sulla tabella, o l'intera
+   tabella diventa scaricabile con una GET.
+5. **L'email non è obbligatoria e non deve diventarlo.** Campo vuoto +
    CONTINUA vale come saltare, e il salto è un bottone dichiarato. La partita
    va in coda al momento della conferma e la spedisce la schermata dell'email:
    una riga sola, con l'email dentro se c'è. Se cambia il payload cambia anche
@@ -719,11 +735,31 @@ non sono confermate (`run.locked`). Dopo il lock la stessa zona diventa
 sul corridoio `campus_run_corridor` e apre subito la corsa sopra, come il
 regolamento e i quadri — nessuna animazione di porta che si apre, il cambio è
 nel fondale e nel lettore badge (rosso/verde), già disegnati dentro le due
-immagini. **Aggiungere un secondo accesso** (un bottone nel countdown, un link
-nel quiz) **scavalca la porta, che è l'unico punto narrativo del gioco per
-questa attività: non farlo.** Per la stessa ragione la corsa non sta sotto la
-griglia dei tre livelli di S8 (i pannelli dicono a che punto sono le domande, un
-elemento in più toglie loro quel significato) né fra i bottoni del countdown.
+immagini. **Aggiungere un secondo accesso *dentro il gioco*** (un bottone nel
+countdown, un link nel quiz) **scavalca la porta, che è l'unico punto narrativo
+del gioco per questa attività: non farlo.** Per la stessa ragione la corsa non
+sta sotto la griglia dei tre livelli di S8 (i pannelli dicono a che punto sono
+le domande, un elemento in più toglie loro quel significato) né fra i bottoni
+del countdown.
+
+**L'unica eccezione è il menu iniziale, ed è voluta** (chiesta dall'utente il
+3/9/2026): sotto GIOCA LA STORIA c'è **GIOCA A CAMPUS RUN**, che apre la corsa
+senza aver fatto la storia. Non contraddice la regola qui sopra: quella
+protegge la scoperta della porta *mentre si gioca*, e in home la partita non è
+ancora cominciata — è la seconda voce di un menu, non una scorciatoia dentro la
+narrazione. Per questo il bottone è più piccolo e spento, e sta **sotto**: la
+storia resta la porta principale. Tecnicamente è `opts.soloCorsa` in
+`VN.boot()`, che apre `apriCorsa()` e **non entra in nessuna scena**; uscendo si
+ricarica la pagina, così il menu torna pulito invece di essere rimontato a mano
+su un motore già avviato.
+
+**Chi entra da lì ha comunque bisogno di un'identità stabile.** La classifica ha
+una riga per giocatore (`player_id`) e un indice unico sul nick: generando un id
+nuovo a ogni apertura, la stessa persona comparirebbe come tanti giocatori e al
+secondo punteggio si vedrebbe rifiutare il **proprio** nick. Perciò
+`identitaCorsa()` in `index.html` riusa il `run_id` della partita salvata se c'è
+(è la stessa persona), altrimenti tiene un id del telefono in **`fl_runner_id`**
+— che sta anche nell'elenco `CHIAVI` del ponte.
 
 **2. La porta non è muta: ha tre indizi, e sono tutto quello che c'è.** Solo i
 più svegli la trovavano. (a) Il rifiuto prima delle previsioni dice cosa c'è
