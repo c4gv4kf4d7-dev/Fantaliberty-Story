@@ -143,9 +143,13 @@ mancanti" ma **rinominare il cast e ricollegare le scene** al nome giusto.
 - I quattro stili vivono in `story.stili` (nome, descrizione, perk, 11 pose),
   non dentro la scena — li leggono sia S5 che S8.
 
-**Domanda aperta, da non decidere da soli:** come i punti dell'Apple Campus
-Run si sommino alla classifica dei pronostici. `VN.state.runner_record` si
-salva e si spedisce, ma non c'è una formula — va chiesto, non inventato.
+**I punti dell'Apple Campus Run non entrano nella classifica dei pronostici.**
+Deciso dall'utente il 3/9/2026, dopo mesi in cui la domanda era rimasta aperta.
+`VN.state.runner_record` continua a salvarsi e a viaggiare con la schedina —
+chi conta a mano ce l'ha se un giorno servisse — ma **non esiste una formula e
+non va inventata**: la corsa ha la sua classifica, separata, ed è lì che quei
+punti valgono. Chi si mette a sommarli ai pronostici sta cambiando le regole
+della gara a giochi fatti.
 
 ## Il camerino (S3): cosa regge la sezione
 
@@ -752,6 +756,14 @@ storia resta la porta principale. Tecnicamente è `opts.soloCorsa` in
 `VN.boot()`, che apre `apriCorsa()` e **non entra in nessuna scena**; uscendo si
 ricarica la pagina, così il menu torna pulito invece di essere rimontato a mano
 su un motore già avviato.
+
+**Prima della corsa il menu chiede "Hai già giocato la storia?"**, e chi
+risponde di no ci viene mandato (`storia` in `opts.soloCorsa`, un secondo
+`VN.boot()` — la stessa strada del menu Esci, che ripulisce da sola quello che
+c'è a schermo). Non è un fastidio da togliere: i punti della corsa **non**
+entrano nella classifica dei pronostici, quindi chi si fermasse lì si giocherebbe
+un minigioco credendo di essere in gara. È la domanda che rende accettabile
+avere il bottone in home. La modale è `mostraModale()`, riusata così com'è.
 
 **Chi entra da lì ha comunque bisogno di un'identità stabile.** La classifica ha
 una riga per giocatore (`player_id`) e un indice unico sul nick: generando un id
