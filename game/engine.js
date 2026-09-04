@@ -6032,8 +6032,20 @@
        ONLY — quella regola vale per la narrazione, e qui la narrazione non e'
        ancora cominciata. */
     if (opts.soloCorsa) {
-      var fine = opts.soloCorsa.fine;
-      return apriCorsa(opts.soloCorsa, function () { if (fine) fine(); });
+      var cfg = opts.soloCorsa;
+      /* Prima di aprire la corsa si chiede se la storia e' gia' stata giocata.
+         Chi risponde di no viene mandato li': la corsa e' un contorno, e senza
+         questa domanda qualcuno si sarebbe giocato il gioco intero senza
+         sapere che esisteva. Chi dice di si' va dritto.
+         E' la stessa mostraModale del menu Esci, non un dialogo a parte. */
+      if (!cfg.domanda) {
+        return apriCorsa(cfg, function () { if (cfg.fine) cfg.fine(); });
+      }
+      return mostraModale(
+        { text: cfg.domanda, si: cfg.si, no: cfg.no },
+        function () { apriCorsa(cfg, function () { if (cfg.fine) cfg.fine(); }); },
+        function () { if (cfg.storia) cfg.storia(); }
+      );
     }
 
     if (opts.scene) { VN.clearSave(); return goScene(start); }   // ?scene=lobby, per lo sviluppo

@@ -55,9 +55,15 @@ della partita migliore) — ma l'ordine è **per punti e basta**; la colonna del
 tempo può mancare sul server (`CLA.conTempo`, si riprova senza al primo 400), e
 il gioco non se ne accorge.
 
-**Il record si tiene, i punti no.** `VN.state.runner_record` entra nel
-salvataggio; come i punti della corsa si sommino alla classifica dei pronostici
-**non è deciso — non inventarlo**.
+**I punti della corsa non entrano nella classifica dei pronostici** (deciso
+dall'utente il 3/9/2026). `VN.state.runner_record` entra nel salvataggio e
+viaggia con la schedina, ma è solo un dato conservato: la corsa ha la sua
+classifica, separata, ed è lì che quei punti valgono. **Non inventare una
+formula che li sommi ai pronostici.**
+
+È anche il motivo per cui il menu iniziale, prima di aprire la corsa, chiede
+"Hai già giocato la storia?": chi risponde di no viene mandato alla storia,
+perché fermandosi qui non starebbe accumulando niente che conti per la gara.
 
 ## La schermata di morte non si tocca per un attimo
 

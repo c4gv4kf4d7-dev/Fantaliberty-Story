@@ -3602,11 +3602,37 @@ function apriMoltiplicatori(stato, extra) {
   assert.match(pagina, /CHIAVI = \[[^\]]*'fl_runner_id'/,
     'fl_runner_id passa il ponte, o chi traghetta perde la sua riga di classifica');
 
+  /* Prima della corsa si chiede se la storia e' gia' stata giocata: i punti
+     della corsa NON entrano nella classifica dei pronostici, quindi chi si
+     fermasse qui giocherebbe un minigioco credendo di essere in gara. */
+  assert.match(pagina, /domanda: 'Hai già giocato la storia\?'/,
+    'il menu chiede se la storia e\' gia\' stata giocata, prima di aprire la corsa');
+
   VN.clearSave();
   const idFinto = '11111111-2222-4333-8444-555555555555';
-  VN.boot(story, { speed: 0, banca, quiz,
-    stato: { run_id: idFinto },
-    soloCorsa: { esci: 'Torna al menu', fine() {} } });
+  let andatoInStoria = false;
+  const soloCorsa = {
+    esci: 'Torna al menu', fine() {},
+    domanda: 'Hai già giocato la storia?',
+    si: 'SÌ, PORTAMI ALLA CORSA', no: 'NO, GIOCO LA STORIA',
+    storia() { andatoInStoria = true; },
+  };
+  VN.boot(story, { speed: 0, banca, quiz, stato: { run_id: idFinto }, soloCorsa });
+  assert.ok($('modal').classList.contains('on'),
+    'la corsa non si apre subito: prima la domanda');
+  assert.equal($('runwrap').classList.contains('on'), false, 'e la corsa non e\' ancora aperta');
+  const scelte = [...$('modalbtns').querySelectorAll('.ch')].map((b) => b.textContent);
+  assert.deepEqual(scelte, ['SÌ, PORTAMI ALLA CORSA', 'NO, GIOCO LA STORIA'],
+    'due strade, e il "no" dice dove porta invece di essere un annulla');
+
+  // "No": si va alla storia, non si resta fermi sul menu.
+  [...$('modalbtns').querySelectorAll('.ch')][1].onclick({ stopPropagation() {} });
+  assert.ok(andatoInStoria, '"No" manda alla storia');
+  assert.equal($('runwrap').classList.contains('on'), false, 'e non apre la corsa');
+
+  // "Si'": dritto alla corsa.
+  VN.boot(story, { speed: 0, banca, quiz, stato: { run_id: idFinto }, soloCorsa });
+  [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });
   assert.ok($('runwrap').classList.contains('on'),
     'dal menu la corsa si apre da sola, senza passare da una scena');
   assert.equal($('runchiudi').textContent, 'Torna al menu',
