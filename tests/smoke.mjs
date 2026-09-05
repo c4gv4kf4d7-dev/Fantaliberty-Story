@@ -154,7 +154,8 @@ for (const [id, sc] of Object.entries(story.scenes)) {
     if (st.t === 'countdown') {
       assert.ok(st.azioni?.length, `scena ${id}: countdown senza vie d'uscita`);
       for (const a of st.azioni) {
-        assert.ok(a.goto || a.card || a.corsa || a.previsioni, `scena ${id}: azione "${a.label}" non fa niente`);
+        assert.ok(a.goto || a.card || a.corsa || a.previsioni || a.ripresa,
+          `scena ${id}: azione "${a.label}" non fa niente`);
         if (a.goto) assert.ok(story.scenes[a.goto], `scena ${id}: countdown verso "${a.goto}", che non esiste`);
       }
       // senza una data il countdown non conta niente
@@ -523,7 +524,12 @@ for (const [who, c] of Object.entries(story.cast || {})) {
 /* ---------- 3. flusso di gioco in jsdom ---------- */
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8')
   .replace(/<script src=".*?"><\/script>/, '')
-  .replace(/<script>[\s\S]*?<\/script>/, '');           // via il bootstrap con fetch
+  // via lo script del redirect http->https (usa location.replace, non serve
+  // e non deve girare qui) e quello di gtag (dataLayer/gtag('config'...):
+  // mirati per contenuto, non per posizione — un nuovo <script> messo prima
+  // di questi non deve far sparire quello sbagliato.
+  .replace(/<script>(?:(?!<\/script>)[\s\S])*?location\.replace[\s\S]*?<\/script>/, '')
+  .replace(/<script>(?:(?!<\/script>)[\s\S])*?gtag\('config'[\s\S]*?<\/script>/, '');
 
 const dom = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://fantaliberty.com/' });
 dom.window.eval(fs.readFileSync(path.join(ROOT, 'game/engine.js'), 'utf8'));
@@ -577,27 +583,24 @@ assert.ok($('npcBody').getAttribute('src').includes('chr_lucas_neutro'), 'posa n
 
 VN.step();                                              // -> scena registrazione
 
-// input nome
+// nome e cognome: due campi nella stessa schermata, uno sotto l'altro
 assert.ok($('inputform').classList.contains('on'), 'form nome visibile');
-assert.match(txt(), /Come ti chiami/, 'una domanda sola per i primi due campi');
-assert.equal($('ti').placeholder, 'Nome', 'il campo dice quale dei due si sta scrivendo');
+assert.match(txt(), /Come ti chiami/, 'una domanda sola per i due campi');
+assert.equal($('ti').placeholder, 'Nome', 'il primo campo e\' il nome');
+assert.equal($('tiriga2').hidden, false, 'il secondo campo e\' gia\' a schermo');
+assert.match($('ti2').placeholder, /Cognome/, 'il secondo campo e\' il cognome');
+assert.equal($('tok').parentNode.id, 'tiriga2', 'OK sta accanto all\'ultimo campo');
+assert.equal($('tok').disabled, true, 'senza nome non si va avanti');
 $('ti').value = 'Fr@nc€sco!!!';
 $('ti').oninput();
 assert.equal(VN.state.nome, 'Frncsco', 'sanitizzazione input');
 assert.equal($('tval_nome').textContent, 'FRNCSCO', 'terminale aggiornato live');
 $('ti').value = 'Franco';
 $('ti').oninput();
-$('tok').onclick();
-
-// input cognome: facoltativo, il bottone resta premibile anche a campo vuoto
-assert.ok($('inputform').classList.contains('on'), 'form cognome visibile');
-// nessuna seconda domanda: resta a schermo quella di prima, e a dire che ora
-// tocca al cognome ci pensa il suggerimento dentro al campo
-assert.match(txt(), /Come ti chiami/, 'la battuta non viene riscritta per il secondo campo');
-assert.match($('ti').placeholder, /Cognome/, 'il campo dice che ora tocca al cognome');
+// cognome facoltativo: OK e' gia' premibile con il solo nome
 assert.equal($('tok').disabled, false, 'campo facoltativo: si puo\' continuare anche vuoto');
-$('ti').value = 'Ross@i!!!';
-$('ti').oninput();
+$('ti2').value = 'Ross@i!!!';
+$('ti2').oninput();
 assert.equal(VN.state.cognome, 'Rossi', 'sanitizzazione input, come per il nome');
 assert.equal($('tval_cognome').textContent, 'ROSSI', 'terminale aggiornato live');
 $('tok').onclick();
@@ -1562,8 +1565,42 @@ for (const [stile, e] of Object.entries(banca.eventi_personali)) {
     `il tempo che manca non e' formattato: "${$('cdtempo').textContent}"`);
   const azioni = [...$('cdbtn').querySelectorAll('.ch')];
   assert.deepEqual(azioni.map((b) => b.textContent),
-    ['Il quiz di Peter', 'Torna in lobby', 'La tua card', 'Le tue previsioni'],
+    ['Il quiz di Peter', 'Torna in lobby', 'La tua card', 'Le tue previsioni',
+     'Il tuo link di ripresa'],
     'nessun bottone diretto alla corsa: si raggiunge solo dalla porta STAFF ONLY in lobby');
+
+  /* "Il tuo link di ripresa": il salvataggio vive nel browser, e cambiare
+     telefono vuol dire perderlo. Il link lo riapre da qualunque parte. */
+  {
+    const uuid = '3f2b8c10-4d5e-4a6b-8c7d-9e0f1a2b3c4d';
+    const primaDelLink = JSON.stringify(VN.state);
+    // Senza run_id la partita non e' mai stata spedita: non c'e' niente da
+    // riprendere e il bottone non deve inventarsi un link rotto.
+    delete VN.state.run_id;
+    azioni[4].onclick({ stopPropagation() {} });
+    assert.equal($('modal').classList.contains('on'), false,
+      'senza schedina spedita non si offre un link che non riaprirebbe niente');
+
+    VN.state.run_id = uuid;
+    azioni[4].onclick({ stopPropagation() {} });
+    assert.ok($('modal').classList.contains('on'), 'il link si offre in una modale');
+    assert.ok(/qualunque telefono/.test($('modaltxt').textContent),
+      'e si spiega a cosa serve, invece di mostrare un codice e basta');
+
+    let condiviso = null;
+    window.navigator.share = (d) => { condiviso = d; return Promise.resolve(); };
+    [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });
+    assert.ok(condiviso, 'CONDIVIDI apre il foglio di sistema: e\' cosi\' che ci si manda le cose');
+    assert.equal(condiviso.url, 'https://fantaliberty.com/#riprendi=' + uuid,
+      'il link porta il codice nel frammento, che non arriva al server');
+    delete window.navigator.share;
+
+    VN.state.run_id = undefined;
+    assert.equal(JSON.stringify(VN.state), primaDelLink,
+      'offrire il link non tocca la partita');
+    assert.ok($('countdown').classList.contains('on'), 'e il countdown resta sotto');
+    $('modal').classList.remove('on');
+  }
 
   // "Le tue previsioni": si rileggono, non si cambiano. Si apre sopra il
   // countdown e alla chiusura non ha toccato niente.
@@ -2314,8 +2351,7 @@ VN.clearSave();
 VN.boot(story, { speed: 0, banca, quiz });
 VN.step();                    // luci
 VN.step();                    // prima battuta di Lucas
-$('ti').value = 'Luca'; $('ti').oninput(); $('tok').onclick();
-$('tok').onclick();           // cognome facoltativo: salta senza scrivere niente
+$('ti').value = 'Luca'; $('ti').oninput(); $('tok').onclick();   // cognome facoltativo: resta vuoto
 const scegli = (i) => [...$('choices').querySelectorAll('.ch')][i].onclick({ stopPropagation() {} });
 scegli(0);   // maschile
 scegli(0);   // store: Piazza Liberty
@@ -2590,7 +2626,8 @@ function apriQuizHub(stile) {
   // All'accensione il Mac mostra il "hello." di MacPaint, e il terminale arriva
   // solo dopo i primi dati: l'ordine e' la battuta, non un dettaglio.
   const iHello = reg.steps.findIndex((x) => x.t === 'prop' && x.schermata === 'mac_hello');
-  const iCognome = reg.steps.findIndex((x) => x.t === 'input' && x.var === 'cognome');
+  const iCognome = reg.steps.findIndex((x) => x.t === 'input' &&
+    (x.var === 'cognome' || (x.campi || []).some((c) => c.var === 'cognome')));
   const iTerm = reg.steps.findIndex((x, k) => k > iCognome && x.t === 'prop' && x.show === true && !x.schermata);
   assert.ok(iHello >= 0 && iHello < iCognome, 'il "hello." e\' acceso prima dei primi dati');
   assert.ok(iTerm > iCognome, 'e lascia il posto al terminale dopo nome e cognome');
@@ -2859,14 +2896,18 @@ function apriQuizHub(stile) {
 
 /* 10c. giocare un livello: tutte giuste -> passato, e il moltiplicatore in banca */
 // risponde alla domanda a schermo: trova la domanda vera nel pool dal testo, e
-// clicca il bottone giusto (o uno sbagliato) — i bottoni seguono l'ordine delle
-// opzioni, quindi l'indice della risposta corretta e' proprio "ok"
+// clicca il bottone giusto (o uno sbagliato). I bottoni sono mescolati a ogni
+// domanda, quindi quello giusto si cerca dal testo, non da "ok".
 const tutteQuiz = Object.values(quiz.pool).flat(2);
+const posizioniGiusta = new Set();   // dove e' finita la risposta giusta, domanda dopo domanda
 function rispondiQuiz(giusto) {
   const d = tutteQuiz.find((x) => x.q === $('txt').textContent);
   assert.ok(d, `domanda a schermo non trovata nel pool: "${$('txt').textContent}"`);
   const btns = [...$('choices').querySelectorAll('.ch')].filter((b) => !b.classList.contains('perk'));
-  const i = giusto ? d.ok : (d.ok + 1) % btns.length;
+  const iOk = btns.findIndex((b) => b.textContent === d.opzioni[d.ok]);
+  assert.ok(iOk >= 0, 'la risposta giusta e\' fra i bottoni');
+  posizioniGiusta.add(iOk);
+  const i = giusto ? iOk : (iOk + 1) % btns.length;
   btns[i].onclick({ stopPropagation() {} });
   VN.step();                                 // via la reazione di Peter
   return d;
@@ -3269,7 +3310,7 @@ function apriMoltiplicatori(stato, extra) {
   }
 
   // il terminale si scrive a macchina: il tocco secco non e' il suo suono
-  assert.match(motore, /el\.ti\.oninput = function \(\) \{\n\s*tastiera\(\);/,
+  assert.match(motore, /input\.oninput = function \(\) \{\n\s*tastiera\(\);/,
     'il campo del terminale suona come una tastiera mentre si scrive');
 }
 
@@ -3506,7 +3547,7 @@ function apriMoltiplicatori(stato, extra) {
     const d = tutteQuiz.find((x) => x.q === $('txt').textContent);
     assert.ok(d, `domanda a schermo non trovata nel pool: "${$('txt').textContent}"`);
     const btns = [...$('choices').querySelectorAll('.ch')].filter((b) => !b.classList.contains('perk'));
-    btns[d.ok].onclick({ stopPropagation() {} });
+    btns.find((b) => b.textContent === d.opzioni[d.ok]).onclick({ stopPropagation() {} });
     VN.step();
   };
   for (const liv of ['base', 'avanzato', 'leggenda']) {
@@ -3544,6 +3585,205 @@ function apriMoltiplicatori(stato, extra) {
   delete window.gtag;
 }
 
+/* ---------- Apple Campus Run dal menu iniziale ----------
+   Si gioca senza aver fatto la storia. Dentro il gioco la corsa resta
+   raggiungibile solo dalla porta STAFF ONLY: questo non e' una scorciatoia
+   nella narrazione, e' l'ingresso di chi non la sta giocando. */
+{
+  const pagina = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  assert.match(pagina, /id="homeGioca"[^>]*>GIOCA LA STORIA</,
+    'il bottone principale dice che si gioca la STORIA, ora che non e\' l\'unica cosa');
+  assert.match(pagina, /id="homeCorsa"[^>]*>GIOCA A CAMPUS RUN</,
+    'e sotto c\'e\' la seconda voce');
+  assert.ok(pagina.indexOf('id="homeGioca"') < pagina.indexOf('id="homeCorsa"'),
+    'la storia resta la porta principale: sta prima');
+  // Regola di CLAUDE.md: una chiave fl_* nuova che non entra in CHIAVI non
+  // passa il ponte http->https, e l'identita' della corsa si perderebbe.
+  assert.match(pagina, /CHIAVI = \[[^\]]*'fl_runner_id'/,
+    'fl_runner_id passa il ponte, o chi traghetta perde la sua riga di classifica');
+
+  /* Prima della corsa si chiede se la storia e' gia' stata giocata: i punti
+     della corsa NON entrano nella classifica dei pronostici, quindi chi si
+     fermasse qui giocherebbe un minigioco credendo di essere in gara. */
+  assert.match(pagina, /domanda: 'Hai già giocato la storia\?'/,
+    'il menu chiede se la storia e\' gia\' stata giocata, prima di aprire la corsa');
+
+  VN.clearSave();
+  const idFinto = '11111111-2222-4333-8444-555555555555';
+  let andatoInStoria = false;
+  const soloCorsa = {
+    esci: 'Torna al menu', fine() {},
+    domanda: 'Hai già giocato la storia?',
+    si: 'SÌ, PORTAMI ALLA CORSA', no: 'NO, GIOCO LA STORIA',
+    storia() { andatoInStoria = true; },
+  };
+  VN.boot(story, { speed: 0, banca, quiz, stato: { run_id: idFinto }, soloCorsa });
+  assert.ok($('modal').classList.contains('on'),
+    'la corsa non si apre subito: prima la domanda');
+  assert.equal($('runwrap').classList.contains('on'), false, 'e la corsa non e\' ancora aperta');
+  const scelte = [...$('modalbtns').querySelectorAll('.ch')].map((b) => b.textContent);
+  assert.deepEqual(scelte, ['SÌ, PORTAMI ALLA CORSA', 'NO, GIOCO LA STORIA'],
+    'due strade, e il "no" dice dove porta invece di essere un annulla');
+
+  // "No": si va alla storia, non si resta fermi sul menu.
+  [...$('modalbtns').querySelectorAll('.ch')][1].onclick({ stopPropagation() {} });
+  assert.ok(andatoInStoria, '"No" manda alla storia');
+  assert.equal($('runwrap').classList.contains('on'), false, 'e non apre la corsa');
+
+  // "Si'": dritto alla corsa.
+  VN.boot(story, { speed: 0, banca, quiz, stato: { run_id: idFinto }, soloCorsa });
+  [...$('modalbtns').querySelectorAll('.ch')][0].onclick({ stopPropagation() {} });
+  assert.ok($('runwrap').classList.contains('on'),
+    'dal menu la corsa si apre da sola, senza passare da una scena');
+  assert.equal($('runchiudi').textContent, 'Torna al menu',
+    'e si torna al menu, non "in lobby": chi entra da qui la lobby non l\'ha mai vista');
+  assert.equal(VN.state.run_id, idFinto,
+    'la corsa usa l\'identita\' passata dal menu: generandone una nuova a ogni '
+    + 'apertura la stessa persona si duplicherebbe in classifica');
+  $('runwrap').classList.remove('on');
+}
+
+/* ---------- il ponte http -> https ----------
+   Il salvataggio e' legato all'origine: quello scritto sotto http:// non si
+   vede da https://. Il ponte se lo porta dietro nel frammento dell'indirizzo.
+   Qui lo si prova fuori da jsdom, con un browser finto, perche' serve far
+   girare lo stesso codice su DUE origini diverse. */
+{
+  const pagina = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const m = pagina.match(/<script>((?:(?!<\/script>)[\s\S])*?location\.replace[\s\S]*?)<\/script>/);
+  assert.ok(m, 'il ponte http->https e\' ancora nella pagina');
+  assert.ok(pagina.indexOf(m[0]) < pagina.indexOf('<meta name="viewport"'),
+    'il ponte deve restare il PRIMO script: gira prima che il motore legga il salvataggio');
+  const ponte = new Function('location', 'localStorage', 'history', m[1]);
+
+  const apri = ({ proto = 'https:', host = 'fantaliberty.com', hash = '', dati = {}, privato = false }) => {
+    const store = { ...dati };
+    const ctx = { andato: null, pulito: false, store };
+    ponte(
+      { protocol: proto, hostname: host, host, pathname: '/', search: '', hash,
+        replace(u) { ctx.andato = u; } },
+      { getItem(k) { if (privato) throw new Error('privato'); return k in store ? store[k] : null; },
+        setItem(k, v) { if (privato) throw new Error('privato'); store[k] = v; } },
+      { replaceState() { ctx.pulito = true; } },
+    );
+    return ctx;
+  };
+  const pacco = (url) => JSON.parse(decodeURIComponent(url.slice(url.indexOf('#ponte=') + 7)));
+
+  // --- di qua (http): raccoglie e porta ---
+  const salvataggio = JSON.stringify({ scene: 'lobby', punti: 12 });
+  let c = apri({ proto: 'http:', dati: { fl_nexus_save_v1: salvataggio, fl_runner_record: '9000' } });
+  assert.match(c.andato, /^https:\/\/fantaliberty\.com\//, 'da http si salta su https');
+  assert.deepEqual(pacco(c.andato), { fl_nexus_save_v1: salvataggio, fl_runner_record: '9000' },
+    'il salvataggio viaggia nel frammento, che il browser non manda al server');
+
+  c = apri({ proto: 'http:', dati: {} });
+  assert.ok(!/#ponte=/.test(c.andato), 'senza niente da portare non si appende un pacco vuoto');
+
+  c = apri({ proto: 'http:', privato: true });
+  assert.match(c.andato, /^https:\/\/fantaliberty\.com\//,
+    'in Safari privato il localStorage esplode: si salta di la\' comunque, a mani vuote');
+
+  // --- di la' (https): scarica, ma non copre mai ---
+  const url = '#ponte=' + encodeURIComponent(JSON.stringify({
+    fl_nexus_save_v1: salvataggio, fl_runner_record: '9000',
+  }));
+  c = apri({ hash: url });
+  assert.equal(c.store.fl_nexus_save_v1, salvataggio, 'la partita persa torna');
+  assert.equal(c.store.fl_runner_record, '9000', 'e con lei il record della corsa');
+  assert.ok(c.pulito, 'il pacco sparisce dall\'indirizzo: non resta in cronologia');
+
+  const nuovo = JSON.stringify({ scene: 'keynote', punti: 40 });
+  c = apri({ hash: url, dati: { fl_nexus_save_v1: nuovo } });
+  assert.equal(c.store.fl_nexus_save_v1, nuovo,
+    'chi ha gia\' ricominciato di qua tiene la partita nuova: il ponte non la copre');
+  assert.equal(c.store.fl_runner_record, '9000',
+    'ma le chiavi che di qua mancavano arrivano lo stesso');
+
+  c = apri({ host: 'c4gv4kf4d7-dev.github.io', hash: url });
+  assert.equal(c.store.fl_nexus_save_v1, undefined,
+    'fuori dal dominio pubblico il ponte non tocca niente');
+  c = apri({ proto: 'http:', host: 'localhost', dati: { fl_nexus_save_v1: salvataggio } });
+  assert.equal(c.andato, null, 'in locale non si redirige: si sviluppa in chiaro');
+}
+
+/* ---------- il codice di ripresa ----------
+   La schedina confermata sta sul server: il run_id e' un UUID, e chi ce l'ha
+   puo' rimettersi davanti al countdown da un telefono qualsiasi. Qui si
+   controlla che il codice si legga solo se e' un codice, e soprattutto che
+   il ritorno dal database rimetta a posto TUTTO quello che la schedina porta:
+   un campo dimenticato qui e' un pezzo di partita che non torna. */
+{
+  const pagina = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const pesca = (nome) => {
+    const m = pagina.match(new RegExp('function ' + nome + '\\s*\\([^)]*\\)\\s*\\{[\\s\\S]*?\\n  \\}'));
+    assert.ok(m, `manca ${nome}() in index.html`);
+    return m[0];
+  };
+  const codiceRipresa = new Function('location',
+    pesca('codiceRipresa') + '; return codiceRipresa();');
+  const statoDaRiga = new Function('riga', pesca('statoDaRiga') + '; return statoDaRiga(riga);');
+
+  const uuid = '3f2b8c10-4d5e-4a6b-8c7d-9e0f1a2b3c4d';
+  assert.equal(codiceRipresa({ hash: '#riprendi=' + uuid }), uuid, 'il codice si legge dal frammento');
+  assert.equal(codiceRipresa({ hash: '#ponte=x&riprendi=' + uuid }), uuid,
+    'convive col ponte http->https, che usa lo stesso frammento');
+  assert.equal(codiceRipresa({ hash: '' }), null, 'senza frammento non si riprende niente');
+  assert.equal(codiceRipresa({ hash: '#riprendi=pippo' }), null, 'e non si accetta un codice inventato');
+
+  // La riga finta ha ESATTAMENTE i campi che payload() spedisce (il test 10j
+  // sopra li fissa): se il payload cambia e questa mappa no, si vede qui.
+  const riga = {
+    run_id: uuid, nome: 'Lorenzo', cognome: 'Bandini', genere: 'm',
+    store: 'Roma', reparto: 'Genius', anni: '2', device: '15', stile: 'drip',
+    punti: 37, picks: { iphone: { core: { Q1: { v: 'a', p: 2 } } } },
+    flags: { sfacciato: true, studiato: 3 },
+    quiz: { livelli: { base: { passato: true } }, banca: 1.5, moltiplicatori: { iphone: 0.5 } },
+    runner: { record: 9000 }, email: 'x@y.it', versione: '4.0',
+  };
+  const st = statoDaRiga(riga);
+  assert.equal(st.nome, 'Lorenzo'); assert.equal(st.cognome, 'Bandini');
+  assert.equal(st.genere, 'm'); assert.equal(st.stile, 'drip');
+  assert.equal(st.store, 'Roma'); assert.equal(st.reparto, 'Genius');
+  assert.equal(st.anni, '2'); assert.equal(st.device, '15');
+  assert.equal(st.punti, 37); assert.deepEqual(st.picks, riga.picks);
+  assert.equal(st.sfacciato, true); assert.equal(st.studiato, 3);
+  assert.deepEqual(st.quiz, { base: { passato: true } }, 'i livelli del quiz tornano');
+  assert.equal(st.mult_bank, 1.5, 'e i moltiplicatori ancora da spendere');
+  assert.deepEqual(st.moltiplicatori, { iphone: 0.5 }, 'e quelli gia' + '\' assegnati');
+  assert.equal(st.runner_record, 9000, 'e il record della corsa');
+  assert.equal(st.email, 'x@y.it',
+    'l\'email torna indietro: senza, il secondo invio la sovrascriverebbe con null');
+  assert.equal(st.run_id, uuid,
+    'si riprende lo STESSO run_id, o la partita ripresa diventerebbe una riga nuova');
+  assert.equal(st.locked, true, 'la partita ripresa e\' oltre le previsioni');
+  assert.equal(st.post_lobby_visto, true, 'quindi il pulsante Esci non ricompare');
+
+  // Ogni campo della schedina o e' rimesso nello stato, o e' roba di servizio.
+  const diServizio = ['versione'];
+  for (const campo of Object.keys(riga)) {
+    if (diServizio.includes(campo)) continue;
+    const mappa = pesca('statoDaRiga');
+    assert.ok(mappa.includes(campo),
+      `statoDaRiga non rimette a posto "${campo}": la partita ripresa torna monca`);
+  }
+
+  const vuota = statoDaRiga({ run_id: uuid, nome: 'Ada' });
+  assert.equal(vuota.cognome, '', 'una schedina senza cognome non riporta "undefined"');
+  assert.equal(vuota.runner_record, 0, 'ne\' un record NaN');
+  assert.deepEqual(vuota.quiz, {}, 'ne\' un quiz indefinito');
+
+  assert.ok(/riprendi_run/.test(fs.readFileSync(path.join(ROOT, 'docs', 'backend.sql'), 'utf8')),
+    'la funzione riprendi_run sta in docs/backend.sql, come upsert_run');
+}
+
 if (todoAssets.size) console.log(`asset ancora da disegnare (${todoAssets.size}):`, [...todoAssets].join(', '));
 console.log(`banca domande: ${idsDomande.size} domande, ${nBattute} battute · quiz: ${idsQuiz.size} domande`);
+/* Le risposte del quiz si mescolano: nel file la giusta sta quasi sempre
+   nella stessa casella (in Base tutte in alto a destra), e i giocatori se
+   n'erano accorti il giorno del lancio. Dopo tutte le domande giocate sopra,
+   la giusta deve essere finita in caselle diverse. */
+assert.ok(posizioniGiusta.size >= 2,
+  `le risposte del quiz non si mescolano: la giusta e' sempre nella casella ${[...posizioniGiusta]}`);
+
 console.log('smoke test: OK');

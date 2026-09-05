@@ -897,6 +897,27 @@
     if (id === 'quiz') gaOnce('quiz_started', 'quiz_started', {});
   }
 
+  /* scene_view e' il livello di dettaglio "dove si ferma il giocatore":
+     parte a OGNI cambio scena (non solo per le location tracciate sopra, che
+     sono una lettura narrativa a parte), e porta con se' quanti secondi sono
+     durati sull'ultima scena. In GA4 e' cosi' che si legge il punto esatto di
+     abbandono di una sessione: l'ultimo scene_view registrato e' l'ultima
+     scena vista davvero, non solo "il funnel si e' fermato a un certo step".
+     Nessun dato personale: solo id di scena, mai testo, nome o risposte. */
+  var ultimaScenaVista = null;
+  var ultimoIngressoScena = 0;
+  function trackScenaVista(id) {
+    var ora = Date.now();
+    var params = { scene_id: id };
+    if (ultimaScenaVista && ultimoIngressoScena) {
+      params.previous_scene_id = ultimaScenaVista;
+      params.previous_scene_seconds = Math.round((ora - ultimoIngressoScena) / 1000);
+    }
+    ga('scene_view', params);
+    ultimaScenaVista = id;
+    ultimoIngressoScena = ora;
+  }
+
   function apreSulNero(sc) {
     var steps = sc.steps || [];
     for (var i = 0; i < steps.length; i++) {
@@ -951,6 +972,7 @@
     senzaSalto = false;
     VN.scene = sc; VN.sceneId = id; VN.i = 0;
     trackLocationScena(id);
+    trackScenaVista(id);
     /* Lo stacco di transizione solo sui cambi di POSTO dichiarati in
        story.audio.transizioni (la lobby, il palco, il camerino...), e solo se
        si arriva davvero da un'altra parte: rientrare nella stessa scena dopo un
@@ -1816,6 +1838,10 @@
       VN.progressed = true;
       VN.state[st.var] = o.id;
       VN.state['__label_' + st.var] = o.nome;
+      // Quale personaggio si sceglie non e' un dato personale (e' un
+      // personaggio del gioco, non un'informazione sul giocatore): utile a chi
+      // guarda i dati per sapere quale stile funziona di piu'.
+      if (st.var === 'stile') gaOnce('style_selected', 'style_selected', { style: o.id });
       termSet(st.var);
       chiudiCarosello();
       next();
@@ -3094,6 +3120,7 @@
         if (ev && ev.stopPropagation) ev.stopPropagation();
         if (a.card) return mostraCard(st);
         if (a.previsioni) return mostraPrevisioni(st);
+        if (a.ripresa) return mostraRipresa(st);
         // la corsa si apre sopra il countdown e lo lascia acceso sotto: alla
         // chiusura si e' di nuovo davanti al conto alla rovescia, senza aver
         // cambiato scena
@@ -3163,6 +3190,66 @@
     };
     el.monitorwrap.classList.add('on', 'sololettura');
     el.mondettaglio.classList.add('on');
+  }
+
+  /* ---------------- il link di ripresa ----------------
+     Il salvataggio vive nel browser: cambiare telefono, o perderlo, vuol dire
+     non ritrovare piu' la partita. E' successo davvero il giorno del lancio.
+
+     La schedina pero' e' sul server, e il suo run_id la riapre da qualunque
+     telefono (index.html, #riprendi=...). Qui si consegna quel link al
+     giocatore, prima che gli serva: sta nel countdown perche' e' la schermata
+     su cui si riapre il gioco nei giorni d'attesa, cioe' l'unico posto dove
+     qualcuno ci ripassa con calma.
+
+     Non e' una password e non si chiede a nessuno di ricordarlo: si condivide
+     con il foglio di sistema, che e' il modo in cui su un telefono ci si manda
+     le cose da soli. */
+  function linkRipresa() {
+    var codice = VN.state.run_id;
+    if (!codice) return null;      // partita mai spedita: non c'e' niente da riprendere
+    var base = '';
+    try { base = global.location.origin + global.location.pathname; } catch (e) { return null; }
+    return base + '#riprendi=' + codice;
+  }
+
+  function mostraRipresa(st) {
+    var link = linkRipresa();
+    if (!link) return;
+    // Il testo sta in story.json: qui non si scrivono battute.
+    mostraModale({
+      text: st.ripresaTesto || 'Questo link riapre la tua partita su qualunque telefono.',
+      si: st.ripresaCondividi || 'CONDIVIDI IL LINK',
+      no: st.ripresaChiudi || 'CHIUDI'
+    }, function () { condividiLink(link, st); });
+  }
+
+  /* Tre strade, in ordine di quanto sono comode, perche' nessuna funziona
+     dappertutto: il foglio di condivisione (il modo naturale su un telefono),
+     gli appunti, e in ultimo il link scritto a schermo — che si puo' sempre
+     selezionare o fotografare. L'ultima non fallisce mai, ed e' per questo che
+     c'e'. */
+  function condividiLink(link, st) {
+    var nav = global.navigator || {};
+    var scritto = function () {
+      mostraModale({ text: (st.ripresaCopiato || 'Copiato.'), si: st.ripresaChiudi || 'CHIUDI' });
+    };
+    var aMano = function () {
+      // Il link per esteso: brutto ma infallibile, si fotografa.
+      mostraModale({ text: link, si: st.ripresaChiudi || 'CHIUDI' });
+    };
+    if (nav.share) {
+      try {
+        var p = nav.share({ title: 'FantaLiberty', text: fmt(st.ripresaTitolo || 'La mia partita'), url: link });
+        // Annullare il foglio di condivisione non e' un errore: non si dice niente.
+        if (p && p.catch) p.catch(function () {});
+        return;
+      } catch (e) { /* si scende alla strada dopo */ }
+    }
+    if (nav.clipboard && nav.clipboard.writeText) {
+      try { return nav.clipboard.writeText(link).then(scritto, aMano); } catch (e) {}
+    }
+    aMano();
   }
 
   /* ---------------- la card condivisibile ----------------
@@ -3526,7 +3613,11 @@
       el.quizbar.classList.add('on');
       disegnaTimer();
 
-      opzioni(d, d.opzioni.map(function (_, k) { return k; }));
+      // Le risposte si mescolano a ogni domanda: nel file la giusta sta quasi
+      // sempre nella stessa casella (in Base tutte in alto a destra), e i
+      // giocatori se n'erano accorti il giorno del lancio. "ok" resta l'indice
+      // nel file; qui gira solo l'ordine con cui si disegnano.
+      opzioni(d, mescola(d.opzioni.map(function (_, k) { return k; })));
 
       VN.quizScadenza = function () { rispondi(d, -1); };
       if (VN.speed) {
@@ -3801,6 +3892,10 @@
 
   function apriCorsa(cfg, done) {
     suona('apri');
+    // Campus Run e' un segreto scoperto solo da chi trova la porta STAFF ONLY:
+    // sapere quanti ci arrivano davvero e' un dato a se', non coperto da
+    // nessuna location del funnel principale.
+    gaOnce('campus_run_opened', 'campus_run_opened', {});
     cfg = cfg || {};
     if (!el.runwrap || !el.runframe) return done && done();
     // Musica a caso per la corsa, non quella della scena sotto: si sente ogni
@@ -4463,29 +4558,56 @@
     el.choices.classList.add('on');
   }
 
+  /* Uno step "input" chiede un campo (var/max/placeholder/opzionale) oppure
+     due insieme con "campi": [nome, cognome], uno sotto l'altro nella stessa
+     schermata. Erano due schermate di fila con la stessa battuta sopra, e i
+     giocatori non capivano che il secondo campo era un altro (2/9/2026). Il
+     bottone OK sta accanto all'ultimo campo e si accende quando tutti i campi
+     obbligatori hanno qualcosa dentro. */
   function showInput(st) {
-    var max = st.max || 24;
-    // Il limite lo dichiara la scena (story.json), non l'HTML: due limiti
-    // diversi sullo stesso campo sono due verita' che prima o poi divergono.
-    // Passarlo anche al campo fa smettere di accettare invece di tagliare zitto.
-    el.ti.maxLength = max;
-    var re = st.pattern ? new RegExp(st.pattern, 'g') : /[^A-Za-zÀ-ÿ0-9' ]/g;
-    el.ti.value = '';
-    // il suggerimento dentro al campo: quando due campi di fila arrivano con una
-    // domanda sola, e' l'unica cosa che dice quale dei due si sta scrivendo
-    el.ti.placeholder = fmt(st.placeholder || '');
+    var campi = st.campi || [st];
+    var due = campi.length > 1;
+    var nodi = [el.ti, el.ti2];
+    if (el.tiriga2) el.tiriga2.hidden = !due;
+    // OK sta nella riga dell'ultimo campo visibile
+    (due ? el.tiriga2 : el.tiriga1).appendChild(el.tok);
+
+    function pronto() {
+      return campi.every(function (c, i) {
+        return c.opzionale || String(nodi[i].value || '').trim().length > 0;
+      });
+    }
+    campi.forEach(function (c, i) {
+      var input = nodi[i];
+      if (!input) return;
+      var max = c.max || 24;
+      // Il limite lo dichiara la scena (story.json), non l'HTML: due limiti
+      // diversi sullo stesso campo sono due verita' che prima o poi divergono.
+      // Passarlo anche al campo fa smettere di accettare invece di tagliare zitto.
+      input.maxLength = max;
+      var re = c.pattern ? new RegExp(c.pattern, 'g') : /[^A-Za-zÀ-ÿ0-9' ]/g;
+      input.value = '';
+      // il suggerimento dentro al campo dice cosa ci va
+      input.placeholder = fmt(c.placeholder || '');
+      input.oninput = function () {
+        tastiera();                       // un colpo di tasti, non uno per lettera
+        var v = input.value.replace(re, '').slice(0, max);
+        input.value = v;
+        VN.state[c.var] = v;
+        termSet(c.var);
+        el.tok.disabled = !pronto();
+      };
+      // Invio: sul primo campo passa al secondo, sull'ultimo conferma
+      input.onkeydown = function (e) {
+        if (e.key !== 'Enter') return;
+        var prossimo = nodi[i + 1];
+        if (due && prossimo && i < campi.length - 1) { try { prossimo.focus(); } catch (err) {} return; }
+        if (!el.tok.disabled) el.tok.click();
+      };
+    });
     // Un campo opzionale (es. il cognome) lascia il bottone premibile anche
     // a vuoto: si continua senza aver scritto niente, non e' un errore.
-    el.tok.disabled = !st.opzionale;
-    el.ti.oninput = function () {
-      tastiera();                       // un colpo di tasti, non uno per lettera
-      var v = el.ti.value.replace(re, '').slice(0, max);
-      el.ti.value = v;
-      VN.state[st.var] = v;
-      termSet(st.var);
-      el.tok.disabled = !st.opzionale && v.trim().length === 0;
-    };
-    el.ti.onkeydown = function (e) { if (e.key === 'Enter' && !el.tok.disabled) el.tok.click(); };
+    el.tok.disabled = !pronto();
     el.tok.onclick = function (ev) {
       if (ev && ev.stopPropagation) ev.stopPropagation();
       if (el.tok.disabled) return;
@@ -5774,6 +5896,7 @@
       boxwrap: $('boxwrap'), box: $('box'), name: $('name'), nametxt: $('nametxt'), voce: $('voce'),
       txt: $('txt'), arrow: $('arrow'),
       choices: $('choices'), inputform: $('inputform'), ti: $('ti'), tok: $('tok'),
+      tiriga1: $('tiriga1'), tiriga2: $('tiriga2'), ti2: $('ti2'),
       listform: $('listform'), tsel: $('tsel'), tselok: $('tselok'),
       badgewrap: $('badgewrap'), badgeImg: $('badgeImg'), badgeName: $('badgeName'),
       coriandoli: $('coriandoli'),
@@ -5902,6 +6025,29 @@
     var start = opts.scene || (story.meta && story.meta.start) || Object.keys(story.scenes)[0];
 
     if (opts.dev) return pannelloSviluppo(story, opts);          // ?dev, menu di salto rapido
+    /* Apple Campus Run da sola, aperta dal menu iniziale da chi non sta
+       giocando la storia. Non e' una scena e non tocca la partita: si apre il
+       riquadro sopra lo schermo nero e alla chiusura si torna al menu.
+       Dentro il gioco la corsa resta raggiungibile SOLO dalla porta STAFF
+       ONLY — quella regola vale per la narrazione, e qui la narrazione non e'
+       ancora cominciata. */
+    if (opts.soloCorsa) {
+      var cfg = opts.soloCorsa;
+      /* Prima di aprire la corsa si chiede se la storia e' gia' stata giocata.
+         Chi risponde di no viene mandato li': la corsa e' un contorno, e senza
+         questa domanda qualcuno si sarebbe giocato il gioco intero senza
+         sapere che esisteva. Chi dice di si' va dritto.
+         E' la stessa mostraModale del menu Esci, non un dialogo a parte. */
+      if (!cfg.domanda) {
+        return apriCorsa(cfg, function () { if (cfg.fine) cfg.fine(); });
+      }
+      return mostraModale(
+        { text: cfg.domanda, si: cfg.si, no: cfg.no },
+        function () { apriCorsa(cfg, function () { if (cfg.fine) cfg.fine(); }); },
+        function () { if (cfg.storia) cfg.storia(); }
+      );
+    }
+
     if (opts.scene) { VN.clearSave(); return goScene(start); }   // ?scene=lobby, per lo sviluppo
 
     if (opts.resume !== false && VN.hasSave(story)) {

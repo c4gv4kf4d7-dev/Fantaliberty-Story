@@ -325,3 +325,51 @@ create trigger runner_solo_meglio
 
 -- Per cancellare la classifica a fine iniziativa, come per le schedine:
 --   delete from public.runner_leaderboard;
+
+-- ══════════════════════════════════════════════════════════════════════
+-- Il codice di ripresa: rileggere la propria partita da un altro telefono
+--
+-- Il salvataggio del gioco vive nel browser, e basta cambiare telefono (o
+-- perdere il localStorage) per non ritrovarlo piu'. La schedina pero' e' qui:
+-- chi ha confermato le previsioni ha una riga in runs, e quella riga contiene
+-- tutto quello che serve a rimetterlo davanti al countdown.
+--
+-- La chiave e' il run_id, che il gioco genera una volta e tiene con la
+-- partita. E' un UUID: non si indovina, esattamente come un link privato. Chi
+-- ce l'ha e' il proprietario della partita — non serve nessuna login.
+--
+-- Perche' una funzione e non una policy di select: dare ad anon il permesso di
+-- leggere runs renderebbe l'INTERA tabella scaricabile con una GET (nomi,
+-- reparti e previsioni di tutti). La funzione, come upsert_run, gira con i
+-- permessi del proprietario e restituisce UNA riga SOLO a chi presenta il
+-- codice esatto.
+create or replace function public.riprendi_run(codice uuid)
+returns jsonb
+language sql
+security definer
+set search_path = public
+as $$
+  -- 'id' e 'submitted_at' sono roba della tabella, non della partita: al gioco
+  -- non servono e non c'e' motivo di farli uscire.
+  select to_jsonb(r) - 'id' - 'submitted_at'
+  from public.runs r
+  where r.run_id = codice
+  limit 1;
+$$;
+
+-- Nessun permesso di lettura sulla tabella: solo il diritto di chiamare la
+-- funzione, che senza il codice giusto non restituisce niente.
+revoke all on function public.riprendi_run(uuid) from public, anon;
+grant execute on function public.riprendi_run(uuid) to anon;
+
+-- Verifica dal vivo (sostituisci <CODICE> con un run_id vero):
+--   POST /rest/v1/rpc/riprendi_run   {"codice":"<CODICE>"}   -> la riga
+--   POST /rest/v1/rpc/riprendi_run   {"codice":"<a caso>"}   -> null
+--   GET  /rest/v1/runs?select=*                              -> 401, come prima
+--
+-- Per ritrovare il codice di chi ha perso il telefono e scrive per chiedere
+-- aiuto (l'identita' la verifichi tu, non il gioco):
+--   select run_id, nome, cognome, store, reparto, punti, submitted_at
+--   from public.runs
+--   where lower(nome) = lower('Marco')
+--   order by submitted_at desc;
