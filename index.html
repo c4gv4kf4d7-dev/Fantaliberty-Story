@@ -95,7 +95,7 @@
   gtag('js', new Date());
   gtag('config', 'G-SYX1RZLNNE');
 </script>
-<link rel="stylesheet" href="./game/engine.css?v=154">
+<link rel="stylesheet" href="./game/engine.css?v=155">
 </head>
 <body>
 <div id="stage">
@@ -437,7 +437,7 @@
      telefono, cosi' la sigla dello studio si sente davvero. Si salta con
      ?subito (i tool di verifica), ?dev e ?scene= (sviluppo). -->
 <div id="home" hidden>
-  <img id="homeBg" src="./assets/bg/bg_intro.webp?v=154" alt="">
+  <img id="homeBg" src="./assets/bg/bg_intro.webp?v=155" alt="">
   <button id="homeGioca" type="button">GIOCA LA STORIA</button>
   <!-- Apple Campus Run come sala giochi a se': si apre da qui senza aver fatto
        la storia. Piu' piccolo e spento apposta — la storia resta la porta
@@ -448,8 +448,8 @@
   <button id="homeCorsa" type="button">GIOCA A CAMPUS RUN</button>
 </div>
 
-<script src="./game/analytics.js?v=154"></script>
-<script src="./game/engine.js?v=154"></script>
+<script src="./game/analytics.js?v=155"></script>
+<script src="./game/engine.js?v=155"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -702,7 +702,7 @@
   // La banca dei pronostici sta in un file suo: e' grande quanto tutto il resto
   // dello script (29 domande x 4 stili di battute) e cambia per conto proprio.
   var prendi = function (nome) {
-    return fetch('./game/' + nome + '?v=154', { cache: 'no-cache' })      .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
+    return fetch('./game/' + nome + '?v=155', { cache: 'no-cache' })      .then(function (r) { if (!r.ok) throw new Error(nome + ': ' + r.status); return r.json(); });
   };
   // backend.json e' facoltativo: senza, la partita si chiude lo stesso e
   // l'invio resta in coda per il prossimo avvio

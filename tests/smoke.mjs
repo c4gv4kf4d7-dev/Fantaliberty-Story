@@ -3328,10 +3328,20 @@ function apriMoltiplicatori(stato, extra) {
     'la corsa non deve chiedere un nome per conto suo');
 
   // una riga per giocatore, e dentro solo il migliore
-  assert.match(corsa, /resolution=merge-duplicates/,
-    'il punteggio riscrive la riga del giocatore invece di aggiungerne una');
-  assert.match(corsa, /if \(p > suServer\)/,
-    'si scrive solo se il punteggio nuovo batte il record sul server');
+  // il punteggio non si scrive sulla tabella: lo decide il server (runner_fine),
+  // dopo che la partita e' stata annunciata (runner_inizio)
+  assert.doesNotMatch(corsa, /resolution=merge-duplicates/,
+    'la corsa non deve piu\' scrivere direttamente sulla classifica');
+  assert.match(corsa, /claRpc\('runner_inizio'/, 'la partita si annuncia al server quando parte');
+  assert.match(corsa, /claRpc\('runner_fine'/, 'e la chiude il server, che decide se accettarla');
+  assert.match(corsa, /claInizio\(\);/, 'via() annuncia la partita');
+  assert.match(corsa, /if \(PROVA\) window\.RUN = S;/, 'lo stato si espone solo con ?prova');
+  const sql = fs.readFileSync('docs/backend.sql', 'utf8');
+  for (const f of ['runner_inizio', 'runner_fine', 'runner_rinomina', 'runner_massimo', 'runner_tetto']) {
+    assert.match(sql, new RegExp('create or replace function public\\.' + f), 'backend.sql definisce ' + f);
+  }
+  assert.doesNotMatch(sql, /create policy "il punteggio si scrive"/,
+    'anon non deve piu\' poter scrivere sulla classifica');
   assert.match(corsa, /order=best_score\.desc,updated_at\.asc/,
     'a parita\' di punteggio e\' davanti chi ci e\' arrivato prima');
   assert.match(corsa, /limit=10/, 'si scaricano le prime dieci, non tutta la tabella');
