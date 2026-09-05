@@ -65,6 +65,46 @@ formula che li sommi ai pronostici.**
 "Hai già giocato la storia?": chi risponde di no viene mandato alla storia,
 perché fermandosi qui non starebbe accumulando niente che conti per la gara.
 
+## Il server non si fida del telefono
+
+Un giocatore ha aperto "Ispeziona elemento", cambiato la velocita' e tolto gli
+scalini, e ha fatto un punteggio altissimo; un altro ha usato un bot. Il gioco
+gira per forza sul telefono, quindi **non si puo' impedire di manometterlo**:
+si puo' rifiutare quello che non e' possibile, e lo fa il database, dove il
+browser non arriva (`docs/backend.sql`, sezione "Il server non si fida del
+telefono").
+
+- **La partita si annuncia prima di cominciare.** `via()` chiama `claInizio()`
+  (`rpc/runner_inizio`): il server segna l'ora e restituisce un id. A fine
+  corsa `claFine()` (`rpc/runner_fine`) manda id, punti e secondi, e il server
+  **misura il tempo da solo**: un telefono che dice "ho giocato tre minuti"
+  dopo trenta secondi viene scartato. Se l'annuncio non arriva (rete giu') la
+  partita si gioca lo stesso, solo che non entra in classifica — la classifica
+  non ferma mai il gioco, anche qui.
+- **Il punteggio deve essere possibile in quel tempo.** `runner_massimo()`
+  e' la curva di un giocatore perfetto (velocita' per livello, ~215 punti al
+  metro, qui 280 piu' 500 di abbuono) e `runner_tetto()` e' il tetto assoluto
+  (40.000). Chi cambia le costanti in questo file (velocita' 0.62 + 0.20 a
+  scalino, valore degli anelli, `PASSO_ANELLI`, probabilita' delle chicche)
+  **rifa' il conto anche li'**, se no le partite oneste vengono rifiutate.
+- **La chiave del sito non scrive piu' sulla tabella.** Le policy di insert e
+  update per `anon` sono state tolte: `claSalva` non esiste piu', il nick si
+  cambia con `rpc/runner_rinomina`. La lettura (`claMio`, `claTop`, i conteggi)
+  resta diretta, come prima.
+- **Un rifiuto e' muto per il giocatore.** La riga della posizione mostra il
+  record che c'era, il motivo va in console (`[run] partita non accettata`) e
+  nel registro `runner_partite` sul server, con la query per leggerlo in fondo
+  a `backend.sql`. Niente messaggio a schermo: chi manomette non deve capire
+  dov'e' la soglia.
+- **`window.RUN` e `window.CLA` esistono solo con `?prova`.** Nel gioco vero
+  lo stato non e' in console (era una riga sola per cambiare la velocita'). Non
+  e' una protezione — chi vuole modifica il sorgente — e' un gradino in piu'.
+  Il collaudo (`npm run corsa`) apre il gioco con `?scene=lobby&prova`, e
+  `apriCorsa()` in `engine.js` passa `prova` alla corsa.
+- **Cosa non fa**: un bot che gioca davvero, con punteggi possibili, passa.
+  Per fermarlo bisognerebbe rigiocare la partita sul server mossa per mossa —
+  un altro progetto, non un ritocco.
+
 ## La schermata di morte non si tocca per un attimo
 
 Compare sotto il dito di chi stava ancora giocando, e il tocco di troppo lo

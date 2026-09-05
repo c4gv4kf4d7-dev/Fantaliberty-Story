@@ -3969,7 +3969,15 @@
 
     var pagina = (VN.story.meta && VN.story.meta.runnerInline) || null;
     if (pagina) el.runframe.srcdoc = pagina;
-    else el.runframe.src = conVersione((VN.story.meta && VN.story.meta.runner) || 'game/runner/');
+    else {
+      var urlCorsa = conVersione((VN.story.meta && VN.story.meta.runner) || 'game/runner/');
+      // ?prova sul gioco passa alla corsa: e' l'unico modo in cui il collaudo
+      // (npm run corsa) vede lo stato, che nel gioco vero resta chiuso
+      if (/(^|[?&])prova(=|&|$)/.test(global.location.search || '')) {
+        urlCorsa += (urlCorsa.indexOf('?') < 0 ? '?' : '&') + 'prova';
+      }
+      el.runframe.src = urlCorsa;
+    }
     el.runwrap.classList.add('on');
     // via il bottone dell'audio del gioco: sta sopra il riquadro e finirebbe
     // accanto all'ingranaggio della corsa, che fa gia' quel mestiere

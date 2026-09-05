@@ -49,7 +49,7 @@ pagina.on('response', (r) => {
 });
 
 /* ---------- arrivarci come ci arriva il giocatore ---------- */
-await pagina.goto(INDIRIZZO + '/index.html?scene=lobby', { waitUntil: 'networkidle' });
+await pagina.goto(INDIRIZZO + '/index.html?scene=lobby&prova', { waitUntil: 'networkidle' });
 await pagina.evaluate(() => {
   VN.state.locked = true; VN.state.post_lobby_visto = true;
   VN.state.genere = 'm'; VN.state.nome = 'Collaudo'; VN.state.stile = 'drip';

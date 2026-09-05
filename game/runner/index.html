@@ -734,7 +734,12 @@ const S = {
   intoccabile:0,     // dopo un colpo si lampeggia e non si muore due volte
   scossa:0
 };
-window.RUN = S;   // esposto per il collaudo automatico
+// Lo stato si espone SOLO al collaudo (?prova), non nel gioco vero: con
+// window.RUN a portata di console cambiare la velocita' era una riga sola.
+// Non e' una protezione (chi vuole modifica il sorgente), e' un gradino in
+// piu'; la guardia vera e' il server, vedi "la classifica globale".
+const PROVA = /(^|[?&])prova(=|&|$)/.test(location.search);
+if (PROVA) window.RUN = S;
 const RECORD = 'fl_runner_record';
 let record = 0;
 try { record = +(localStorage.getItem(RECORD) || 0) || 0; } catch(e){}
@@ -1639,6 +1644,7 @@ function via(){
   S.cose = []; S.prossimo = 0.4; S.respiro = false; S.scossa = 0; SEGNALI.length = 0;
   S.vite = VITE; S.intoccabile = 0; S.traguardo = 0; S.scivola = 0; S.salto = 0;
   S.annuncio = null; S.tempo = 0;
+  claInizio();                    // il server segna l'ora: da qui conta il tempo
   nuovaQuotaVita(); mostraVite(null);
   S.imparate = {}; S.collezione = {}; riprendi();
   chiudiUscita();
@@ -1732,7 +1738,7 @@ const NICK = 'fl_runner_nick';
 let nickSalvato = '';
 try { nickSalvato = String(localStorage.getItem(NICK) || ''); } catch(e){}
 
-const CLA = window.CLA = {
+const CLA = {
   id: null, nome: '', cfg: null,
   conTempo: null,    // la colonna del tempo c'e'? null = non lo so ancora
   mioTempo: null,    // il tempo della mia partita migliore, per la riga "TU"
@@ -1740,8 +1746,12 @@ const CLA = window.CLA = {
   posizione: 0, quanti: 0,
   top: null,         // le prime dieci, quando arrivano
   inCorso: false, fallita: false,
-  nickPreso: false   // l'ultimo invio e' stato rifiutato perche' il nick era gia' di un altro
+  nickPreso: false,  // l'ultimo invio e' stato rifiutato perche' il nick era gia' di un altro
+  partita: null,     // l'id della partita in corso, dato dal server a inizio corsa
+  partitaAttesa: null,
+  rifiutata: false   // l'ultima partita non e' stata accettata dal server
 };
+if (PROVA) window.CLA = CLA;
 
 function claAttiva(){ return !!(CLA.id && CLA.cfg && CLA.cfg.url && CLA.cfg.chiave); }
 
@@ -1762,47 +1772,61 @@ async function claMio(){
   return righe.length ? (+righe[0].best_score || 0) : 0;
 }
 
-/* Si scrive solo se il punteggio nuovo batte quello che c'e'. La riga e' una
-   sola per giocatore: l'upsert la riscrive invece di aggiungerne un'altra. */
-/* La colonna del tempo potrebbe non esserci ancora (va aggiunta a mano su
-   Supabase, vedi backend.sql): al primo 400 si prende nota e si riprova
-   senza. La classifica non deve fermare il gioco, e nemmeno una colonna in
-   meno. */
-function mancaColonna(r){ return r.status === 400 && CLA.conTempo !== false; }
-
-async function claSalva(punti, secondi){
-  const riga = { player_id: CLA.id, player_name: CLA.nome || 'Anonimo',
-                 best_score: punti, updated_at: new Date().toISOString() };
-  if (CLA.conTempo !== false && Number.isFinite(secondi)) riga.best_time_s = Math.round(secondi);
-  const manda = () => fetch(claUrl(''), {
+/* ---- il server decide ----
+   Dal 5 settembre 2026 il punteggio non si scrive piu' sulla tabella: si
+   ANNUNCIA la partita quando parte (runner_inizio: il server segna l'ora) e la
+   si CHIUDE quando finisce (runner_fine: il server misura il tempo e rifiuta
+   quello che in quel tempo non si puo' fare — velocita' cambiata dalla
+   console, punteggio scritto a mano, bot che ricomincia in continuazione).
+   Il tutto sta in docs/backend.sql. Un rifiuto per il giocatore e' muto: la
+   classifica resta com'era, il motivo va in console e nel registro sul server.
+   Chi manomette il gioco non deve avere un messaggio da cui capire la soglia. */
+async function claRpc(nome, corpo, opz){
+  const r = await fetch(CLA.cfg.url.replace(/\/+$/, '') + '/rest/v1/rpc/' + nome, Object.assign({
     method: 'POST',
-    headers: claTesta({ 'Content-Type': 'application/json',
-                        Prefer: 'return=minimal,resolution=merge-duplicates' }),
-    body: JSON.stringify(riga)
-  });
-  let r = await manda();
-  if (mancaColonna(r) && 'best_time_s' in riga) {
-    CLA.conTempo = false; delete riga.best_time_s; r = await manda();
-  }
+    headers: claTesta({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(corpo)
+  }, opz || {}));
   // 409: il nick e' di un altro (l'indice unico). Non e' un guasto, e' una
   // risposta: si torna a chiederlo.
   if (r.status === 409) throw Object.assign(new Error('nick preso'), { nick: true });
-  if (!r.ok) throw new Error('scrittura ' + r.status);
-  if ('best_time_s' in riga) CLA.mioTempo = riga.best_time_s;
+  if (!r.ok) throw new Error(nome + ' ' + r.status);
+  const t = await r.text();
+  return t ? JSON.parse(t) : null;
+}
+
+/* All'inizio della corsa, senza aspettare: se il server non risponde la
+   partita si gioca lo stesso, solo che a fine corsa non avra' un id e la
+   classifica non si aggiorna. */
+function claInizio(){
+  CLA.partita = null; CLA.partitaAttesa = null;
+  if (!claAttiva()) return;
+  CLA.partitaAttesa = claRpc('runner_inizio', { p_player_id: CLA.id })
+    .then(id => { CLA.partita = typeof id === 'string' ? id : null; return CLA.partita; })
+    .catch(e => { console.warn('[run] partita non annunciata:', e && e.message); return null; });
+}
+
+async function claFine(punti, secondi){
+  const id = CLA.partita || (CLA.partitaAttesa ? await CLA.partitaAttesa : null);
+  if (!id) throw new Error('partita non annunciata');
+  const esito = await claRpc('runner_fine', {
+    p_partita: id, p_player_id: CLA.id, p_nick: CLA.nome || 'Anonimo',
+    p_punti: punti, p_secondi: Math.round(secondi || 0)
+  });
+  CLA.partita = null; CLA.partitaAttesa = null;
+  return esito || { ok: false, motivo: 'risposta vuota' };
 }
 
 /* Solo il nome, niente punteggio: per chi lo cambia dalla classifica. Se una
    riga ancora non c'e' (mai fatto un punteggio) non c'e' niente da rinominare,
    il nick nuovo entrera' con il primo. */
 async function claRinomina(){
-  const r = await fetch(claUrl('?player_id=eq.' + encodeURIComponent(CLA.id)), {
-    method: 'PATCH',
-    headers: claTesta({ 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
-    body: JSON.stringify({ player_name: CLA.nome })
-  });
-  if (r.status === 409) throw Object.assign(new Error('nick preso'), { nick: true });
-  if (!r.ok) throw new Error('rinomina ' + r.status);
+  await claRpc('runner_rinomina', { p_player_id: CLA.id, p_nick: CLA.nome });
 }
+
+/* La colonna del tempo potrebbe mancare su un server non aggiornato: al primo
+   400 il tabellone si richiede senza. */
+function mancaColonna(r){ return r.status === 400 && CLA.conTempo !== false; }
 
 /* E' libero? Si guarda se qualcun altro ce l'ha gia', senza distinguere le
    maiuscole. Il controllo vero lo fa l'indice del database: questo serve a
@@ -1856,9 +1880,11 @@ async function claAggiorna(punti){
   try {
     const valido = Number.isFinite(punti) && punti >= 0;
     const p = valido ? Math.floor(punti) : 0;
-    const suServer = await claMio();
-    if (p > suServer) { await claSalva(p, S.tempo); CLA.mio = p; }
-    else CLA.mio = suServer;
+    const esito = await claFine(p, S.tempo);       // decide il server
+    CLA.mio = esito.best_score | 0;
+    if (Number.isFinite(+esito.best_time_s)) CLA.mioTempo = +esito.best_time_s;
+    CLA.rifiutata = !esito.ok;
+    if (!esito.ok) console.warn('[run] partita non accettata:', esito.motivo);
 
     /* I due conteggi vanno insieme, non in fila: la riga della posizione e' la
        cosa che il giocatore aspetta a schermo dopo essere morto, e ogni viaggio
@@ -2306,7 +2332,7 @@ addEventListener('message', e => {
    un punteggio deciso invece di doverla giocare. Senza quel parametro non
    esiste, e nel gioco vero l'indirizzo non ce l'ha mai. */
 try {
-  if (/(^|[?&])prova(=|&|$)/.test(location.search)) window.__prova = { S, finisci };
+  if (PROVA) window.__prova = { S, finisci };
 } catch(e){}
 
 // scorciatoia per provare la pagina da sola con il bottone acceso: ?esci=Chiudi

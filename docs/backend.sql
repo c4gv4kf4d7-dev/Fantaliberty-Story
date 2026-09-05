@@ -261,13 +261,13 @@ drop policy if exists "la classifica si legge" on public.runner_leaderboard;
 create policy "la classifica si legge"
   on public.runner_leaderboard for select to anon using (true);
 
+-- Dal 5 settembre 2026 la chiave del sito NON scrive piu' direttamente sulla
+-- classifica: passa dalle funzioni runner_inizio / runner_fine / runner_rinomina
+-- piu' sotto, che controllano che il punteggio sia possibile. Le due policy di
+-- scrittura di prima vanno tolte (chi le lasciasse riaprirebbe la porta a
+-- "punteggio = 99999" scritto dalla console del browser).
 drop policy if exists "il punteggio si scrive" on public.runner_leaderboard;
-create policy "il punteggio si scrive"
-  on public.runner_leaderboard for insert to anon with check (true);
-
 drop policy if exists "il punteggio si aggiorna" on public.runner_leaderboard;
-create policy "il punteggio si aggiorna"
-  on public.runner_leaderboard for update to anon using (true) with check (true);
 
 -- Il tempo della partita migliore, in secondi. E' la terza colonna della
 -- classifica: si mostra e basta, l'ordine resta per punti. Il gioco prova a
@@ -322,6 +322,192 @@ drop trigger if exists runner_solo_meglio on public.runner_leaderboard;
 create trigger runner_solo_meglio
   before update on public.runner_leaderboard
   for each row execute function public.runner_solo_meglio();
+
+-- ===========================================================================
+-- Il server non si fida del telefono (5 settembre 2026)
+-- ===========================================================================
+-- Un giocatore ha aperto "Ispeziona elemento", cambiato la velocita' e tolto
+-- gli scalini, e ha fatto un punteggio altissimo; un altro ha usato un bot.
+-- Il gioco gira per forza sul telefono (e' li' che si corre), quindi non si
+-- puo' impedire di manometterlo: si puo' pero' RIFIUTARE quello che non e'
+-- possibile. Tre cose, tutte qui nel database, dove il browser non arriva:
+--
+--   1. ogni partita si ANNUNCIA prima di cominciare (runner_inizio) e il
+--      server segna l'ora: a fine partita (runner_fine) il tempo lo misura
+--      lui, non il telefono;
+--   2. il punteggio deve stare sotto quello che un giocatore PERFETTO puo'
+--      fare in quel tempo (runner_massimo: la curva dei livelli, i punti per
+--      metro, un margine) e sotto un tetto assoluto (runner_tetto);
+--   3. troppe partite in un minuto dallo stesso giocatore vengono rifiutate
+--      (un bot che ricomincia in continuazione).
+--
+-- Ogni partita, accettata o no, resta in runner_partite con il motivo: e' il
+-- registro per vedere chi ci prova (query in fondo).
+--
+-- Che cosa NON fa: non riconosce un bot che gioca davvero, con punteggi
+-- possibili. Per quello servirebbe rigiocare la partita sul server mossa per
+-- mossa, un altro progetto.
+
+create table if not exists public.runner_partite (
+  id           uuid primary key default gen_random_uuid(),
+  player_id    text not null,
+  started_at   timestamptz not null default now(),
+  finished_at  timestamptz,
+  punti        integer,
+  secondi      integer,           -- come li ha contati il telefono
+  durata_s     integer,           -- come li ha contati il server
+  esito        text,              -- 'ok' | 'rifiutata'
+  motivo       text
+);
+create index if not exists runner_partite_giocatore
+  on public.runner_partite (player_id, started_at desc);
+alter table public.runner_partite enable row level security;
+-- nessuna policy per anon: si entra solo dalle funzioni qui sotto
+revoke all on public.runner_partite from anon;
+
+-- Il tetto assoluto. Il record vero, a settembre 2026, e' sui 13.000: sopra
+-- questo numero non entra nessuno, qualunque cosa dica il telefono. Si cambia
+-- qui, in un posto solo.
+create or replace function public.runner_tetto() returns integer
+language sql immutable as $$ select 40000 $$;
+
+-- Quanto puo' fare AL MASSIMO un giocatore perfetto in tanti secondi.
+-- Il modello e' quello del gioco: la velocita' parte da 0.62 metri al
+-- secondo e sale di 0.20 a ogni livello (1000 punti), fino a dieci scalini;
+-- un giocatore che prende OGNI anello e OGNI prodotto raccoglie circa 215
+-- punti al metro (gruppo da 6 anelli blu piu' un prodotto ogni 0.75 metri,
+-- piu' i 4 punti al metro della distanza). Qui si usa 280 al metro — un
+-- terzo in piu' — e 500 punti di abbuono, cosi' la fortuna non fa mai
+-- rifiutare una partita onesta. Un tabellone da 40.000 vuole almeno un
+-- minuto e mezzo di gioco vero.
+create or replace function public.runner_massimo(secondi numeric) returns integer
+language plpgsql immutable as $$
+declare
+  resto  numeric := greatest(secondi, 0);
+  punti  numeric := 500;
+  ritmo  constant numeric := 280;   -- punti al metro, con margine
+  liv    integer;
+  vel    numeric;
+  serve  numeric;
+begin
+  for liv in 0..9 loop
+    vel   := 0.62 + 0.20 * liv;
+    serve := 1000 / (ritmo * vel);           -- secondi per riempire il livello
+    if resto < serve then
+      return floor(punti + resto * ritmo * vel);
+    end if;
+    punti := punti + 1000;
+    resto := resto - serve;
+  end loop;
+  return floor(punti + resto * ritmo * 2.62);
+end $$;
+
+-- 1. La partita si annuncia. Torna l'id da restituire a fine partita.
+create or replace function public.runner_inizio(p_player_id text)
+returns uuid
+language plpgsql security definer set search_path = public as $$
+declare
+  v_id uuid;
+  v_recenti integer;
+begin
+  if p_player_id is null or length(p_player_id) < 4 or length(p_player_id) > 80 then
+    raise exception 'giocatore non valido' using errcode = '22023';
+  end if;
+  -- un bot che ricomincia in continuazione: piu' di otto partite in un minuto
+  -- non le fa nessuno con le dita
+  select count(*) into v_recenti from public.runner_partite
+    where player_id = p_player_id and started_at > now() - interval '60 seconds';
+  if v_recenti >= 8 then
+    raise exception 'troppe partite' using errcode = '54000';
+  end if;
+  insert into public.runner_partite (player_id) values (p_player_id) returning id into v_id;
+  return v_id;
+end $$;
+
+-- 2. La partita si chiude. Decide il server: torna {ok, motivo, best_score,
+--    best_time_s}. Un punteggio rifiutato NON e' un errore HTTP (il gioco va
+--    avanti e mostra la classifica com'era): e' una risposta con ok=false.
+--    L'unico errore vero e' il nick gia' preso (23505 -> 409), che il gioco
+--    gestisce riaprendo la finestra del nick.
+create or replace function public.runner_fine(
+  p_partita uuid, p_player_id text, p_nick text, p_punti integer, p_secondi integer)
+returns json
+language plpgsql security definer set search_path = public as $$
+declare
+  r        public.runner_partite%rowtype;
+  durata   numeric;
+  v_motivo text := null;
+  v_best   integer;
+  v_tempo  integer;
+begin
+  select * into r from public.runner_partite where id = p_partita and player_id = p_player_id;
+  if not found then
+    return json_build_object('ok', false, 'motivo', 'partita sconosciuta');
+  end if;
+  if r.finished_at is not null then
+    return json_build_object('ok', false, 'motivo', 'partita gia'' chiusa');
+  end if;
+
+  durata := extract(epoch from (now() - r.started_at));
+
+  if p_punti is null or p_punti < 0 then v_motivo := 'punteggio non valido';
+  elsif durata < 3 then v_motivo := 'partita troppo corta';
+  elsif p_secondi is not null and p_secondi > durata + 8 then v_motivo := 'tempo del telefono piu'' lungo di quello vero';
+  elsif p_punti > public.runner_tetto() then v_motivo := 'sopra il tetto';
+  elsif p_punti > public.runner_massimo(durata + 5) then v_motivo := 'impossibile in ' || floor(durata) || ' s';
+  end if;
+
+  update public.runner_partite
+     set finished_at = now(), punti = p_punti, secondi = p_secondi,
+         durata_s = floor(durata), esito = case when v_motivo is null then 'ok' else 'rifiutata' end,
+         motivo = v_motivo
+   where id = p_partita;
+
+  if v_motivo is null then
+    insert into public.runner_leaderboard (player_id, player_name, best_score, best_time_s, updated_at)
+      values (p_player_id, coalesce(nullif(p_nick, ''), 'Anonimo'), p_punti,
+              least(coalesce(p_secondi, floor(durata)::integer), floor(durata)::integer), now())
+      on conflict (player_id) do update
+        set player_name = excluded.player_name,
+            best_score  = excluded.best_score,
+            best_time_s = excluded.best_time_s,
+            updated_at  = excluded.updated_at;   -- il trigger tiene il vecchio se non e' battuto
+  end if;
+
+  select best_score, best_time_s into v_best, v_tempo
+    from public.runner_leaderboard where player_id = p_player_id;
+
+  return json_build_object('ok', v_motivo is null, 'motivo', v_motivo,
+                           'best_score', coalesce(v_best, 0), 'best_time_s', v_tempo);
+end $$;
+
+-- 3. Solo il nick. Se una riga ancora non c'e' non c'e' niente da rinominare:
+--    il nick nuovo entrera' con il primo punteggio.
+create or replace function public.runner_rinomina(p_player_id text, p_nick text)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if p_nick is null or p_nick !~ '^[A-Z0-9 _-]{2,10}$' then
+    raise exception 'nick non valido' using errcode = '22023';
+  end if;
+  update public.runner_leaderboard set player_name = p_nick where player_id = p_player_id;
+end $$;
+
+revoke all on function public.runner_inizio(text) from public;
+revoke all on function public.runner_fine(uuid, text, text, integer, integer) from public;
+revoke all on function public.runner_rinomina(text, text) from public;
+grant execute on function public.runner_inizio(text) to anon;
+grant execute on function public.runner_fine(uuid, text, text, integer, integer) to anon;
+grant execute on function public.runner_rinomina(text, text) to anon;
+
+-- Chi ci prova: le partite rifiutate degli ultimi giorni.
+--   select started_at, player_id, punti, durata_s, motivo
+--     from public.runner_partite where esito = 'rifiutata'
+--     order by started_at desc limit 50;
+-- Per togliere dalla classifica chi e' gia' entrato barando, prima di oggi:
+--   delete from public.runner_leaderboard where lower(player_name) = 'nick';
+-- Pulizia del registro (cresce di una riga a partita):
+--   delete from public.runner_partite where started_at < now() - interval '60 days';
 
 -- Per cancellare la classifica a fine iniziativa, come per le schedine:
 --   delete from public.runner_leaderboard;

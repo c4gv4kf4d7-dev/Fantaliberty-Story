@@ -3328,10 +3328,20 @@ function apriMoltiplicatori(stato, extra) {
     'la corsa non deve chiedere un nome per conto suo');
 
   // una riga per giocatore, e dentro solo il migliore
-  assert.match(corsa, /resolution=merge-duplicates/,
-    'il punteggio riscrive la riga del giocatore invece di aggiungerne una');
-  assert.match(corsa, /if \(p > suServer\)/,
-    'si scrive solo se il punteggio nuovo batte il record sul server');
+  // il punteggio non si scrive sulla tabella: lo decide il server (runner_fine),
+  // dopo che la partita e' stata annunciata (runner_inizio)
+  assert.doesNotMatch(corsa, /resolution=merge-duplicates/,
+    'la corsa non deve piu\' scrivere direttamente sulla classifica');
+  assert.match(corsa, /claRpc\('runner_inizio'/, 'la partita si annuncia al server quando parte');
+  assert.match(corsa, /claRpc\('runner_fine'/, 'e la chiude il server, che decide se accettarla');
+  assert.match(corsa, /claInizio\(\);/, 'via() annuncia la partita');
+  assert.match(corsa, /if \(PROVA\) window\.RUN = S;/, 'lo stato si espone solo con ?prova');
+  const sqlCorsa = fs.readFileSync('docs/backend.sql', 'utf8');
+  for (const f of ['runner_inizio', 'runner_fine', 'runner_rinomina', 'runner_massimo', 'runner_tetto']) {
+    assert.match(sqlCorsa, new RegExp('create or replace function public\\.' + f), 'backend.sql definisce ' + f);
+  }
+  assert.doesNotMatch(sqlCorsa, /create policy "il punteggio si scrive"/,
+    'anon non deve piu\' poter scrivere sulla classifica');
   assert.match(corsa, /order=best_score\.desc,updated_at\.asc/,
     'a parita\' di punteggio e\' davanti chi ci e\' arrivato prima');
   assert.match(corsa, /limit=10/, 'si scaricano le prime dieci, non tutta la tabella');
@@ -3353,9 +3363,14 @@ function apriMoltiplicatori(stato, extra) {
   const sql = fs.readFileSync(path.join(ROOT, 'docs', 'backend.sql'), 'utf8');
   assert.match(sql, /create table if not exists public\.runner_leaderboard/,
     'la tabella della classifica sta in docs/backend.sql');
-  for (const p2 of ['for select to anon', 'for insert to anon', 'for update to anon']) {
-    assert.ok(sql.includes(p2), `manca la policy "${p2}" per la classifica`);
+  // si legge direttamente; si scrive SOLO dalle funzioni (runner_fine): la
+  // chiave del sito non deve avere una policy di insert/update sulla tabella
+  assert.ok(sql.includes('for select to anon'), 'manca la policy di lettura per la classifica');
+  for (const p2 of ['for insert to anon', 'for update to anon']) {
+    assert.ok(!sql.includes(p2), `anon non deve avere la policy "${p2}" sulla classifica`);
   }
+  assert.match(sql, /grant execute on function public\.runner_fine/,
+    'anon deve poter chiamare runner_fine');
   assert.match(sql, /new\.best_score < old\.best_score/,
     'il database impedisce da solo che un punteggio peggiore sovrascriva il record');
 
